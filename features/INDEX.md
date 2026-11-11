@@ -15,7 +15,21 @@
 
 | ID | Feature | Status | Spec | Created |
 |----|---------|--------|------|---------|
+| PROJ-1 | Datenhaltung (JSON/localStorage) + Demo-Daten — Persistenzschicht und Beispieldaten (Systeme in 2.3/4.2/5.0) · P0 · Deps: None | Roadmap | — | 2026-11-11 |
+| PROJ-2 | Simulierte Anmeldung & Rollenwechsel — Benutzerauswahl, Rollen Administrator/Bearbeiter · P0 · Deps: PROJ-1 | Roadmap | — | 2026-11-11 |
+| PROJ-3 | Benutzerverwaltung — Admin legt Benutzer an und bearbeitet sie · P0 · Deps: PROJ-2 | Roadmap | — | 2026-11-11 |
+| PROJ-4 | Organisationsverwaltung — Admin verwaltet interne/externe Organisationen · P0 · Deps: PROJ-2 | Roadmap | — | 2026-11-11 |
+| PROJ-5 | Systemverwaltung — Admin verwaltet Systeme inkl. S1000D-Issue (2.3/4.2/5.0) · P0 · Deps: PROJ-2 | Roadmap | — | 2026-11-11 |
+| PROJ-6 | DMRL anlegen & Berechtigungen — Admin legt DMRLs zu Systemen an und vergibt Rechte · P0 · Deps: PROJ-3, PROJ-4, PROJ-5 | Roadmap | — | 2026-11-11 |
+| PROJ-7 | DMRL-Ansicht — Anzeige der DMRL mit Einträgen und Eintragsstatus · P0 · Deps: PROJ-6 | Roadmap | — | 2026-11-11 |
+| PROJ-8 | Fachliches Regelwerk — gemeinsame Prüfregeln für Check-in und REPLY · P0 · Deps: PROJ-7 | Roadmap | — | 2026-11-11 |
+| PROJ-9 | Check-out Excel/CSV — Export zur externen Bearbeitung, sperrt die DMRL · P0 · Deps: PROJ-7 | Roadmap | — | 2026-11-11 |
+| PROJ-10 | Check-in Excel/CSV — Import mit Regelprüfung, Übernahme, Entsperren · P0 · Deps: PROJ-8, PROJ-9 | Roadmap | — | 2026-11-11 |
+| PROJ-11 | XSD-Validierung — Prüfung gegen dml.xsd (2.3/4.2/5.0) via xmllint · P0 · Deps: PROJ-5 | Roadmap | — | 2026-11-11 |
+| PROJ-12 | SEND-Export — S1000D-DMRL-XML mit Versionsindex NNNNN-JJJJ · P0 · Deps: PROJ-7, PROJ-11 | Roadmap | — | 2026-11-11 |
+| PROJ-13 | REPLY-Import — Partner-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | Roadmap | — | 2026-11-11 |
+| PROJ-14 | Freigabestatus DMRL — Ableitung aus Eintragsstatus, Aufhebung bei Änderung · P0 · Deps: PROJ-10, PROJ-13 | Roadmap | — | 2026-11-11 |
+| PROJ-15 | Archiv SEND/REPLY — alle Austauschstände einsehen und herunterladen · P0 · Deps: PROJ-12, PROJ-13 | Roadmap | — | 2026-11-11 |
+| PROJ-16 | Dashboard — Übersicht aller DMRLs und ihres Status · P1 · Deps: PROJ-14 | Roadmap | — | 2026-11-11 |
 
-<!-- Add features above this line -->
-
-## Next Available ID: PROJ-1
+## Next Available ID: PROJ-17
