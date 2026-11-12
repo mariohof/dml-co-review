@@ -1,6 +1,6 @@
 # PROJ-12: SEND-Export
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -180,12 +180,83 @@ Nur **Administrator**, nur bei Status *gesendet*:
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| XML-Erzeugung im Browser, XSD-Prüfung über Serverfunktion (PROJ-11) | Daten lokal; Server nur Prüfdienst | 2026-11-12 |
+| DML-Schreiber je Issue als gemeinsamer Baustein (PROJ-12/14/18) | Einheitliche Dateien | 2026-11-12 |
+| Schreiber und Leser nach derselben Mapping-Tabelle, Rundlauftest | REPLY-Vergleich (PROJ-8 G) zuverlässig | 2026-11-12 |
+| Reihenfolge: erzeugen → XSD → atomar speichern → Download | Kein Archiv ohne gültige Datei, kein Download ohne Archiv | 2026-11-12 |
+| Archiv speichert exakt den Download-Text | Byte-genau (PRD) | 2026-11-12 |
+| Versionsindex beim Senden neu berechnet; zurückgezogene SENDs belegen ihre seqnum | Korrekt über Jahreswechsel, eindeutig | 2026-11-12 |
+| Keine XML-Bibliothek, feste Struktur je Issue | Keine Abhängigkeit nötig | 2026-11-12 |
+| Bemerkung im SEND-Dialog max. 2.000 Zeichen | Begrenzte Dateigröße | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Der SEND ist eine Workflow-Aktion nach dem Muster aus PROJ-9 (Verfügbarkeitsregel + atomare Ausführung). Neu ist der **DML-Schreiber je Issue** — das Gegenstück zum DML-Leser aus PROJ-8 —, der aus DMRL und Einträgen die S1000D-XML für 2.3, 4.2 oder 5.0 erzeugt. Er wird auch vom Export (PROJ-18) und vom Freigabestand-Export (PROJ-14) genutzt. Die erzeugte Datei wird serverseitig gegen das Schema geprüft (PROJ-11), danach im Browser archiviert und heruntergeladen. Ansonsten kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+DMRL-Ansicht (PROJ-7) — Aktion „SEND" (gesperrt mit Grund, wenn Voraussetzungen fehlen)
++-- SEND-Dialog (shadcn Dialog + Form)
+|   +-- Partner (Auswahl: Organisationen außer Originator; vorbelegt letzter Partner; Hinweis bei Abweichung)
+|   +-- Bemerkung (mehrzeilig, optional)
+|   +-- Vorschau: neuer Versionsindex · Dateiname · Anzahl gesamt / n / c / d
+|   +-- „Senden" · „Abbrechen"
+|   +-- während des Sendens: „XML wird erzeugt und geprüft…"
+|   +-- bei XSD-Fehler: Prüfbericht-Anzeige (PROJ-8/11) mit Hinweis „Anwendungsfehler"
++-- nur Administrator bei Status gesendet: „SEND zurückziehen"
+    +-- Dialog mit Versionsindex, Pflichtfeld „Begründung", „Zurückziehen" · „Abbrechen"
+```
+
+### B) Datenmodell (in Klartext)
+Keine neuen Objekte (PROJ-1). Ein erfolgreicher SEND schreibt in **einer** Speicherung:
+- **Archivstand** (Richtung SEND): DML-Code, Versionsindex, `dmlref`, Dateiname, **XML-Text genau wie heruntergeladen**, Zeitpunkt, Bearbeiter, Partner
+- **Einträge** mit `n`/`c`/`d` → *gesendet*
+- **DMRL** → *gesendet*
+- **Verlauf** „SEND [Versionsindex] an [Partner]"
+
+Schlägt die XSD-Prüfung fehl: nur Verlaufseintrag „SEND fehlgeschlagen — XSD-Prüfung". **Zurückziehen** schreibt: Archivstand-Kennzeichen „zurückgezogen" (Zeitpunkt, Administrator, Begründung), Einträge *gesendet* → *in Bearbeitung*, DMRL → *in Bearbeitung*, Verlaufseintrag.
+
+### C) Bausteine
+| Baustein | Aufgabe | Auch genutzt von |
+|---|---|---|
+| **Versionsindex-Rechner** | nächste seqnum je DMRL + Absender + Jahr aus dem Archiv (zurückgezogene SENDs zählen mit) | Vorschau, Dashboard/Ansicht (aktueller Index) |
+| **Bezugs-Ermittlung (`dmlref`)** | erster SEND → eigener DML-Code; sonst letzter REPLY; nach Zurückziehen letzter gültiger Stand | PROJ-18 (Export) |
+| **DML-Schreiber je Issue** | erzeugt Kopf + Einträge nach `docs/dmrl-mapping.md`; 4.2/5.0 mit Standard-BREX; Einträge nach DMC sortiert; ohne `answer`; Sonderzeichen korrekt maskiert; UTF-8 mit XML-Deklaration | PROJ-14, PROJ-18 |
+| **Dateiname-Bildung** | `DML-{MI}-{CAGE}-{DML-Typ}-{Jahr}-{seqnum}_001-00.XML` | PROJ-18 (`_000-01`) |
+| **XSD-Prüfdienst** | Prüfung über den Server (PROJ-11) | PROJ-13, 14, 18 |
+| **Verfügbarkeitsregeln** | SEND und SEND zurückziehen laut Spec, mit Gründen | Aktionsleiste (PROJ-7) |
+
+### D) Ablauf „Senden"
+1. Dialog öffnen → Vorschau (Versionsindex, Dateiname, Zahlen) berechnen.
+2. „Senden" → Verfügbarkeit erneut prüfen; Versionsindex mit aktuellem Datum neu ermitteln (Jahreswechsel).
+3. XML erzeugen (DML-Schreiber).
+4. XSD-Prüfung (Server). Nicht verfügbar → Abbruch mit Meldung, nichts gespeichert. Fehler → Verlaufseintrag „fehlgeschlagen", Bericht anzeigen.
+5. Gültig → atomare Speicherung (Archiv, Einträge, DMRL, Verlauf). Scheitert sie (Speicher voll) → kein Download, Meldung.
+6. Download der **identischen** XML; Dialog schließt; Ansicht zeigt neuen Versionsindex. Blockierter Download → erneut aus dem Archiv (PROJ-15).
+
+### E) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| XML wird im Browser erzeugt, nur die Prüfung läuft auf dem Server | Daten liegen im Browser; Server bleibt ein schlanker Prüfdienst. |
+| DML-Schreiber je Issue als gemeinsamer Baustein | SEND, Export und Freigabestand erzeugen identisch aufgebaute Dateien. |
+| Schreiber und Leser folgen derselben Mapping-Tabelle; Rundlauftest Schreiben → Lesen | Was gesendet wird, kann beim REPLY wieder exakt gelesen und verglichen werden (PROJ-8 G). |
+| Erst prüfen, dann speichern, dann herunterladen | Kein Archiv ohne gültige Datei; kein Download ohne Archiv. |
+| Archiv speichert genau den heruntergeladenen Text | Byte-genauer Nachweis (PRD). |
+| Versionsindex beim Senden neu berechnet | Korrekt auch über Jahreswechsel und bei parallelen Tabs. |
+| Zurückgezogene SENDs belegen ihre seqnum | Keine doppelten Versionsindizes, Archiv bleibt eindeutig. |
+| Bemerkung max. 2.000 Zeichen | Begrenzt die Dateigröße; reicht für Begleittext. |
+
+### F) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.** XML-Erzeugung ohne Zusatzbibliothek (feste Struktur je Issue); Prüfung über PROJ-11.
+
+### G) Testbarkeit
+- Unit-Tests: Versionsindex (fortlaufend, Jahreswechsel, zurückgezogene), `dmlref` (erster SEND, nach REPLY, nach Zurückziehen), DML-Schreiber je Issue (Kopf, Einträge, BREX bei 4.2/5.0, kein `answer`, Sonderzeichen), Rundlauf Schreiber → Leser, Statuswirkung, Zurückziehen.
+- Integration mit xmllint: erzeugte Dateien für 2.3/4.2/5.0 sind schemagültig.
+- E2E: Demo Fahrzeug (4.2) senden → Download `DML-GTFDEMO-D0815-C-[Jahr]-00001_001-00.XML`, Status gesendet; PHUNGUN nicht sendbar (gesendet); Admin zieht SEND zurück; erneuter SEND erhält nächste seqnum.
 
 ## QA Test Results
 _To be added by /qa_
