@@ -126,7 +126,7 @@ Leer: „Noch keine Workflow-Schritte"
 - Darstellung archivierter XML-Dateien aller drei Issues (2.3/4.2/5.0)
 
 ## Open Questions
-- [ ] Soll es eine Archivübersicht über alle DMRLs geben (z. B. im Dashboard, PROJ-16)?
+- [x] Soll es eine Archivübersicht über alle DMRLs geben (z. B. im Dashboard, PROJ-16)? → Nein, nicht im MVP; Archiv je DMRL reicht (2026-11-12)
 
 ## Decision Log
 
