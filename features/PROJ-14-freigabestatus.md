@@ -125,7 +125,7 @@ Kopfbereich der Ansicht (Ergänzung PROJ-7):
 - Anzeige eines Freigabestands mit 1.000 Einträgen ohne spürbare Verzögerung
 
 ## Open Questions
-- [ ] Kopfdaten des XML-Exports (Richtung, `dmlc`, `dmlref`) werden in PROJ-18 festgelegt
+- [x] Kopfdaten des XML-Exports (Richtung, `dmlc`, `dmlref`) → festgelegt in PROJ-18 (`issno` 000 / `inwork` 01, `remarks` „Freigabestand vom … — Export vom …")
 
 ## Decision Log
 

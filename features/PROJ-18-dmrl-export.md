@@ -1,0 +1,133 @@
+# PROJ-18: DMRL-Export (CSV/XML)
+
+## Status: Planned
+**Created:** 2026-11-12
+**Last Updated:** 2026-11-12
+
+## Dependencies
+- Requires: PROJ-7 (DMRL-Ansicht) — Aktion „Exportieren"
+- Requires: PROJ-9 (Check-out CSV) — CSV-Aufbau
+- Requires: PROJ-12 (SEND-Export) — XML-Aufbau je Issue
+- Requires: PROJ-11 (XSD-Validierung) — Prüfung vor dem Download
+- Requires: PROJ-17 (Berechtigungen)
+- Wird genutzt von: PROJ-14 (Export des Freigabestands verwendet denselben Aufbau)
+
+## Beschreibung
+Der aktuelle Stand einer DMRL kann **jederzeit** als CSV oder S1000D-XML exportiert werden — unabhängig von Sperre und Status, ohne Workflow, ohne Versionsindex und ohne Archiveintrag. Der Export dient zur Information und Weitergabe (z. B. Vorführung, interne Abstimmung, TP-Projekt). Ein XML-Export ist als Arbeitsstand gekennzeichnet und kann nicht mit einem offiziellen SEND verwechselt werden.
+
+## Export
+Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
+
+| Punkt | Festlegung |
+|---|---|
+| Wer | berechtigte Bearbeiter (PROJ-17) und Administratoren |
+| Wann | jederzeit — auch wenn ausgecheckt (auch von anderen), *gesendet* oder *freigegeben* |
+| Inhalt | aktueller Stand der DMRL in der Anwendung (bei Sperre: Stand vor dem Check-in, nicht die Änderungen in der ausgecheckten CSV) |
+| Wirkung | keine: keine Sperre, keine Statusänderung, kein Versionsindex, kein Archiv, kein Verlaufseintrag (PROJ-15) |
+| DMRL ohne Einträge | CSV: nur Kopfzeile. XML: nicht möglich — „Die DMRL hat keine Einträge" (Schema verlangt mindestens einen Eintrag) |
+
+### CSV
+- Aufbau wie Check-out (PROJ-9): 27 Spalten, Semikolon, UTF-8 mit BOM, alle Einträge nach DMC sortiert, inkl. `answer`/`answer_comment`
+- Dateiname: `DML-{MI}-{CAGE Originator}-{DML-Typ}-Export-{JJJJ-MM-TT}.csv`, z. B. `DML-PHUNGUN-D0815-C-Export-2026-11-12.csv`
+- Eine Export-CSV kann bei bestehender eigener Sperre eingecheckt werden (gleicher Aufbau); sie wird wie jede Datei geprüft (PROJ-8/10)
+
+### XML
+**Kopf**
+| Feld | Wert |
+|---|---|
+| Richtung | `send` |
+| `dmlc` | MI · CAGE Originator · DML-Typ · Jahr und seqnum des **letzten SEND**; ohne SEND: aktuelles Jahr und `00000` |
+| `issno` / `inwork` | **`000` / `01`** (S1000D-Arbeitsstand; SEND hat `001` / `00`) |
+| `issdate` | Datum des Exports |
+| `security` | Sicherheitseinstufung der DMRL |
+| `dmlref` | wie beim nächsten SEND: auf den letzten REPLY, ohne Austausch auf sich selbst |
+| `brexDmRef` | nur 4.2/5.0: Standard-BREX (PROJ-12) |
+| `remarks` | „Export vom [TT.MM.JJJJ] — kein offizieller Austauschstand" |
+
+**Einträge:** wie SEND (PROJ-12) — alle Einträge nach DMC, mit Eintragstyp und Ausgabedaten, **ohne** `answer`; Elementnamen je Issue laut `docs/dmrl-mapping.md`.
+
+**Dateiname:** `DML-{MI}-{CAGE}-{DML-Typ}-{Jahr}-{seqnum}_000-01.XML`, z. B. `DML-PHUNGUN-D0815-C-2026-00002_000-01.XML`
+
+**XSD-Prüfung** vor dem Download (PROJ-11); bei Fehler oder nicht verfügbarer Prüfung kein Download.
+
+**Freigabestand (PROJ-14):** gleicher Aufbau; Einträge aus dem Freigabestand, Dateiname laut PROJ-14, `remarks` „Freigabestand vom [Datum] — Export vom [Datum]".
+
+## User Stories
+- Als **Bearbeiter** möchte ich den aktuellen Stand jederzeit als CSV exportieren, damit ich ihn intern weitergeben kann, ohne die DMRL zu sperren.
+- Als **Bearbeiter** möchte ich den aktuellen Stand als S1000D-XML exportieren, auch während die DMRL auf einen REPLY wartet.
+- Als **Empfänger** einer exportierten XML möchte ich erkennen, dass es sich um einen Arbeitsstand und nicht um einen offiziellen SEND handelt.
+- Als **Product Owner** möchte ich in der Demo jederzeit Stände in beiden Formaten zeigen können.
+
+## Out of Scope
+- Export mehrerer DMRLs auf einmal
+- Excel-Format (.xlsx)
+- Export mit Kopfdaten in der CSV
+- Auswahl einzelner Einträge oder Spalten
+- Protokollierung von Exporten (PROJ-15)
+- Export archivierter SEND/REPLY-Stände → Download im Archiv (PROJ-15)
+- Export als offizieller Austauschstand → SEND (PROJ-12)
+
+## Acceptance Criteria
+
+**Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
+
+### Zugriff
+- [ ] Angenommen ein berechtigter Bearbeiter öffnet die DMRL-Ansicht, wenn er „Exportieren" wählt, dann kann er CSV oder XML auswählen
+- [ ] Angenommen ein Bearbeiter ist nicht berechtigt, wenn er den Export direkt aufruft, dann erscheint „Keine Berechtigung"
+- [ ] Angenommen die DMRL ist von einem anderen Benutzer ausgecheckt, wenn exportiert wird, dann ist der Export möglich und enthält den Stand der Anwendung
+- [ ] Angenommen die DMRL hat Status *gesendet*, wenn exportiert wird, dann ist der Export möglich
+
+### CSV
+- [ ] Angenommen PHUNGUN wird am 12.11.2026 als CSV exportiert, wenn die Datei gespeichert wird, dann heißt sie `DML-PHUNGUN-D0815-C-Export-2026-11-12.csv` und hat den Aufbau von PROJ-9
+- [ ] Angenommen eine DMRL wird als CSV exportiert, wenn danach der Status betrachtet wird, dann ist sie nicht gesperrt und unverändert
+
+### XML
+- [ ] Angenommen PHUNGUN (letzter SEND 00002-2026) wird als XML exportiert, wenn die Datei gespeichert wird, dann heißt sie `DML-PHUNGUN-D0815-C-2026-00002_000-01.XML` und hat `issno` `000`, `inwork` `01`
+- [ ] Angenommen eine DMRL wurde nie gesendet, wenn als XML exportiert wird, dann hat `dmlc` die seqnum `00000` und das aktuelle Jahr, und `dmlref` verweist auf sich selbst
+- [ ] Angenommen ein XML-Export wird erzeugt, wenn er geöffnet wird, dann enthält `remarks` „Export vom [Datum] — kein offizieller Austauschstand" und kein Eintrag hat `answer`
+- [ ] Angenommen das System hat Issue 2.3 / 4.2 / 5.0, wenn als XML exportiert wird, dann besteht die Datei die XSD-Prüfung des jeweiligen Issues
+- [ ] Angenommen die XSD-Prüfung schlägt fehl oder ist nicht verfügbar, wenn als XML exportiert wird, dann wird nichts heruntergeladen und eine Meldung erscheint
+- [ ] Angenommen eine DMRL hat keine Einträge, wenn als XML exportiert wird, dann erscheint „Die DMRL hat keine Einträge" und nichts wird heruntergeladen
+- [ ] Angenommen ein XML-Export wurde erstellt, wenn das Archiv und der Verlauf betrachtet werden, dann gibt es dafür keinen Eintrag und keinen neuen Versionsindex
+
+## Edge Cases
+- **Export während eines laufenden Check-ins (Zusammenfassung offen):** exportiert den Stand vor der Übernahme.
+- **Jahreswechsel:** `dmlc` behält Jahr/seqnum des letzten SEND; Export-Datum ist das aktuelle Datum.
+- **Zurückgezogener letzter SEND:** `dmlc` verwendet den letzten nicht zurückgezogenen SEND (bzw. `00000`).
+- **Gleicher Dateiname bei mehreren Exporten am selben Tag:** Browser vergibt ggf. Zusatz; kein Problem für die Anwendung.
+- **Sehr große DMRL:** Fortschrittsanzeige während XML-Erzeugung und Prüfung.
+
+## Technical Requirements (optional)
+- CSV-Export im Browser; XML-Prüfung serverseitig (PROJ-11)
+- Gleiche XML-Erzeugung wie SEND (PROJ-12), nur Kopfwerte abweichend
+
+## Open Questions
+- (keine)
+
+## Decision Log
+
+### Product Decisions
+| Decision | Rationale | Date |
+|----------|-----------|------|
+| Export jederzeit, ohne Sperre, Status, Versionsindex, Archiv oder Verlauf | Vorgabe Product Owner (PROJ-9) | 2026-11-12 |
+| XML-Export mit `issno` 000 / `inwork` 01 und Hinweis in `remarks` | Kennzeichnung als Arbeitsstand, keine Verwechslung mit SEND | 2026-11-12 |
+| `dmlc` übernimmt den letzten SEND (ohne SEND: 00000) | Kein neuer Versionsindex | 2026-11-12 |
+| Einträge wie SEND, ohne `answer` | Gleicher Aufbau, keine Sonderlogik | 2026-11-12 |
+| CSV-Export mit Zusatz „Export" und Datum im Dateinamen | Unterscheidbar von der Check-out-Datei | 2026-11-12 |
+| Freigabestand-Export nutzt denselben Aufbau | Konsistenz mit PROJ-14 | 2026-11-12 |
+
+### Technical Decisions
+| Decision | Rationale | Date |
+|----------|-----------|------|
+
+---
+<!-- Sections below are added by subsequent skills -->
+
+## Tech Design (Solution Architect)
+_To be added by /architecture_
+
+## QA Test Results
+_To be added by /qa_
+
+## Deployment
+_To be added by /deploy_
