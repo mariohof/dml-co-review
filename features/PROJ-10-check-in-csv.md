@@ -132,7 +132,7 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 - Maximale Dateigröße 5 MB
 
 ## Open Questions
-- [ ] Soll der Prüfbericht eines abgelehnten Check-ins im Workflow-Verlauf festgehalten werden? (→ PROJ-15)
+- [x] Soll der Prüfbericht eines abgelehnten Check-ins im Workflow-Verlauf festgehalten werden? → Eintrag „Check-in abgelehnt — n Fehler", Prüfbericht selbst wird nicht gespeichert (PROJ-15)
 
 ## Decision Log
 

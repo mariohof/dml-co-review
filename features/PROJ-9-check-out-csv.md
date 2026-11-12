@@ -126,7 +126,7 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 - CSV-Erzeugung für 1.000 Einträge in unter einer Sekunde
 
 ## Open Questions
-- [ ] Werden im Workflow-Verlauf auch Admin-Änderungen an den DMRL-Kopfdaten protokolliert? (→ PROJ-15)
+- [x] Werden im Workflow-Verlauf auch Admin-Änderungen an den DMRL-Kopfdaten protokolliert? → Ja, „Kopfdaten geändert: Feld alt → neu" (PROJ-15)
 
 ## Decision Log
 
