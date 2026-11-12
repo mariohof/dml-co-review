@@ -159,7 +159,7 @@ Nur **Administrator**, nur bei Status *gesendet*:
 
 ## Open Questions
 - [ ] Ausgabedaten der Einträge (`issno`, DM-Ausgabetyp, Datum) im SEND-XML: derzeit enthalten (Vorgabe Product Owner), NSG sieht sie nicht vor — ggf. später anpassen
-- [ ] Beispieldatei Issue 5.0 steht noch aus (`docs/beispiele/issue-5.0/`)
+- [x] Beispieldatei Issue 5.0 → `docs/beispiele/issue-5.0/DML-S1000DBIKE-B6865-S-2019-00001_001-00.XML`, schemagültig (2026-11-12)
 
 ## Decision Log
 

@@ -122,8 +122,7 @@ Abgeleitet aus `schemas/s1000d/issue-4.2/dml.xsd` und `issue-5.0/dml.xsd` (für 
 ## XSD-Schemas
 - Ablage: `schemas/s1000d/issue-{2.3,4.2,5.0}/` (`dml.xsd` + eingebundene Schemas)
 - Issue 5.0: Import von `xml.xsd` auf lokale Kopie umgestellt (statt `http://www.w3.org/2001/xml.xsd`), damit `xmllint --nonet` offline validiert
-- Alle drei Schemas kompilieren mit `xmllint --nonet`; die PHUNGUN-Beispieldateien sind gegen Issue 2.3 gültig
+- Alle drei Schemas kompilieren mit `xmllint --nonet`; die PHUNGUN-Beispieldateien sind gegen Issue 2.3 gültig, `docs/beispiele/issue-4.2/DML-S1000DBIKE-B6865-S-2016-00002_001-00.XML` gegen 4.2 und `docs/beispiele/issue-5.0/DML-S1000DBIKE-B6865-S-2019-00001_001-00.XML` gegen 5.0
 
 ## Offen
-- Beispieldatei Issue 5.0 fehlt noch (`docs/beispiele/issue-5.0/`)
 - Ausgabedaten der Einträge (`issno`, DM-Ausgabetyp, Datum) im SEND-XML: derzeit enthalten (PROJ-12), ggf. später anpassen (NSG sieht sie nicht vor)
