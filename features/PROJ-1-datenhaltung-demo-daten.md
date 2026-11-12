@@ -25,6 +25,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 - Name
 - Rolle: Administrator / Bearbeiter
 - Organisation
+- Systemkonto ja/nein — genau ein Systemkonto „Administrator" existiert immer (nicht löschbar, Rolle fest; siehe PROJ-2/PROJ-3)
 
 ### System
 - Bezeichnung
@@ -59,7 +60,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 | Objekt | Inhalt |
 |--------|--------|
 | Organisationen | `D0815` – eigene Organisation (neutraler Name); `C1234` – Partner (neutraler Name) |
-| Benutzer | 1 Administrator, 2 Bearbeiter (alle Organisation D0815) |
+| Benutzer | Systemkonto „Administrator", 2 Bearbeiter (alle Organisation D0815) |
 | System 1 | PHUNGUN — Gerät — Issue 2.3 |
 | System 2 | Fiktives Fahrzeug — Issue 4.2 |
 | System 3 | Fiktives Fluggerät — Issue 5.0 |
@@ -152,6 +153,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 | Zurücksetzen nur durch Administrator, mit Bestätigung | Verhindert versehentlichen Datenverlust durch Bearbeiter | 2026-11-11 |
 | Beschädigte Daten → Hinweis + Neuladen der Demo-Daten statt Absturz | Demo-Fähigkeit hat Vorrang; keine Datenrettung im Prototyp | 2026-11-11 |
 | Kein Abgleich zwischen mehreren Tabs/Browsern | localStorage-Prototyp; echte Mehrbenutzerfähigkeit ist Non-Goal | 2026-11-11 |
+| Demo-Admin ist das Systemkonto „Administrator" (Kennzeichen Systemkonto); fehlt es, gilt der Datenbestand als beschädigt | Vorgabe Product Owner (PROJ-2) — jederzeit Zugang zur Verwaltung | 2026-11-12 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
