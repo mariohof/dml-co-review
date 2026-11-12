@@ -42,7 +42,7 @@ Bei Regel 3 und 4 nennt die Meldung die betroffenen DMRLs.
 - Löschen von Benutzern — bewusst ausgeschlossen (Archiv-Nachvollziehbarkeit)
 - Organisation, E-Mail, Kürzel oder weitere Benutzerfelder
 - Passwörter / echte Anmeldung (PRD Non-Goal)
-- Zuordnung von Benutzern zu DMRLs → PROJ-6
+- Berechtigung von Benutzern für DMRLs → PROJ-17
 - Aufheben von Sperren durch den Administrator → PROJ-9 / PROJ-10
 - Änderungsprotokoll der Benutzerverwaltung (wer hat wann was geändert)
 - Import/Export von Benutzerlisten
@@ -95,7 +95,7 @@ Bei Regel 3 und 4 nennt die Meldung die betroffenen DMRLs.
 - **Umbenennen auf eigenen Namen in anderer Schreibweise** („Bea Bearbeiter" → „BEA Bearbeiter"): erlaubt, da derselbe Benutzer.
 - **Name „Administrator" für einen neuen Benutzer:** abgelehnt, da bereits vom Systemkonto belegt (Eindeutigkeit).
 - **Letzter aktiver Bearbeiter wird deaktiviert:** erlaubt; der Administrator hat ohnehin alle Bearbeiter-Rechte.
-- **Inaktiver Benutzer ist noch DMRL zugeordnet:** Zuordnung bleibt gespeichert; in PROJ-6 kann er nicht neu zugeordnet werden.
+- **Inaktiver Benutzer ist noch DMRL zugeordnet:** Zuordnung bleibt gespeichert; in PROJ-17 kann er nicht neu berechtigt werden.
 - **Archiv zeigt Stände eines inaktiven Benutzers:** Name wird weiterhin angezeigt (ggf. mit Vermerk „inaktiv").
 - **Zwei Tabs, gleichzeitiges Bearbeiten:** letzter Speichervorgang gewinnt (Prototyp, PROJ-1).
 

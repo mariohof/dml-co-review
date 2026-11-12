@@ -19,7 +19,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 ### Organisation
 - CAGE-Code (z. B. `D0815`, `C1234`) — entspricht `sendid` im DML-Code
 - Name
-- (keine Art — Sender/Partner wird je DMRL festgelegt, PROJ-4)
+- (keine Art — Originator wird je DMRL festgelegt (PROJ-6), Partner je SEND (PROJ-12))
 
 ### Benutzer (simuliert)
 - Name
@@ -35,10 +35,11 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 - Model Ident Code (`modelic`)
 
 ### DMRL
-- Bezeichnung
+- (keine eigene Bezeichnung — Anzeige über Systembezeichnung, PROJ-6)
 - System (→ S1000D-Issue)
-- Sender-Organisation und Partner-Organisation
-- Zuständige Bearbeiter
+- Originator (Sender-Organisation)
+- DML-Typ (Vorgabe `c`) und Sicherheitseinstufung (`00`–`99`)
+- Berechtigte Bearbeiter (PROJ-17)
 - Statusdaten laut `docs/dmrl-mapping.md`: `dmlc` (modelic, sendid, dmltype, diyear, seqnum), `issno` (issno, inwork, type), `issdate`, `security`, `dmlref`, `remarks`
 - Aktueller Versionsindex `NNNNN-JJJJ` (= `seqnum-diyear` des letzten SEND)
 - DMRL-Status: *in Bearbeitung* / *gesendet* / *freigegeben*
@@ -54,13 +55,14 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 - DML-Code (`dmlc`) und Versionsindex
 - Verweis (`dmlref`) auf die vorherige DMRL der Austauschkette
 - Dateiname und unveränderter Original-Dateiinhalt (XML)
-- Zeitpunkt und auslösender Benutzer
+- Zeitpunkt und ausführender Benutzer
+- Partner-Organisation (bei SEND gewählt, PROJ-12; bei REPLY Absender)
 
 ## Demo-Datenbestand
 
 | Objekt | Inhalt |
 |--------|--------|
-| Organisationen | `D0815` (neutraler Name, Sender der Demo-DMRLs); `C1234` (neutraler Name, Partner der Demo-DMRLs) |
+| Organisationen | `D0815` (neutraler Name, Originator der Demo-DMRLs); `C1234` (neutraler Name, Partner der SEND/REPLY-Kette PHUNGUN) |
 | Benutzer | Systemkonto „Administrator", 2 Bearbeiter (alle aktiv, keine Organisation) |
 | System 1 | PHUNGUN — Issue 2.3 |
 | System 2 | Fiktives Fahrzeug — Issue 4.2 |
@@ -82,7 +84,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 ## Out of Scope
 - Echte Datenbank / Backend / Synchronisation zwischen Browsern oder Geräten (PRD Non-Goal)
 - Echte Anmeldung — Benutzerauswahl und Rollenwechsel → PROJ-2
-- Pflegemasken für Benutzer, Organisationen, Systeme, DMRLs → PROJ-3 bis PROJ-6
+- Pflegemasken für Benutzer, Organisationen, Systeme, DMRLs, Berechtigungen → PROJ-3 bis PROJ-6, PROJ-17
 - Anzeige der DMRL und ihrer Einträge → PROJ-7
 - Prüfregeln, Check-out/Check-in, SEND/REPLY-Logik, Freigabelogik → PROJ-8 bis PROJ-14
 - Archiv-Ansicht und Download → PROJ-15
@@ -97,7 +99,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 ### Erststart & Demo-Daten
 - [ ] Angenommen im Browser sind keine Anwendungsdaten gespeichert, wenn die Anwendung erstmals geöffnet wird, dann wird der Demo-Datenbestand automatisch geladen und gespeichert
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Daten betrachtet werden, dann existieren genau 3 Systeme mit den S1000D-Issues 2.3, 4.2 und 5.0
-- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Daten betrachtet werden, dann existieren die Organisationen D0815 (eigene) und C1234 (Partner) sowie 1 Administrator und 2 Bearbeiter
+- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Daten betrachtet werden, dann existieren die Organisationen D0815 und C1234 sowie das Systemkonto „Administrator" und 2 Bearbeiter
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRL des Systems PHUNGUN betrachtet wird, dann enthält ihr Archiv 3 Stände in der Reihenfolge SEND 00001-2026, REPLY C1234 00001-2026, SEND 00002-2026 mit unverändertem Original-XML-Inhalt
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRL des Systems PHUNGUN betrachtet wird, dann hat sie den Versionsindex 00002-2026, den Status *gesendet* und 32 Einträge (11 mit Typ `d`, 21 mit Typ `n`) im Status *gesendet*
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRLs des Fahrzeugs (4.2) und des Fluggeräts (5.0) betrachtet werden, dann haben sie je ca. 10 Einträge im Status *in Bearbeitung* und kein Archiv

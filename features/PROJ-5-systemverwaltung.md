@@ -30,11 +30,13 @@ Keine Systemart.
 
 Ein System gilt als **in einem Workflow benutzt**, sobald seine DMRL mindestens einmal Check-out/Check-in oder SEND/REPLY durchlaufen hat (dauerhaft, analog PROJ-4).
 
-| Situation | Löschen | S1000D-Issue | Model Ident Code | Bezeichnung / Beschreibung |
-|---|---|---|---|---|
-| Keine DMRL | ja | änderbar | änderbar | änderbar |
-| DMRL vorhanden, noch kein Workflow | nein — zuerst DMRL löschen (PROJ-6) | änderbar | **fest** | änderbar |
-| DMRL in Workflow benutzt | **nein, dauerhaft** | **fest** | **fest** | änderbar |
+| Situation | Löschen | S1000D-Issue | Model Ident Code | Bezeichnung | Beschreibung |
+|---|---|---|---|---|---|
+| Keine DMRL | ja | änderbar | änderbar | änderbar | änderbar |
+| DMRL vorhanden, noch kein Workflow | nein — zuerst DMRL löschen (PROJ-6) | änderbar | **fest** | **fest** | änderbar |
+| DMRL in Workflow benutzt | **nein, dauerhaft** | **fest** | **fest** | **fest** | änderbar |
+
+Die Bezeichnung ist fest, sobald eine DMRL existiert, da die DMRL keine eigene Bezeichnung hat und über die Systembezeichnung angezeigt wird (PROJ-6).
 
 ## User Stories
 - Als **Administrator** möchte ich Systeme mit Bezeichnung, S1000D-Issue und Model Ident Code anlegen, damit ich dafür DMRLs führen kann.
@@ -81,8 +83,8 @@ Ein System gilt als **in einem Workflow benutzt**, sobald seine DMRL mindestens 
 
 ### Bearbeiten
 - [ ] Angenommen ein System hat keine DMRL, wenn „Bearbeiten" gewählt wird, dann sind alle Felder änderbar (gleiche Prüfregeln wie beim Anlegen)
-- [ ] Angenommen ein System hat eine DMRL ohne Workflow-Historie, wenn „Bearbeiten" gewählt wird, dann ist der Model Ident Code gesperrt mit dem Hinweis „Model Ident Code ist fest, da eine DMRL existiert"; Bezeichnung, S1000D-Issue und Beschreibung sind änderbar
-- [ ] Angenommen die DMRL eines Systems hat einen Workflow durchlaufen, wenn „Bearbeiten" gewählt wird, dann sind Model Ident Code und S1000D-Issue gesperrt mit dem Hinweis „wird in Workflows verwendet"; Bezeichnung und Beschreibung sind änderbar
+- [ ] Angenommen ein System hat eine DMRL ohne Workflow-Historie, wenn „Bearbeiten" gewählt wird, dann sind Model Ident Code und Bezeichnung gesperrt mit dem Hinweis „fest, da eine DMRL existiert"; S1000D-Issue und Beschreibung sind änderbar
+- [ ] Angenommen die DMRL eines Systems hat einen Workflow durchlaufen, wenn „Bearbeiten" gewählt wird, dann sind Model Ident Code, S1000D-Issue und Bezeichnung gesperrt mit dem Hinweis „wird in Workflows verwendet"; nur die Beschreibung ist änderbar
 - [ ] Angenommen die S1000D-Issue eines Systems ohne Workflow-Historie wird geändert, wenn gespeichert wird, dann gilt die neue Version für Export/Import der zugehörigen DMRL
 
 ### Löschen
@@ -109,7 +111,7 @@ Ein System gilt als **in einem Workflow benutzt**, sobald seine DMRL mindestens 
 
 ## Open Questions
 - [ ] Muss `modelic` jedes DMRL-Eintrags dem Model Ident Code des Systems entsprechen? (PROJ-8)
-- [ ] Darf eine DMRL mit Workflow-Historie überhaupt gelöscht werden? (PROJ-6 — Annahme: nein)
+- [x] Darf eine DMRL mit Workflow-Historie gelöscht werden? → Nein (PROJ-6)
 
 ## Decision Log
 
@@ -125,6 +127,7 @@ Ein System gilt als **in einem Workflow benutzt**, sobald seine DMRL mindestens 
 | S1000D-Issue fest ab erstem Workflow | Bestimmt XML-Format der archivierten Stände | 2026-11-12 |
 | Kein Löschen bei Workflow-Nutzung (dauerhaft); bei DMRL ohne Workflow erst DMRL löschen | Vorgabe Product Owner, analog Organisationen (PROJ-4) | 2026-11-12 |
 | Bezeichnung eindeutig | Systeme werden in Auswahllisten (PROJ-6) über die Bezeichnung erkannt | 2026-11-12 |
+| Bezeichnung fest, sobald eine DMRL existiert | Vorgabe Product Owner — DMRL wird über die Systembezeichnung angezeigt (PROJ-6) | 2026-11-12 |
 | Spalte „DMRL" mit Link in der Systemliste | Schneller Überblick, wo noch eine DMRL fehlt | 2026-11-12 |
 
 ### Technical Decisions

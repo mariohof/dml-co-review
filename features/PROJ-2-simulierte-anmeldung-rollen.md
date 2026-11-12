@@ -14,8 +14,8 @@ Der Prototyp hat keine echte Authentifizierung. Stattdessen wählt man auf einer
 
 | | Administrator | Bearbeiter |
 |---|---|---|
-| Dashboard (Startseite) | alle DMRLs | nur zugeordnete DMRLs |
-| DMRL-Workflows (Check-out/-in, SEND, REPLY) | auf **allen** DMRLs | nur auf zugeordneten DMRLs |
+| Dashboard (Startseite) | alle DMRLs | nur berechtigte DMRLs (PROJ-17) |
+| DMRL-Workflows (Check-out/-in, SEND, REPLY) | auf **allen** DMRLs | nur auf berechtigten DMRLs |
 | Verwaltung (Benutzer, Organisationen, Systeme, DMRL-Berechtigungen) | ja | nein |
 | Demo-Daten zurücksetzen | ja | nein |
 
@@ -45,8 +45,8 @@ Kopfzeile
 ## Out of Scope
 - Passwörter, echte Authentifizierung, Sitzungsablauf (PRD Non-Goal)
 - Anlegen/Bearbeiten/Löschen von Benutzern → PROJ-3 (inkl. Lösch- und Rollenänderungssperre für das Systemkonto „Administrator")
-- Zuordnung von Bearbeitern zu DMRLs → PROJ-6
-- Inhalte der Verwaltungsseiten → PROJ-3 bis PROJ-6 (PROJ-2 liefert nur Navigation und Zugriffsschutz)
+- Berechtigung von Bearbeitern für DMRLs → PROJ-17
+- Inhalte der Verwaltungsseiten → PROJ-3 bis PROJ-6, PROJ-17 (PROJ-2 liefert nur Navigation und Zugriffsschutz)
 - DMRL-Detailansicht → PROJ-7
 - Statusübersicht/Kennzahlen im Dashboard → PROJ-16 (PROJ-2 liefert nur die DMRL-Liste)
 - Durchsetzung der Workflow-Rechte in den einzelnen Aktionen → jeweiliges Feature (PROJ-9 bis PROJ-13) nutzt die hier definierte Rechte-Regel
@@ -91,7 +91,7 @@ Kopfzeile
 - **Alle anderen Benutzer gelöscht:** Das Systemkonto „Administrator" bleibt immer übrig; die Anmeldeliste ist nie leer.
 - **Systemkonto fehlt in gespeicherten Daten** (manipuliert/beschädigt): wird als beschädigter Datenbestand behandelt (PROJ-1 Fehlerbildschirm → „Demo-Daten neu laden").
 - **Bearbeiter wird einer DMRL entzogen, während er sie geöffnet hat:** beim nächsten Seitenaufruf „Keine Berechtigung".
-- **Bearbeiter wird von einer DMRL entfernt, die er ausgecheckt hat:** Sperre bleibt bestehen (Auflösung in PROJ-9/PROJ-10 klären).
+- **Bearbeiter soll von einer DMRL entfernt werden, die er ausgecheckt hat:** wird in PROJ-17 verhindert.
 - **Gleichnamige Benutzer:** Liste zeigt Name + Rolle; Unterscheidung bei identischem Namen und Rolle wird in PROJ-3 durch eindeutige Namen verhindert.
 
 ## Technical Requirements (optional)
@@ -100,7 +100,7 @@ Kopfzeile
 - UI-Sprache Deutsch, Design-System laut `docs/design-system.md`
 
 ## Open Questions
-- [ ] Wie wird eine Sperre aufgelöst, wenn der sperrende Bearbeiter von der DMRL entfernt oder gelöscht wird? (PROJ-9/PROJ-10)
+- [x] Wie wird eine Sperre aufgelöst, wenn der sperrende Bearbeiter entfernt oder gelöscht wird? → Entfernen (PROJ-17) und Deaktivieren (PROJ-3) sind bei aktivem Check-out gesperrt; Löschen gibt es nicht
 - [x] Müssen Benutzernamen eindeutig sein? → Ja, ohne Unterscheidung Groß-/Kleinschreibung (PROJ-3)
 
 ## Decision Log

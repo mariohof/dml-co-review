@@ -7,10 +7,10 @@
 ## Dependencies
 - Requires: PROJ-1 (Datenhaltung + Demo-Daten) — Organisationen werden im Datenbestand gespeichert
 - Requires: PROJ-2 (Simulierte Anmeldung & Rollen) — Zugriff nur für Administratoren
-- Wird genutzt von: PROJ-6 (DMRL: Auswahl von Sender- und Partner-Organisation), PROJ-12/13 (CAGE-Code als `sendid` im DML-Code)
+- Wird genutzt von: PROJ-6 (Auswahl des Originators einer DMRL), PROJ-12 (Auswahl des Partners beim SEND), PROJ-13 (Absenderprüfung REPLY), CAGE-Code als `sendid` im DML-Code
 
 ## Beschreibung
-Der Administrator verwaltet unter „Verwaltung → Organisationen" die Organisationen, die als Sender oder Partner an DMRLs beteiligt sind. Eine Organisation wird über ihren CAGE-Code identifiziert, der im S1000D-DML-Code als `sendid` erscheint (z. B. `D0815`, `C1234`). Ob eine Organisation Sender oder Partner ist, wird nicht an der Organisation, sondern an der jeweiligen DMRL festgelegt (PROJ-6).
+Der Administrator verwaltet unter „Verwaltung → Organisationen" die Organisationen, die als Sender oder Partner an DMRLs beteiligt sind. Eine Organisation wird über ihren CAGE-Code identifiziert, der im S1000D-DML-Code als `sendid` erscheint (z. B. `D0815`, `C1234`). Ob eine Organisation Originator oder Partner ist, wird nicht an der Organisation festgelegt: der Originator an der DMRL (PROJ-6), der Partner je SEND (PROJ-12).
 
 ## Datenfelder einer Organisation
 | Feld | Regel |
@@ -22,7 +22,7 @@ Keine Art (eigene/Partner), kein Status (aktiv/inaktiv).
 
 ## Änderungs- und Löschregeln
 
-Eine Organisation gilt als **in einem Workflow benutzt**, sobald eine DMRL, der sie als Sender oder Partner zugeordnet ist (oder war), mindestens einmal einen der beiden Workflows durchlaufen hat:
+Eine Organisation gilt als **in einem Workflow benutzt**, sobald eine DMRL, der sie als Originator zugeordnet ist (oder war) oder an die sie als Partner gesendet wurde, mindestens einmal einen der beiden Workflows durchlaufen hat:
 1. **Check-out / Check-in**
 2. **SEND / REPLY**
 
@@ -35,14 +35,14 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 | In einem Workflow benutzt | **nein, dauerhaft** | **nein** | ja |
 
 ## User Stories
-- Als **Administrator** möchte ich Organisationen mit CAGE-Code und Name anlegen, damit ich sie DMRLs als Sender oder Partner zuordnen kann.
+- Als **Administrator** möchte ich Organisationen mit CAGE-Code und Name anlegen, damit ich sie DMRLs als Originator zuordnen und beim SEND als Partner wählen kann.
 - Als **Administrator** möchte ich den Namen einer Organisation jederzeit korrigieren können, damit Umfirmierungen abgebildet werden.
 - Als **Administrator** möchte ich falsch angelegte, unbenutzte Organisationen löschen können, damit die Liste übersichtlich bleibt.
 - Als **Bearbeiter** möchte ich, dass am Austausch beteiligte Organisationen nicht gelöscht oder umcodiert werden können, damit ich archivierte DMRLs jederzeit den beteiligten Organisationen zuordnen kann.
 - Als **Administrator** möchte ich sehen, wie vielen DMRLs eine Organisation zugeordnet ist und warum eine Aktion gesperrt ist, damit ich die Einschränkungen verstehe.
 
 ## Out of Scope
-- Art der Organisation (eigene/Partner) — wird je DMRL festgelegt → PROJ-6
+- Art der Organisation (eigene/Partner) — Originator je DMRL (PROJ-6), Partner je SEND (PROJ-12)
 - Status aktiv/inaktiv
 - Zuordnung von Organisationen zu DMRLs → PROJ-6
 - Zuordnung von Benutzern zu Organisationen (Benutzer haben keine Organisation, PROJ-3)
@@ -95,7 +95,7 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 - **CAGE-Code mit Leerzeichen** („C 123"): ungültig — keine automatische Bereinigung von Leerzeichen innerhalb des Codes.
 - **CAGE-Code mit Umlauten oder Sonderzeichen:** ungültig.
 - **Umcodieren auf bestehenden Code** (unbenutzte Organisation „X0001" → „C1234"): abgelehnt, Eindeutigkeit.
-- **Gleiche Organisation als Sender und Partner einer DMRL:** wird in PROJ-6 geregelt (siehe Open Questions).
+- **Gleiche Organisation als Originator und Partner:** Partner wird beim SEND gewählt (PROJ-12) — Regel dort.
 - **Zwei Tabs, gleichzeitiges Bearbeiten:** letzter Speichervorgang gewinnt (Prototyp, PROJ-1).
 
 ## Technical Requirements (optional)
@@ -104,8 +104,8 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 - Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar
 
 ## Open Questions
-- [ ] Darf dieselbe Organisation in einer DMRL zugleich Sender und Partner sein? (PROJ-6)
-- [ ] Muss die Sender-Organisation einer DMRL zum CAGE-Code in `dmlc/sendid` beim REPLY-Import passen? (PROJ-13)
+- [ ] Darf beim SEND der Originator selbst als Partner gewählt werden? (PROJ-12)
+- [x] Prüfung beim REPLY-Import: `dmlc/sendid` der REPLY muss dem beim SEND gewählten Partner entsprechen (PROJ-6/PROJ-13)
 
 ## Decision Log
 
@@ -117,7 +117,7 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 | Kein Status aktiv/inaktiv | Vorgabe Product Owner | 2026-11-12 |
 | „Benutzt" = beteiligte DMRL hat Check-out/Check-in oder SEND/REPLY durchlaufen; dauerhaft | Vorgabe Product Owner — Nachvollziehbarkeit archivierter DMRLs | 2026-11-12 |
 | Benutzte Organisation: kein Löschen, CAGE-Code fest, Name änderbar | CAGE-Code steckt in DML-Codes und Dateinamen; Name ist nur Anzeige | 2026-11-12 |
-| Zugeordnet ohne Workflow: Löschen gesperrt bis Zuordnung geändert | Verhindert DMRLs ohne Sender/Partner | 2026-11-12 |
+| Zugeordnet ohne Workflow: Löschen gesperrt bis Zuordnung geändert | Verhindert DMRLs ohne Originator | 2026-11-12 |
 | Name nicht eindeutig, 2–120 Zeichen | Gleichnamige Standorte möglich; Identität über CAGE-Code | 2026-11-12 |
 | Gesperrte Aktionen ausgegraut mit Tooltip-Begründung | Administrator versteht Einschränkung ohne Fehlermeldung | 2026-11-12 |
 | Liste sortiert nach CAGE-Code, Suche über Code und Name | CAGE-Code ist das fachliche Ordnungsmerkmal | 2026-11-12 |
