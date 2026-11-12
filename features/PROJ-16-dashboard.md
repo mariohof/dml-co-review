@@ -1,6 +1,6 @@
 # PROJ-16: Dashboard
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -143,12 +143,76 @@ Bereich entfällt, wenn keine Aufgaben vorliegen.
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Alle Dashboard-Werte bei der Anzeige berechnet, nichts gespeichert | Immer aktuell | 2026-11-12 |
+| Eine gemeinsame Auswertung für Kennzahlen, Tabelle und Aufgaben | Konsistente Zahlen | 2026-11-12 |
+| Filterzustand in der Seitenadresse | Zurück-Navigation, Verlinkbarkeit | 2026-11-12 |
+| Kacheln als bedienbare Schaltflächen mit Zustand | Barrierefreiheit | 2026-11-12 |
+| Tabelle seitenweise ab 25 Zeilen | Übersicht | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Das Dashboard ist die Startseite `/` (PROJ-2) und wird um Kennzahlen, „Meine Aufgaben" und eine erweiterte DMRL-Tabelle ergänzt — Aufbau laut Wireframe `docs/wireframes/PROJ-16-dashboard.png`. Alle Werte werden **beim Anzeigen aus dem Datenbestand berechnet** (nichts gespeichert). Sichtbarkeit kommt aus der zentralen Rechte-Regel (PROJ-2), Status und Badges aus dem Statusmodul (PROJ-14). Alles im Browser, kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+Seite „Dashboard" (/)
++-- Zugriffswächter „angemeldet?" (PROJ-2) · Kopfzeile mit Benutzer-Auswahlliste (PROJ-2)
++-- Überschrift: Kennzeile „ÜBERBLICK" · Titel „DMRL im Blick."
++-- Kennzahlen (4 Kacheln, shadcn Card, als Schaltflächen bedienbar)
+|   +-- Bestände · Offene SEND · Offene Änderungen · Freigegeben
+|   +-- aktive Kachel hervorgehoben; erneuter Klick hebt Filter auf
++-- „Meine Aufgaben" (shadcn Card, nur wenn Aufgaben vorhanden)
+|   +-- Liste von Hinweisen mit Link zur DMRL-Ansicht
++-- Karte „DMRL-Bestände" (shadcn Card)
+    +-- Titel · Zähler-Badge „[n] sichtbare Bestände"
+    +-- Filterzeile: Status (Mehrfachauswahl, shadcn DropdownMenu mit Häkchen) · Issue (shadcn Select) · Suche (Input)
+    +-- Tabelle (shadcn Table, sortiert nach Systemname, seitenweise ab 25)
+    |   +-- System / DMRL (Name + Kennung MI–CAGE–Typ in Monospace)
+    |   +-- S1000D · Version · DMRL-Einträge
+    |   +-- Fortschritt („x / n freigegeben", shadcn Progress)
+    |   +-- Workflow (Status-Badge; darunter „ausgecheckt von …", „n zu überarbeiten")
+    |   +-- „Auswahl" (Button → DMRL-Ansicht)
+    +-- Leer: Hinweise laut PROJ-2 · Keine Treffer: „Keine DMRL entspricht dem Filter"
+```
+
+### B) Datenmodell (in Klartext)
+Keine Änderung, nichts gespeichert. **Berechnet** je Anzeige aus dem Datenbestand (PROJ-1):
+- sichtbare DMRLs (Rechte-Regel PROJ-2)
+- je DMRL: System, Issue, Kennung, Versionsindex (letzter nicht zurückgezogener SEND), Anzahl Einträge, Anzahl *freigegeben*, Anzahl *in Bearbeitung* + *zu überarbeiten*, Sperre, Status, Wartezeit seit letztem SEND
+- Kennzahlen über alle sichtbaren DMRLs (unabhängig von Suche/Filter)
+- Aufgaben des angemeldeten Benutzers
+
+**Filterzustand** (Kachel, Status, Issue, Suche) steht in der Adresse der Seite → bleibt bei Zurück-Navigation erhalten und ist verlinkbar.
+
+### C) Bausteine
+| Baustein | Aufgabe | Herkunft |
+|---|---|---|
+| Dashboard-Auswertung | berechnet Kennzahlen, Zeilenwerte und Aufgaben in einem Durchlauf | neu |
+| Versionsindex-Ermittlung | letzter nicht zurückgezogener SEND | PROJ-12 |
+| Status-Badges | Texte und Farben | PROJ-14 / PROJ-7 |
+| Rechte-Regel | sichtbare DMRLs | PROJ-2 |
+| Kennung `MI–CAGE–Typ` | Anzeige unter dem Systemnamen | neu (klein) |
+
+### D) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Alle Werte bei der Anzeige berechnet | Immer aktuell nach jedem Workflow-Schritt oder Benutzerwechsel; nichts kann veralten. |
+| Eine Auswertung für Kennzahlen, Tabelle und Aufgaben | Zahlen in Kacheln und Tabelle stimmen garantiert überein. |
+| Filter in der Adresse | Zurück-Taste und Links behalten die Ansicht. |
+| Kacheln als Schaltflächen | Per Tastatur bedienbar, Zustand für Screenreader erkennbar. |
+| Tabelle seitenweise ab 25 Zeilen | Übersichtlich auch bei vielen Systemen. |
+| Layout laut Wireframe, Farben/Schrift laut Design-System | Vorgabe Product Owner. |
+
+### E) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.** shadcn Card, Table, Badge, Progress, Select, DropdownMenu, Input, Button, Pagination sind installiert.
+
+### F) Testbarkeit
+- Unit-Tests: Auswertung mit Demo-Daten (Admin: 3 / 1 / 20 / 0; Anna Bearbeitung nur PHUNGUN + Fahrzeug), Aufgaben (ausgecheckt, zu überarbeiten, Wartezeit ≥ 1 Tag), Versionsindex mit zurückgezogenem SEND, Filter/Suche.
+- E2E: Kachel-Filter an/aus, Issue-Filter 4.2, Suche „PHUN", „Auswahl" öffnet DMRL, Benutzerwechsel aktualisiert die Sicht.
 
 ## QA Test Results
 _To be added by /qa_

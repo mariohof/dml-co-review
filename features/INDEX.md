@@ -30,7 +30,7 @@
 | PROJ-13 | REPLY-Import — Partner-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | Architected | [PROJ-13](PROJ-13-reply-import.md) | 2026-11-11 |
 | PROJ-14 | Freigabestatus DMRL — Statusmodell, Freigabe-Nachweis, Freigabestand (CSV/XML) · P0 · Deps: PROJ-10, PROJ-13, PROJ-18 | Architected | [PROJ-14](PROJ-14-freigabestatus.md) | 2026-11-11 |
 | PROJ-15 | Archiv SEND/REPLY — alle Austauschstände einsehen und herunterladen · P0 · Deps: PROJ-12, PROJ-13 | Architected | [PROJ-15](PROJ-15-archiv.md) | 2026-11-11 |
-| PROJ-16 | Dashboard — Übersicht aller DMRLs und ihres Status · P1 · Deps: PROJ-14 | Planned | [PROJ-16](PROJ-16-dashboard.md) | 2026-11-11 |
+| PROJ-16 | Dashboard — Übersicht aller DMRLs und ihres Status · P1 · Deps: PROJ-14 | Architected | [PROJ-16](PROJ-16-dashboard.md) | 2026-11-11 |
 | PROJ-17 | DMRL-Berechtigungen — Admin berechtigt Bearbeiter je DMRL/System · P0 · Deps: PROJ-3, PROJ-6 | Architected | [PROJ-17](PROJ-17-dmrl-berechtigungen.md) | 2026-11-12 |
 | PROJ-18 | DMRL-Export (CSV/XML) — jederzeit exportieren, ohne Sperre und ohne Workflow · P0 · Deps: PROJ-7, PROJ-9, PROJ-11, PROJ-12 | Architected | [PROJ-18](PROJ-18-dmrl-export.md) | 2026-11-12 |
 
