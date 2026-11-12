@@ -57,7 +57,7 @@ Kopfzeile
 **Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
 
 ### Anmeldung
-- [ ] Angenommen niemand ist angemeldet, wenn die Anwendung geöffnet wird, dann erscheint die Anmeldeseite mit einer Liste aller Benutzer, die je Benutzer nur Name und Rolle zeigt
+- [ ] Angenommen niemand ist angemeldet, wenn die Anwendung geöffnet wird, dann erscheint die Anmeldeseite mit einer Liste aller aktiven Benutzer (PROJ-3), die je Benutzer nur Name und Rolle zeigt
 - [ ] Angenommen die Anmeldeseite wird angezeigt, wenn ein Benutzer angeklickt wird, dann ist dieser ohne Passwort angemeldet und das Dashboard erscheint
 - [ ] Angenommen ein Benutzer ist angemeldet, wenn die Seite neu geladen oder der Browser neu gestartet wird, dann ist er weiterhin angemeldet
 - [ ] Angenommen niemand ist angemeldet, wenn eine beliebige Seite der Anwendung direkt aufgerufen wird, dann wird zur Anmeldeseite weitergeleitet
@@ -101,7 +101,7 @@ Kopfzeile
 
 ## Open Questions
 - [ ] Wie wird eine Sperre aufgelöst, wenn der sperrende Bearbeiter von der DMRL entfernt oder gelöscht wird? (PROJ-9/PROJ-10)
-- [ ] Müssen Benutzernamen eindeutig sein? (PROJ-3)
+- [x] Müssen Benutzernamen eindeutig sein? → Ja, ohne Unterscheidung Groß-/Kleinschreibung (PROJ-3)
 
 ## Decision Log
 
