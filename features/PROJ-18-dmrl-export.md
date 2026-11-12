@@ -1,6 +1,6 @@
 # PROJ-18: DMRL-Export (CSV/XML)
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -119,12 +119,59 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Export ohne Schreibzugriff auf den Datenbestand | Keine Wirkung laut Spec | 2026-11-12 |
+| Kopf-Variante „Export" des DML-Schreibers (PROJ-12), auch für Freigabestand (PROJ-14) | Einträge identisch, nur Kopf abweichend | 2026-11-12 |
+| XSD-Prüfung vor jedem XML-Export (PROJ-11) | Schemakonforme Dateien | 2026-11-12 |
+| Aufklappmenü „Exportieren" mit CSV/XML | Eine Aktion in der Leiste | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Der Export ist **keine Workflow-Aktion**: Er liest nur und schreibt nichts in den Datenbestand. Er kombiniert ausschließlich vorhandene Bausteine — CSV-Schreiber (PROJ-9), DML-Schreiber je Issue (PROJ-12), XSD-Prüfdienst (PROJ-11) und Download-Helfer (PROJ-9). Neu ist nur die **Kopf-Variante „Export"** des DML-Schreibers, die auch der Freigabestand-Export (PROJ-14) nutzt. Alles im Browser; nur die XSD-Prüfung läuft auf dem Server.
+
+### A) Komponentenstruktur
+```
+DMRL-Ansicht (PROJ-7) — Aktionsleiste
++-- „Exportieren" (shadcn DropdownMenu)
+    +-- „Als CSV exportieren" → sofortiger Download
+    +-- „Als XML exportieren" → Fortschritt „XML wird erzeugt und geprüft…"
+        +-- gültig → Download
+        +-- XSD-Fehler → Prüfbericht-Anzeige (PROJ-8/11) als Anwendungsfehler
+        +-- Prüfung nicht verfügbar / keine Einträge → Fehlermeldung (Toast), kein Download
+```
+
+### B) Datenmodell (in Klartext)
+Keine Änderung, keine Speicherung: kein Versionsindex, kein Archiv, kein Verlauf, keine Sperre. Gelesen werden DMRL, Einträge, System, Originator und das Archiv (letzter nicht zurückgezogener SEND für `dmlc`, letzter REPLY für `dmlref`).
+
+### C) Bausteine
+| Baustein | Herkunft | Verwendung im Export |
+|---|---|---|
+| Verfügbarkeitsregel „Exportieren" | neu (einfach) | berechtigt (PROJ-2) — sonst keine Einschränkung |
+| CSV-Schreiber | PROJ-9 | aktuelle Einträge; Dateiname `…-Export-{JJJJ-MM-TT}.csv` |
+| DML-Schreiber je Issue | PROJ-12 | mit **Kopf-Variante „Export"**: `issno` 000 / `inwork` 01, `dmlc` aus letztem SEND bzw. seqnum `00000` + aktuelles Jahr, `remarks` mit Export-Hinweis |
+| Bezugs-Ermittlung `dmlref` | PROJ-12 | wie beim nächsten SEND |
+| XSD-Prüfdienst | PROJ-11 | vor jedem XML-Download |
+| Download-Helfer | PROJ-9 | Dateien speichern |
+
+### D) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Export schreibt nichts in den Datenbestand | Spec: keine Wirkung; jederzeit gefahrlos nutzbar. |
+| Kopf-Variante „Export" im DML-Schreiber statt eigenem Schreiber | Einträge identisch zum SEND; nur der Kopf unterscheidet sich (Arbeitsstand). |
+| Gleiche Kopf-Variante für Freigabestand-Export (PROJ-14) | Eine Regel für alle Nicht-SEND-XML-Dateien. |
+| XSD-Prüfung auch beim Export | Jede XML, die die Anwendung verlässt, ist schemakonform (PROJ-11). |
+| Auswahl CSV/XML über ein Aufklappmenü | Eine Schaltfläche in der Aktionsleiste. |
+
+### E) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.**
+
+### F) Testbarkeit
+- Unit-Tests: Export-Kopf (mit/ohne SEND, nach zurückgezogenem SEND), Dateinamen, keine Datenänderung nach Export.
+- Integration mit xmllint: Export-XML für 2.3/4.2/5.0 schemagültig (inkl. `issno` 000 / `inwork` 01).
+- E2E: Export während Sperre durch anderen Benutzer und bei Status *gesendet*; XML-Export ohne Einträge → Meldung.
 
 ## QA Test Results
 _To be added by /qa_
