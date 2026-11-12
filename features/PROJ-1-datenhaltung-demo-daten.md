@@ -92,7 +92,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 | DMRL Fluggerät | wie Fahrzeug, MI `THSDEMO` |
 
 ### Demo-Dateien zum Hochladen (nicht Teil des Datenbestands)
-Ablage im Projektordner `demo-dateien/`:
+Ablage im Projektordner `public/demo-dateien/`:
 | Datei | Zweck |
 |---|---|
 | `DML-PHUNGUN-C1234-C-2026-00002_001-00.XML` | **Demo-REPLY** auf SEND 00002-2026 (PROJ-13): alle 11 `d` und 19 `n` mit `y`; 2 `n` mit `n` („Tech Name entspricht nicht der SNS — bitte prüfen", „Infocode nicht im beauftragten Leistungsumfang"); `dml/remarks` „Bitte abgelehnte Einträge überarbeiten."; Ergebnis: 30 freigegeben, 2 zu überarbeiten, DMRL *in Bearbeitung* |
@@ -138,7 +138,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn der Verlauf von PHUNGUN betrachtet wird, dann enthält er SEND, REPLY übernommen und SEND passend zu den Archivständen
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRLs des Fahrzeugs (4.2) und des Fluggeräts (5.0) betrachtet werden, dann haben sie je 10 Einträge mit Eintragstyp `n` im Status *in Bearbeitung*, kein Archiv und keinen Verlauf
 - [ ] Angenommen die Demo-DMRL Fahrzeug oder Fluggerät wird ausgecheckt und unverändert eingecheckt, wenn geprüft wird, dann ist die Datei fehlerfrei (PROJ-8)
-- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Demo-REPLY aus `demo-dateien/` für PHUNGUN importiert wird, dann besteht sie XSD-Prüfung und Regelwerk und ergibt 30 freigegeben / 2 zu überarbeiten
+- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Demo-REPLY aus `public/demo-dateien/` für PHUNGUN importiert wird, dann besteht sie XSD-Prüfung und Regelwerk und ergibt 30 freigegeben / 2 zu überarbeiten
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn nach Firmennamen aus den Originaldateien gesucht wird, dann sind diese durch neutrale Namen ersetzt
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Archivstände betrachtet werden, dann verweist jeder `dmlref` auf die unmittelbar vorherige DMRL der Austauschkette (initialer SEND: auf sich selbst)
 
@@ -179,7 +179,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 - [x] Zulässige Werte für `dmltype/@type` → `c`, `p`, `s` (PROJ-6)
 - [x] Bleiben Einträge mit Typ `d` nach Freigabe in der DMRL? → Ja, nur der Typ wird entfernt; gelöschte DMs werden über `type=deleted` gekennzeichnet (PROJ-7)
 - [x] Konkrete Bezeichnungen/Model Ident Codes für die fiktiven Systeme → „Geschütztes Transportfahrzeug" `GTFDEMO`, „Transporthubschrauber" `THSDEMO` (2026-11-12)
-- [ ] Tech Design (Abschnitte B und D) an die neuen Datenobjekte (Verlauf, Freigabestände, Sperre mit Stand, Archiv-Erweiterungen, Anmeldung) und Demo-Dateien anpassen → `/architecture PROJ-1`
+- [x] Tech Design an die neuen Datenobjekte und Demo-Dateien anpassen → erledigt (2026-11-12)
 
 ## Decision Log
 
@@ -201,7 +201,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 | „Im Workflow verwendet" wird abgeleitet, nicht gespeichert | Eine Quelle der Wahrheit (Verlauf/Archiv) | 2026-11-12 |
 | Anmeldung getrennt vom Datenbestand gespeichert | Bleibt beim Zurücksetzen der Demo erhalten (PROJ-2) | 2026-11-12 |
 | Demo-Namen: Systeme PHUNGUN / Geschütztes Transportfahrzeug (GTFDEMO) / Transporthubschrauber (THSDEMO); Bearbeiter Anna Bearbeitung / Ben Bearbeiter | Vorgabe Product Owner (Wireframe PROJ-16) | 2026-11-12 |
-| Demo-REPLY auf SEND 00002 mit 2 Ablehnungen und fehlerhafte Testdateien in `demo-dateien/` | Vollständiger Demo-Zyklus und Vorführung der Prüfungen (PROJ-11/13) | 2026-11-12 |
+| Demo-REPLY auf SEND 00002 mit 2 Ablehnungen und fehlerhafte Testdateien in `public/demo-dateien/` | Vollständiger Demo-Zyklus und Vorführung der Prüfungen (PROJ-11/13) | 2026-11-12 |
 | Demo-Einträge PHUNGUN werden um `issno` (`001`), DM-Ausgabetyp (`new`) und Ausgabedatum (Datum des SEND) ergänzt; archivierte XML-Dateien bleiben byte-genau | Pflichtfelder laut PROJ-8; Beispieldateien enthalten diese Felder nicht | 2026-11-12 |
 
 ### Technical Decisions
@@ -217,14 +217,24 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 | 4.2-/5.0-Demo-Einträge fest hinterlegt | Keine XML-Beispiele vorhanden, kein Archiv benötigt | 2026-11-12 |
 | Kein Tab-Abgleich (kein storage-Event) | Prototyp; Mehrbenutzerfähigkeit ist Non-Goal | 2026-11-12 |
 | Reset-Button vorübergehend auf Startseite bis PROJ-2 | PROJ-1 muss ohne Rollenkonzept testbar sein | 2026-11-12 |
+| Formatversion 2 | Datenmodell geändert (Refine); alte Stände werden erkannt | 2026-11-12 |
+| Anmeldung in eigenem localStorage-Schlüssel | Überlebt Zurücksetzen der Demo-Daten (PROJ-2) | 2026-11-12 |
+| Sperre speichert Kopie der Einträge beim Check-out | Vergleichsbasis Check-in, identischer erneuter Download (PROJ-9/10) | 2026-11-12 |
+| Freigabestände als vollständige, unveränderliche Kopien | PROJ-14; unabhängig von späteren Änderungen | 2026-11-12 |
+| Versionsindex, „im Workflow verwendet", Kennzahlen abgeleitet statt gespeichert | Eine Quelle der Wahrheit | 2026-11-12 |
+| Workflow-Schritt = eine atomare Speicherung aller betroffenen Objekte | Keine halb ausgeführten Workflows | 2026-11-12 |
+| Demo-Dateien in `public/demo-dateien/`, einmalig per Skript erzeugt, per xmllint-Test abgesichert | Lokal und im Browser verfügbar; reproduzierbar | 2026-11-12 |
+| Feste IDs für Demo-Objekte | Stabile Tests und Demo-Abläufe | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
 
+_Überarbeitet 2026-11-12 nach Refine (neue Datenobjekte aus PROJ-2 bis PROJ-18)._
+
 ### Überblick
-PROJ-1 ist überwiegend „unsichtbare" Infrastruktur: ein zentraler Datenspeicher im Browser, auf den alle späteren Features zugreifen, plus ein Demo-Datenpaket. Sichtbar werden nur drei Dinge: ein kurzer Ladezustand beim Start, ein Fehlerbildschirm bei beschädigten Daten und der Reset-Dialog für den Administrator.
+PROJ-1 ist überwiegend „unsichtbare" Infrastruktur: ein zentraler Datenspeicher im Browser, auf den alle späteren Features zugreifen, ein Demo-Datenpaket und vorbereitete Demo-Dateien zum Hochladen. Sichtbar werden nur: ein kurzer Ladezustand beim Start, ein Fehlerbildschirm bei beschädigten Daten und der Reset-Dialog für den Administrator.
 
 ### A) Komponentenstruktur
 ```
@@ -235,59 +245,78 @@ App-Rahmen (umschließt alle Seiten)
     |   +-- Erklärungstext
     |   +-- Button "Demo-Daten neu laden"
     +-- Normale Anwendung (alle weiteren Seiten, PROJ-2 ff.)
-        +-- Button "Demo-Daten zurücksetzen" (nur für Administrator, Platzierung im Admin-Bereich ab PROJ-2)
+        +-- Button "Demo-Daten zurücksetzen" (nur Administrator, im Verwaltungsbereich ab PROJ-2)
             +-- Bestätigungsdialog (shadcn AlertDialog)
             +-- Erfolgs-/Fehlermeldung (Toast)
 ```
-Bis PROJ-2 (Rollen) existiert, wird der Reset-Button vorübergehend auf der Startseite angezeigt, damit PROJ-1 testbar ist.
+Bis PROJ-2 existiert, wird der Reset-Button vorübergehend auf der Startseite angezeigt (temporäre Übersicht), damit PROJ-1 testbar ist.
 
 ### B) Datenmodell (in Klartext)
-Alle Daten liegen als **ein einziges JSON-Paket** unter einem festen Schlüssel im localStorage. Das Paket enthält:
-- **Formatversion** — Nummer des Datenformats; passt sie nicht zur App, gilt der Bestand als inkompatibel
-- **Organisationen**, **Benutzer**, **Systeme**, **DMRLs**, **DMRL-Einträge**, **Archivstände** — jeweils als Liste
-- Jedes Objekt hat eine **eindeutige ID**; Verknüpfungen (z. B. Eintrag → DMRL, DMRL → System) laufen über diese IDs
-- **Archivstände** enthalten den kompletten XML-Text als unveränderten Text
-- **DMRL-Einträge** speichern alle CSV-Felder als Text (nicht als Zahl), damit führende Nullen (`00`, `001`, `01`) erhalten bleiben
+Zwei getrennte Speicherbereiche im localStorage:
 
-Felder und Werte entsprechen dem Abschnitt „Datenobjekte" oben und `docs/dmrl-mapping.md`.
+**1. Datenbestand** — ein einziges JSON-Paket unter einem festen Schlüssel:
+- **Formatversion** — wird auf **2** erhöht; Stände der alten Version 1 (angefangener Code) gelten als inkompatibel → Fehlerbildschirm „Demo-Daten neu laden"
+- **Organisationen** — ID, CAGE-Code, Name
+- **Benutzer** — ID, Name, Rolle, aktiv ja/nein, Systemkonto ja/nein
+- **Systeme** — ID, Name, Beschreibung, S1000D-Issue, MI
+- **DMRLs** — ID, System, Originator, DML-Typ, Sicherheitseinstufung, berechtigte Bearbeiter, Status, Partner-Bemerkung des letzten REPLY, Freigabe-Nachweis (Zeitpunkt, REPLY-Archivstand, Benutzer) und **Sperre** (Benutzer, Zeitpunkt, **Kopie aller Einträge beim Check-out**)
+- **DMRL-Einträge** — ID, DMRL, Status, alle 27 CSV-Felder als Text
+- **Archivstände** — ID, DMRL, Richtung, DML-Code, Versionsindex, Verweis (`dmlref`), Dateiname, **unveränderter Dateiinhalt**, Zeitpunkt, Benutzer, Partner-Organisation; bei REPLY: zugehöriger SEND-Archivstand und Anzahl freigegeben/zu überarbeiten; bei SEND: optional „zurückgezogen" (Zeitpunkt, Benutzer, Begründung)
+- **Freigabestände** — ID, DMRL, Zeitpunkt, REPLY-Archivstand, Benutzer, **unveränderliche Kopie aller Einträge**
+- **Verlaufseinträge** — ID, DMRL, Zeitpunkt, Benutzer, Aktion (feste Liste laut Spec), Details als Text bzw. Kennzahlen
 
-**Größe:** Die drei Beispiel-XMLs sind zusammen ca. 50 KB; der Browser stellt ca. 5 MB bereit → ausreichend für viele weitere SEND/REPLY-Zyklen in der Demo.
+Alle Verknüpfungen laufen über IDs. Beim Laden wird geprüft, dass jede Verknüpfung auf ein existierendes Objekt zeigt und genau ein aktives Systemkonto „Administrator" existiert.
+
+**Abgeleitet, nicht gespeichert:** Versionsindex der DMRL (aus dem letzten nicht zurückgezogenen SEND), „im Workflow verwendet" (aus Verlauf/Archiv), Kennzahlen für das Dashboard.
+
+**2. Anmeldung** — eigener kleiner Schlüssel mit der ID des angemeldeten Benutzers. Bleibt beim Zurücksetzen der Demo-Daten bestehen; existiert der Benutzer danach nicht oder ist inaktiv, wird abgemeldet (PROJ-2).
+
+**Größe:** Beispiel-XMLs ca. 50 KB, Demo-Bestand insgesamt ca. 150 KB. Jeder weitere SEND/REPLY ca. 30 KB, jeder Freigabestand und jede Sperre (Kopie der Einträge) ca. 15–20 KB bei 32 Einträgen. Bei ca. 5 MB Browser-Speicher reicht das für deutlich über 50 Demo-Zyklen. Bei vollem Speicher greift die bestehende Fehlerbehandlung (letzter gültiger Stand bleibt).
 
 ### C) Ablauf beim Start
 1. App wird geöffnet → Datenspeicher prüft localStorage
 2. **Nichts vorhanden** → Demo-Paket wird erzeugt und gespeichert
-3. **Vorhanden und gültig** → wird geladen
+3. **Vorhanden und gültig** (Formatversion 2, Struktur und Verknüpfungen korrekt) → wird geladen
 4. **Vorhanden, aber ungültig oder alte Formatversion** → Fehlerbildschirm mit „Demo-Daten neu laden"
 
-**Gültigkeitsprüfung:** Beim Laden wird das gesamte Paket gegen eine Strukturbeschreibung geprüft (Pflichtfelder vorhanden, richtige Typen, Verknüpfungen zeigen auf existierende IDs).
-
-**Speichern:** Jede Änderung schreibt das komplette Paket in einem Schritt. Scheitert das Schreiben (Speicher voll), bleibt der vorherige Stand im Browser unangetastet und eine Fehlermeldung erscheint.
+**Speichern:** Jede Änderung schreibt das komplette Paket in einem Schritt. Scheitert das Schreiben (Speicher voll), bleibt der vorherige Stand unangetastet und eine Fehlermeldung erscheint. Workflow-Schritte (z. B. REPLY-Übernahme: Einträge + DMRL + Archiv + Freigabestand + Verlauf) werden als **eine** Änderung gespeichert — entweder alles oder nichts.
 
 ### D) Demo-Datenpaket
-- Die **drei Beispiel-XMLs** werden einmalig ins Projekt kopiert (Ordner für Demo-Daten). Beim Kopieren wird der reale Firmenname in Datei 02 (11 Vorkommen in `rpcname`) durch einen neutralen Namen ersetzt. Diese bereinigten Kopien sind die „Originale" für das Archiv und werden danach byte-genau übernommen.
-- Die **32 Einträge der PHUNGUN-DMRL** werden beim Erzeugen des Demo-Pakets direkt aus SEND 00002 (Datei 03) ausgelesen. Dafür nutzt die App den eingebauten XML-Leser des Browsers. Die gleiche Lesetechnik wird später für den REPLY-Import (PROJ-13) gebraucht.
-- **Fahrzeug (4.2)** und **Fluggerät (5.0)** werden als fest hinterlegte Einträge (je ca. 10) mitgeliefert, da es dafür keine XML-Beispiele gibt und kein Archiv nötig ist.
-- **Organisationen, Benutzer, Systeme** werden fest hinterlegt.
+- **Beispiel-XMLs PHUNGUN** liegen als Projektdateien vor; Firmenname in Datei 02 ist in der Projektkopie neutralisiert. Sie werden byte-genau ins Archiv übernommen (3 Archivstände, Partner C1234, REPLY dem SEND 00001 zugeordnet).
+- **32 PHUNGUN-Einträge** werden beim Erzeugen aus SEND 00002 ausgelesen (Browser-XML-Leser) und um `issno` `001`, DM-Ausgabetyp `new` und das Ausgabedatum von SEND 00002 ergänzt. Status *gesendet*.
+- **PHUNGUN-Verlauf**: 3 Einträge (SEND, REPLY übernommen, SEND) mit Benutzer „Anna Bearbeitung" und den Datumsangaben aus den Dateien.
+- **Fahrzeug (GTFDEMO, 4.2) und Fluggerät (THSDEMO, 5.0)**: je 10 fest hinterlegte Einträge (Eintragstyp `n`, *in Bearbeitung*), so gewählt, dass sie das Regelwerk (PROJ-8) erfüllen. Ein Unit-Test sichert das ab, sobald das Regelwerk existiert.
+- **Organisationen, Benutzer, Systeme, Berechtigungen** fest hinterlegt mit festen IDs (damit Tests und Demo-Abläufe stabil bleiben).
 
-### E) Technische Entscheidungen (für PM erklärt)
+### E) Demo-Dateien zum Hochladen
+- Ablage: **`public/demo-dateien/`** — liegt damit im Projektordner (direkt im Dateisystem auswählbar) und ist zusätzlich über den Browser abrufbar (auch nach einem Deployment).
+- Inhalt: Demo-REPLY auf SEND 00002 (30 `y`, 2 `n` mit Begründung) und die vier Testdateien aus PROJ-11.
+- Die Dateien werden **einmalig per Skript** aus SEND 00002 abgeleitet und als feste Dateien ins Projekt übernommen (keine Laufzeit-Erzeugung). Ein Test prüft die Demo-REPLY und Testdatei 4 mit xmllint gegen das 2.3-Schema; Testdateien 1–3 müssen scheitern.
+- Eine kurze Übersicht der Dateien und ihres Zwecks liegt als Textdatei daneben.
+
+### F) Technische Entscheidungen (für PM erklärt)
 | Entscheidung | Warum |
 |---|---|
-| Ein JSON-Paket statt vieler Einzelschlüssel | Ein Schreibvorgang = alles oder nichts. Halb gespeicherte, widersprüchliche Daten können nicht entstehen. |
-| Zentraler Datenspeicher für die ganze App | Alle Seiten sehen denselben Stand; spätere Features (Check-in, REPLY) ändern Daten an einer Stelle. |
-| Strukturprüfung beim Laden mit Zod (bereits installiert) | Erkennt beschädigte oder veraltete Daten zuverlässig, bevor die App damit arbeitet. |
-| Formatversion im Paket | Wenn sich das Datenmodell in späteren Features ändert, erkennt die App alte Stände und bietet den Neuaufbau an. |
-| CSV-Felder als Text | Führende Nullen sind fachlich relevant (S1000D) und dürfen nie verloren gehen. |
-| Beispiel-XMLs als Dateien im Projekt, Einträge daraus ausgelesen | Eine Quelle der Wahrheit — Archiv und Einträge können nicht auseinanderlaufen. |
-| Firmenname einmalig in der Projektkopie ersetzen | Archiv bleibt „unverändert" gegenüber der Projektkopie und enthält trotzdem keine realen Firmennamen. |
-| Daten werden erst im Browser geladen (nicht serverseitig) | localStorage existiert nur im Browser; deshalb kurzer Ladezustand beim Start. |
+| Ein JSON-Paket für alle Daten | Ein Schreibvorgang = alles oder nichts; keine halb gespeicherten Workflows. |
+| Anmeldung in einem eigenen Speicherbereich | Bleibt beim Zurücksetzen der Demo-Daten erhalten (PROJ-2). |
+| Sperre enthält eine Kopie der Einträge | Check-in vergleicht gegen genau diesen Stand; erneuter Download liefert dieselbe Datei. |
+| Freigabestände als vollständige Kopien | Unveränderlich und unabhängig von späteren Änderungen (PROJ-14). |
+| Versionsindex und „im Workflow verwendet" werden abgeleitet | Eine Quelle der Wahrheit — keine widersprüchlichen Zähler. |
+| Formatversion auf 2 erhöht | Alte Stände aus dem angefangenen Code werden erkannt und sauber ersetzt. |
+| Demo-Dateien in `public/demo-dateien/` | Lokal auswählbar und im Browser abrufbar; keine Erzeugung zur Laufzeit. |
+| Zod-Strukturprüfung beim Laden | Erkennt beschädigte oder veraltete Daten, bevor die App damit arbeitet. |
+| Alle CSV-Felder als Text | Führende Nullen bleiben erhalten. |
 
-### F) Abhängigkeiten (Pakete)
-- **Keine neuen Pakete.** Genutzt werden bereits installiert: Zod (Strukturprüfung), shadcn/ui AlertDialog + Button, Sonner (Toast-Meldungen).
-- Das XML-Auslesen erfolgt mit dem im Browser eingebauten XML-Leser.
+### G) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.** Genutzt: Zod, shadcn/ui (AlertDialog, Button, Card, Alert, Skeleton), Sonner. XML-Lesen mit dem eingebauten Browser-XML-Leser; Tests laufen in der vorhandenen jsdom-Testumgebung.
 
-### G) Testbarkeit
-- Unit-Tests: Demo-Paket erzeugen (Anzahlen 3 Systeme / 32 Einträge / 3 Archivstände), Gültigkeitsprüfung (gültig / beschädigt / alte Formatversion), Speicher-voll-Fehler.
-- E2E-Test: Erststart → Daten vorhanden; Reload → Änderungen bleiben; Reset → Ausgangszustand.
+### H) Anpassung des angefangenen Codes
+Der unversionierte Code aus dem ersten `/frontend`-Lauf wird weiterverwendet, aber angepasst: Datenmodell (Organisation ohne Art, Benutzer ohne Organisation mit aktiv/Systemkonto, System ohne Art, DMRL ohne Name/Partner mit Originator/DML-Typ/Sicherheitseinstufung/Berechtigungen), neue Objekte (Freigabestände, Verlauf), Demo-Namen und -Einträge, Formatversion 2, Anmeldungs-Speicher.
+
+### I) Testbarkeit
+- Unit-Tests: Demo-Paket (3 Systeme, 32 + 10 + 10 Einträge, 3 Archivstände, 3 Verlaufseinträge, Berechtigungen), Gültigkeitsprüfung (gültig / beschädigt / Formatversion 1 / fehlendes Systemkonto / kaputte Verknüpfung), Speicher voll, Byte-Genauigkeit der Archivstände.
+- Demo-Dateien: xmllint-Prüfung (gültig bzw. erwartete Fehler).
+- E2E: Erststart → Daten vorhanden; Reload → Änderungen bleiben; Reset → Ausgangszustand, Anmeldung bleibt.
 
 ## QA Test Results
 _To be added by /qa_
