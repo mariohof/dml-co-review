@@ -1,6 +1,6 @@
 # PROJ-5: Systemverwaltung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -65,7 +65,7 @@ Die Bezeichnung ist fest, sobald eine DMRL existiert, da die DMRL keine eigene B
 
 ### Liste
 - [ ] Angenommen die Systemverwaltung ist geöffnet, wenn die Liste angezeigt wird, dann zeigt sie alle Systeme mit Bezeichnung, Model Ident Code, S1000D-Issue und DMRL, sortiert nach Bezeichnung
-- [ ] Angenommen ein System hat eine DMRL, wenn die Liste angezeigt wird, dann zeigt die Spalte „DMRL" deren Namen als Link zur DMRL
+- [ ] Angenommen ein System hat eine DMRL, wenn die Liste angezeigt wird, dann zeigt die Spalte „DMRL" „vorhanden" mit DMRL-Status als Link zur DMRL-Ansicht (DMRLs haben keinen eigenen Namen, PROJ-6)
 - [ ] Angenommen ein System hat keine DMRL, wenn die Liste angezeigt wird, dann zeigt die Spalte „DMRL" „— keine —"
 - [ ] Angenommen die Liste wird angezeigt, wenn ein Suchbegriff eingegeben wird, dann werden nur Systeme angezeigt, deren Bezeichnung oder Model Ident Code den Begriff enthält (ohne Unterscheidung Groß-/Kleinschreibung)
 - [ ] Angenommen es existieren keine Systeme, wenn die Liste angezeigt wird, dann erscheint „Noch keine Systeme angelegt" mit der Aktion „System anlegen"
@@ -89,12 +89,12 @@ Die Bezeichnung ist fest, sobald eine DMRL existiert, da die DMRL keine eigene B
 
 ### Löschen
 - [ ] Angenommen ein System hat keine DMRL, wenn „Löschen" gewählt wird, dann erscheint ein Bestätigungsdialog; bei Bestätigung ist das System entfernt, bei Abbruch bleibt es erhalten
-- [ ] Angenommen ein System hat eine DMRL ohne Workflow-Historie, wenn „Löschen" gewählt werden soll, dann ist die Aktion gesperrt mit dem Hinweis „Zum System existiert die DMRL [Name]. Löschen Sie zuerst die DMRL."
+- [ ] Angenommen ein System hat eine DMRL ohne Workflow-Historie, wenn „Löschen" gewählt werden soll, dann ist die Aktion gesperrt mit dem Hinweis „Zum System existiert eine DMRL. Löschen Sie zuerst die DMRL."
 - [ ] Angenommen die DMRL eines Systems hat einen Workflow durchlaufen, wenn „Löschen" gewählt werden soll, dann ist die Aktion dauerhaft gesperrt mit dem Hinweis „Das System ist an Workflows beteiligt und kann nicht gelöscht werden"
 - [ ] Angenommen eine gesperrte Aktion oder ein gesperrtes Feld wird angezeigt, wenn der Mauszeiger darauf zeigt oder es fokussiert wird, dann erklärt ein Tooltip den Grund
 
 ### Demo-Daten
-- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Systemverwaltung geöffnet wird, dann ist PHUNGUN (2.3) vollständig gesperrt (DMRL mit SEND/REPLY-Historie) und bei Fahrzeug (4.2) und Fluggerät (5.0) ist nur der Model Ident Code gesperrt (DMRL ohne Workflow)
+- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Systemverwaltung geöffnet wird, dann sind bei PHUNGUN (2.3) alle Felder außer der Beschreibung gesperrt und Löschen dauerhaft gesperrt (DMRL mit SEND/REPLY-Historie); bei „Geschütztes Transportfahrzeug" (4.2) und „Transporthubschrauber" (5.0) sind Model Ident Code und Bezeichnung gesperrt, S1000D-Issue und Beschreibung änderbar und Löschen gesperrt bis die DMRL gelöscht ist (DMRL ohne Workflow)
 
 ## Edge Cases
 - **DMRL wurde gelöscht (PROJ-6), System hatte vorher keinen Workflow:** System ist wieder vollständig änderbar und löschbar.
@@ -110,7 +110,7 @@ Die Bezeichnung ist fest, sobald eine DMRL existiert, da die DMRL keine eigene B
 - Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar
 
 ## Open Questions
-- [ ] Muss `modelic` jedes DMRL-Eintrags dem Model Ident Code des Systems entsprechen? (PROJ-8)
+- [x] Muss `modelic` jedes DMRL-Eintrags dem Model Ident Code des Systems entsprechen? → Ja, Abweichung ist ein Fehler (PROJ-8 Gruppe D, 2026-11-12)
 - [x] Darf eine DMRL mit Workflow-Historie gelöscht werden? → Nein (PROJ-6)
 
 ## Decision Log
@@ -128,17 +128,64 @@ Die Bezeichnung ist fest, sobald eine DMRL existiert, da die DMRL keine eigene B
 | Kein Löschen bei Workflow-Nutzung (dauerhaft); bei DMRL ohne Workflow erst DMRL löschen | Vorgabe Product Owner, analog Organisationen (PROJ-4) | 2026-11-12 |
 | Bezeichnung eindeutig | Systeme werden in Auswahllisten (PROJ-6) über die Bezeichnung erkannt | 2026-11-12 |
 | Bezeichnung fest, sobald eine DMRL existiert | Vorgabe Product Owner — DMRL wird über die Systembezeichnung angezeigt (PROJ-6) | 2026-11-12 |
+| Spalte „DMRL" zeigt „vorhanden" + Status statt Namen; Demo-Kriterium an Regel-Tabelle angeglichen | Korrektur bei /architecture — DMRL ohne Namen (PROJ-6) | 2026-11-12 |
 | Spalte „DMRL" mit Link in der Systemliste | Schneller Überblick, wo noch eine DMRL fehlt | 2026-11-12 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Verwaltungsmuster (PROJ-3) und Regel „im Workflow benutzt" (PROJ-4) wiederverwendet | Einheitliche Umsetzung | 2026-11-12 |
+| Feldsperren und Löschrecht aus Zustand (keine DMRL / DMRL ohne Workflow / benutzt) abgeleitet | Regel-Tabelle direkt abbildbar und testbar | 2026-11-12 |
+| Sperren auch beim Speichern durchgesetzt | Schutz bei veralteter Anzeige | 2026-11-12 |
+| DMRL verweist auf System; „hat DMRL" wird ermittelt | Keine doppelte Verknüpfung, keine Inkonsistenz | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+### Überblick
+Die Systemverwaltung nutzt das **gemeinsame Verwaltungsmuster aus PROJ-3** und die **gemeinsame Regel „im Workflow benutzt" aus PROJ-4**. Besonderheit: Felder werden abhängig vom Zustand des Systems einzeln gesperrt (Regel-Tabelle der Spec). Kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+Seite „Verwaltung → Systeme" (/verwaltung/systeme)
++-- Zugriffswächter „Administrator?" (PROJ-2)
++-- Verwaltungs-Seitenrahmen (PROJ-3)
+    +-- Titel „Systeme" · Button „System anlegen"
+    +-- Suchfeld (Bezeichnung, Model Ident Code)
+    +-- Tabelle
+    |   +-- Spalten: Bezeichnung · Model Ident Code · S1000D-Issue · DMRL („vorhanden" + Status als Link / „— keine —") · Aktionen
+    |   +-- Aktionen: „Bearbeiten" · „Löschen" (gesperrt ausgegraut mit Tooltip-Begründung)
+    |   +-- Leer: „Noch keine Systeme angelegt" + Aktion · Keine Treffer: „Keine Systeme gefunden"
+    +-- Formular-Dialog „System anlegen / bearbeiten"
+    |   +-- Bezeichnung · S1000D-Issue (Auswahl 2.3 / 4.2 / 5.0) · Model Ident Code (automatisch Großbuchstaben) · Beschreibung (mehrzeilig, Zeichenzähler 500)
+    |   +-- gesperrte Felder ausgegraut mit Hinweis („fest, da eine DMRL existiert" / „wird in Workflows verwendet")
+    +-- Bestätigungsdialog „Löschen"
+```
+shadcn/ui: zusätzlich Textarea (Beschreibung) und Select (Issue) — installiert.
+
+### B) Datenmodell (in Klartext)
+Keine Änderung — System laut PROJ-1: ID, Bezeichnung, Beschreibung, S1000D-Issue, Model Ident Code. Die zugehörige DMRL verweist auf das System (nicht umgekehrt); „hat eine DMRL" wird daraus ermittelt.
+
+### C) Fachregeln (eine Stelle, ohne Oberfläche)
+- **Prüfung:** Bezeichnung 2–120 Zeichen, eindeutig ohne Groß-/Kleinschreibung; Issue Pflicht (2.3/4.2/5.0); Model Ident Code 2–14 Buchstaben/Ziffern, Großbuchstaben, eindeutig; Beschreibung max. 500 Zeichen. Eigener Wert jeweils von der Eindeutigkeit ausgenommen.
+- **Zustand des Systems:** *keine DMRL* · *DMRL ohne Workflow* · *im Workflow benutzt* (gemeinsame Regel PROJ-4 angewandt auf die DMRL des Systems).
+- **Feldsperren und Löschrecht** je Zustand laut Regel-Tabelle der Spec — mit Begründungstext. Die Sperren gelten im Formular **und** beim Speichern (gesperrte Werte können nicht überschrieben werden).
+
+### D) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Verwaltungsmuster (PROJ-3) und Regel „im Workflow benutzt" (PROJ-4) wiederverwendet | Einheitlich, kein neuer Grundbaustein nötig. |
+| Feldsperren aus einer Zustands-Tabelle abgeleitet | Regel-Tabelle der Spec 1:1 umgesetzt; leicht zu prüfen und zu ändern. |
+| Sperren zusätzlich beim Speichern geprüft | Schutz auch bei veralteter Anzeige (z. B. zweiter Tab). |
+| Spalte „DMRL" als Link zur DMRL-Ansicht | Schneller Sprung; DMRL hat keinen eigenen Namen (PROJ-6). |
+
+### E) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.**
+
+### F) Testbarkeit
+- Unit-Tests: Prüfungen (Bezeichnung/MI eindeutig, Längen, Zeichen), Zustandsermittlung (keine DMRL / ohne Workflow / benutzt), Feldsperren und Löschrecht je Zustand, Speichern mit gesperrtem Feld wird abgelehnt.
+- E2E: Anlegen/Bearbeiten/Löschen; Demo-Daten: PHUNGUN vollständig gesperrt, Fahrzeug/Fluggerät mit MI und Bezeichnung gesperrt, Issue änderbar.
 
 ## QA Test Results
 _To be added by /qa_
