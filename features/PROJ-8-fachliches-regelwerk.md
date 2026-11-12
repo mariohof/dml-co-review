@@ -33,7 +33,7 @@ Quellen: `docs/dmrl-mapping.md`, Anforderungen DMRLMS 01/02, NSG-Verfahrensbesch
 | G | REPLY passt zum letzten SEND | — | ✓ |
 | H | Antworten vollständig | — | ✓ |
 
-Alle Regelverstöße sind **Fehler**; es gibt keine Warnungen.
+Alle Regelverstöße sind **Fehler**; es gibt keine Warnungen. Einzige Ausnahme sind **Hinweise** zum Auffüllen führender Nullen (Gruppe A).
 
 ### S — Dateistruktur (nur Check-in)
 - Erste Zeile ist die Kopfzeile mit **genau** diesen Spalten in **genau** dieser Reihenfolge:
@@ -68,6 +68,8 @@ Alle Regelverstöße sind **Fehler**; es gibt keine Warnungen.
 | day / month / year | 2 / 2 / 4 Ziffern, führende Nullen; zusammen ein gültiges Datum (kein 31.02.) |
 | answer | leer, `y`, `n` |
 | answer_comment, remarks | Text |
+
+**Führende Nullen (nur Check-in):** Bei `security`, `issno`, `day`, `month` werden fehlende führende Nullen vor der Prüfung aufgefüllt (`1` → `01` bzw. `001`), da Excel sie beim Öffnen der CSV entfernt (PROJ-9). Der Prüfbericht nennt jede Auffüllung als Hinweis; Hinweise sind keine Fehler. DMC-Teile werden nicht aufgefüllt.
 
 ### B — Pflichtfelder
 - **Pflicht:** alle DMC-Teile (`modelic` … `itemloc`), `techname`, `infoname`, `language`, `country`, `security`, `rpc`, `issno`, `type`, `day`, `month`, `year`
@@ -171,7 +173,9 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 
 ### Format & Pflicht (Check-in und REPLY)
 - [ ] Angenommen `chapnum` hat 4 Zeichen, wenn geprüft wird, dann meldet der Bericht einen Formatfehler mit Zeile, DMC, Feld und gefundenem Wert
-- [ ] Angenommen `security` ist `1` oder `A1`, wenn geprüft wird, dann wird ein Formatfehler gemeldet; `01` ist gültig
+- [ ] Angenommen `security` ist `A1` oder `123`, wenn geprüft wird, dann wird ein Formatfehler gemeldet; `01` ist gültig
+- [ ] Angenommen in einer Check-in-Datei ist `security` = `1`, `issno` = `1`, `month` = `9`, wenn geprüft wird, dann werden die Werte zu `01`, `001`, `09` aufgefüllt, als Hinweis gemeldet und kein Fehler erzeugt
+- [ ] Angenommen ein REPLY enthält `security` = `1`, wenn geprüft wird, dann wird ein Formatfehler gemeldet (kein Auffüllen beim REPLY)
 - [ ] Angenommen `dmentryType` ist `x`, wenn geprüft wird, dann wird ein Fehler gemeldet; leer, `n`, `c`, `d` sind gültig
 - [ ] Angenommen der DM-Ausgabetyp ist `change`, wenn geprüft wird, dann wird ein Fehler gemeldet; `new`, `changed`, `revised`, `deleted` sind gültig
 - [ ] Angenommen das Datum ist 31.02.2026, wenn geprüft wird, dann wird ein Fehler „ungültiges Datum" gemeldet
@@ -223,7 +227,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 - [ ] Angenommen die Demo-DMRL PHUNGUN wird ausgecheckt und unverändert eingecheckt, wenn geprüft wird, dann ist die Datei fehlerfrei
 
 ## Edge Cases
-- **Führende Nullen in Excel:** Excel entfernt führende Nullen (z. B. `security` `01` → `1`). Das Regelwerk korrigiert nicht, sondern meldet einen Formatfehler; Check-out (PROJ-9) muss Textformat sicherstellen.
+- **Führende Nullen in Excel:** Excel entfernt führende Nullen (z. B. `security` `01` → `1`). Beim Check-in werden `security`, `issno`, `day`, `month` aufgefüllt; bei DMC-Teilen (z. B. `chapnum` `00` → `0`) bleibt es ein Formatfehler.
 - **Groß-/Kleinschreibung:** DMC-Teile werden so geprüft, wie sie in der Datei stehen; `n`/`c`/`d`, `y`/`n` und DM-Ausgabetypen nur in Kleinschreibung gültig.
 - **Leerzeichen am Anfang/Ende eines Werts:** werden vor der Prüfung entfernt.
 - **E/I über alte und neue Einträge:** geprüft wird über alle Einträge der Datei, also auch über Einträge mit Eintragstyp `d` und DM-Ausgabetyp `deleted`.
@@ -258,6 +262,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 | `language` nach ISO 639-1, `country` nach ISO 3166 (2-stelliger Ländercode) | Vorgabe Product Owner; S1000D verwendet den 2-stelligen Ländercode | 2026-11-12 |
 | Sicherheitseinstufung der Einträge: nur Format 00–99 | Vorgabe Product Owner | 2026-11-12 |
 | Alles-oder-nichts, vollständiger Bericht, nur Fehler (keine Warnungen) | PRD: fehlerhafte Dateien werden nicht übernommen | 2026-11-12 |
+| Fehlende führende Nullen bei `security`, `issno`, `day`, `month` beim Check-in auffüllen (Hinweis, kein Fehler) | Vorgabe Product Owner (PROJ-9) — Excel entfernt Nullen | 2026-11-12 |
 | Spalten exakt in festgelegter Reihenfolge, keine zusätzlichen Spalten | Vorgabe Product Owner | 2026-11-12 |
 | Keine Infocode-Liste, keine refdm/reqdm-/Lieferprüfung | Nicht im Prototyp-Umfang (RISP/CSDB) | 2026-11-12 |
 
