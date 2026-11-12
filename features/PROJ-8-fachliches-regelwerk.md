@@ -1,6 +1,6 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -270,12 +270,94 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Regelwerk läuft im Browser, speichert nichts | Daten liegen lokal; Bericht nur temporär | 2026-11-12 |
+| Gemeinsames Prüfformat; CSV-Leser und DML-Leser je Issue übersetzen vorher | Jede Regel einmal für alle Formate | 2026-11-12 |
+| DML-Leser je Issue als gemeinsamer Baustein (auch PROJ-1/13/15) | Wiederverwendung | 2026-11-12 |
+| Regelgruppen als unabhängige Prüfungen, je Quelle aktivierbar | Testbarkeit | 2026-11-12 |
+| ISO 639-1 / 3166-1 Alpha-2 als feste Listen im Projekt | Keine Zusatzabhängigkeit für statische Daten | 2026-11-12 |
+| PapaParse für CSV lesen/schreiben | Robuste CSV-Behandlung; auch PROJ-9/14/18 | 2026-11-12 |
+| Prüfbericht als CSV (Semikolon, UTF-8 mit BOM) herunterladbar | Excel-tauglich, gleiche Konventionen wie PROJ-9 | 2026-11-12 |
+| Gemeinsame Prüfbericht-Anzeige für PROJ-10/11/13 | Einheitliche Darstellung | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Das Regelwerk ist ein **Prüfbaustein ohne eigene Seite**. Er läuft vollständig im Browser und wird von Check-in (PROJ-10) und REPLY-Import (PROJ-13) aufgerufen. Damit Check-in (CSV) und REPLY (XML in drei Issue-Formaten) dieselben Regeln nutzen, werden beide Dateiarten zuerst in ein **gemeinsames Prüfformat** übersetzt; erst danach laufen die Regeln. Ergebnis ist ein **Prüfbericht**, den eine gemeinsame Anzeige darstellt (auch für PROJ-11). Kein Backend nötig — nur die XSD-Prüfung (PROJ-11) läuft auf dem Server.
+
+### A) Ablauf
+```
+Check-in (PROJ-10)                         REPLY-Import (PROJ-13)
+  CSV-Datei                                  XML-Datei
+     │                                          │  (vorher XSD-Prüfung, PROJ-11)
+  CSV-Leser                                  DML-Leser je Issue (2.3 / 4.2 / 5.0)
+  + Strukturprüfung (Gruppe S)                  │
+  + Auffüllen führender Nullen (Hinweise)       │
+     └──────────────► gemeinsames Prüfformat ◄──┘
+                      (Kopf + Einträge mit Zeile/Position)
+                                 │
+                       Regelwerk (Gruppen A–K)
+                       + Prüfkontext (System, DMRL, Stand vor Check-out
+                         bzw. letzter SEND, Archiv)
+                                 │
+                            Prüfbericht
+             (Fehler + Hinweise, Zusammenfassung neu/geändert/…)
+                                 │
+                     Prüfbericht-Anzeige + Download
+```
+
+### B) Bausteine
+| Baustein | Aufgabe | Auch genutzt von |
+|---|---|---|
+| **CSV-Leser** | liest Semikolon-CSV (UTF-8, mit/ohne BOM, Anführungszeichen), prüft Kopfzeile (Gruppe S), überspringt Leerzeilen | — (Schreiben derselben CSV: PROJ-9/14/18) |
+| **DML-Leser je Issue** | liest Kopf und Einträge einer DML-Datei in 2.3, 4.2 oder 5.0 laut `docs/dmrl-mapping.md` in das gemeinsame Format | PROJ-13, PROJ-15 (Anzeige archivierter Stände), PROJ-1 (Demo-Einträge) |
+| **Prüfkontext** | stellt bereit: MI des Systems, DML-Typ, Stand vor dem Check-out (Sperre) bzw. Einträge und Kopf des letzten SEND, Partner, archivierte REPLYs | — |
+| **Regelwerk** | Gruppen A, B, C, D, E, I (beide), F, K (Check-in), G, H (REPLY); jede Gruppe einzeln, alle laufen vollständig durch | — |
+| **Code-Listen** | ISO 639-1 (Sprachen) und ISO 3166-1 Alpha-2 (Länder) als feste Listen im Projekt | Formularprüfungen bei Bedarf |
+| **Meldungskatalog** | alle deutschen Meldungstexte an einer Stelle | — |
+| **Prüfbericht** | Liste der Befunde: Art (Fehler/Hinweis), Zeile bzw. Position, DMC, Feld, Regelgruppe, Meldung mit gefundenem Wert; dazu Zusammenfassung | PROJ-10, 11, 13 |
+| **Prüfbericht-Anzeige** | Überschrift mit Anzahl, Tabelle der Befunde (gruppierbar nach Zeile/Regel), bei > 100 seitenweise, Button „Bericht herunterladen" | PROJ-10, 11, 13 |
+
+### C) Komponentenstruktur (Anzeige)
+```
+Prüfbericht-Anzeige (eingebettet in Check-in- bzw. REPLY-Dialog)
++-- Kopf: „[n] Fehler · [m] Hinweise" bzw. „Prüfung bestanden"
++-- Umschalter: nach Zeile / nach Regel (shadcn Tabs)
++-- Tabelle der Befunde (shadcn Table, seitenweise ab 100)
+|   +-- Art (Badge Fehler/Hinweis) · Zeile · DMC · Feld · Regel · Meldung
++-- „Bericht herunterladen"
+```
+
+### D) Datenmodell (in Klartext)
+Das Regelwerk **speichert nichts**. Ein Prüfbericht existiert nur, solange der Dialog offen ist; der Download erzeugt eine Datei. Im Verlauf wird nur die Anzahl der Fehler festgehalten (PROJ-15).
+
+**Gemeinsames Prüfformat:** Kopf (bei REPLY: Richtung, `dmlc`, `dmlref`, DML-Typ, Bemerkung) und Einträge mit allen 27 Feldern als Text plus Herkunft (CSV-Zeilennummer bzw. Position im XML).
+
+**Downloadformat des Berichts:** CSV mit Semikolon und UTF-8 mit BOM (öffnet direkt in Excel, gleiche Konventionen wie PROJ-9); Dateiname z. B. `Pruefbericht-PHUNGUN-2026-11-12.csv`.
+
+### E) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Prüfung im Browser | Daten liegen im Browser; schnell; kein Server nötig. |
+| Gemeinsames Prüfformat vor den Regeln | Jede Regel existiert genau einmal und gilt für CSV und alle drei XML-Issues gleich. |
+| DML-Leser je Issue als eigener Baustein | Wird auch für Archiv-Anzeige und Demo-Daten gebraucht; neue Issues ließen sich ergänzen. |
+| Regelgruppen als einzelne, unabhängige Prüfungen | Einzeln testbar; Check-in und REPLY schalten nur die passenden Gruppen ein. |
+| ISO-Codelisten fest im Projekt statt Zusatzpaket | Listen ändern sich praktisch nie; keine Abhängigkeit für zwei kleine Tabellen. |
+| CSV-Paket **PapaParse** statt Eigenbau | Bewährt für Anführungszeichen, Zeilenumbrüche in Werten, BOM; dieselbe Bibliothek erzeugt die CSV in PROJ-9/14/18. |
+| Bericht als CSV herunterladbar | Öffnet in Excel, lässt sich an den Partner weitergeben. |
+| Meldungen zentral gesammelt | Einheitliche Formulierungen, einfache Anpassung. |
+
+### F) Abhängigkeiten (Pakete)
+- **papaparse** — CSV lesen und schreiben (Anführungszeichen, BOM, Semikolon); dazu die Typdefinitionen für TypeScript.
+- Sonst keine neuen Pakete (XML lesen mit dem eingebauten Browser-XML-Leser, wie PROJ-1).
+
+### G) Testbarkeit
+- Unit-Tests je Regelgruppe mit kleinen Beispieldateien (gültig/ungültig je Akzeptanzkriterium).
+- DML-Leser: PHUNGUN-Beispieldateien (2.3), S1000DBIKE-Beispiel (4.2), 5.0 sobald Beispiel vorliegt.
+- Gesamttests: Demo-REPLY (fehlerfrei, 30/2), unveränderter Check-in der Demo-DMRLs (fehlerfrei), Demo-Testdatei 4 (Regelwerk-Fehler).
+- Performance: 1.000 Einträge unter 1 Sekunde.
 
 ## QA Test Results
 _To be added by /qa_
