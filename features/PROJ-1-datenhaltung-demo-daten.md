@@ -17,9 +17,9 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 ## Datenobjekte (fachlich)
 
 ### Organisation
-- Code (z. B. `D0815`, `C1234`) — entspricht `sendid` im DML-Code
+- CAGE-Code (z. B. `D0815`, `C1234`) — entspricht `sendid` im DML-Code
 - Name
-- Art: eigene Organisation / Partner
+- (keine Art — Sender/Partner wird je DMRL festgelegt, PROJ-4)
 
 ### Benutzer (simuliert)
 - Name
@@ -36,7 +36,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 ### DMRL
 - Bezeichnung
 - System (→ S1000D-Issue)
-- Sender-Organisation (eigene) und Partner-Organisation
+- Sender-Organisation und Partner-Organisation
 - Zuständige Bearbeiter
 - Statusdaten laut `docs/dmrl-mapping.md`: `dmlc` (modelic, sendid, dmltype, diyear, seqnum), `issno` (issno, inwork, type), `issdate`, `security`, `dmlref`, `remarks`
 - Aktueller Versionsindex `NNNNN-JJJJ` (= `seqnum-diyear` des letzten SEND)
@@ -59,7 +59,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 
 | Objekt | Inhalt |
 |--------|--------|
-| Organisationen | `D0815` – eigene Organisation (neutraler Name); `C1234` – Partner (neutraler Name) |
+| Organisationen | `D0815` (neutraler Name, Sender der Demo-DMRLs); `C1234` (neutraler Name, Partner der Demo-DMRLs) |
 | Benutzer | Systemkonto „Administrator", 2 Bearbeiter (alle aktiv, keine Organisation) |
 | System 1 | PHUNGUN — Gerät — Issue 2.3 |
 | System 2 | Fiktives Fahrzeug — Issue 4.2 |

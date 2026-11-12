@@ -18,7 +18,7 @@
 | PROJ-1 | Datenhaltung (JSON/localStorage) + Demo-Daten — Persistenzschicht und Beispieldaten (Systeme in 2.3/4.2/5.0) · P0 · Deps: None | Architected | [PROJ-1](PROJ-1-datenhaltung-demo-daten.md) | 2026-11-11 |
 | PROJ-2 | Simulierte Anmeldung & Rollenwechsel — Benutzerauswahl, Rollen Administrator/Bearbeiter · P0 · Deps: PROJ-1 | Planned | [PROJ-2](PROJ-2-simulierte-anmeldung-rollen.md) | 2026-11-11 |
 | PROJ-3 | Benutzerverwaltung — Admin legt Benutzer an und bearbeitet sie · P0 · Deps: PROJ-2 | Planned | [PROJ-3](PROJ-3-benutzerverwaltung.md) | 2026-11-11 |
-| PROJ-4 | Organisationsverwaltung — Admin verwaltet interne/externe Organisationen · P0 · Deps: PROJ-2 | Roadmap | — | 2026-11-11 |
+| PROJ-4 | Organisationsverwaltung — Admin verwaltet Organisationen (CAGE-Code, Name) · P0 · Deps: PROJ-2 | Planned | [PROJ-4](PROJ-4-organisationsverwaltung.md) | 2026-11-11 |
 | PROJ-5 | Systemverwaltung — Admin verwaltet Systeme inkl. S1000D-Issue (2.3/4.2/5.0) · P0 · Deps: PROJ-2 | Roadmap | — | 2026-11-11 |
 | PROJ-6 | DMRL anlegen & Berechtigungen — Admin legt DMRLs zu Systemen an und vergibt Rechte · P0 · Deps: PROJ-3, PROJ-4, PROJ-5 | Roadmap | — | 2026-11-11 |
 | PROJ-7 | DMRL-Ansicht — Anzeige der DMRL mit Einträgen und Eintragsstatus · P0 · Deps: PROJ-6 | Roadmap | — | 2026-11-11 |
