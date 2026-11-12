@@ -1,6 +1,6 @@
 # PROJ-19: Lokaler Start (Python-Startskript)
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -132,12 +132,94 @@ Alle drei liegen im Hauptordner des Projekts.
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Startskript `scripts/start.py`, nur Python-Standardbibliothek; Startdateien im Hauptordner | Keine Zusatzinstallation, Logik an einer Stelle | 2026-11-12 |
+| Update-Erkennung über Fingerabdruck von Lock-Datei und Projektstand (Stand-Vermerk, nicht in Git) | Funktioniert auch bei ZIP-Weitergabe | 2026-11-12 |
+| Paketinstallation exakt nach Lock-Datei | Reproduzierbar | 2026-11-12 |
+| Next.js-Produktionsserver nur an localhost, Port vorab geprüft | Sicherheit, Datenbindung an Adresse | 2026-11-12 |
+| Unterprozesse beim Beenden mitstoppen (auch Fensterschließen unter Windows) | Port wird frei, kein hängender Server | 2026-11-12 |
+| Ausführliche Ausgaben in Protokolldatei, Konsole mit Kurzmeldungen | Verständlich und fehlersuchbar | 2026-11-12 |
+| Next.js-Telemetrie abgeschaltet | Keine Datenübertragung | 2026-11-12 |
+| Ausführbar-Kennzeichen und Zeilenenden der Startdateien im Projekt festgelegt | Funktion nach ZIP/Git-Klon | 2026-11-12 |
+| Node.js-Mindestversion 20 in der Paketbeschreibung | Klare Voraussetzung | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+PROJ-19 hat **keine Oberfläche in der App**. Es besteht aus drei kleinen **Startdateien** (je Betriebssystem), einem **Python-Startskript** (nur Standardbibliothek) und der Kurzanleitung **`START-HIER.md`**. Das Skript steuert die vorhandenen Projektbefehle (Pakete installieren, bauen, starten) und überwacht den laufenden Server. Die Anwendung selbst bleibt unverändert.
+
+### A) Bestandteile
+```
+Projektordner (Hauptebene)
++-- Start.command      (macOS, Doppelklick)
++-- Start.bat          (Windows 11, Doppelklick)
++-- start.sh           (Linux)
++-- START-HIER.md      (Kurzanleitung)
++-- scripts/
+    +-- start.py       (Python-Startskript)
+```
+
+### B) Ablauf des Startskripts
+```
+1. Optionen lesen (Port, --open / --kein-browser, --neu-bauen)
+2. Voraussetzungen prüfen
+   +-- Python ≥ 3.9
+   +-- Node.js ≥ 20 (Versionsabfrage)
+   +-- xmllint (Versionsabfrage; Pfad aus der Einstellung von PROJ-11, sonst Systempfad)
+   +-- fehlt etwas → Installationshinweis für das erkannte Betriebssystem, Ende mit Fehler
+3. Port prüfen (Standard 8877) → belegt: Hinweis „läuft die Anwendung bereits?", Ende mit Fehler
+4. Pakete installieren, falls nötig
+   +-- nötig, wenn noch keine installiert sind oder sich die Paketliste (Lock-Datei) geändert hat
+   +-- exakt nach Lock-Datei installieren (reproduzierbar)
+5. App bauen, falls nötig
+   +-- nötig, wenn noch kein Build existiert, sich der Projektstand geändert hat oder --neu-bauen
+6. App starten (Produktionsmodus, nur an localhost gebunden, gewählter Port)
+7. Warten bis erreichbar (max. ca. 60 s) → Browser öffnen (außer --kein-browser)
+8. Meldung „Anwendung läuft unter http://localhost:8877 — Beenden mit Strg+C oder Fenster schließen"
+9. Beenden: Strg+C / Fenster schließen → Server und alle Unterprozesse werden gestoppt
+```
+
+### C) Daten (in Klartext)
+Das Skript speichert nur **einen kleinen Stand-Vermerk** im Projektordner (nicht in Git): Fingerabdruck der Paketliste und des Projektstands beim letzten Installieren/Bauen. Daraus erkennt es Updates. Anwendungsdaten berührt es nicht (sie liegen im Browser, PROJ-1).
+
+**Projektstand** = Inhalt der Quell- und Konfigurationsdateien, die das Ergebnis des Builds beeinflussen (Quellcode, öffentliche Dateien, Schemas, Paket- und Build-Konfiguration).
+
+### D) Startdateien
+- Wechseln in den Projektordner (auch bei Leerzeichen/Umlauten im Pfad).
+- Suchen Python: macOS/Linux `python3`; Windows `py`, dann `python`.
+- Fehlt Python → Meldung, Fenster wartet auf Tastendruck.
+- Rufen das Startskript mit Port 8877 und „Browser öffnen" auf; bei Fehler bleibt das Fenster offen.
+- macOS/Linux-Dateien werden als ausführbar im Projekt gespeichert; Zeilenenden je Betriebssystem werden festgelegt (Windows-Datei mit Windows-Zeilenenden), damit sie nach ZIP/Git-Klon funktionieren.
+
+### E) Meldungen und Protokoll
+- Konsole: kurze deutsche Schrittmeldungen („Prüfe Voraussetzungen … ok", „Installiere Pakete (einmalig) …", „Baue Anwendung …").
+- Ausführliche Ausgaben von Installation und Build gehen in eine **Protokolldatei** im Projektordner; bei einem Fehler zeigt das Skript die letzten Zeilen und den Pfad zur Protokolldatei.
+- Typische Fehler bekommen eine klare Erklärung (keine Internetverbindung beim ersten Start, Build fehlgeschlagen → `--neu-bauen`, Browser nicht öffnbar → Adresse manuell aufrufen).
+
+### F) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Python nur mit Standardbibliothek | Keine zusätzliche Installation; läuft mit jedem Python ≥ 3.9. |
+| Startdateien rufen ein gemeinsames Python-Skript | Logik nur einmal; die Startdateien bleiben winzig. |
+| Update-Erkennung über Fingerabdruck statt Git | Funktioniert auch bei Weitergabe als ZIP. |
+| Installation exakt nach Lock-Datei | Auf jedem Rechner dieselben Paketversionen. |
+| Server nur an localhost gebunden | Nicht aus dem Netzwerk erreichbar (PRD, PROJ-11). |
+| Port vor dem Start prüfen, bei Belegung abbrechen | Daten im Browser hängen an der Adresse (Spec-Entscheidung). |
+| Unterprozesse beim Beenden mitstoppen | Kein „hängender" Server, Port wird wieder frei — auch beim Fensterschließen unter Windows. |
+| Ausführliche Ausgabe in Protokolldatei | Konsole bleibt verständlich; Details für Fehlersuche vorhanden. |
+| Next.js-Telemetrie abgeschaltet | Lokaler Betrieb ohne Datenübertragung an Dritte. |
+| xmllint-Pfad aus derselben Einstellung wie PROJ-11 | Was das Skript prüft, nutzt auch die App. |
+| Mindestversion Node.js in der Paketbeschreibung hinterlegt | Klare Voraussetzung auch für Entwickler. |
+
+### G) Abhängigkeiten (Pakete)
+- **Keine** neuen npm- oder Python-Pakete.
+- Systemvoraussetzungen: Python ≥ 3.9, Node.js ≥ 20, xmllint.
+
+### H) Testbarkeit
+- Unit-Tests des Startskripts mit der Python-Standard-Testbibliothek: Versionsvergleich, Fingerabdruck/Update-Erkennung, Port-Prüfung, Optionen, Installationshinweise je Betriebssystem.
+- Manuelle Prüfung je Betriebssystem (macOS, Windows 11, Linux): Erststart, Zweitstart ohne Build, Update, fehlendes Node.js/xmllint, belegter Port, Beenden per Strg+C und Fensterschließen, Pfad mit Leerzeichen/Umlauten.
 
 ## QA Test Results
 _To be added by /qa_
