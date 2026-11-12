@@ -64,6 +64,10 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 
 Dateinamensschema: `DML-{modelic}-{sendid}-{dmltype}-{diyear}-{seqnum}_{issno}-{inwork}.XML`
 
+## XSD-Schemas
+- Ablage: `schemas/s1000d/issue-{2.3,4.2,5.0}/` (`dml.xsd` + eingebundene Schemas)
+- Issue 5.0: Import von `xml.xsd` auf lokale Kopie umgestellt (statt `http://www.w3.org/2001/xml.xsd`), damit `xmllint --nonet` offline validiert
+- Alle drei Schemas kompilieren mit `xmllint --nonet`; die PHUNGUN-Beispieldateien sind gegen Issue 2.3 gültig
+
 ## Offen
 - Mapping für Issue 4.2 und 5.0 (abweichende Elementnamen, z. B. `dmlEntry`, `dmRef`, `dmCode`-Attribute)
-- XSD-Dateien liegen unter `schemas/s1000d/issue-{2.3,4.2,5.0}/`. Issue 5.0 importiert `http://www.w3.org/2001/xml.xsd` aus dem Internet — für die Offline-Validierung mit `xmllint --nonet` muss `xml.xsd` lokal bereitgestellt werden (PROJ-11)
