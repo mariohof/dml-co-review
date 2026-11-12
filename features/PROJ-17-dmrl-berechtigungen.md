@@ -1,6 +1,6 @@
 # PROJ-17: DMRL-Berechtigungen
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -65,7 +65,7 @@ Der Administrator berechtigt Bearbeiter für eine DMRL (und damit für deren Sys
 - [ ] Angenommen ein berechtigter Bearbeiter wird deaktiviert und später reaktiviert (PROJ-3), wenn er sich danach anmeldet, dann gilt seine Berechtigung wieder
 
 ### Demo-Daten
-- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Berechtigungen betrachtet werden, dann ist Bearbeiter 1 für PHUNGUN und Fahrzeug, Bearbeiter 2 für Fahrzeug und Fluggerät berechtigt
+- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Berechtigungen betrachtet werden, dann ist „Anna Bearbeitung" für PHUNGUN und Fahrzeug, „Ben Bearbeiter" für Fahrzeug und Fluggerät berechtigt (PROJ-1)
 
 ## Edge Cases
 - **Bearbeiter wird zum Administrator befördert:** Berechtigungen bleiben gespeichert, sind aber wirkungslos (Admin sieht alles); nach Rückstufung wirken sie wieder.
@@ -79,7 +79,7 @@ Der Administrator berechtigt Bearbeiter für eine DMRL (und damit für deren Sys
 - Rechteprüfung wirkt sofort auf Dashboard und Direktaufrufe
 
 ## Open Questions
-- [ ] Soll ein Bearbeiter, der den letzten SEND ausgelöst hat, ebenfalls nicht entfernt werden können (analog Deaktivieren, PROJ-3)?
+- [x] Soll ein Bearbeiter, der den letzten SEND ausgelöst hat, ebenfalls nicht entfernt werden können? → Nein, Entfernen erlaubt (nur Check-out sperrt); Deaktivieren bleibt gesperrt (PROJ-3) — siehe Edge Cases (2026-11-12)
 
 ## Decision Log
 
@@ -97,12 +97,62 @@ Der Administrator berechtigt Bearbeiter für eine DMRL (und damit für deren Sys
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Berechtigungsdialog aus der DMRL-Verwaltung (PROJ-6), keine eigene Seite | Alles zu einer DMRL an einer Stelle | 2026-11-12 |
+| Checkbox-Liste im Dialog | Wenige Bearbeiter, Sperren sichtbar | 2026-11-12 |
+| Wirkung ausschließlich über zentrale Rechte-Regel (PROJ-2) | Sofort wirksam, eine Quelle | 2026-11-12 |
+| Berechtigungen inaktiver/beförderter Benutzer bleiben gespeichert, wirken aber nicht | Wiederherstellung ohne Neuvergabe | 2026-11-12 |
+| Sperrinhaber-Schutz in UI und beim Speichern | Schutz bei veralteter Anzeige | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Die Berechtigungen werden direkt in der **DMRL-Verwaltung (PROJ-6)** gepflegt: zusätzliche Spalte „Bearbeiter" und Aktion „Berechtigungen" je DMRL, die einen Auswahldialog öffnet. Die Wirkung (wer sieht welche DMRL) setzt ausschließlich die **zentrale Rechte-Regel aus PROJ-2** um. Kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+DMRL-Verwaltung (/verwaltung/dmrl, PROJ-6)
++-- Tabelle (Ergänzung)
+|   +-- Spalte „Bearbeiter": Namen der berechtigten Bearbeiter, inaktive mit Badge „inaktiv"; „— keine —"
+|   +-- Aktion „Berechtigungen"
++-- Dialog „Berechtigungen — [Systemname]" (shadcn Dialog)
+    +-- Liste aller Bearbeiter als Mehrfachauswahl (shadcn Checkbox), sortiert nach Name
+    |   +-- aktive Bearbeiter: frei wählbar
+    |   +-- inaktive, bereits berechtigte: angezeigt mit „inaktiv", nur abwählbar
+    |   +-- Sperrinhaber: angehakt und gesperrt, Hinweis „[Name] hat die DMRL ausgecheckt …"
+    |   +-- Administratoren: nicht angezeigt
+    +-- Hinweis, wenn keine aktiven Bearbeiter existieren (mit Verweis auf Verwaltung → Benutzer)
+    +-- „Speichern" · „Abbrechen"
+```
+
+### B) Datenmodell (in Klartext)
+Keine Änderung — die DMRL speichert die Liste der berechtigten Bearbeiter (IDs) laut PROJ-1. Beim Löschen einer DMRL verschwindet die Liste mit (PROJ-6). Deaktivierte oder zum Administrator beförderte Benutzer bleiben in der Liste; ob die Berechtigung wirkt, entscheidet die Rechte-Regel (nur aktive Bearbeiter).
+
+### C) Fachregeln (eine Stelle, ohne Oberfläche)
+- **Auswählbar:** aktive Benutzer mit Rolle Bearbeiter.
+- **Nur abwählbar:** inaktive, bereits berechtigte Bearbeiter.
+- **Nicht entfernbar:** der Sperrinhaber der DMRL (Check-out, PROJ-9) — wird auch beim Speichern geprüft.
+- **Leere Auswahl** erlaubt.
+- **Wirkung:** zentrale Rechte-Regel (PROJ-2) — Bearbeiter sieht/bearbeitet eine DMRL nur, wenn er aktiv, Rolle Bearbeiter und in der Liste ist; Administratoren immer.
+- Änderungen werden **nicht** im Verlauf protokolliert (PROJ-15).
+
+### D) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Pflege in der DMRL-Verwaltung statt eigener Seite | Alles zu einer DMRL an einer Stelle (PROJ-6). |
+| Mehrfachauswahl als Checkbox-Liste im Dialog | Wenige Bearbeiter; alle Optionen und Sperren auf einen Blick. |
+| Wirkung nur über die zentrale Rechte-Regel | Änderungen gelten sofort für Dashboard, DMRL-Seiten und Aktionen. |
+| Inaktive/beförderte Benutzer bleiben gespeichert | Reaktivierung bzw. Rückstufung stellt die Berechtigung ohne Neuvergabe wieder her (PROJ-3). |
+| Sperrinhaber-Schutz auch beim Speichern | Schutz bei veralteter Anzeige (zweiter Tab). |
+
+### E) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.** shadcn Checkbox, Dialog, Badge sind installiert.
+
+### F) Testbarkeit
+- Unit-Tests: Auswahlliste (aktive Bearbeiter, keine Admins, inaktive nur abwählbar), Sperrinhaber nicht entfernbar, Rechte-Regel mit Berechtigung (aktiv / inaktiv / befördert).
+- E2E: Berechtigung vergeben → Bearbeiter sieht DMRL; entziehen → „Keine Berechtigung"; Sperrinhaber nicht entfernbar; Demo-Berechtigungen laut PROJ-1.
 
 ## QA Test Results
 _To be added by /qa_
