@@ -139,7 +139,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 ## Open Questions
 - [ ] Mapping der Felder auf die XML-Struktur von Issue 4.2 und 5.0 (Schemas liefert Product Owner) — relevant für Demo-Einträge der Systeme 2 und 3 sowie PROJ-12/13
 - [ ] Zulässige Werte für `dmltype/@type` (in Beispielen nur `c`)
-- [ ] Bleiben Einträge mit Typ `d` (gelöscht) nach Freigabe in der DMRL sichtbar oder werden sie entfernt? (klären in PROJ-14)
+- [x] Bleiben Einträge mit Typ `d` nach Freigabe in der DMRL? → Ja, nur der Typ wird entfernt; gelöschte DMs werden über `type=deleted` gekennzeichnet (PROJ-7)
 - [ ] Konkrete Bezeichnungen/Model Ident Codes für die fiktiven Systeme Fahrzeug (4.2) und Fluggerät (5.0)
 
 ## Decision Log

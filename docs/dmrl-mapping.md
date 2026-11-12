@@ -6,7 +6,7 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 
 | DMRL Feld | XPath Exchange-DMRL | Regel |
 | --- | --- | --- |
-| dmentryType | /dml/dmentry/@type | leer, n, c, d |
+| dmentryType | /dml/dmentry/@type | **Eintragstyp:** leer, n, c, d (Änderungsart des Eintrags in der Abstimmung) |
 | modelic | /dml/dmentry/addresdm/dmc/avee/modelic | 2-14 Stellen, alphanumerisch |
 | sdc | /dml/dmentry/addresdm/dmc/avee/sdc | 1-4 Stellen, alphanumerisch |
 | chapnum | /dml/dmentry/addresdm/dmc/avee/chapnum | 2-3 Stellen, alphanumerisch |
@@ -23,9 +23,10 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 | language | /dml/dmentry/addresdm/language/@language | 2 Stellen, alphanumerisch |
 | country | /dml/dmentry/addresdm/language/@country | 2 Stellen, alphanumerisch |
 | security | /dml/dmentry/security/@class | 2 Stellen, führende Nullen |
-| rpc | /dml/dmentry/rpc/@rpcname | alphanumerisch |
+| rpc | /dml/dmentry/rpc (Elementinhalt) | alphanumerisch, Firmencode |
+| rpcname | /dml/dmentry/rpc/@rpcname | alphanumerisch, Firmenname (optional) |
 | issno | /dml/dmentry/addresdm/issno/@issno | 3 Stellen, führende Nullen |
-| type | /dml/dmentry/addresdm/issno/@type | new, change, revised |
+| type | /dml/dmentry/addresdm/issno/@type | **DM-Ausgabetyp:** new, changed, revised, deleted (deleted = DM gelöscht, manuell vom Bearbeiter gesetzt) |
 | day | /dml/dmentry/addresdm/issdate/@day | 2 Stellen, führende Nullen |
 | month | /dml/dmentry/addresdm/issdate/@month | 2 Stellen, führende Nullen |
 | year | /dml/dmentry/addresdm/issdate/@year | 4 Stellen, führende Nullen |
@@ -35,6 +36,8 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 ### Ergänzungen aus den Beispieldateien
 - `rpc`: Elementinhalt = Firmencode (z. B. `D7177`), Attribut `@rpcname` = Firmenname (optional)
 - `/dml/dmentry/remarks`: eigene Bemerkung zum Eintrag (getrennt von `answer/remarks`)
+- **Zwei Typ-Felder:** `/dml/dmentry/@type` = Eintragstyp (n/c/d, Abstimmung) ≠ `/dml/dmentry/addresdm/issno/@type` = DM-Ausgabetyp (new/…/deleted, Datenmodul)
+- REPLY-Übernahme (betrifft nur den Eintragstyp): `answer="y"` → `dmentry/@type` wird entfernt (genehmigt, auch bei `d` — Eintrag bleibt bestehen); `answer="n"` → Typ bleibt, Eintrag muss überarbeitet und erneut gesendet werden
 - `answer` + `answer/remarks` werden nur vom Partner (REPLY) gefüllt; in einer REPLY-DMRL hat jeder `dmentry` mit `@type` die Elemente `answer` und `remarks`
 
 ## DMRL-Statusdaten (Kopf)
