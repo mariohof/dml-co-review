@@ -1,6 +1,6 @@
 # PROJ-2: Simulierte Anmeldung & Rollenwechsel
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -136,12 +136,91 @@ Kopfzeile
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Clientseitige Seiten, Anmeldung nur im Browser-Speicher | Datenbestand liegt in localStorage (PROJ-1); kein Server-Zustand | 2026-11-12 |
+| Anmelde-Bereitsteller (React Context) innerhalb des Datenspeicher-Bereitstellers | Aktueller Benutzer überall verfügbar; Rollen werden aus aktuellem Datenstand gelesen | 2026-11-12 |
+| Zentrale Rechte-Regel für Verwaltung, DMRL-Zugriff und Dashboard-Sichtbarkeit | Eine Quelle für alle Features (PROJ-7 bis PROJ-18), leicht testbar | 2026-11-12 |
+| Zugriffswächter als Wrapper-Komponenten je Bereich | Einheitlicher Schutz neuer Seiten | 2026-11-12 |
+| Adressen `/anmelden`, `/`, `/dmrl/[ID]`, `/verwaltung/...` | Deutsche UI, klare Bereichstrennung Admin/Arbeitsbereich | 2026-11-12 |
+| Reset-Funktion auf `/verwaltung` | Ersetzt temporäre Platzierung aus PROJ-1 | 2026-11-12 |
+| Benutzer-Auswahlliste mit shadcn Select/DropdownMenu | Bereits installiert; Wireframe PROJ-16 | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+PROJ-2 liefert den „Rahmen" der Anwendung: Anmeldeseite, Kopfzeile mit Navigation und Benutzer-Auswahlliste, Zugriffsschutz für Seiten und **eine zentrale Rechte-Regel**, die alle späteren Features nutzen. Alles läuft im Browser; kein Backend nötig.
+
+### A) Seitenstruktur (Adressen)
+| Adresse | Seite | Zugriff |
+|---|---|---|
+| `/anmelden` | Anmeldeseite | nur ohne Anmeldung |
+| `/` | Dashboard (Liste hier, Kennzahlen PROJ-16) | alle Angemeldeten |
+| `/dmrl/[ID]` (+ Unterseiten wie Archiv) | DMRL-Ansicht (PROJ-7, 15) | Administrator oder berechtigter Bearbeiter |
+| `/verwaltung` | Verwaltungsübersicht inkl. „Demo-Daten zurücksetzen" | nur Administrator |
+| `/verwaltung/benutzer`, `/organisationen`, `/systeme`, `/dmrl` | Verwaltungsseiten (PROJ-3–6, 17) | nur Administrator |
+
+### B) Komponentenstruktur
+```
+App-Rahmen
++-- Datenspeicher-Bereitsteller (PROJ-1)
+    +-- Anmelde-Bereitsteller (aktueller Benutzer, anmelden, wechseln, abmelden)
+        +-- Anmeldeseite (/anmelden)
+        |   +-- Karte „Anmelden"
+        |   |   +-- Liste aktiver Benutzer (je Zeile: Name + Rollen-Badge, ganze Zeile klickbar)
+        |   +-- Hinweis „Ihr Benutzer ist nicht mehr aktiv" (falls zutreffend)
+        +-- Geschützter Bereich (alle anderen Seiten)
+            +-- Zugriffswächter „angemeldet?" → sonst Weiterleitung zu /anmelden
+            +-- Kopfzeile
+            |   +-- Anwendungsname
+            |   +-- Navigation: „Dashboard" · „Verwaltung" (Aufklappmenü, nur Administrator)
+            |   +-- „Benutzer" + Auswahlliste (Name · Rolle, aktueller ausgewählt, Trenner, „Abmelden")
+            +-- Seiteninhalt
+                +-- Zugriffswächter „Administrator?" (Verwaltung) bzw. „DMRL erlaubt?" (DMRL-Seiten)
+                    +-- sonst Seite „Keine Berechtigung" mit Link zum Dashboard
+```
+Genutzte shadcn/ui-Bausteine (alle installiert): Card, Button, Badge, Select bzw. DropdownMenu (Benutzer-Auswahlliste), NavigationMenu oder DropdownMenu (Verwaltung), Alert (Hinweise), Sonner (Toast „Die vorherige Seite ist für [Name] nicht verfügbar").
+
+### C) Datenmodell (in Klartext)
+- **Anmeldung:** nur die ID des angemeldeten Benutzers, in einem eigenen kleinen Speicherbereich (PROJ-1, Abschnitt B). Kein Passwort, kein Token.
+- **Benutzer, Rollen, Berechtigungen:** kommen aus dem Datenbestand (PROJ-1, PROJ-3, PROJ-17) — PROJ-2 speichert dazu nichts Eigenes.
+- **Ein kurzlebiger Hinweis** („nicht mehr aktiv", „vorherige Seite nicht verfügbar") wird nur für die nächste Anzeige gemerkt, nicht dauerhaft.
+
+### D) Zentrale Rechte-Regel
+Eine einzige Stelle beantwortet alle Rechtefragen, z. B.:
+- Darf Benutzer X die Verwaltung sehen? → nur Administrator
+- Darf Benutzer X DMRL Y sehen/bearbeiten? → Administrator immer; Bearbeiter nur, wenn für Y berechtigt (PROJ-17)
+- Welche DMRLs sieht Benutzer X im Dashboard?
+
+Alle Seiten, Aktionen (Check-out, SEND …) und das Dashboard fragen diese Stelle — keine verstreuten Einzelprüfungen. Das macht Rollenänderungen sofort wirksam und ist einfach zu testen.
+
+### E) Abläufe
+- **Start:** Anmeldung gespeichert und Benutzer existiert + aktiv → Dashboard bzw. aufgerufene Seite. Benutzer inaktiv/fehlt → abmelden, Anmeldeseite mit Hinweis. Keine Anmeldung → Anmeldeseite.
+- **Anmelden:** Klick auf Benutzer → Anmeldung speichern → Dashboard.
+- **Wechseln (Auswahlliste):** neue ID speichern → Rechte-Regel prüft die aktuelle Seite → erlaubt: Seite bleibt (zeigt Daten aus neuer Sicht); nicht erlaubt: Dashboard + Toast. Offene Dialoge werden geschlossen (nichts übernommen).
+- **Abmelden:** Anmeldung löschen → Anmeldeseite. Sperren bleiben (gehören zur DMRL).
+- **Rollenänderung / Deaktivierung im Datenbestand:** wird bei jeder Anzeige neu ausgewertet — Rollenänderung wirkt sofort; Deaktivierung führt beim nächsten Laden zur Abmeldung.
+- **Demo-Daten zurücksetzen:** Anmeldung bleibt, falls der Benutzer im Demo-Bestand existiert und aktiv ist; sonst Abmeldung.
+
+### F) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Alle Seiten werden im Browser aufgebaut | Daten und Anmeldung liegen im Browser-Speicher; der Server kennt sie nicht. |
+| Eigener Anmelde-Bereitsteller über dem Datenspeicher | Jede Seite kennt den aktuellen Benutzer, ohne ihn selbst laden zu müssen. |
+| Eine zentrale Rechte-Regel | Ein Ort für alle Rechte; keine widersprüchlichen Prüfungen in einzelnen Features. |
+| Zugriffswächter als umschließende Bausteine | Neue Seiten werden durch einfaches Einbetten geschützt. |
+| „Keine Berechtigung" als eigene Anzeige statt stiller Weiterleitung | Vorgabe der Spec; verständlich für den Benutzer. |
+| Deutsche Adressen (`/anmelden`, `/verwaltung`) | Konsistent mit deutscher Oberfläche. |
+| „Demo-Daten zurücksetzen" auf `/verwaltung` | Ersetzt die temporäre Platzierung auf der Startseite aus PROJ-1. |
+
+### G) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.** Next.js-Routing, vorhandene shadcn/ui-Komponenten, Sonner.
+
+### H) Testbarkeit
+- Unit-Tests der Rechte-Regel (Administrator / Bearbeiter berechtigt / nicht berechtigt / inaktiv).
+- Unit-Tests des Anmelde-Bereitstellers (Start mit gültiger/inaktiver/fehlender Anmeldung, Wechsel, Abmelden).
+- E2E: Anmelden als Administrator und Bearbeiter, Navigation je Rolle, Direktaufruf ohne Recht, Wechsel auf erlaubter und nicht erlaubter Seite, Reload bleibt angemeldet.
 
 ## QA Test Results
 _To be added by /qa_
