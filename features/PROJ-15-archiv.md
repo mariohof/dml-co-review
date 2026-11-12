@@ -1,6 +1,6 @@
 # PROJ-15: Archiv SEND/REPLY
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -144,12 +144,72 @@ Leer: „Noch keine Workflow-Schritte"
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Archivseite `/dmrl/[ID]/archiv` mit Registerkarten, gewählte Karte in der Adresse | Verlinkbar, Zurück-Taste | 2026-11-12 |
+| Eigene Seite für archivierten Stand `/dmrl/[ID]/archiv/[Stand-ID]` | Platz für große Tabellen, verlinkbar | 2026-11-12 |
+| Anzeige liest archivierte Datei mit DML-Leser (PROJ-8) neu ein | Exakt der archivierte Inhalt | 2026-11-12 |
+| Namen über IDs aktuell angezeigt, Datei unverändert | Umbenennung sichtbar, Nachweis byte-genau | 2026-11-12 |
+| Ausschließlich Lesen; Wiederverwendung Eintragstabelle, Download-Helfer, Freigabestand-Export | Keine neuen Bausteine | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Das Archiv ist eine **reine Anzeigeseite je DMRL** mit drei Registerkarten. Es nutzt ausschließlich vorhandene Bausteine: Eintragstabelle (PROJ-7), DML-Leser (PROJ-8), Download-Helfer (PROJ-9), Freigabestand-Seite und -Export (PROJ-14), Rechte-Regel (PROJ-2). Nichts wird geschrieben. Alles im Browser, kein Backend nötig.
+
+### A) Seiten und Komponentenstruktur
+```
+Seite „Archiv" (/dmrl/[ID]/archiv?ansicht=austausch|freigaben|verlauf)
++-- Zugriffswächter „DMRL erlaubt?" (PROJ-2)
++-- Kopf: System · MI · Issue · aktueller DMRL-Status · Link zurück zur DMRL
++-- Registerkarten (shadcn Tabs; gewählte Karte steht in der Adresse)
+    +-- „Austausch"
+    |   +-- Liste der Archivstände, neueste oben (shadcn Table)
+    |   |   +-- Richtung (Badge SEND/REPLY) · Versionsindex · Partner (CAGE + Name) · Datum · Bearbeiter
+    |   |   +-- Bezug (`dmlref`) · Einträge (bei REPLY: freigegeben / zu überarbeiten) · Dateiname
+    |   |   +-- Kennzeichen „zurückgezogen" mit Datum, Administrator, Begründung (Tooltip/Zeile)
+    |   |   +-- Aktionen: „Anzeigen" · „Herunterladen"
+    |   +-- Leer: „Noch kein Austausch mit einem Partner"
+    +-- „Freigabestände"
+    |   +-- Liste: Datum · REPLY · Bearbeiter · Anzahl Einträge
+    |   +-- Aktionen: „Anzeigen" (→ Freigabestand-Seite PROJ-14) · „Als CSV exportieren" · „Als XML exportieren"
+    |   +-- Leer: „Die DMRL wurde noch nie freigegeben"
+    +-- „Verlauf"
+        +-- Filter nach Aktionsart (shadcn Select)
+        +-- Tabelle: Datum/Uhrzeit · Benutzer · Aktion · Details (seitenweise)
+        +-- Leer: „Noch keine Workflow-Schritte"
+
+Seite „Archivierter Stand" (/dmrl/[ID]/archiv/[Stand-ID])
++-- Kopf: Richtung · Versionsindex · Partner · Datum · Bearbeiter · Bezug · Bemerkung (dml/remarks) · „Herunterladen"
++-- Eintragstabelle (PROJ-7, nur lesend) — bei REPLY mit Spalten Antwort und Kommentar
++-- Falls die Datei nicht lesbar ist: Hinweis „Inhalt kann nicht angezeigt werden" — Download bleibt möglich
+```
+
+### B) Datenmodell (in Klartext)
+Keine Änderung, nur Lesen (PROJ-1): Archivstände (inkl. Originaldatei, Zuordnung REPLY ↔ SEND, Kennzeichen „zurückgezogen"), Freigabestände, Verlaufseinträge. **Namen** von Benutzern und Organisationen werden über die gespeicherte ID mit dem **aktuellen** Namen angezeigt; inaktive Benutzer mit Badge „inaktiv". Die archivierte Datei selbst bleibt unverändert.
+
+### C) Abläufe
+- **Herunterladen:** Download-Helfer liefert die gespeicherte Originaldatei unverändert mit Original-Dateinamen.
+- **Anzeigen:** archivierte Datei mit dem DML-Leser für das Issue des Systems lesen → Eintragstabelle. Kein erneutes Prüfen.
+- **Verlauf filtern:** Filter wirkt nur auf die Anzeige.
+
+### D) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Registerkarten mit eigener Adresse je Karte | Direkt verlinkbar (z. B. „Verlauf" aus dem Dashboard); Zurück-Taste funktioniert. |
+| Eigene Seite für einen archivierten Stand | Große Tabellen brauchen Platz; verlinkbar. |
+| Anzeige liest die gespeicherte Datei neu ein | Zeigt garantiert genau den archivierten Inhalt — keine separat gespeicherte Kopie, die abweichen könnte. |
+| Aktuelle Namen über IDs, Datei unverändert | Umbenennungen sind sichtbar, der Nachweis bleibt byte-genau. |
+| Nur Lesen, keine Lösch-/Änderungsaktionen | PRD: dauerhafte Archivierung. |
+| Wiederverwendung vorhandener Bausteine | Kein neuer Code für Tabellen, Lesen oder Downloads. |
+
+### E) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.**
+
+### F) Testbarkeit
+- Unit-Tests: Sortierung und Kettenanzeige, zurückgezogener SEND, Namensauflösung (inaktiv, umbenannt), Verlaufsfilter.
+- E2E: Demo PHUNGUN — 3 Archivstände, Download byte-genau (CRLF erhalten), Anzeige REPLY C1234 mit Antworten, Verlauf mit 3 Einträgen; DMRL ohne Austausch zeigt Leerhinweise; Bearbeiter ohne Berechtigung.
 
 ## QA Test Results
 _To be added by /qa_

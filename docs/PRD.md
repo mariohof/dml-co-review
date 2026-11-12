@@ -28,7 +28,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | DMRL-Export CSV/XML (jederzeit, ohne Sperre) | Planned (PROJ-18) |
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Architected (PROJ-11) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Architected (PROJ-12, PROJ-13) |
-| P0 (MVP) | Freigabestatus & Archiv | Planned (PROJ-14, PROJ-15) |
+| P0 (MVP) | Freigabestatus & Archiv | Architected (PROJ-14, PROJ-15) |
 | P1 | Dashboard / Übersicht | Planned (PROJ-16) |
 
 Details und Abhängigkeiten: siehe `features/INDEX.md`.
