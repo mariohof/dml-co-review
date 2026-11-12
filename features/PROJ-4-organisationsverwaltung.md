@@ -1,6 +1,6 @@
 # PROJ-4: Organisationsverwaltung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -83,7 +83,7 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 ### Löschen
 - [ ] Angenommen eine Organisation ist keiner DMRL zugeordnet und nie in einem Workflow benutzt, wenn „Löschen" gewählt wird, dann erscheint ein Bestätigungsdialog
 - [ ] Angenommen der Lösch-Dialog ist geöffnet, wenn bestätigt wird, dann ist die Organisation entfernt; wenn abgebrochen wird, bleibt sie erhalten
-- [ ] Angenommen eine Organisation ist einer DMRL zugeordnet, die noch keinen Workflow durchlaufen hat, wenn „Löschen" gewählt werden soll, dann ist die Aktion gesperrt mit dem Hinweis „Die Organisation ist der DMRL [Name] zugeordnet. Ändern Sie zuerst die Zuordnung in der DMRL."
+- [ ] Angenommen eine Organisation ist einer DMRL zugeordnet, die noch keinen Workflow durchlaufen hat, wenn „Löschen" gewählt werden soll, dann ist die Aktion gesperrt mit dem Hinweis „Die Organisation ist der DMRL [Systemname] zugeordnet. Ändern Sie zuerst die Zuordnung in der DMRL."
 - [ ] Angenommen eine Organisation ist in einem Workflow benutzt, wenn „Löschen" gewählt werden soll, dann ist die Aktion dauerhaft gesperrt mit dem Hinweis „Die Organisation ist an Workflows beteiligt und kann nicht gelöscht werden"
 - [ ] Angenommen eine gesperrte Aktion wird angezeigt, wenn der Mauszeiger darauf zeigt oder sie fokussiert wird, dann erklärt ein Tooltip den Grund
 
@@ -104,7 +104,7 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 - Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar
 
 ## Open Questions
-- [ ] Darf beim SEND der Originator selbst als Partner gewählt werden? (PROJ-12)
+- [x] Darf beim SEND der Originator selbst als Partner gewählt werden? → Nein, der Originator wird in der Partnerauswahl nicht angeboten (PROJ-12, 2026-11-12)
 - [x] Prüfung beim REPLY-Import: `dmlc/sendid` der REPLY muss dem beim SEND gewählten Partner entsprechen (PROJ-6/PROJ-13)
 
 ## Decision Log
@@ -125,12 +125,61 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Verwaltungsmuster aus PROJ-3 wiederverwendet | Einheitliche Bedienung | 2026-11-12 |
+| Gemeinsame, abgeleitete Regel „im Workflow benutzt" (Check-in im Verlauf oder Archivstand; Partner im Archiv) für PROJ-4/5/6 | Eine Definition, kein gespeichertes Kennzeichen (PROJ-1) | 2026-11-12 |
+| Aktueller Originator genügt für die Regel | Originator nach erstem Workflow unveränderlich (PROJ-6) | 2026-11-12 |
+| Verknüpfung über ID, Anzeige aktueller Name | Umfirmierung wirkt überall, Archivdateien unverändert | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+### Überblick
+Die Organisationsverwaltung nutzt das **gemeinsame Verwaltungsmuster aus PROJ-3** (Seitenrahmen, durchsuchbare Tabelle, Formular-Dialog, Bestätigung mit Sperrgründen). Neu ist eine **gemeinsame Regel „im Workflow benutzt"**, die auch PROJ-5 (Systeme) und PROJ-6 (DMRL) verwenden. Kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+Seite „Verwaltung → Organisationen" (/verwaltung/organisationen)
++-- Zugriffswächter „Administrator?" (PROJ-2)
++-- Verwaltungs-Seitenrahmen (PROJ-3)
+    +-- Titel „Organisationen" · Button „Organisation anlegen"
+    +-- Suchfeld (CAGE-Code, Name)
+    +-- Tabelle
+    |   +-- Spalten: CAGE-Code · Name · zugeordnete DMRLs (Anzahl) · Kennzeichen „im Workflow benutzt" · Aktionen
+    |   +-- Aktionen: „Bearbeiten" · „Löschen" (gesperrt ausgegraut mit Tooltip-Begründung)
+    |   +-- Leer: „Noch keine Organisationen angelegt" + Aktion · Keine Treffer: „Keine Organisationen gefunden"
+    +-- Formular-Dialog „Organisation anlegen / bearbeiten"
+    |   +-- CAGE-Code (automatisch Großbuchstaben; gesperrt mit Hinweis, wenn benutzt) · Name
+    +-- Bestätigungsdialog „Löschen"
+```
+
+### B) Datenmodell (in Klartext)
+Keine Änderung — Organisation laut PROJ-1: ID, CAGE-Code, Name. Verknüpfungen zu DMRLs (Originator) und Archivständen (Partner) laufen über die ID; deshalb bleibt bei einer Namensänderung alles korrekt verknüpft, archivierte XML-Dateien bleiben unverändert.
+
+### C) Fachregeln (eine Stelle, ohne Oberfläche)
+- **Prüfung:** CAGE-Code genau 5 Buchstaben/Ziffern, in Großbuchstaben, eindeutig (eigener Code ausgenommen); Name 2–120 Zeichen nach Entfernen der Randleerzeichen.
+- **Zugeordnete DMRLs:** DMRLs mit dieser Organisation als Originator (Anzahl und Systemnamen für Meldungen).
+- **Gemeinsame Regel „im Workflow benutzt"** (abgeleitet, nicht gespeichert — PROJ-1):
+  - eine DMRL mit dieser Organisation als Originator hat mindestens einen **abgeschlossenen Check-in** (Verlauf) oder **Archivstand** (SEND/REPLY), oder
+  - die Organisation ist **Partner** eines Archivstands (SEND oder REPLY).
+  Da der Originator nach dem ersten Workflow nicht mehr geändert werden kann (PROJ-6), genügt der aktuelle Originator.
+- **Rechte je Situation** (Löschen / CAGE-Code ändern / Name ändern) laut Tabelle der Spec, mit Begründungstext für Tooltip und Hinweise.
+
+### D) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Gemeinsames Verwaltungsmuster aus PROJ-3 | Einheitliche Bedienung, kaum neuer Aufwand. |
+| Gemeinsame Regel „im Workflow benutzt" für Organisationen, Systeme und DMRLs | Eine Definition für PROJ-4/5/6 — keine abweichenden Auslegungen. |
+| Ableitung aus Verlauf und Archiv statt gespeichertem Kennzeichen | Kann nicht „vergessen" werden und bleibt dauerhaft korrekt. |
+| Verknüpfung über ID, Anzeige des aktuellen Namens | Umfirmierung wirkt überall; CAGE-Code in Dateien bleibt unverändert. |
+| CAGE-Code-Feld wandelt Eingabe sofort in Großbuchstaben | Verhindert Tippfehler-Duplikate („c1234" vs. „C1234"). |
+
+### E) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.**
+
+### F) Testbarkeit
+- Unit-Tests: CAGE-Prüfung (Länge, Zeichen, Groß-/Kleinschreibung, Eindeutigkeit), Regel „im Workflow benutzt" (Originator mit Check-in, Originator mit Archiv, Partner im Archiv, zugeordnet ohne Workflow, unbenutzt), Rechte-Tabelle.
+- E2E: Anlegen/Bearbeiten/Löschen; Demo-Daten: D0815 und C1234 als benutzt erkennbar, Löschen und CAGE-Änderung gesperrt.
 
 ## QA Test Results
 _To be added by /qa_
