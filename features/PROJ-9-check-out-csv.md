@@ -1,6 +1,6 @@
 # PROJ-9: Check-out CSV
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -149,12 +149,72 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Workflow-Aktionen als Verfügbarkeitsregel (Grund) + atomare Ausführung inkl. Verlauf | Einheitliches Muster für PROJ-9/10/12/13 | 2026-11-12 |
+| Sperre mit Kopie der Einträge ist Quelle für CSV, erneuten Download und Check-in-Vergleich | Identische Dateien, eindeutige Vergleichsbasis | 2026-11-12 |
+| Erst speichern, dann Download | Kein Download ohne Sperre; blockierter Download lösbar | 2026-11-12 |
+| Gemeinsamer CSV-Schreiber (PapaParse) und gemeinsame Spaltenliste mit dem CSV-Leser (PROJ-8) | Rundlauf ohne Abweichung; auch PROJ-14/18 | 2026-11-12 |
+| Gemeinsamer Download-Helfer für CSV/XML/Prüfberichte | Einheitliches Herunterladen | 2026-11-12 |
+| Dateiname beim erneuten Download mit Jahr des Check-outs | Identische Datei | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Der Check-out ist die erste **Workflow-Aktion**. Er legt ein Muster fest, das auch Check-in, SEND, REPLY und Zurückziehen nutzen: Jede Aktion hat eine **Verfügbarkeitsregel** (erlaubt ja/nein + Grund — angezeigt in der Aktionsleiste, PROJ-7) und eine **Ausführung**, die alle Änderungen inkl. Verlaufseintrag in **einer** Speicherung schreibt. Dazu kommt ein gemeinsamer **CSV-Schreiber** für Check-out, Freigabestand und Export. Alles im Browser, kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+DMRL-Ansicht (PROJ-7) — Aktionsleiste
++-- „Check-out" → Bestätigungsdialog (shadcn AlertDialog)
+|   +-- Dateiname · Hinweis „Die DMRL wird für andere gesperrt, bis Sie sie wieder einchecken"
+|   +-- „Auschecken" · „Abbrechen"
++-- nur Sperrinhaber:
+|   +-- „CSV erneut herunterladen" (ohne Dialog)
+|   +-- „Check-out zurücknehmen" → Bestätigungsdialog (Hinweis: Änderungen in der CSV gehen verloren)
++-- nur Administrator bei fremder Sperre:
+    +-- „Sperre aufheben" → Bestätigungsdialog mit Name des Sperrinhabers
+Kopfbereich (PROJ-7): „Ausgecheckt von [Name] seit [Datum, Uhrzeit]"
+```
+
+### B) Datenmodell (in Klartext)
+Keine neuen Objekte — genutzt wird die **Sperre an der DMRL** aus PROJ-1: Benutzer, Zeitpunkt und eine **Kopie aller Einträge beim Check-out**. Aus dieser Kopie entstehen die heruntergeladene CSV, der erneute Download und die Vergleichsbasis für den Check-in (PROJ-10). Zusätzlich je Schritt ein **Verlaufseintrag** (Check-out / Check-out zurückgenommen / Sperre aufgehoben mit Sperrinhaber).
+
+### C) Verfügbarkeitsregeln
+| Aktion | Verfügbar wenn | Grund sonst |
+|---|---|---|
+| Check-out | berechtigt (Rechte-Regel PROJ-2) · nicht gesperrt · Status ≠ *gesendet* | „Ausgecheckt von …" bzw. „Die DMRL wartet auf die Antwort des Partners …" |
+| CSV erneut herunterladen | angemeldeter Benutzer = Sperrinhaber | — (nicht angezeigt) |
+| Check-out zurücknehmen | angemeldeter Benutzer = Sperrinhaber | — (nicht angezeigt) |
+| Sperre aufheben | Administrator · gesperrt · Sperrinhaber ≠ angemeldeter Benutzer | — (nicht angezeigt) |
+
+### D) Abläufe
+- **Check-out:** Verfügbarkeit erneut prüfen → Sperre mit Kopie der Einträge + Verlaufseintrag in einer Speicherung → CSV aus der Kopie erzeugen → Download. Schlägt das Speichern fehl (Speicher voll), gibt es keinen Download und keine Sperre. Wird der Download vom Browser blockiert, bleibt die Sperre; „CSV erneut herunterladen" hilft.
+- **Erneuter Download:** CSV aus der gespeicherten Kopie; Dateiname mit dem Jahr des Check-outs → identische Datei.
+- **Zurücknehmen / Aufheben:** Sperre entfernen + Verlaufseintrag in einer Speicherung; Einträge und Status bleiben unverändert.
+
+### E) Gemeinsamer CSV-Schreiber
+- Erzeugt die CSV laut Spec: 27 Spalten in fester Reihenfolge, Semikolon, UTF-8 mit BOM, Anführungszeichen nur wo nötig, Einträge sortiert nach DMC (gemeinsame DMC-Sortierung aus PROJ-7).
+- Genutzt von PROJ-9 (Check-out), PROJ-14 (Freigabestand), PROJ-18 (Export). Die Spaltenliste ist dieselbe, die der CSV-Leser in PROJ-8 erwartet — eine gemeinsame Definition.
+- Ein gemeinsamer **Download-Helfer** speichert Dateien mit vorgegebenem Namen (auch für XML-Dateien in PROJ-12/14/18 und Prüfberichte).
+
+### F) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Muster „Verfügbarkeitsregel + atomare Ausführung" für alle Workflow-Aktionen | Aktionsleiste zeigt überall Gründe; kein halb ausgeführter Workflow. |
+| Erst speichern, dann herunterladen | Ohne gespeicherte Sperre gibt es keine Datei; ein blockierter Download ist über „erneut herunterladen" lösbar. |
+| CSV immer aus der gespeicherten Kopie | Erneuter Download ist identisch; Check-in vergleicht gegen genau diese Daten. |
+| Gemeinsamer CSV-Schreiber mit PapaParse (PROJ-8) | Lesen und Schreiben folgen denselben Regeln; Rundlauf Check-out → Check-in ohne Abweichung. |
+| Spaltenliste an einer Stelle | CSV-Leser (PROJ-8) und -Schreiber können nicht auseinanderlaufen. |
+| Verfügbarkeit vor der Ausführung erneut geprüft | Schutz bei veralteter Anzeige (zweiter Tab). |
+
+### G) Abhängigkeiten (Pakete)
+- **papaparse** (bereits durch PROJ-8 vorgesehen). Keine weiteren.
+
+### H) Testbarkeit
+- Unit-Tests: Verfügbarkeitsregeln (alle Zeilen der Tabelle), CSV-Schreiber (Kopfzeile, Reihenfolge, BOM, Anführungszeichen, führende Nullen, Umlaute), Rundlauf CSV schreiben → CSV lesen (PROJ-8) ohne Änderung, Sperre/Verlauf nach Check-out, Rücknahme, Aufhebung.
+- E2E: Check-out Demo PHUNGUN nicht möglich (gesendet); Check-out Fahrzeug → Datei `DML-GTFDEMO-D0815-C-[Jahr].csv`, Sperre sichtbar; anderer Benutzer sieht Sperre; Rücknahme; Admin hebt Sperre auf.
 
 ## QA Test Results
 _To be added by /qa_
