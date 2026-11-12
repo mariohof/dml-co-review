@@ -1,6 +1,6 @@
 # PROJ-14: Freigabestatus DMRL
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -141,12 +141,62 @@ Kopfbereich der Ansicht (Ergänzung PROJ-7):
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Zentrales Statusmodul für alle Übergänge (genutzt von PROJ-10/12/13) | Eine Quelle der Wahrheit | 2026-11-12 |
+| Grundregel „freigegeben ⇔ alle Einträge freigegeben" auch in der Ladeprüfung (PROJ-1) | Widersprüche werden erkannt | 2026-11-12 |
+| Freigabestand-Seite `/dmrl/[ID]/freigabestand/[Stand-ID]` | Verlinkbar, klar vom aktuellen Stand getrennt | 2026-11-12 |
+| Wiederverwendung Eintragstabelle (PROJ-7), CSV-Schreiber (PROJ-9), DML-Schreiber (PROJ-12), Export-Kopf (PROJ-18) | Keine neuen Bausteine | 2026-11-12 |
+| Dateinamen mit Datum der Freigabe | Eindeutig je Freigabestand | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+PROJ-14 liefert drei Dinge: (1) ein **zentrales Statusmodul**, das alle Statusübergänge der Tabellen dieser Spec umsetzt und von Check-in, SEND, Zurückziehen und REPLY genutzt wird, (2) die **Anzeige des Freigabe-Nachweises** im Kopfbereich der DMRL-Ansicht und (3) eine **Seite „Freigabestand"** mit CSV- und XML-Export. Freigabe-Nachweis und Freigabestand werden beim REPLY-Import gespeichert (PROJ-13). Alles im Browser; nur die XSD-Prüfung des XML-Exports läuft auf dem Server (PROJ-11).
+
+### A) Komponentenstruktur
+```
+DMRL-Ansicht (PROJ-7) — Kopfbereich (Ergänzung)
++-- freigegeben: „Freigegeben am … durch REPLY [Partner] [Versionsindex] — übernommen von [Name]"
++-- nicht freigegeben, früher freigegeben: Banner „Nicht freigegeben" + „Letzte Freigabe: …" + Link „Freigabestand anzeigen"
++-- nie freigegeben: nur Banner
+
+Seite „Freigabestand" (/dmrl/[ID]/freigabestand/[Stand-ID])
++-- Zugriffswächter „DMRL erlaubt?" (PROJ-2)
++-- Kopf: deutliche Kennzeichnung „Freigabestand vom [Datum] (REPLY [Versionsindex])" · Bearbeiter · Link zurück zur DMRL
++-- Aktionen: „Als CSV exportieren" · „Als XML exportieren"
++-- Eintragstabelle (PROJ-7, nur lesend) mit den Einträgen des Freigabestands
+```
+
+### B) Datenmodell (in Klartext)
+Keine neuen Objekte — Freigabe-Nachweis (an der DMRL) und Freigabestände (eigene Liste) sind in PROJ-1 definiert und werden in PROJ-13 geschrieben. „Letzte Freigabe" = neuester Freigabestand der DMRL. Ein Freigabestand wird nie verändert oder gelöscht.
+
+### C) Zentrales Statusmodul
+- Setzt die beiden Übergangstabellen (Einträge, DMRL) dieser Spec an **einer** Stelle um; PROJ-10, 12 und 13 rufen es auf, statt Status selbst zu setzen.
+- **Grundregel als Prüfung:** DMRL *freigegeben* ⇔ mindestens ein Eintrag und alle Einträge *freigegeben*. Wird zusätzlich in der Gültigkeitsprüfung beim Laden (PROJ-1) geprüft; ein Verstoß gilt als beschädigter Datenbestand.
+- Liefert die Anzeigewerte (Badge-Texte und -Farben) für Status (gemeinsam mit PROJ-7/16).
+
+### D) Export des Freigabestands
+- **CSV:** gemeinsamer CSV-Schreiber (PROJ-9) mit den Einträgen des Freigabestands; Dateiname `DML-{MI}-{CAGE}-{DML-Typ}-Freigabe-{JJJJ-MM-TT}.csv` (Datum der Freigabe).
+- **XML:** gemeinsamer DML-Schreiber (PROJ-12) mit Export-Kopf aus PROJ-18 (`issno` 000 / `inwork` 01, `remarks` „Freigabestand vom … — Export vom …"), XSD-Prüfung (PROJ-11) vor dem Download; Dateiname `…-Freigabe-{JJJJ-MM-TT}.XML`.
+- Beide ohne Sperre, Status, Archiv oder Verlauf.
+
+### E) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Ein zentrales Statusmodul | Statusübergänge sind an einer Stelle definiert; Workflows können nicht voneinander abweichen. |
+| Grundregel zusätzlich beim Laden geprüft | Ein widersprüchlicher Stand würde sonst unbemerkt eine falsche Freigabe anzeigen. |
+| Freigabestand als eigene Seite mit eigener Adresse | Verlinkbar aus Ansicht und Archiv (PROJ-15); deutlich vom aktuellen Stand getrennt. |
+| Eintragstabelle, CSV- und DML-Schreiber wiederverwendet | Keine neuen Bausteine; gleiche Darstellung und Dateien wie überall. |
+| Dateiname mit Datum der Freigabe | Eindeutig je Freigabestand. |
+
+### F) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.**
+
+### G) Testbarkeit
+- Unit-Tests: jede Zeile beider Übergangstabellen, Grundregel (inkl. DMRL ohne Einträge), „letzte Freigabe" bei mehreren Freigabeständen, Gültigkeitsprüfung erkennt Verstoß.
+- E2E: Demo-REPLY mit nur `y` (angepasste Testdatei) → freigegeben + Nachweis; Check-in mit Änderung → Banner + „Letzte Freigabe"; Freigabestand anzeigen, CSV/XML exportieren.
 
 ## QA Test Results
 _To be added by /qa_
