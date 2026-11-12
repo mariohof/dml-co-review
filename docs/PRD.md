@@ -19,7 +19,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 
 | Priority | Feature | Status |
 |----------|---------|--------|
-| P0 (MVP) | Datenhaltung (JSON/localStorage) + Demo-Daten | Planned |
+| P0 (MVP) | Datenhaltung (JSON/localStorage) + Demo-Daten | Architected |
 | P0 (MVP) | Simulierte Anmeldung & Rollenwechsel | Roadmap |
 | P0 (MVP) | Benutzer-, Organisations-, System- und DMRL-Verwaltung (Admin) | Roadmap |
 | P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | Roadmap |

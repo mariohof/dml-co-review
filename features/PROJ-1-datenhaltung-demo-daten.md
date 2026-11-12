@@ -1,8 +1,8 @@
 # PROJ-1: Datenhaltung (JSON/localStorage) + Demo-Daten
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-11
-**Last Updated:** 2026-11-11
+**Last Updated:** 2026-11-12
 
 ## Dependencies
 - None (Basis für alle weiteren Features)
@@ -156,12 +156,87 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| localStorage, ein JSON-Paket unter einem festen Schlüssel | PRD-Constraint (kein Backend); atomares Schreiben verhindert inkonsistente Teilstände | 2026-11-12 |
+| Formatversion im Datenpaket | Erkennt inkompatible ältere Stände nach Modelländerungen | 2026-11-12 |
+| Zod-Schema zur Prüfung beim Laden | Bereits installiert; erkennt beschädigte Daten vor der Nutzung | 2026-11-12 |
+| Zentraler Datenspeicher via React Context | Einheitlicher Datenstand für alle Features, keine zusätzliche State-Bibliothek nötig (CLAUDE.md: useState/Context) | 2026-11-12 |
+| Alle CSV-Felder als String gespeichert | Führende Nullen (S1000D-Codes) bleiben erhalten | 2026-11-12 |
+| Beispiel-XMLs als Projektdateien; PHUNGUN-Einträge zur Laufzeit aus SEND 00002 per Browser-DOMParser gelesen | Archiv und Einträge aus einer Quelle; gleiche Technik wird für REPLY-Import benötigt | 2026-11-12 |
+| Firmenname in Datei 02 einmalig in der Projektkopie neutralisiert | Archiv bleibt byte-genau zur Projektkopie, ohne reale Firmennamen | 2026-11-12 |
+| 4.2-/5.0-Demo-Einträge fest hinterlegt | Keine XML-Beispiele vorhanden, kein Archiv benötigt | 2026-11-12 |
+| Kein Tab-Abgleich (kein storage-Event) | Prototyp; Mehrbenutzerfähigkeit ist Non-Goal | 2026-11-12 |
+| Reset-Button vorübergehend auf Startseite bis PROJ-2 | PROJ-1 muss ohne Rollenkonzept testbar sein | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+PROJ-1 ist überwiegend „unsichtbare" Infrastruktur: ein zentraler Datenspeicher im Browser, auf den alle späteren Features zugreifen, plus ein Demo-Datenpaket. Sichtbar werden nur drei Dinge: ein kurzer Ladezustand beim Start, ein Fehlerbildschirm bei beschädigten Daten und der Reset-Dialog für den Administrator.
+
+### A) Komponentenstruktur
+```
+App-Rahmen (umschließt alle Seiten)
++-- Datenspeicher-Bereitsteller (lädt beim Start, stellt Daten allen Seiten bereit)
+    +-- Ladezustand ("Daten werden geladen…") — kurz beim ersten Rendern
+    +-- Fehlerbildschirm "Daten beschädigt"
+    |   +-- Erklärungstext
+    |   +-- Button "Demo-Daten neu laden"
+    +-- Normale Anwendung (alle weiteren Seiten, PROJ-2 ff.)
+        +-- Button "Demo-Daten zurücksetzen" (nur für Administrator, Platzierung im Admin-Bereich ab PROJ-2)
+            +-- Bestätigungsdialog (shadcn AlertDialog)
+            +-- Erfolgs-/Fehlermeldung (Toast)
+```
+Bis PROJ-2 (Rollen) existiert, wird der Reset-Button vorübergehend auf der Startseite angezeigt, damit PROJ-1 testbar ist.
+
+### B) Datenmodell (in Klartext)
+Alle Daten liegen als **ein einziges JSON-Paket** unter einem festen Schlüssel im localStorage. Das Paket enthält:
+- **Formatversion** — Nummer des Datenformats; passt sie nicht zur App, gilt der Bestand als inkompatibel
+- **Organisationen**, **Benutzer**, **Systeme**, **DMRLs**, **DMRL-Einträge**, **Archivstände** — jeweils als Liste
+- Jedes Objekt hat eine **eindeutige ID**; Verknüpfungen (z. B. Eintrag → DMRL, DMRL → System) laufen über diese IDs
+- **Archivstände** enthalten den kompletten XML-Text als unveränderten Text
+- **DMRL-Einträge** speichern alle CSV-Felder als Text (nicht als Zahl), damit führende Nullen (`00`, `001`, `01`) erhalten bleiben
+
+Felder und Werte entsprechen dem Abschnitt „Datenobjekte" oben und `docs/dmrl-mapping.md`.
+
+**Größe:** Die drei Beispiel-XMLs sind zusammen ca. 50 KB; der Browser stellt ca. 5 MB bereit → ausreichend für viele weitere SEND/REPLY-Zyklen in der Demo.
+
+### C) Ablauf beim Start
+1. App wird geöffnet → Datenspeicher prüft localStorage
+2. **Nichts vorhanden** → Demo-Paket wird erzeugt und gespeichert
+3. **Vorhanden und gültig** → wird geladen
+4. **Vorhanden, aber ungültig oder alte Formatversion** → Fehlerbildschirm mit „Demo-Daten neu laden"
+
+**Gültigkeitsprüfung:** Beim Laden wird das gesamte Paket gegen eine Strukturbeschreibung geprüft (Pflichtfelder vorhanden, richtige Typen, Verknüpfungen zeigen auf existierende IDs).
+
+**Speichern:** Jede Änderung schreibt das komplette Paket in einem Schritt. Scheitert das Schreiben (Speicher voll), bleibt der vorherige Stand im Browser unangetastet und eine Fehlermeldung erscheint.
+
+### D) Demo-Datenpaket
+- Die **drei Beispiel-XMLs** werden einmalig ins Projekt kopiert (Ordner für Demo-Daten). Beim Kopieren wird der reale Firmenname in Datei 02 (11 Vorkommen in `rpcname`) durch einen neutralen Namen ersetzt. Diese bereinigten Kopien sind die „Originale" für das Archiv und werden danach byte-genau übernommen.
+- Die **32 Einträge der PHUNGUN-DMRL** werden beim Erzeugen des Demo-Pakets direkt aus SEND 00002 (Datei 03) ausgelesen. Dafür nutzt die App den eingebauten XML-Leser des Browsers. Die gleiche Lesetechnik wird später für den REPLY-Import (PROJ-13) gebraucht.
+- **Fahrzeug (4.2)** und **Fluggerät (5.0)** werden als fest hinterlegte Einträge (je ca. 10) mitgeliefert, da es dafür keine XML-Beispiele gibt und kein Archiv nötig ist.
+- **Organisationen, Benutzer, Systeme** werden fest hinterlegt.
+
+### E) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Ein JSON-Paket statt vieler Einzelschlüssel | Ein Schreibvorgang = alles oder nichts. Halb gespeicherte, widersprüchliche Daten können nicht entstehen. |
+| Zentraler Datenspeicher für die ganze App | Alle Seiten sehen denselben Stand; spätere Features (Check-in, REPLY) ändern Daten an einer Stelle. |
+| Strukturprüfung beim Laden mit Zod (bereits installiert) | Erkennt beschädigte oder veraltete Daten zuverlässig, bevor die App damit arbeitet. |
+| Formatversion im Paket | Wenn sich das Datenmodell in späteren Features ändert, erkennt die App alte Stände und bietet den Neuaufbau an. |
+| CSV-Felder als Text | Führende Nullen sind fachlich relevant (S1000D) und dürfen nie verloren gehen. |
+| Beispiel-XMLs als Dateien im Projekt, Einträge daraus ausgelesen | Eine Quelle der Wahrheit — Archiv und Einträge können nicht auseinanderlaufen. |
+| Firmenname einmalig in der Projektkopie ersetzen | Archiv bleibt „unverändert" gegenüber der Projektkopie und enthält trotzdem keine realen Firmennamen. |
+| Daten werden erst im Browser geladen (nicht serverseitig) | localStorage existiert nur im Browser; deshalb kurzer Ladezustand beim Start. |
+
+### F) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.** Genutzt werden bereits installiert: Zod (Strukturprüfung), shadcn/ui AlertDialog + Button, Sonner (Toast-Meldungen).
+- Das XML-Auslesen erfolgt mit dem im Browser eingebauten XML-Leser.
+
+### G) Testbarkeit
+- Unit-Tests: Demo-Paket erzeugen (Anzahlen 3 Systeme / 32 Einträge / 3 Archivstände), Gültigkeitsprüfung (gültig / beschädigt / alte Formatversion), Speicher-voll-Fehler.
+- E2E-Test: Erststart → Daten vorhanden; Reload → Änderungen bleiben; Reset → Ausgangszustand.
 
 ## QA Test Results
 _To be added by /qa_
