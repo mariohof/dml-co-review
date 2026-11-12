@@ -1,6 +1,6 @@
 # PROJ-1: Datenhaltung (JSON/localStorage) + Demo-Daten
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-11
 **Last Updated:** 2026-11-12
 
@@ -317,6 +317,27 @@ Der unversionierte Code aus dem ersten `/frontend`-Lauf wird weiterverwendet, ab
 - Unit-Tests: Demo-Paket (3 Systeme, 32 + 10 + 10 Einträge, 3 Archivstände, 3 Verlaufseinträge, Berechtigungen), Gültigkeitsprüfung (gültig / beschädigt / Formatversion 1 / fehlendes Systemkonto / kaputte Verknüpfung), Speicher voll, Byte-Genauigkeit der Archivstände.
 - Demo-Dateien: xmllint-Prüfung (gültig bzw. erwartete Fehler).
 - E2E: Erststart → Daten vorhanden; Reload → Änderungen bleiben; Reset → Ausgangszustand, Anmeldung bleibt.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-12 — `/frontend PROJ-1`_
+
+**Umgesetzt**
+- `src/lib/data/schema.ts` — Datenmodell Formatversion **2** (Zod): Organisation, Benutzer (aktiv, Systemkonto), System (Beschreibung), DMRL (Originator, DML-Typ, Sicherheitseinstufung 01–20, Berechtigungen, Partner-Bemerkung, Freigabe-Nachweis, Sperre mit Kopie der Einträge), Einträge, Archiv (Partner, REPLY↔SEND, Zählwerte, zurückgezogen), Freigabestände, Verlauf. Gültigkeitsprüfung beim Laden: eindeutige IDs, alle Verknüpfungen, genau ein aktives Systemkonto, max. eine DMRL je System, Grundregel „DMRL freigegeben ⇔ alle Einträge freigegeben" (PROJ-14).
+- `src/lib/data/storage.ts` — Laden/Speichern des Datenpakets (unverändert im Prinzip) + **Anmelde-Speicher** `dmrl-ms:session` (für PROJ-2).
+- `src/lib/data/demo-data.ts` — Demo-Bestand mit den festgelegten Namen, Berechtigungen, PHUNGUN-Archiv (3 Stände, byte-genau, REPLY↔SEND verknüpft), 32 PHUNGUN-Einträgen mit ergänzten Ausgabedaten, Verlauf (3 Einträge), je 10 regelkonformen Einträgen für GTFDEMO (4.2) und THSDEMO (5.0).
+- `src/lib/data/queries.ts` — abgeleitete Werte: letzter nicht zurückgezogener SEND, aktueller Versionsindex.
+- `src/lib/data/dml-parser-2-3.ts` — an das neue Schema angepasst (DML-Leser 4.2/5.0 folgt mit PROJ-8/13).
+- `scripts/generate-demo-files.py` + **`public/demo-dateien/`** — Demo-REPLY auf SEND 00002 (30 y / 2 n) und Testdateien 1–4 inkl. `LIESMICH.txt`; per xmllint geprüft.
+- `src/components/data/*` — Bereitsteller, Lade-/Fehlerbildschirm, Reset-Dialog (Text um Verlauf/Freigabestände/Anmeldung ergänzt), vorläufige Übersicht auf `/` (bis PROJ-2/16).
+
+**Tests** (Vitest, 43 Tests): `demo-data.test.ts`, `storage.test.ts`, `dml-parser-2-3.test.ts`, `demo-files.test.ts` (xmllint-Prüfung, übersprungen ohne xmllint).
+
+**Weitere Änderungen**
+- ESLint auf das neue Konfigurationsformat umgestellt (`eslint.config.mjs`, Skript `lint` = `eslint .`), da `next lint` in Next.js 16 entfällt; für shadcn-Komponenten ist die Regel `react-hooks/purity` abgeschaltet.
+
+**Abweichungen / Hinweise**
+- Demo-Verlauf PHUNGUN: REPLY C1234 00001 hat alle 11 Einträge genehmigt; laut Spec gibt es im Demo-Bestand dennoch **keinen Freigabestand** (Annahme: Freigabe wurde danach durch Check-in wieder aufgehoben — der zugehörige Check-in-Verlaufseintrag ist nicht enthalten).
+- Browser-E2E-Tests stehen aus (Playwright-Browser nicht installiert) → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_

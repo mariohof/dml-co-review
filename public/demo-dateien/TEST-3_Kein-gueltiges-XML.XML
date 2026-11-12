@@ -1,0 +1,986 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dml direction="reply"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"     
+   xsi:noNamespaceSchemaLocation="http://www.s1000d.org/S1000D_2-3/xml_schema_flat/dml.xsd">
+   <dmlc>
+      <modelic>PHUNGUN</modelic>
+      <sendid>C1234</sendid>
+      <dmltype type="c"/>
+      <diyear>2026</diyear>
+      <seqnum>00002</seqnum>
+   </dmlc>
+   <issno issno="001" inwork="00" type="new"/>
+   <issdate day="15" month="10" year="2026"/>
+   <security class="01"/>
+   <dmlref>
+      <dmlc>
+         <modelic>PHUNGUN</modelic>
+         <sendid>D0815</sendid>
+         <dmltype type="c"/>
+         <diyear>2026</diyear>
+         <seqnum>00002</seqnum>
+      </dmlc>
+      <issno issno="001" inwork="00" type="new"/>
+   </dmlref>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A00</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>1000</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Fähigkeitsträger1 F1, monatlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A00</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>1500</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Gerätesatz F1</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A00</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>2000</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Fähigkeitsträger1 F2, halbjährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A00</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>2500</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Gerätesatz F2</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A00</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>3000</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Fähigkeitsträger1 F3, jährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>01</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Fähigkeitsträger1 F1, monatlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>02</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Türen, Klappen und Abdeckungen F1, monatlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>03</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Klimaanlage F1, monatlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>04</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten ABC-Anlage F1, monatlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>05</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Fähigkeitsträger1 F2, halbjährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="n">
+         <remarks>Tech Name entspricht nicht der SNS – bitte prüfen</remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>06</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Schaltschrank F2, halbjährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>07</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Türen, Klappen und Abdeckungen F2, halbjährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>08</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Klimaanlage F2, halbjährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>09</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Fähigkeitsträger1 F3, jährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>10</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Türen, Klappen und Abdeckungen F3, jährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>11</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Klimaanlage F3, jährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>12</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten BV-SOTAS TaWAN F3, jährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="n">
+         <remarks>Infocode nicht im beauftragten Leistungsumfang</remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>13</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Gerätesatz F1</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>14</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Gerätesatz F2</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>15</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist  Schaltschrank, wöchentlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>16</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist  Sichtprüfung Schaltschrank (Filterlüfter), 2000 Betriebsstunden</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>17</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist Reinigung des Zyklonfilters (ausgebaut), 4-jährig</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>18</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist Stromerzeugeraggregat, 250 Betriebsstunden</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>19</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist Stromerzeugeraggregat, 1000 Betriebsstunden</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>20</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist Stromerzeugeraggregat, 3000 Betriebsstunden</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="n">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A05</chapnum>
+               <section>4</section>
+               <subsect>0</subsect>
+               <subject>0000</subject>
+               <discode>21</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist Stromerzeugeraggregat, 6000 Betriebsstunden</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A06</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>2000</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Schaltschrank F2, halbjährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A06</chapnum>
+               <section>3</section>
+               <subsect>0</subsect>
+               <subject>1000</subject>
+               <discode>01</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist  Schaltschrank, wöchentlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A06</chapnum>
+               <section>3</section>
+               <subsect>0</subsect>
+               <subject>1000</subject>
+               <discode>02</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Sonderfrist  Sichtprüfung Schaltschrank (Filterlüfter), 2000 Betriebsstunden</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A18</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>1000</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Türen, Klappen und Abdeckungen F1, monatlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A18</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>2000</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Türen, Klappen und Abdeckungen F2, halbjährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <dmentry type="d">
+      <addresdm>
+         <dmc>
+            <avee>
+               <modelic>PHUNGUN</modelic>
+               <sdc>A</sdc>
+               <chapnum>A18</chapnum>
+               <section>0</section>
+               <subsect>0</subsect>
+               <subject>3000</subject>
+               <discode>00</discode>
+               <discodev>A</discodev>
+               <incode>000</incode>
+               <incodev>A</incodev>
+               <itemloc>A</itemloc>
+            </avee>
+         </dmc>
+         <dmtitle>
+            <techname>Fristenarbeiten Türen, Klappen und Abdeckungen F3, jährlich</techname>
+            <infoname>Funktion, Daten für Pläne und Beschreibung</infoname>
+         </dmtitle>
+         <language language="de" country="DE"/>
+      </addresdm>
+      <security class="01"/>
+      <rpc>D7177</rpc>
+      <answer answer="y">
+         <remarks></remarks>
+      </answer>
+      <remarks></remarks>
+   </dmentry>
+   <remarks>Bitte abgelehnte Einträge überarbeiten.</remarks>

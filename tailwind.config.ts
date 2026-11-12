@@ -9,7 +9,14 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['var(--font-noto-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif']
+  		},
   		colors: {
+  			brand: {
+  				dark: 'hsl(var(--brand-dark))',
+  				darkest: 'hsl(var(--brand-darkest))'
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
