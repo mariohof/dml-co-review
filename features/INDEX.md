@@ -25,7 +25,7 @@
 | PROJ-8 | Fachliches Regelwerk — gemeinsame Prüfregeln für Check-in und REPLY · P0 · Deps: PROJ-7 | Planned | [PROJ-8](PROJ-8-fachliches-regelwerk.md) | 2026-11-11 |
 | PROJ-9 | Check-out CSV — Export zur externen Bearbeitung, sperrt die DMRL · P0 · Deps: PROJ-7 | Planned | [PROJ-9](PROJ-9-check-out-csv.md) | 2026-11-11 |
 | PROJ-10 | Check-in CSV — Import mit Regelprüfung, Übernahme, Entsperren · P0 · Deps: PROJ-8, PROJ-9 | Planned | [PROJ-10](PROJ-10-check-in-csv.md) | 2026-11-11 |
-| PROJ-11 | XSD-Validierung — Prüfung gegen dml.xsd (2.3/4.2/5.0) via xmllint · P0 · Deps: PROJ-5 | Roadmap | — | 2026-11-11 |
+| PROJ-11 | XSD-Validierung — Prüfung gegen dml.xsd (2.3/4.2/5.0) via xmllint · P0 · Deps: PROJ-5 | Planned | [PROJ-11](PROJ-11-xsd-validierung.md) | 2026-11-11 |
 | PROJ-12 | SEND-Export — S1000D-DMRL-XML mit Versionsindex NNNNN-JJJJ · P0 · Deps: PROJ-7, PROJ-11 | Roadmap | — | 2026-11-11 |
 | PROJ-13 | REPLY-Import — Partner-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | Roadmap | — | 2026-11-11 |
 | PROJ-14 | Freigabestatus DMRL — Ableitung aus Eintragsstatus, Aufhebung bei Änderung · P0 · Deps: PROJ-10, PROJ-13 | Roadmap | — | 2026-11-11 |
