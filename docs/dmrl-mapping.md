@@ -64,10 +64,66 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 
 Dateinamensschema: `DML-{modelic}-{sendid}-{dmltype}-{diyear}-{seqnum}_{issno}-{inwork}.XML`
 
+## Mapping Issue 4.2 / 5.0
+
+Abgeleitet aus `schemas/s1000d/issue-4.2/dml.xsd` und `issue-5.0/dml.xsd` (für diese Felder identisch) und der Beispieldatei `docs/beispiele/issue-4.2/DML-S1000DBIKE-B6865-S-2016-00002_001-00.XML`. Präfix `E` = `/dml/dmlContent/dmlEntry`, `R` = `E/dmRef/dmRefIdent`.
+
+### Datenmoduleintrag
+| CSV-Feld | Issue 2.3 | Issue 4.2 / 5.0 |
+| --- | --- | --- |
+| dmentryType | dmentry/@type | E/@dmlEntryType |
+| modelic | …/avee/modelic | R/dmCode/@modelIdentCode |
+| sdc | …/avee/sdc | R/dmCode/@systemDiffCode |
+| chapnum | …/avee/chapnum | R/dmCode/@systemCode |
+| section | …/avee/section | R/dmCode/@subSystemCode |
+| subsect | …/avee/subsect | R/dmCode/@subSubSystemCode |
+| subject | …/avee/subject | R/dmCode/@assyCode |
+| discode | …/avee/discode | R/dmCode/@disassyCode |
+| discodev | …/avee/discodev | R/dmCode/@disassyCodeVariant |
+| incode | …/avee/incode | R/dmCode/@infoCode |
+| incodev | …/avee/incodev | R/dmCode/@infoCodeVariant |
+| itemloc | …/avee/itemloc | R/dmCode/@itemLocationCode |
+| techname | addresdm/dmtitle/techname | E/dmRef/dmRefAddressItems/dmTitle/techName |
+| infoname | addresdm/dmtitle/infoname | E/dmRef/dmRefAddressItems/dmTitle/infoName |
+| language | addresdm/language/@language | R/language/@languageIsoCode |
+| country | addresdm/language/@country | R/language/@countryIsoCode |
+| security | dmentry/security/@class | E/security/@securityClassification |
+| rpc | dmentry/rpc | E/responsiblePartnerCompany/@enterpriseCode |
+| rpcname | dmentry/rpc/@rpcname | E/responsiblePartnerCompany/enterpriseName |
+| issno | addresdm/issno/@issno | R/issueInfo/@issueNumber (+ `@inWork="00"`) |
+| type (DM-Ausgabetyp) | addresdm/issno/@type | E/@issueType |
+| day / month / year | addresdm/issdate/@day/@month/@year | E/dmRef/dmRefAddressItems/issueDate/@day/@month/@year |
+| answer | dmentry/answer/@answer | E/answer/@answerToEntry |
+| answer_comment | dmentry/answer/remarks | E/answer/remarks/simplePara |
+| remarks | dmentry/remarks | E/remarks/simplePara |
+
+### Kopf
+| Feld | Issue 2.3 | Issue 4.2 / 5.0 |
+| --- | --- | --- |
+| direction | /dml/@direction | /dml/@listDirection |
+| dmlc | /dml/dmlc/(modelic, sendid, dmltype/@type, diyear, seqnum) | …/dmlIdent/dmlCode/@modelIdentCode, @senderIdent, @dmlType, @yearOfDataIssue, @seqNumber |
+| issno | /dml/issno/@issno, @inwork, @type | …/dmlIdent/issueInfo/@issueNumber, @inWork; …/dmlStatus/@issueType |
+| issdate | /dml/issdate | …/dmlAddressItems/issueDate |
+| security | /dml/security/@class | …/dmlStatus/security/@securityClassification |
+| dmlref | /dml/dmlref/dmlc (+ issno) | …/dmlStatus/dmlRef/dmlRefIdent/dmlCode (+ issueInfo) |
+| brexDmRef | — | …/dmlStatus/brexDmRef/dmRef (Pflicht) — Standard-BREX: 4.2 `S1000D-F-04-10-0301-00A-022A-D`, 5.0 `S1000D-G-04-10-0301-00A-022A-D` |
+| remarks | /dml/remarks | …/dmlStatus/remarks/simplePara |
+
+(`…` = `/dml/identAndStatusSection/dmlAddress` bzw. `/dml/identAndStatusSection`)
+
+### Wertebereiche laut Schema
+- `securityClassification`: 4.2/5.0 `01`–`20`, 2.3 `01`–`24` → Anwendung verwendet `01`–`20`
+- `issueNumber`: 4.2 `\d{3}`, 5.0 `\d{3,5}`; `inWork` `\d{2}`
+- `languageIsoCode` `[a-z]{2,3}`, `countryIsoCode` `[A-Z]{2}`
+- `issueType`: new, changed, deleted, revised, status, rinstate-changed, rinstate-revised, rinstate-status
+- `dmlEntryType`: c, d, n; `dmlType`: c, p, s; `answerToEntry`: y, n
+- Jede DML braucht mindestens einen Eintrag (alle Issues)
+
 ## XSD-Schemas
 - Ablage: `schemas/s1000d/issue-{2.3,4.2,5.0}/` (`dml.xsd` + eingebundene Schemas)
 - Issue 5.0: Import von `xml.xsd` auf lokale Kopie umgestellt (statt `http://www.w3.org/2001/xml.xsd`), damit `xmllint --nonet` offline validiert
 - Alle drei Schemas kompilieren mit `xmllint --nonet`; die PHUNGUN-Beispieldateien sind gegen Issue 2.3 gültig
 
 ## Offen
-- Mapping für Issue 4.2 und 5.0 (abweichende Elementnamen, z. B. `dmlEntry`, `dmRef`, `dmCode`-Attribute)
+- Beispieldatei Issue 5.0 fehlt noch (`docs/beispiele/issue-5.0/`)
+- Ausgabedaten der Einträge (`issno`, DM-Ausgabetyp, Datum) im SEND-XML: derzeit enthalten (PROJ-12), ggf. später anpassen (NSG sieht sie nicht vor)

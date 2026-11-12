@@ -61,7 +61,7 @@ Alle Regelverstöße sind **Fehler**; es gibt keine Warnungen. Einzige Ausnahme 
 | techname, infoname | Text |
 | language | 2 Kleinbuchstaben, gültiger Sprachcode nach **ISO 639-1** (z. B. `de`, `en`) |
 | country | 2 Großbuchstaben, gültiger Ländercode nach **ISO 3166** (Alpha-2, z. B. `DE`, `US`) |
-| security | 2 Ziffern, `00`–`99` (nur Format; kein Vergleich mit der DMRL-Einstufung) |
+| security | 2 Ziffern, `01`–`20` (Wertebereich der Schemas 4.2/5.0; kein Vergleich mit der DMRL-Einstufung) |
 | rpc, rpcname | Text |
 | issno | 3 Ziffern, führende Nullen |
 | type (DM-Ausgabetyp) | `new`, `changed`, `revised`, `deleted` |
@@ -173,7 +173,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 
 ### Format & Pflicht (Check-in und REPLY)
 - [ ] Angenommen `chapnum` hat 4 Zeichen, wenn geprüft wird, dann meldet der Bericht einen Formatfehler mit Zeile, DMC, Feld und gefundenem Wert
-- [ ] Angenommen `security` ist `A1` oder `123`, wenn geprüft wird, dann wird ein Formatfehler gemeldet; `01` ist gültig
+- [ ] Angenommen `security` ist `A1`, `123`, `00` oder `21`, wenn geprüft wird, dann wird ein Formatfehler gemeldet; `01` ist gültig
 - [ ] Angenommen in einer Check-in-Datei ist `security` = `1`, `issno` = `1`, `month` = `9`, wenn geprüft wird, dann werden die Werte zu `01`, `001`, `09` aufgefüllt, als Hinweis gemeldet und kein Fehler erzeugt
 - [ ] Angenommen ein REPLY enthält `security` = `1`, wenn geprüft wird, dann wird ein Formatfehler gemeldet (kein Auffüllen beim REPLY)
 - [ ] Angenommen `dmentryType` ist `x`, wenn geprüft wird, dann wird ein Fehler gemeldet; leer, `n`, `c`, `d` sind gültig
@@ -261,6 +261,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 | REPLY: Partner, `dmlref` auf letzten SEND, gleiche DMCs, keine Feldänderungen | Nachvollziehbarer Zyklus (NSG 1.2.3, PROJ-6) | 2026-11-12 |
 | `language` nach ISO 639-1, `country` nach ISO 3166 (2-stelliger Ländercode) | Vorgabe Product Owner; S1000D verwendet den 2-stelligen Ländercode | 2026-11-12 |
 | Sicherheitseinstufung der Einträge: nur Format 00–99 | Vorgabe Product Owner | 2026-11-12 |
+| Sicherheitseinstufung auf `01`–`20` eingeschränkt (alle Issues) | Schemas 4.2/5.0 erlauben nur 01–20; Fehler früh beim Check-in statt beim SEND (PROJ-12) | 2026-11-12 |
 | Alles-oder-nichts, vollständiger Bericht, nur Fehler (keine Warnungen) | PRD: fehlerhafte Dateien werden nicht übernommen | 2026-11-12 |
 | Fehlende führende Nullen bei `security`, `issno`, `day`, `month` beim Check-in auffüllen (Hinweis, kein Fehler) | Vorgabe Product Owner (PROJ-9) — Excel entfernt Nullen | 2026-11-12 |
 | Spalten exakt in festgelegter Reihenfolge, keine zusätzlichen Spalten | Vorgabe Product Owner | 2026-11-12 |

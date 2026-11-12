@@ -21,14 +21,14 @@ Der Administrator legt unter „Verwaltung → DMRLs" zu einem System dessen DMR
 | Bezeichnung | keine eigene — angezeigt wird die Bezeichnung des Systems |
 | Originator (Sender-Organisation) | Pflicht; Auswahl aus angelegten Organisationen (CAGE-Code + Name); wird als `dmlc/sendid` verwendet |
 | DML-Typ | Pflicht; Auswahl `c`, `p` oder `s`; vorbelegt mit `c` |
-| Sicherheitseinstufung | Pflicht; genau 2 Ziffern, `00`–`99`; vorbelegt mit `01` |
+| Sicherheitseinstufung | Pflicht; genau 2 Ziffern, `01`–`20`; vorbelegt mit `01` |
 
 Nicht an der DMRL gepflegt:
 - **Berechtigte Bearbeiter** → PROJ-17
 - **Partner** — wird beim SEND gewählt und in der Übertragungshistorie gespeichert (PROJ-12); beim REPLY wird geprüft, ob die Antwort vom richtigen Partner kommt (PROJ-13)
 - **Ausführender Benutzer je Workflow-Schritt** — wird im Workflow/Archiv gespeichert (PROJ-9, 10, 12, 13)
 
-Die Sicherheitseinstufung der DMRL ist **unabhängig** von der Sicherheitseinstufung der Datenmodul-Einträge. Einträge werden eigenständig geprüft (Format `00`–`99`, Regelwerk PROJ-8) und müssen nicht mit der DMRL übereinstimmen.
+Die Sicherheitseinstufung der DMRL ist **unabhängig** von der Sicherheitseinstufung der Datenmodul-Einträge. Einträge werden eigenständig geprüft (Format `01`–`20`, Regelwerk PROJ-8) und müssen nicht mit der DMRL übereinstimmen.
 
 ## Änderungs- und Löschregeln
 
@@ -78,7 +78,7 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - [ ] Angenommen es gibt keine Organisationen, wenn der Anlegen-Dialog geöffnet wird, dann weist er darauf hin, zuerst eine Organisation anzulegen
 - [ ] Angenommen der Dialog ist gültig ausgefüllt, wenn gespeichert wird, dann erscheint die DMRL mit Status „in Bearbeitung" und ohne Einträge in der Liste
 - [ ] Angenommen System oder Originator sind nicht gewählt, wenn gespeichert wird, dann erscheint je Pflichtfeld eine Fehlermeldung und nichts wird gespeichert
-- [ ] Angenommen die Sicherheitseinstufung ist nicht genau zwei Ziffern (z. B. „1", „100", „A1"), wenn gespeichert wird, dann erscheint „Sicherheitseinstufung muss zweistellig sein (00–99)" und nichts wird gespeichert
+- [ ] Angenommen die Sicherheitseinstufung ist nicht genau zwei Ziffern (z. B. „1", „100", „A1", „00", „21"), wenn gespeichert wird, dann erscheint „Sicherheitseinstufung muss zweistellig sein (01–20)" und nichts wird gespeichert
 - [ ] Angenommen der DML-Typ wird ausgewählt, wenn die Auswahl geöffnet wird, dann stehen genau `c`, `p` und `s` zur Verfügung
 - [ ] Angenommen eine DMRL wurde zu einem System angelegt, wenn danach die Systemverwaltung geöffnet wird, dann ist die Systembezeichnung dieses Systems nicht mehr änderbar (PROJ-5)
 
@@ -122,6 +122,7 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 | Partner wird beim SEND gewählt und in der Übertragungshistorie gespeichert; REPLY wird gegen ihn geprüft | Vorgabe Product Owner — Nachvollziehbarkeit „an wen geliefert" und Absenderprüfung | 2026-11-12 |
 | DML-Typ: Auswahl `c`, `p`, `s`, vorbelegt `c` | Vorgabe Product Owner | 2026-11-12 |
 | Sicherheitseinstufung 2 Ziffern 00–99, vorbelegt `01` | Vorgabe Product Owner (Format); Vorbelegung entspricht Beispieldateien | 2026-11-12 |
+| Sicherheitseinstufung auf `01`–`20` eingeschränkt | Schemas 4.2/5.0 erlauben nur 01–20 (2.3: 01–24); Vorgabe Product Owner (PROJ-12) | 2026-11-12 |
 | Sicherheitseinstufung der DMRL unabhängig von der der Einträge; Einträge werden eigenständig geprüft | Vorgabe Product Owner | 2026-11-12 |
 | Berechtigungen als eigenes Feature (PROJ-17) | Vorgabe Product Owner — Single Responsibility | 2026-11-12 |
 | Ausführender Bearbeiter wird je Workflow-Schritt gespeichert | Vorgabe Product Owner — Nachvollziehbarkeit | 2026-11-12 |
