@@ -23,7 +23,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Simulierte Anmeldung & Rollenwechsel | Planned |
 | P0 (MVP) | Benutzer-, Organisations-, System- und DMRL-Verwaltung, DMRL-Berechtigungen (Admin) | Planned (PROJ-3–6, PROJ-17) |
 | P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | Planned (PROJ-7) |
-| P0 (MVP) | Fachliches Regelwerk | Roadmap |
+| P0 (MVP) | Fachliches Regelwerk | Planned (PROJ-8) |
 | P0 (MVP) | Check-out/Check-in Excel/CSV mit Sperre | Roadmap |
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Roadmap |
 | P0 (MVP) | SEND-Export & REPLY-Import | Roadmap |

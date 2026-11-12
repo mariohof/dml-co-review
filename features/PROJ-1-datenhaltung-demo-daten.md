@@ -158,6 +158,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 | Kein Abgleich zwischen mehreren Tabs/Browsern | localStorage-Prototyp; echte Mehrbenutzerfähigkeit ist Non-Goal | 2026-11-11 |
 | Benutzer ohne Organisation, mit Status aktiv/inaktiv | Vorgabe Product Owner (PROJ-3) | 2026-11-12 |
 | Demo-Admin ist das Systemkonto „Administrator" (Kennzeichen Systemkonto); fehlt es, gilt der Datenbestand als beschädigt | Vorgabe Product Owner (PROJ-2) — jederzeit Zugang zur Verwaltung | 2026-11-12 |
+| Demo-Einträge PHUNGUN werden um `issno` (`001`), DM-Ausgabetyp (`new`) und Ausgabedatum (Datum des SEND) ergänzt; archivierte XML-Dateien bleiben byte-genau | Pflichtfelder laut PROJ-8; Beispieldateien enthalten diese Felder nicht | 2026-11-12 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |

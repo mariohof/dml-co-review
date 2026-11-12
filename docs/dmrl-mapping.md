@@ -20,8 +20,8 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 | itemloc | /dml/dmentry/addresdm/dmc/avee/itemloc | 1 Stelle, alphanumerisch |
 | techname | /dml/dmentry/addresdm/dmtitle/techname | alphanumerisch |
 | infoname | /dml/dmentry/addresdm/dmtitle/infoname | alphanumerisch |
-| language | /dml/dmentry/addresdm/language/@language | 2 Stellen, alphanumerisch |
-| country | /dml/dmentry/addresdm/language/@country | 2 Stellen, alphanumerisch |
+| language | /dml/dmentry/addresdm/language/@language | 2 Stellen, ISO 639-1 (klein, z. B. `de`) |
+| country | /dml/dmentry/addresdm/language/@country | 2 Stellen, ISO 3166 Alpha-2 (groß, z. B. `DE`) |
 | security | /dml/dmentry/security/@class | 2 Stellen, führende Nullen |
 | rpc | /dml/dmentry/rpc (Elementinhalt) | alphanumerisch, Firmencode |
 | rpcname | /dml/dmentry/rpc/@rpcname | alphanumerisch, Firmenname (optional) |
@@ -32,6 +32,7 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 | year | /dml/dmentry/addresdm/issdate/@year | 4 Stellen, führende Nullen |
 | answer | /dml/dmentry/answer/@answer | y, n |
 | answer_comment | /dml/dmentry/answer/remarks | alphanumerisch |
+| remarks | /dml/dmentry/remarks | alphanumerisch, eigene Bemerkung zum Eintrag (optional) |
 
 ### Ergänzungen aus den Beispieldateien
 - `rpc`: Elementinhalt = Firmencode (z. B. `D7177`), Attribut `@rpcname` = Firmenname (optional)
@@ -65,3 +66,4 @@ Dateinamensschema: `DML-{modelic}-{sendid}-{dmltype}-{diyear}-{seqnum}_{issno}-{
 
 ## Offen
 - Mapping für Issue 4.2 und 5.0 (abweichende Elementnamen, z. B. `dmlEntry`, `dmRef`, `dmCode`-Attribute)
+- XSD-Dateien liegen unter `schemas/s1000d/issue-{2.3,4.2,5.0}/`. Issue 5.0 importiert `http://www.w3.org/2001/xml.xsd` aus dem Internet — für die Offline-Validierung mit `xmllint --nonet` muss `xml.xsd` lokal bereitgestellt werden (PROJ-11)
