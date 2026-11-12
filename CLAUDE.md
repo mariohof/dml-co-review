@@ -7,7 +7,7 @@
 - **Framework:** Next.js 16 (App Router), TypeScript
 - **Styling:** Tailwind CSS + shadcn/ui (copy-paste components)
 - **Backend:** Supabase (PostgreSQL + Auth + Storage) - optional
-- **Deployment:** Vercel
+- **Deployment:** lokal (macOS / Windows 11 / Linux), Start per Python-Startskript; kein Vercel (siehe `docs/PRD.md`, Constraints)
 - **Validation:** Zod + react-hook-form
 - **State:** React useState / Context API
 

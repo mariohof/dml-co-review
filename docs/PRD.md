@@ -39,7 +39,7 @@ Details und Abhängigkeiten: siehe `features/INDEX.md`.
 
 ## Constraints
 - **No backend — localStorage only:** Datenhaltung und Benutzer werden über JSON-Strukturen in localStorage simuliert; keine echte Authentifizierung.
-- **Betrieb:** vorerst nur lokal auf einem Rechner mit macOS, Windows 11 oder Linux (kein Cloud-Hosting/Vercel); xmllint muss installiert sein.
+- **Betrieb:** vorerst nur lokal auf einem Rechner mit macOS, Windows 11 oder Linux (kein Cloud-Hosting/Vercel). Start über ein **Python-Startskript**, das Voraussetzungen (Node.js, xmllint) prüft, die App baut, lokal startet und den Browser öffnet; xmllint muss installiert sein.
 - **XSD-Validierung:** Pflicht-Validierung gegen `dml.xsd` mit `xmllint` (MacOS/Windows/Linux). Da xmllint nicht im Browser läuft, wird dafür eine serverseitige Next.js-Funktion benötigt. Die Schemas für Issue 2.3, 4.2 und 5.0 werden vom Product Owner bereitgestellt.
 - **S1000D-Version:** wird pro System festgelegt; alle drei Versionen sind im MVP enthalten.
 - **Design system:** see `docs/design-system.md`
