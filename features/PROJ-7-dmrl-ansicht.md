@@ -1,6 +1,6 @@
 # PROJ-7: DMRL-Ansicht
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -24,8 +24,8 @@ DMRL-Ansicht
 |   +-- Versionsindex (z. B. 00002-2026) · letzter SEND (Partner, Datum, Bearbeiter)
 |   +-- DMRL-Status (farbiges Kennzeichen) · Sperre ("ausgecheckt von … seit …")
 |   +-- Hinweisbanner, solange nicht freigegeben
-+-- Aktionsleiste: Check-out · Check-in · SEND · REPLY importieren · Archiv
-|   (Verhalten → PROJ-9, 10, 12, 13, 15)
++-- Aktionsleiste: Check-out · Check-in · SEND · REPLY importieren · Exportieren · Archiv
+|   (+ Sperrinhaber/Administrator-Aktionen; Verhalten → PROJ-9, 10, 12, 13, 15, 18)
 +-- Zählerleiste je Eintragsstatus
 +-- Filter (Eintragsstatus, Eintragstyp) · Suche (DMC, Tech Name, Info Name)
 +-- Eintragstabelle
@@ -35,7 +35,7 @@ DMRL-Ansicht
 
 ## Darstellung der Einträge
 
-**DMC** wird aus den Einzelfeldern zusammengesetzt (Issue 2.3):
+**DMC** wird aus den Einzelfeldern zusammengesetzt (gleich für Issue 2.3, 4.2 und 5.0):
 `modelic-sdc-chapnum-section subsect-subject-discode discodev-incode incodev-itemloc`
 Beispiel: `PHUNGUN-A-A05-40-0000-01A-000A-A`
 
@@ -77,7 +77,7 @@ Betrifft ausschließlich den **Eintragstyp** (`/dml/dmentry/@type`); der DM-Ausg
 - Entfernen von Einträgen aus der DMRL nach genehmigter Löschung (Einträge bleiben bestehen)
 - Sortierung/Spaltenauswahl durch den Benutzer (feste Sortierung nach DMC)
 - Export der Ansicht (Druck, PDF)
-- DMC-Darstellung für Issue 4.2/5.0 mit abweichender Struktur → bei Klärung des Mappings (PROJ-12/13)
+- Learn Code / Learn Event Code (Issue 4.2/5.0) — nicht im Datenmodell
 
 ## Acceptance Criteria
 
@@ -139,8 +139,8 @@ Betrifft ausschließlich den **Eintragstyp** (`/dml/dmentry/@type`); der DM-Ausg
 - Tastaturbedienbarkeit der Tabelle und des Detailfensters
 
 ## Open Questions
-- [ ] DMC-Zusammensetzung für Issue 4.2 / 5.0 (abweichende Codestruktur, z. B. Learn Code) — nach Schema-Vergleich (PROJ-12/13)
-- [ ] Soll die Spalte „Sicherheitseinstufung" Abweichungen zur DMRL-Einstufung hervorheben? (Annahme: nein, unabhängig — PROJ-6)
+- [x] DMC-Zusammensetzung für Issue 4.2 / 5.0 → gleiche 11 Felder und gleiche Darstellung für alle Issues (Mapping PROJ-12); Learn Code wird nicht unterstützt (2026-11-12)
+- [x] Soll die Spalte „Sicherheitseinstufung" Abweichungen zur DMRL-Einstufung hervorheben? → Nein, unabhängig (PROJ-6) (2026-11-12)
 
 ## Decision Log
 
@@ -161,12 +161,73 @@ Betrifft ausschließlich den **Eintragstyp** (`/dml/dmentry/@type`); der DM-Ausg
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Wiederverwendbare, nur lesende Eintragstabelle (PROJ-7/14/15) | Einheitliche Darstellung, einmal gebaut | 2026-11-12 |
+| Seitenweise Anzeige, 50 Einträge je Seite | Performance bei großen DMRLs | 2026-11-12 |
+| Detailfenster als seitliches Sheet | Tabelle bleibt sichtbar | 2026-11-12 |
+| Aktionsleiste ohne eigene Logik; Verfügbarkeit + Grund aus den Workflow-Regeln | Keine doppelte Logik | 2026-11-12 |
+| Gemeinsame DMC-Darstellung und Status-/Typ-Badges | Konsistenz über alle Seiten | 2026-11-12 |
+| Ergänzt: Freigabe-Nachweis, Partner-Bemerkung, Export, Aktionen für Sperrinhaber/Administrator | Anforderungen aus PROJ-9/12/13/14/18 | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+### Überblick
+Die DMRL-Ansicht (`/dmrl/[ID]`) ist die zentrale Arbeitsseite. Sie ist reine Anzeige und Startpunkt aller Workflow-Aktionen. Kernbaustein ist eine **wiederverwendbare Eintragstabelle (nur lesend)**, die auch für Freigabestände (PROJ-14) und archivierte Stände (PROJ-15) genutzt wird. Alles im Browser, kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+Seite „DMRL-Ansicht" (/dmrl/[ID])
++-- Zugriffswächter „DMRL erlaubt?" (PROJ-2) · „DMRL nicht gefunden"
++-- Kopfbereich (shadcn Card)
+|   +-- Systembezeichnung · MI · Issue · Originator (CAGE + Name) · DML-Typ · Sicherheitseinstufung
+|   +-- Versionsindex + letzter SEND (Partner, Datum, Bearbeiter) bzw. „— noch nicht gesendet —"
+|   +-- Status-Badge · Sperre „Ausgecheckt von … seit …"
+|   +-- Freigabe-Nachweis bzw. „Letzte Freigabe …" mit „Freigabestand anzeigen" (PROJ-14)
+|   +-- Bemerkung des Partners aus dem letzten REPLY (PROJ-13)
+|   +-- Banner „Nicht freigegeben …" (shadcn Alert)
++-- Aktionsleiste (Schaltflächen; Verfügbarkeit aus den Workflow-Regeln, gesperrte mit Tooltip-Grund)
+|   +-- Check-out · Check-in · SEND · REPLY importieren · Exportieren (CSV/XML) · Archiv
+|   +-- nur Sperrinhaber: „Check-out zurücknehmen" · „CSV erneut herunterladen" (PROJ-9)
+|   +-- nur Administrator: „Sperre aufheben" (PROJ-9) · „SEND zurückziehen" (PROJ-12)
++-- Eintragstabelle (wiederverwendbar, nur lesend)
+    +-- Zählerleiste je Eintragsstatus + Gesamt
+    +-- Filter: Eintragsstatus · Eintragstyp (shadcn Select) · Suche (Input)
+    +-- Tabelle (shadcn Table), sortiert nach DMC, seitenweise (shadcn Pagination, 50 je Seite)
+    |   +-- DMC · Tech Name · Info Name · Eintragstyp · Sicherheitseinstufung · Status · Partner-Kommentar
+    |   +-- Kennzeichen „DM gelöscht"; Zeilen mit `d` durchgestrichen/ausgegraut; „zu überarbeiten" hervorgehoben
+    +-- Leer / „Keine Einträge gefunden" + „Filter zurücksetzen"
+    +-- Detailfenster (shadcn Sheet, seitlich): alle 27 Felder, nur lesend
+```
+Die Dialoge der Aktionen (Check-in-Zusammenfassung, SEND-Dialog usw.) gehören zu den jeweiligen Features und werden aus der Aktionsleiste geöffnet.
+
+### B) Datenmodell (in Klartext)
+Keine Änderung — liest DMRL, Einträge, Archivstände, Freigabe-Nachweis und Sperre aus dem Datenbestand (PROJ-1). **Abgeleitet** (nicht gespeichert): DMC-Darstellung, Versionsindex und letzter SEND (letzter nicht zurückgezogener SEND im Archiv), Zähler je Status.
+
+### C) Gemeinsame Bausteine
+| Baustein | Genutzt von |
+|---|---|
+| **Eintragstabelle (nur lesend)** mit Zählern, Filter, Suche, Seiten, Detailfenster; optional Spalten für Antworten | PROJ-7, PROJ-14 (Freigabestand), PROJ-15 (archivierte Stände) |
+| **DMC-Darstellung** aus den 11 Feldern | Tabelle, Prüfberichte (PROJ-8), Zusammenfassungen (PROJ-10/13), Dashboard-Aufgaben |
+| **Status- und Eintragstyp-Kennzeichen** (Badges mit festen Farben laut Design-System) | Ansicht, Dashboard (PROJ-16), Verwaltung (PROJ-6) |
+| **Aktions-Verfügbarkeit** je Aktion: erlaubt ja/nein + Grund — kommt aus den Regeln der Workflow-Features | Aktionsleiste |
+
+### D) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Wiederverwendbare Eintragstabelle | Ansicht, Freigabestand und Archiv zeigen Einträge identisch — einmal bauen, dreimal nutzen. |
+| Seitenweise Anzeige (50 je Seite) statt alles auf einmal | Auch große DMRLs bleiben flüssig; Filter/Suche wirken auf alle Einträge. |
+| Detailfenster seitlich (Sheet) | Tabelle bleibt sichtbar; schnelles Durchklicken mehrerer Einträge. |
+| Aktionen fragen ihre Verfügbarkeit bei den Workflow-Regeln ab | Ansicht enthält keine eigene Workflow-Logik; gesperrte Aktionen erklären den Grund. |
+| Versionsindex und letzter SEND werden aus dem Archiv abgeleitet | Eine Quelle der Wahrheit (PROJ-1). |
+| Feste Sortierung nach DMC | Laut Spec; einfache, vorhersagbare Darstellung. |
+
+### E) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.** shadcn Table, Pagination, Select, Input, Badge, Card, Alert, Sheet, Tooltip sind installiert.
+
+### F) Testbarkeit
+- Unit-Tests: DMC-Darstellung (inkl. leerer Teilfelder), Filter/Suche, Zähler, Ableitung Versionsindex (inkl. zurückgezogener SEND).
+- E2E: Demo PHUNGUN (32 Einträge gesendet, Versionsindex 00002-2026, Banner), Filter/Suche, Detailfenster, Bearbeiter ohne Berechtigung, unbekannte DMRL.
 
 ## QA Test Results
 _To be added by /qa_

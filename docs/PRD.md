@@ -22,7 +22,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Datenhaltung (JSON/localStorage) + Demo-Daten | Architected |
 | P0 (MVP) | Simulierte Anmeldung & Rollenwechsel | Architected |
 | P0 (MVP) | Benutzer-, Organisations-, System- und DMRL-Verwaltung, DMRL-Berechtigungen (Admin) | Architected (PROJ-3–6, PROJ-17) |
-| P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | Planned (PROJ-7) |
+| P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | Architected (PROJ-7) |
 | P0 (MVP) | Fachliches Regelwerk | Planned (PROJ-8) |
 | P0 (MVP) | Check-out/Check-in CSV mit Sperre | Planned (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML (jederzeit, ohne Sperre) | Planned (PROJ-18) |
