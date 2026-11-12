@@ -1,6 +1,6 @@
 # PROJ-3: Benutzerverwaltung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -85,7 +85,7 @@ Bei Regel 3 und 4 nennt die Meldung die betroffenen DMRLs.
 - [ ] Angenommen ein Benutzer hat eine DMRL ausgecheckt, wenn er deaktiviert werden soll, dann erscheint eine Meldung mit den betroffenen DMRLs und er bleibt aktiv
 - [ ] Angenommen ein Benutzer hat den letzten SEND einer DMRL im Status „gesendet" ausgelöst, wenn er deaktiviert werden soll, dann erscheint eine Meldung mit der DMRL und dem Versionsindex (z. B. „wartet auf REPLY zu SEND 00002-2026") und er bleibt aktiv
 - [ ] Angenommen die REPLY zu diesem SEND wurde importiert, wenn der Benutzer deaktiviert werden soll, dann ist die Deaktivierung möglich
-- [ ] Angenommen ein Benutzer ist angemeldet, wenn er (z. B. in einem anderen Tab) deaktiviert wird, dann wird er beim nächsten Seitenaufruf abgemeldet und sieht „Ihr Benutzer ist deaktiviert"
+- [ ] Angenommen ein Benutzer ist angemeldet, wenn er (z. B. in einem anderen Tab) deaktiviert wird, dann wird er beim nächsten Seitenaufruf abgemeldet und sieht „Ihr Benutzer ist nicht mehr aktiv" (PROJ-2)
 
 ### Kein Löschen
 - [ ] Angenommen die Benutzerverwaltung ist geöffnet, wenn ein beliebiger Benutzer betrachtet wird, dann gibt es keine Möglichkeit, ihn zu löschen
@@ -105,7 +105,7 @@ Bei Regel 3 und 4 nennt die Meldung die betroffenen DMRLs.
 - Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar oder als Liste
 
 ## Open Questions
-- [ ] Soll im Archiv bei inaktiven Benutzern ein Vermerk „inaktiv" erscheinen? (PROJ-15)
+- [x] Soll im Archiv bei inaktiven Benutzern ein Vermerk „inaktiv" erscheinen? → Ja, Name mit Vermerk „inaktiv" (PROJ-15, 2026-11-12)
 
 ## Decision Log
 
@@ -128,12 +128,83 @@ Bei Regel 3 und 4 nennt die Meldung die betroffenen DMRLs.
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Gemeinsames Verwaltungsmuster (Seitenrahmen, Tabelle, Formular-Dialog, Bestätigung mit Sperrgründen) für PROJ-3/4/5/6/17 | Einheitliche Bedienung, weniger Code | 2026-11-12 |
+| Fachregeln (Prüfung, Sperrgründe) als eigene, oberflächenunabhängige Module | Testbar, wiederverwendbar (z. B. Sperrgründe in PROJ-17) | 2026-11-12 |
+| Gleiche Zod-Prüfung im Formular und beim Speichern | Keine Abweichung zwischen UI und Datenbestand | 2026-11-12 |
+| Anlegen/Bearbeiten im Dialog (shadcn Dialog + Form) | Wenige Felder, Liste bleibt sichtbar | 2026-11-12 |
+| Sperrgründe bei jedem Öffnen neu ermittelt, „letzter SEND" ohne zurückgezogene SENDs | Immer aktueller Stand; konsistent mit PROJ-12 | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+### Überblick
+Die Benutzerverwaltung ist die erste von fünf gleichartigen Verwaltungsseiten (PROJ-3, 4, 5, 6, 17). Sie legt dafür ein **gemeinsames Verwaltungsmuster** fest: Seitenrahmen, durchsuchbare Tabelle, Formular-Dialog, Bestätigungsdialog und Anzeige von Sperrgründen. Die fachlichen Regeln (Pflichtfelder, Eindeutigkeit, wann Deaktivieren gesperrt ist) liegen getrennt von der Oberfläche an einer Stelle und sind dadurch einzeln testbar. Kein Backend nötig — alles im Browser-Datenbestand (PROJ-1).
+
+### A) Komponentenstruktur
+```
+Seite „Verwaltung → Benutzer" (/verwaltung/benutzer)
++-- Zugriffswächter „Administrator?" (PROJ-2)
++-- Verwaltungs-Seitenrahmen (gemeinsames Muster)
+    +-- Titel „Benutzer" · Button „Benutzer anlegen"
+    +-- Suchfeld (Name)
+    +-- Tabelle (shadcn Table)
+    |   +-- Spalten: Name · Rolle (Badge) · Status (Badge aktiv/inaktiv) · Aktionen
+    |   +-- Kennzeichen „Systemkonto" am Administrator
+    |   +-- Aktionen je Zeile: „Bearbeiten" · „Deaktivieren" / „Aktivieren"
+    |   |   (beim Systemkonto nicht angeboten; gesperrte Aktion mit Tooltip-Begründung)
+    |   +-- Leer-/Keine-Treffer-Hinweis „Keine Benutzer gefunden"
+    +-- Formular-Dialog „Benutzer anlegen / bearbeiten" (shadcn Dialog + Form)
+    |   +-- Name (Eingabefeld) · Rolle (Auswahl)
+    |   +-- Fehlermeldungen je Feld · „Speichern" · „Abbrechen"
+    +-- Bestätigungsdialog „Deaktivieren / Aktivieren" (shadcn AlertDialog)
+        +-- bei Sperre: Meldung mit Grund und betroffenen DMRLs statt Bestätigung
+```
+Genutzte shadcn/ui-Bausteine (installiert): Table, Input, Select, Badge, Button, Dialog, Form, AlertDialog, Tooltip, Sonner.
+
+### B) Datenmodell (in Klartext)
+Keine Änderung am Datenbestand — Benutzer sind in PROJ-1 definiert: ID, Name, Rolle, aktiv ja/nein, Systemkonto ja/nein. Neue Benutzer erhalten eine neue eindeutige ID und sind aktiv.
+
+### C) Fachregeln (eine Stelle, ohne Oberfläche)
+- **Prüfung Name/Rolle:** Name nach Entfernen der Randleerzeichen 2–80 Zeichen, eindeutig ohne Groß-/Kleinschreibung (eigener Name ausgenommen), Rolle Pflicht. Dieselbe Prüfung gilt im Formular (sofortige Meldungen) und beim Speichern im Datenbestand.
+- **Sperrgründe für Deaktivieren** — liefert eine Liste von Gründen:
+  1. Systemkonto
+  2. angemeldeter Benutzer selbst
+  3. hat DMRL(s) ausgecheckt → Namen der DMRLs
+  4. hat den letzten (nicht zurückgezogenen) SEND einer DMRL im Status *gesendet* ausgelöst → DMRL + Versionsindex
+- **Schutz Systemkonto:** Name, Rolle und Status nicht änderbar — wird sowohl in der Oberfläche (Aktion nicht angeboten) als auch beim Speichern geprüft.
+
+### D) Abläufe
+- **Anlegen/Bearbeiten:** Dialog → Prüfung → eine atomare Speicherung → Liste und Anmeldeliste aktualisiert → Erfolgsmeldung.
+- **Eigene Rolle ändern:** nach dem Speichern wertet die zentrale Rechte-Regel (PROJ-2) sofort neu aus → bei Verlust der Admin-Rolle Wechsel zum Dashboard mit Hinweis.
+- **Deaktivieren:** Sperrgründe ermitteln → keine: Bestätigung → speichern; sonst Meldung mit Gründen, nichts gespeichert.
+- **Aktivieren:** Bestätigung → speichern; Berechtigungen (PROJ-17) gelten wieder, da sie nie entfernt wurden.
+
+### E) Gemeinsames Verwaltungsmuster (für PROJ-4, 5, 6, 17)
+| Baustein | Zweck |
+|---|---|
+| Verwaltungs-Seitenrahmen | Titel, Haupt-Aktion, Suchfeld, einheitliche Abstände |
+| Durchsuchbare Tabelle | Sortierung, Suche, Leer-/Keine-Treffer-Hinweis, Aktionen je Zeile |
+| Formular-Dialog | Anlegen/Bearbeiten mit Feldprüfung (react-hook-form + Zod) |
+| Bestätigungsdialog mit Sperrgründen | Einheitliche Darstellung „nicht möglich, weil …" |
+| Fachregel-Module je Objekt | Prüfungen und Sperrgründe ohne Oberflächenbezug, testbar |
+
+### F) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Gemeinsames Verwaltungsmuster | Fünf Verwaltungsseiten sehen gleich aus und verhalten sich gleich; weniger Aufwand, weniger Fehler. |
+| Fachregeln getrennt von der Oberfläche | Regeln (z. B. Sperrgründe) sind einzeln testbar und werden später auch von anderen Features genutzt. |
+| Eine Prüfung für Formular und Speicherung | Keine Lücke zwischen Anzeige und gespeicherten Daten. |
+| react-hook-form + Zod für Formulare | Bereits im Projekt-Stack (CLAUDE.md); deutsche Fehlermeldungen je Feld. |
+| Sperrgründe werden bei jedem Öffnen neu ermittelt | Immer aktueller Stand (z. B. nach REPLY-Import sofort deaktivierbar). |
+| Dialoge statt eigener Seiten für Anlegen/Bearbeiten | Wenige Felder; Liste bleibt sichtbar. |
+
+### G) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.** react-hook-form, Zod, shadcn/ui (inkl. Form, Dialog, AlertDialog, Table, Tooltip) sind installiert.
+
+### H) Testbarkeit
+- Unit-Tests der Fachregeln: Namensprüfung (Länge, Leerzeichen, Eindeutigkeit inkl. eigener Name), Sperrgründe 1–4 einzeln und kombiniert, Schutz Systemkonto.
+- E2E: Anlegen mit Fehlern/erfolgreich, Bearbeiten, Deaktivieren gesperrt (Demo: Anna Bearbeitung hat letzten SEND PHUNGUN ausgelöst) und erfolgreich, Aktivieren, Bearbeiter ohne Zugriff.
 
 ## QA Test Results
 _To be added by /qa_

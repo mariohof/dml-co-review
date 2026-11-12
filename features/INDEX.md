@@ -17,7 +17,7 @@
 |----|---------|--------|------|---------|
 | PROJ-1 | Datenhaltung (JSON/localStorage) + Demo-Daten — Persistenzschicht und Beispieldaten (Systeme in 2.3/4.2/5.0) · P0 · Deps: None | Architected | [PROJ-1](PROJ-1-datenhaltung-demo-daten.md) | 2026-11-11 |
 | PROJ-2 | Simulierte Anmeldung & Rollenwechsel — Benutzerauswahl, Rollen Administrator/Bearbeiter · P0 · Deps: PROJ-1 | Architected | [PROJ-2](PROJ-2-simulierte-anmeldung-rollen.md) | 2026-11-11 |
-| PROJ-3 | Benutzerverwaltung — Admin legt Benutzer an und bearbeitet sie · P0 · Deps: PROJ-2 | Planned | [PROJ-3](PROJ-3-benutzerverwaltung.md) | 2026-11-11 |
+| PROJ-3 | Benutzerverwaltung — Admin legt Benutzer an und bearbeitet sie · P0 · Deps: PROJ-2 | Architected | [PROJ-3](PROJ-3-benutzerverwaltung.md) | 2026-11-11 |
 | PROJ-4 | Organisationsverwaltung — Admin verwaltet Organisationen (CAGE-Code, Name) · P0 · Deps: PROJ-2 | Planned | [PROJ-4](PROJ-4-organisationsverwaltung.md) | 2026-11-11 |
 | PROJ-5 | Systemverwaltung — Admin verwaltet Systeme inkl. S1000D-Issue (2.3/4.2/5.0) · P0 · Deps: PROJ-2 | Planned | [PROJ-5](PROJ-5-systemverwaltung.md) | 2026-11-11 |
 | PROJ-6 | DMRL anlegen — Admin legt DMRL zu einem System an (Originator, DML-Typ, Sicherheitseinstufung) · P0 · Deps: PROJ-4, PROJ-5 | Planned | [PROJ-6](PROJ-6-dmrl-anlegen.md) | 2026-11-11 |
