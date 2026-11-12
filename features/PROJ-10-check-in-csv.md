@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -151,12 +151,83 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Mehrstufiger Check-in-Dialog (Datei → Prüfung → Bericht/Zusammenfassung → Übernahme) | Ablauf im Kontext der DMRL | 2026-11-12 |
+| Vergleichsbasis = Kopie der Einträge in der Sperre | Exakter ausgecheckter Stand | 2026-11-12 |
+| Zuordnung der Einträge über den DMC; Einträge behalten ihre ID | Fachlicher Schlüssel; stabile Verweise | 2026-11-12 |
+| Abgleich einmal berechnet für Regelwerk, Zusammenfassung und Übernahme | Konsistente Ergebnisse | 2026-11-12 |
+| Übernahme atomar (Einträge, DMRL-Status, Sperre, Verlauf) | Kein halber Check-in | 2026-11-12 |
+| Abgelehnter Check-in: nur Verlaufseintrag; Abbrechen: nichts | PROJ-15 | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Der Check-in ist eine Workflow-Aktion nach dem Muster aus PROJ-9 (Verfügbarkeitsregel + atomare Ausführung). Er verbindet die **Prüfung aus PROJ-8** (CSV-Leser, Regelwerk, Prüfbericht) mit einem **Abgleich** gegen den Stand beim Check-out und einer **Übernahme** in einem Schritt. Alles im Browser, kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+DMRL-Ansicht (PROJ-7) — Aktion „Check-in" (nur Sperrinhaber)
++-- Check-in-Dialog (shadcn Dialog, mehrstufig)
+    +-- Schritt 1: Datei wählen
+    |   +-- Dateiauswahl / Ablagefläche (nur .csv, max. 5 MB)
+    |   +-- Hinweis bei falschem Typ, zu großer Datei oder nicht UTF-8
+    +-- Schritt 2: Prüfung läuft (Fortschrittsanzeige)
+    +-- Schritt 3a: Fehler
+    |   +-- Prüfbericht-Anzeige (PROJ-8) mit „Bericht herunterladen"
+    |   +-- „Andere Datei wählen" · „Schließen" (Sperre bleibt)
+    +-- Schritt 3b: Zusammenfassung
+        +-- Zahlen: geprüft · neu · geändert · unverändert
+        +-- Hinweise (z. B. aufgefüllte führende Nullen)
+        +-- Liste neuer Einträge (DMC, Tech Name, Eintragstyp)
+        +-- Liste geänderter Einträge, je Eintrag aufklappbar (shadcn Accordion): Feld · alt → neu
+        +-- „Übernehmen" · „Abbrechen"
+```
+
+### B) Datenmodell (in Klartext)
+Keine neuen Objekte. Die Übernahme ändert in **einer** Speicherung:
+- **Einträge** der DMRL: ersetzt durch den Inhalt der Datei (mit aufgefüllten Nullen); bestehende Einträge behalten ihre ID (Zuordnung über den DMC), neue erhalten eine neue ID; Status laut Tabelle der Spec.
+- **DMRL**: Status (*in Bearbeitung* bei Änderung, sonst unverändert), Sperre entfernt. Der Freigabe-Nachweis bleibt erhalten und dient als „Letzte Freigabe" (PROJ-14).
+- **Verlauf**: „Check-in" mit Anzahl neu/geändert/unverändert.
+
+Bei Ablehnung wegen Fehlern wird nur ein Verlaufseintrag „Check-in abgelehnt — n Fehler" gespeichert (PROJ-15); Abbrechen speichert nichts.
+
+### C) Abgleich (Stand beim Check-out ↔ Datei)
+- **Vergleichsbasis:** Kopie der Einträge in der Sperre (PROJ-9) — nicht der aktuelle Stand, damit der Vergleich genau dem ausgecheckten Stand entspricht.
+- **Zuordnung:** über den DMC (alle 11 Teile). Ein in der Datei veränderter DMC gilt als neuer Eintrag; der alte fehlt dann → Fehler laut PROJ-8 F. Ein DMC lässt sich also nicht „umbenennen" (fachlich korrekt: alter Eintrag `d`, neuer `n`).
+- **Klassifizierung:** *neu* (DMC vorher nicht vorhanden) · *geändert* (mindestens ein Feld weicht ab, inkl. Eintragstyp; nach Auffüllen der Nullen) · *unverändert*.
+- Dieselbe Klassifizierung nutzt das Regelwerk (Gruppe F) — sie wird einmal berechnet und für Prüfung, Zusammenfassung und Übernahme verwendet.
+
+### D) Abläufe
+1. **Datei wählen** → Typ, Größe, UTF-8 prüfen.
+2. **Prüfen** → CSV-Leser + Regelwerk (PROJ-8, Gruppen S, A–E, I, F, K) mit Prüfkontext (System-MI, Kopie aus der Sperre).
+3. **Fehler** → Bericht; Verlaufseintrag „abgelehnt"; erneuter Upload möglich.
+4. **Keine Fehler** → Zusammenfassung aus dem Abgleich.
+5. **Übernehmen** → Verfügbarkeit erneut prüfen (Sperre noch vorhanden und eigene?) → atomare Speicherung → Dialog schließt, Ansicht zeigt neuen Stand, Erfolgsmeldung. Sperre inzwischen aufgehoben → „Die Sperre wurde aufgehoben — Check-in nicht möglich", nichts gespeichert.
+
+### E) Verfügbarkeitsregel
+| Aktion | Verfügbar wenn | sonst |
+|---|---|---|
+| Check-in | angemeldeter Benutzer = Sperrinhaber (Bearbeiter oder Administrator) | nicht angezeigt (andere sehen nur die Sperre) |
+
+### F) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Mehrstufiger Dialog statt eigener Seite | Ablauf bleibt im Kontext der DMRL; Abbrechen jederzeit. |
+| Vergleich gegen die Kopie in der Sperre | Exakt der ausgecheckte Stand ist Basis — unabhängig von späteren Ereignissen. |
+| Zuordnung über den DMC | Fachlicher Schlüssel; konsistent mit Regel „Einträge nicht entfernen". |
+| Abgleich einmal berechnet, von Regelwerk, Zusammenfassung und Übernahme genutzt | Keine abweichenden Ergebnisse zwischen Anzeige und Speicherung. |
+| Übernahme als eine Speicherung | Einträge, Status, Sperre und Verlauf ändern sich zusammen oder gar nicht. |
+| Vorher/Nachher aufklappbar je Eintrag | Übersichtlich auch bei vielen Änderungen. |
+| UTF-8-Prüfung vor dem Lesen | Klare Meldung statt unlesbarer Umlaute. |
+
+### G) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete** (PapaParse aus PROJ-8; shadcn Dialog, Accordion, Progress, Badge installiert).
+
+### H) Testbarkeit
+- Unit-Tests: Abgleich (neu/geändert/unverändert, Nullen aufgefüllt = unverändert, nur Eintragstyp geändert = geändert, veränderter DMC), Status nach Übernahme (Tabellen der Spec), DMRL-Status (freigegeben + Änderung → in Bearbeitung; ohne Änderung bleibt), Verlaufseinträge.
+- E2E: Fahrzeug auschecken → Eintrag ergänzen → einchecken (11 Einträge, 1 neu); fehlerhafte Datei → Bericht, Sperre bleibt; Abbrechen; Sperre zwischenzeitlich aufgehoben.
 
 ## QA Test Results
 _To be added by /qa_
