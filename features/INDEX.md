@@ -28,7 +28,7 @@
 | PROJ-11 | XSD-Validierung — Prüfung gegen dml.xsd (2.3/4.2/5.0) via xmllint · P0 · Deps: PROJ-5 | Planned | [PROJ-11](PROJ-11-xsd-validierung.md) | 2026-11-11 |
 | PROJ-12 | SEND-Export — S1000D-DMRL-XML mit Versionsindex NNNNN-JJJJ · P0 · Deps: PROJ-7, PROJ-11 | Planned | [PROJ-12](PROJ-12-send-export.md) | 2026-11-11 |
 | PROJ-13 | REPLY-Import — Partner-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | Planned | [PROJ-13](PROJ-13-reply-import.md) | 2026-11-11 |
-| PROJ-14 | Freigabestatus DMRL — Ableitung aus Eintragsstatus, Aufhebung bei Änderung · P0 · Deps: PROJ-10, PROJ-13 | Roadmap | — | 2026-11-11 |
+| PROJ-14 | Freigabestatus DMRL — Statusmodell, Freigabe-Nachweis, Freigabestand (CSV/XML) · P0 · Deps: PROJ-10, PROJ-13, PROJ-18 | Planned | [PROJ-14](PROJ-14-freigabestatus.md) | 2026-11-11 |
 | PROJ-15 | Archiv SEND/REPLY — alle Austauschstände einsehen und herunterladen · P0 · Deps: PROJ-12, PROJ-13 | Roadmap | — | 2026-11-11 |
 | PROJ-16 | Dashboard — Übersicht aller DMRLs und ihres Status · P1 · Deps: PROJ-14 | Roadmap | — | 2026-11-11 |
 | PROJ-17 | DMRL-Berechtigungen — Admin berechtigt Bearbeiter je DMRL/System · P0 · Deps: PROJ-3, PROJ-6 | Planned | [PROJ-17](PROJ-17-dmrl-berechtigungen.md) | 2026-11-12 |
