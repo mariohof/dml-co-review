@@ -8,7 +8,7 @@
 - Requires: PROJ-1 (Datenhaltung + Demo-Daten) — Benutzer mit Rolle stammen aus dem Datenbestand
 
 ## Beschreibung
-Der Prototyp hat keine echte Authentifizierung. Stattdessen wählt man auf einer Anmeldeseite einen der vorhandenen Benutzer aus und arbeitet dann mit dessen Rolle (Administrator oder Bearbeiter). Die Rolle bestimmt Navigation, sichtbare DMRLs und erlaubte Aktionen. Ein schneller Benutzerwechsel ermöglicht in der Demo den Perspektivwechsel zwischen Administrator und Bearbeiter.
+Der Prototyp hat keine echte Authentifizierung. Stattdessen wählt man auf einer Anmeldeseite einen der vorhandenen Benutzer aus und arbeitet dann mit dessen Rolle (Administrator oder Bearbeiter). Die Rolle bestimmt Navigation, sichtbare DMRLs und erlaubte Aktionen. Ein schneller Benutzerwechsel über eine Auswahlliste in der Kopfzeile ermöglicht in der Demo den Perspektivwechsel zwischen Administrator und Bearbeiter.
 
 ## Rollen & Rechte
 
@@ -31,7 +31,7 @@ Kopfzeile
 +-- "Dashboard"            (alle Rollen)
 +-- "Verwaltung"           (nur Administrator)
 |   +-- Benutzer · Organisationen · Systeme · DMRL-Berechtigungen
-+-- Aktiver Benutzer (Name + Rolle) · "Benutzer wechseln"
++-- "Benutzer" [Auswahlliste: aktive Benutzer mit Name · Rolle, aktueller ausgewählt; am Ende "Abmelden"]
 ```
 
 ## User Stories
@@ -39,6 +39,7 @@ Kopfzeile
 - Als **Bearbeiter** möchte ich nach der Anmeldung im Dashboard nur die mir zugeordneten DMRLs sehen, damit ich mich auf meine Arbeit konzentrieren kann.
 - Als **Administrator** möchte ich alle DMRLs sehen und bearbeiten sowie den Verwaltungsbereich nutzen, damit ich Stammdaten pflegen und jeden Workflow vorführen kann.
 - Als **Benutzer** möchte ich jederzeit sehen, als wer und mit welcher Rolle ich angemeldet bin, damit ich keine Aktionen in der falschen Rolle ausführe.
+- Als **Product Owner** möchte ich den Benutzer direkt in der Kopfzeile wechseln, ohne über die Anmeldeseite zu gehen, damit die Demo flüssig bleibt.
 - Als **Benutzer** möchte ich nach einem Neuladen der Seite angemeldet bleiben, damit eine Demo nicht unterbrochen wird.
 - Als **Bearbeiter** möchte ich beim direkten Aufruf einer nicht erlaubten Seite einen klaren Hinweis bekommen, damit ich verstehe, warum ich sie nicht nutzen kann.
 
@@ -64,8 +65,12 @@ Kopfzeile
 - [ ] Angenommen die Anmeldeseite wird angezeigt, wenn die Benutzerliste betrachtet wird, dann ist das Systemkonto „Administrator" immer enthalten
 
 ### Kopfzeile & Benutzerwechsel
-- [ ] Angenommen ein Benutzer ist angemeldet, wenn eine beliebige Seite angezeigt wird, dann zeigt die Kopfzeile seinen Namen und seine Rolle
-- [ ] Angenommen ein Benutzer ist angemeldet, wenn er „Benutzer wechseln" wählt, dann wird er abgemeldet und die Anmeldeseite erscheint
+- [ ] Angenommen ein Benutzer ist angemeldet, wenn eine beliebige Seite angezeigt wird, dann zeigt die Kopfzeile „Benutzer" mit einer Auswahlliste, in der er mit Name und Rolle ausgewählt ist
+- [ ] Angenommen die Auswahlliste wird geöffnet, wenn sie angezeigt wird, dann enthält sie alle aktiven Benutzer mit Name und Rolle und am Ende „Abmelden"
+- [ ] Angenommen ein Benutzer wählt in der Auswahlliste einen anderen Benutzer, wenn die Auswahl erfolgt, dann ist dieser sofort angemeldet und Navigation, Sichtbarkeit und Rechte entsprechen seiner Rolle
+- [ ] Angenommen der neue Benutzer darf die aktuelle Seite sehen (z. B. Dashboard), wenn gewechselt wird, dann bleibt die Seite geöffnet und zeigt die Daten aus seiner Sicht
+- [ ] Angenommen der neue Benutzer darf die aktuelle Seite nicht sehen (z. B. Bearbeiter auf einer Verwaltungsseite oder einer nicht berechtigten DMRL), wenn gewechselt wird, dann erscheint das Dashboard mit dem Hinweis „Die vorherige Seite ist für [Name] nicht verfügbar"
+- [ ] Angenommen ein Benutzer ist angemeldet, wenn er in der Auswahlliste „Abmelden" wählt, dann wird er abgemeldet und die Anmeldeseite erscheint
 
 ### Rollenabhängige Navigation & Sichtbarkeit
 - [ ] Angenommen ein Administrator ist angemeldet, wenn die Kopfzeile angezeigt wird, dann sind die Menüpunkte „Dashboard" und „Verwaltung" (mit Benutzer, Organisationen, Systeme, DMRL-Berechtigungen) sichtbar
@@ -81,13 +86,15 @@ Kopfzeile
 - [ ] Angenommen ein Bearbeiter ist angemeldet, wenn eine ihm zugeordnete DMRL geöffnet wird, dann sind alle Bearbeiter-Aktionen erlaubt
 
 ### Datenänderungen im Hintergrund
-- [ ] Angenommen ein Benutzer ist angemeldet, wenn sein Benutzer gelöscht wird (z. B. in einem anderen Tab), dann wird er beim nächsten Laden abgemeldet und sieht auf der Anmeldeseite den Hinweis „Ihr Benutzer existiert nicht mehr"
+- [ ] Angenommen ein Benutzer ist angemeldet, wenn sein Benutzer deaktiviert wird (z. B. in einem anderen Tab), dann wird er beim nächsten Laden abgemeldet und sieht auf der Anmeldeseite den Hinweis „Ihr Benutzer ist nicht mehr aktiv"
 - [ ] Angenommen ein Benutzer ist angemeldet, wenn seine Rolle geändert wird, dann gelten Navigation und Rechte der neuen Rolle sofort
-- [ ] Angenommen ein Benutzer hat eine DMRL ausgecheckt, wenn er „Benutzer wechseln" wählt, dann bleibt die Sperre der DMRL bestehen
+- [ ] Angenommen ein Benutzer hat eine DMRL ausgecheckt, wenn er in der Auswahlliste den Benutzer wechselt oder sich abmeldet, dann bleibt die Sperre der DMRL bestehen
 - [ ] Angenommen ein Demo-Benutzer ist angemeldet, wenn der Administrator die Demo-Daten zurücksetzt, dann bleibt die Anmeldung erhalten
 
 ## Edge Cases
 - **Mehrere Tabs:** Die Anmeldung gilt browserweit; ein Benutzerwechsel in Tab A wirkt in Tab B nach dem Neuladen.
+- **Nur ein aktiver Benutzer (Systemkonto):** Auswahlliste enthält nur „Administrator" und „Abmelden".
+- **Wechsel während eines offenen Dialogs (z. B. Check-in-Zusammenfassung):** Dialog wird geschlossen, nichts übernommen; eine Sperre bleibt bestehen.
 - **Alle anderen Benutzer gelöscht:** Das Systemkonto „Administrator" bleibt immer übrig; die Anmeldeliste ist nie leer.
 - **Systemkonto fehlt in gespeicherten Daten** (manipuliert/beschädigt): wird als beschädigter Datenbestand behandelt (PROJ-1 Fehlerbildschirm → „Demo-Daten neu laden").
 - **Bearbeiter wird einer DMRL entzogen, während er sie geöffnet hat:** beim nächsten Seitenaufruf „Keine Berechtigung".
@@ -102,6 +109,7 @@ Kopfzeile
 ## Open Questions
 - [x] Wie wird eine Sperre aufgelöst, wenn der sperrende Bearbeiter entfernt oder gelöscht wird? → Entfernen (PROJ-17) und Deaktivieren (PROJ-3) sind bei aktivem Check-out gesperrt; Löschen gibt es nicht
 - [x] Müssen Benutzernamen eindeutig sein? → Ja, ohne Unterscheidung Groß-/Kleinschreibung (PROJ-3)
+- [x] Benutzerwechsel über Auswahlliste in der Kopfzeile (Wireframe PROJ-16)? → Ja (2026-11-12)
 
 ## Decision Log
 
@@ -116,10 +124,12 @@ Kopfzeile
 | Startseite heißt „Dashboard" | Vorgabe Product Owner; Kennzahlen folgen in PROJ-16 | 2026-11-12 |
 | Kopfnavigation mit „Dashboard" und (nur Admin) „Verwaltung" | Einfache, rollenabhängige Struktur | 2026-11-12 |
 | Direktaufruf ohne Recht → „Keine Berechtigung" mit Link | Verständlicher als stille Weiterleitung | 2026-11-12 |
-| Gelöschter aktiver Benutzer → Abmeldung mit Hinweis | Verhindert Arbeiten mit nicht existierender Identität | 2026-11-12 |
+| Deaktivierter aktiver Benutzer → Abmeldung mit Hinweis (kein Löschen, PROJ-3) | Verhindert Arbeiten mit nicht aktiver Identität | 2026-11-12 |
 | Rollenänderung wirkt sofort | Rechte müssen immer dem aktuellen Datenstand entsprechen | 2026-11-12 |
 | Sperre bleibt bei Benutzerwechsel | Sperre gehört zur DMRL, nicht zur Anmeldung | 2026-11-12 |
 | Anmeldung bleibt beim Zurücksetzen der Demo-Daten erhalten (falls Benutzer existiert) | Demo-Fluss nicht unterbrechen | 2026-11-12 |
+| Benutzerwechsel per Auswahlliste in der Kopfzeile statt über die Anmeldeseite; „Abmelden" als letzter Eintrag | Vorgabe Product Owner (Wireframe PROJ-16) — flüssige Demo | 2026-11-12 |
+| Nach Wechsel bleibt die Seite offen, sonst Dashboard mit Hinweis | Kein „Keine Berechtigung"-Bildschirm durch bloßen Perspektivwechsel | 2026-11-12 |
 | Allgemeines Systemkonto „Administrator", nie löschbar, Rolle nicht änderbar | Vorgabe Product Owner — garantiert jederzeit Zugang zur Verwaltung | 2026-11-12 |
 | Fehlendes Systemkonto = beschädigter Datenbestand | Konsistenzregel; Wiederherstellung über PROJ-1 | 2026-11-12 |
 
