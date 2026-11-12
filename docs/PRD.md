@@ -20,7 +20,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | Priority | Feature | Status |
 |----------|---------|--------|
 | P0 (MVP) | Datenhaltung (JSON/localStorage) + Demo-Daten | In Progress |
-| P0 (MVP) | Simulierte Anmeldung & Rollenwechsel | Architected |
+| P0 (MVP) | Simulierte Anmeldung & Rollenwechsel | In Progress |
 | P0 (MVP) | Benutzer-, Organisations-, System- und DMRL-Verwaltung, DMRL-Berechtigungen (Admin) | Architected (PROJ-3–6, PROJ-17) |
 | P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | Architected (PROJ-7) |
 | P0 (MVP) | Fachliches Regelwerk | Architected (PROJ-8) |

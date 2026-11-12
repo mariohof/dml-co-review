@@ -1,6 +1,6 @@
 # PROJ-2: Simulierte Anmeldung & Rollenwechsel
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -221,6 +221,29 @@ Alle Seiten, Aktionen (Check-out, SEND …) und das Dashboard fragen diese Stell
 - Unit-Tests der Rechte-Regel (Administrator / Bearbeiter berechtigt / nicht berechtigt / inaktiv).
 - Unit-Tests des Anmelde-Bereitstellers (Start mit gültiger/inaktiver/fehlender Anmeldung, Wechsel, Abmelden).
 - E2E: Anmelden als Administrator und Bearbeiter, Navigation je Rolle, Direktaufruf ohne Recht, Wechsel auf erlaubter und nicht erlaubter Seite, Reload bleibt angemeldet.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-12 — `/frontend PROJ-2`_
+
+**Umgesetzt**
+- `src/lib/auth/permissions.ts` — **zentrale Rechte-Regel**: aktiver Benutzer, Verwaltung (nur Administrator), DMRL-Zugriff (Administrator immer, Bearbeiter nur berechtigt), sichtbare DMRLs, aktive Benutzer (sortiert), Seitenzugriff für den Benutzerwechsel.
+- `src/components/auth/session-provider.tsx` — Anmelde-Bereitsteller: Anmeldung im eigenen Speicherbereich (PROJ-1), aktueller Benutzer immer aus dem aktuellen Datenstand (Rollenänderung wirkt sofort), Abmeldung mit Hinweis bei deaktiviertem/fehlendem Benutzer, Anmeldung bleibt beim Zurücksetzen der Demo-Daten.
+- `src/components/auth/guards.tsx` — `RequireLogin` (Weiterleitung zu `/anmelden?ziel=…`), `RequireAdministrator`, `RequireDmrl` („DMRL nicht gefunden" / „Keine Berechtigung"); `no-permission.tsx` mit Link zum Dashboard.
+- `src/components/auth/login-screen.tsx` + `/anmelden` — Liste aktiver Benutzer (Name + Rollen-Badge), Klick meldet an, Hinweis bei verlorener Anmeldung, Rücksprung zum ursprünglichen Ziel (nur interne Adressen).
+- `src/components/layout/app-header.tsx` — Kopfzeile (Markenfarbe), Navigation „Dashboard" und „Verwaltung" (Aufklappmenü, nur Administrator), **Benutzer-Auswahlliste** (Name · Rolle, Haken beim aktuellen, „Abmelden"); beim Wechsel bleibt die Seite offen oder Dashboard + Hinweis.
+- Seitenstruktur: geschützter Bereich `src/app/(app)/` mit `/` (Dashboard-Liste: sichtbare DMRLs, Leerhinweise je Rolle), `/verwaltung` (Übersicht + „Demo-Daten zurücksetzen"), Platzhalterseiten für PROJ-3–6/17 und `/dmrl/[id]` (Zugriffsschutz; Inhalt folgt PROJ-7).
+- `src/components/dmrl/dmrl-status-badge.tsx` — gemeinsames Status-Kennzeichen; `src/lib/navigation.ts` — Menüpunkte der Verwaltung.
+
+**Tests** (Vitest): `permissions.test.ts` (13), `session-provider.test.tsx` (7) — insgesamt 63 Tests grün.
+
+**Weitere Änderungen**
+- `src/test/setup.ts`: Ersatz-`localStorage` für Tests unter Node ≥ 25 (Node-eigenes `localStorage` überdeckt jsdom).
+- Vorläufige Übersicht aus PROJ-1 (`data-overview.tsx`) entfernt; Reset-Funktion jetzt auf `/verwaltung`.
+
+**Abweichungen / Hinweise**
+- Menüpunkt „DMRL-Berechtigungen" heißt „DMRLs & Berechtigungen" (eine Seite für PROJ-6 und PROJ-17, laut Tech Design PROJ-6/17).
+- Deaktivierter angemeldeter Benutzer wird sofort (nicht erst beim nächsten Laden) abgemeldet — strenger als die Spec.
+- Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_

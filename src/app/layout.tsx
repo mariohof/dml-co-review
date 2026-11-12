@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans } from "next/font/google";
 
+import { SessionProvider } from "@/components/auth/session-provider";
 import { DataStoreProvider } from "@/components/data/data-store-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -24,7 +25,9 @@ export default function RootLayout({
   return (
     <html lang="de">
       <body className={`${notoSans.variable} font-sans antialiased`}>
-        <DataStoreProvider>{children}</DataStoreProvider>
+        <DataStoreProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </DataStoreProvider>
         <Toaster richColors position="top-right" />
       </body>
     </html>
