@@ -26,7 +26,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Fachliches Regelwerk | Architected (PROJ-8) |
 | P0 (MVP) | Check-out/Check-in CSV mit Sperre | Architected (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML (jederzeit, ohne Sperre) | Planned (PROJ-18) |
-| P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Planned (PROJ-11) |
+| P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Architected (PROJ-11) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Planned (PROJ-12, PROJ-13) |
 | P0 (MVP) | Freigabestatus & Archiv | Planned (PROJ-14, PROJ-15) |
 | P1 | Dashboard / Übersicht | Planned (PROJ-16) |
@@ -39,6 +39,7 @@ Details und Abhängigkeiten: siehe `features/INDEX.md`.
 
 ## Constraints
 - **No backend — localStorage only:** Datenhaltung und Benutzer werden über JSON-Strukturen in localStorage simuliert; keine echte Authentifizierung.
+- **Betrieb:** vorerst nur lokal auf einem Rechner mit macOS, Windows 11 oder Linux (kein Cloud-Hosting/Vercel); xmllint muss installiert sein.
 - **XSD-Validierung:** Pflicht-Validierung gegen `dml.xsd` mit `xmllint` (MacOS/Windows/Linux). Da xmllint nicht im Browser läuft, wird dafür eine serverseitige Next.js-Funktion benötigt. Die Schemas für Issue 2.3, 4.2 und 5.0 werden vom Product Owner bereitgestellt.
 - **S1000D-Version:** wird pro System festgelegt; alle drei Versionen sind im MVP enthalten.
 - **Design system:** see `docs/design-system.md`

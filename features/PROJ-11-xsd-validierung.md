@@ -1,6 +1,6 @@
 # PROJ-11: XSD-Validierung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -109,7 +109,9 @@ Für die Vorführung werden fehlerhafte REPLY-Dateien bereitgestellt (auf Basis 
 - Hochgeladene Dateien werden nur für die Prüfung verwendet und nicht dauerhaft auf dem Server gespeichert
 
 ## Open Questions
-- [ ] Wie wird xmllint auf dem Deploy-Ziel (Vercel) bereitgestellt? (→ `/architecture`)
+- [x] Wie wird xmllint bereitgestellt? → Installiertes xmllint-Programm, aufgerufen von einer Serverfunktion (Vorgabe Product Owner, 2026-11-12)
+- [x] Deployment → vorerst nur lokaler Betrieb auf einem Rechner mit macOS, Windows 11 oder Linux; kein Vercel (Vorgabe Product Owner, 2026-11-12)
+- [x] Zugriffsschutz der Serverfunktion → nicht nötig, da nur lokal betrieben; App wird nur auf dem eigenen Rechner (localhost) erreichbar gestartet (2026-11-12)
 - [ ] Gültige Demo-Dateien für Issue 4.2 und 5.0 entstehen erst durch SEND (PROJ-12) — eigene Beispieldateien vom Product Owner?
 
 ## Decision Log
@@ -129,12 +131,93 @@ Für die Vorführung werden fehlerhafte REPLY-Dateien bereitgestellt (auf Basis 
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Installiertes xmllint-Programm (libxml2), aufgerufen aus einer Next.js-Serverfunktion | Vorgabe Product Owner (statt WebAssembly-Variante) | 2026-11-12 |
+| xmllint offline, ohne Shell, feste Argumente, Zeitlimit, max. 5 MB | Sicherheit und Stabilität | 2026-11-12 |
+| Schemapfad nur aus Issue-Whitelist (2.3/4.2/5.0) | Kein Pfad aus Benutzereingaben | 2026-11-12 |
+| Programmpfad per Einstellung änderbar (Standard: Systempfad) | Windows-Betrieb | 2026-11-12 |
+| Betrieb nur lokal (macOS, Windows 11, Linux), App nur unter localhost erreichbar; kein Zugriffsschutz der Serverfunktion | Vorgabe Product Owner; kein Vercel | 2026-11-12 |
+| Strukturiertes Ergebnis (gültig / Schemafehler / nicht wohlgeformt / nicht verfügbar) → gemeinsamer Prüfbericht | Einheitliche Anzeige (PROJ-8) | 2026-11-12 |
+| Kein Speichern/Protokollieren von Dateiinhalten auf dem Server | Datenschutz, Prototyp | 2026-11-12 |
+| Integrationstests mit echtem xmllint, übersprungen wenn nicht installiert | Reale Prüfung, lauffähig auf jedem Rechner | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Die XSD-Prüfung ist der **einzige Server-Baustein** der Anwendung. Eine Serverfunktion der Next.js-App nimmt eine XML-Datei und das S1000D-Issue entgegen, ruft das **auf dem Rechner installierte xmllint-Programm** gegen das passende `dml.xsd` auf und liefert ein strukturiertes Ergebnis zurück. Im Browser übersetzt ein **XSD-Prüfdienst** das Ergebnis in den gemeinsamen Prüfbericht (PROJ-8). Daten werden auf dem Server nicht gespeichert.
+
+### A) Ablauf
+```
+Browser                                         Server (Next.js-Serverfunktion)
+SEND / Export / Freigabestand: erzeugte XML ─┐
+REPLY: hochgeladene XML ─────────────────────┤
+                                              ▼
+XSD-Prüfdienst ──(XML-Text + Issue)──►  XSD-Prüfung
+                                          +-- Issue prüfen (nur 2.3 / 4.2 / 5.0)
+                                          +-- Schema wählen: schemas/s1000d/issue-X/dml.xsd
+                                          +-- xmllint aufrufen (offline, mit Zeitlimit)
+                                          +-- Ausgabe auswerten: gültig / Schemafehler / kein gültiges XML
+               ◄──(Ergebnis)───────────  +-- nicht verfügbar (xmllint fehlt, Schema fehlt, Zeitlimit)
+Prüfbericht (PROJ-8-Anzeige) bzw. weiter zum nächsten Schritt
+```
+
+### B) Komponentenstruktur (Anzeige)
+Keine eigene Seite. Das Ergebnis erscheint in den Dialogen der aufrufenden Features:
+```
+REPLY-/SEND-/Export-Dialog
++-- „Schemaprüfung läuft…" (Fortschritt)
++-- bestanden: Hinweis „XSD-Prüfung bestanden (S1000D Issue X)" → nächster Schritt
++-- Fehler: Prüfbericht-Anzeige (PROJ-8)
+|   +-- Überschrift „Die Datei entspricht nicht dem Schema S1000D Issue X (dml.xsd) — n Fehler"
+|   +-- je Fehler: Zeile · Originalmeldung von xmllint · „Bericht herunterladen"
++-- kein gültiges XML: „Die Datei ist kein gültiges XML (Zeile X)"
++-- nicht verfügbar: Fehlermeldung „XSD-Prüfung nicht verfügbar — … Bitte Administrator informieren." (Vorgang blockiert)
+```
+
+### C) Datenmodell (in Klartext)
+Nichts wird gespeichert. **Ergebnis einer Prüfung:** Zustand (gültig / Schemafehler / nicht wohlgeformt / nicht verfügbar), geprüftes Issue, Liste der Befunde (Zeile, Originalmeldung). Der Prüfdienst wandelt es in Befunde des gemeinsamen Prüfberichts um (Regelgruppe „XSD").
+
+### D) Server-Baustein
+| Aspekt | Festlegung |
+|---|---|
+| Aufruf | eine Serverfunktion („XSD-Prüfung") der App; Eingabe XML-Text + Issue |
+| Programm | installiertes **xmllint** (libxml2); Pfad über eine Einstellung änderbar (Standard: `xmllint` im Systempfad) — nötig z. B. unter Windows |
+| Schemas | `schemas/s1000d/issue-2.3 | 4.2 | 5.0/dml.xsd` aus dem Projekt; 5.0 mit lokaler `xml.xsd` |
+| Offline | Prüfung ohne Netzzugriff; externe Verweise in Dateien werden nicht nachgeladen |
+| Zeitlimit | Abbruch nach festem Zeitlimit (z. B. 20 Sekunden) → „Prüfung hat zu lange gedauert" |
+| Größe | max. 5 MB je Prüfung |
+| Fehlerfall | Programm nicht gefunden, Schema fehlt oder unerwartete Ausgabe → Zustand „nicht verfügbar" |
+| Temporäres | ggf. benötigte Zwischendateien werden sofort wieder gelöscht |
+
+### E) Sicherheit
+- Nur die drei bekannten Issue-Werte werden angenommen; der Schema-Pfad wird daraus gebildet, nie aus Benutzereingaben.
+- xmllint wird ohne Kommandozeilen-Shell und mit festen Argumenten gestartet (keine Befehlseinschleusung möglich).
+- Kein Nachladen externer Ressourcen; Größen- und Zeitlimit gegen überlange Dateien.
+- Inhalte werden nicht protokolliert oder gespeichert.
+- Prototyp ohne echte Anmeldung: die Serverfunktion ist nicht zugriffsgeschützt — akzeptabel, da die App nur lokal auf dem eigenen Rechner (localhost) läuft.
+
+### F) Betrieb
+- **Voraussetzung:** xmllint muss auf dem Rechner bzw. Server installiert sein (macOS: vorinstalliert; Linux: Paket libxml2-utils; Windows: libxml2-Binärpaket). Eine kurze Installationsanleitung kommt in die Projektdokumentation.
+- **Betrieb:** vorerst **nur lokal** auf einem Rechner mit **macOS, Windows 11 oder Linux** (`npm run build` + `npm run start`, erreichbar nur unter localhost). Kein Vercel — dort gäbe es kein xmllint.
+
+### G) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Installiertes xmllint statt WebAssembly-Variante | Vorgabe Product Owner; identisch mit dem Werkzeug, das Partner und Fachleute nutzen. |
+| Eine Serverfunktion in der Next.js-App | xmllint läuft nicht im Browser; kein separater Dienst nötig. |
+| Schema immer aus dem Issue des Systems | Eindeutig, sicher (kein Pfad aus Benutzereingabe). |
+| Strukturiertes Ergebnis statt Rohtext | Gemeinsame Prüfbericht-Anzeige (PROJ-8) kann es darstellen. |
+| Zustand „nicht verfügbar" blockiert den Vorgang | PRD: Prüfung ist Pflicht. |
+| Pfad zu xmllint einstellbar | Funktioniert auch unter Windows ohne Systempfad-Eintrag. |
+
+### H) Abhängigkeiten (Pakete)
+- **Keine neuen npm-Pakete.** Systemvoraussetzung: **xmllint** (libxml2) auf dem Rechner/Server.
+
+### I) Testbarkeit
+- Integrationstests mit echtem xmllint: PHUNGUN-Dateien gültig (2.3), S1000DBIKE-Beispiel gültig (4.2), leere/fehlerhafte Dateien → Schemafehler, kaputtes XML → nicht wohlgeformt, unbekanntes Issue abgelehnt, falscher Programmpfad → nicht verfügbar. Tests werden übersprungen (mit Hinweis), wenn xmllint auf dem Testrechner fehlt.
+- Demo-Testdateien (PROJ-1): 1–3 scheitern wie erwartet, 4 und Demo-REPLY bestehen.
 
 ## QA Test Results
 _To be added by /qa_
