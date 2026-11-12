@@ -1,6 +1,6 @@
 # PROJ-13: REPLY-Import
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -119,7 +119,7 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 - 1.000 Einträge in wenigen Sekunden prüfen und übernehmen
 
 ## Open Questions
-- [ ] Demo-REPLY-Datei auf SEND 00002-2026 (PHUNGUN, Partner C1234, einige `answer="n"` mit Begründung) wird als Demo-Testdatei bereitgestellt (analog PROJ-11) — Inhalt der Ablehnungen mit Product Owner abstimmen
+- [x] Demo-REPLY-Datei auf SEND 00002-2026 → festgelegt in PROJ-1: `public/demo-dateien/DML-PHUNGUN-C1234-C-2026-00002_001-00.XML`, 30 `y`, 2 `n` mit Begründung (2026-11-12)
 
 ## Decision Log
 
@@ -136,12 +136,84 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Reihenfolge XSD (Server) → DML-Leser → Regelwerk (Browser) | Fachliche Prüfung nur bei gültiger Struktur | 2026-11-12 |
+| Vergleichsbasis = archivierter XML-Text des letzten SEND | Exakt der gesendete Stand | 2026-11-12 |
+| Zuordnung über DMC; Abgleich einmal berechnet | Konsistenz Prüfung/Anzeige/Speicherung | 2026-11-12 |
+| Übernahme atomar inkl. Freigabe-Nachweis und Freigabestand (PROJ-14) | Grundregel DMRL freigegeben ⇔ alle Einträge freigegeben | 2026-11-12 |
+| Originaldatei unverändert archiviert (Zeilenenden, Kodierung) | Byte-genauer Nachweis | 2026-11-12 |
+| Abgelehnte REPLY: Verlaufseintrag; nicht verfügbare XSD-Prüfung: kein Eintrag | Nur fachliche Ablehnungen sind Workflow-Ereignisse | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Überblick
+Der REPLY-Import ist eine Workflow-Aktion nach dem Muster aus PROJ-9. Er kombiniert die **XSD-Prüfung (PROJ-11, Server)**, den **DML-Leser je Issue** und das **Regelwerk (PROJ-8)** mit einer **Übernahme in einem Schritt**, die bei vollständiger Genehmigung zugleich die **Freigabe (PROJ-14)** auslöst. Alles außer der XSD-Prüfung läuft im Browser.
+
+### A) Komponentenstruktur
+```
+DMRL-Ansicht (PROJ-7) — Aktion „REPLY importieren" (nur bei Status gesendet)
++-- REPLY-Dialog (shadcn Dialog, mehrstufig)
+    +-- Schritt 1: Datei wählen (.xml/.XML, max. 5 MB)
+    +-- Schritt 2: Prüfung läuft — „Schemaprüfung…" → „Fachliche Prüfung…"
+    +-- Schritt 3a: Fehler
+    |   +-- Prüfbericht-Anzeige (PROJ-8), Überschrift XSD bzw. Regelwerk
+    |   +-- „Andere Datei wählen" · „Schließen"
+    +-- Schritt 3b: Zusammenfassung
+        +-- Absender (CAGE + Name) · Versionsindex · Bezug auf SEND [Versionsindex]
+        +-- Zahlen: freigegeben · zu überarbeiten
+        +-- Tabelle abgelehnter Einträge: DMC · Tech Name · Begründung
+        +-- Bemerkung des Partners (falls vorhanden)
+        +-- künftiger DMRL-Status (Badge „freigegeben" / „in Bearbeitung")
+        +-- „Übernehmen" · „Abbrechen"
+```
+
+### B) Datenmodell (in Klartext)
+Keine neuen Objekte (PROJ-1). Die Übernahme schreibt in **einer** Speicherung:
+- **Archivstand REPLY:** Originaldatei unverändert (auch Zeilenenden und Zeichenkodierung), DML-Code, Versionsindex des Partners, `dmlref`, Dateiname, Zeitpunkt, Bearbeiter, Partner, **zugeordneter SEND**, Anzahl freigegeben / zu überarbeiten
+- **Einträge:** `answer`/`answer_comment` gesetzt; bei `y` Eintragstyp entfernt → *freigegeben*; bei `n` → *zu überarbeiten*; ungeprüfte Einträge unverändert
+- **DMRL:** Status *freigegeben* bzw. *in Bearbeitung*; Bemerkung des Partners
+- **bei Freigabe zusätzlich (PROJ-14):** Freigabe-Nachweis an der DMRL und neuer **Freigabestand** (Kopie aller Einträge)
+- **Verlauf:** „REPLY [Versionsindex] von [Partner] übernommen — x freigegeben, y zu überarbeiten" (+ „DMRL freigegeben")
+
+Abgelehnte Datei: nur Verlaufseintrag „REPLY abgelehnt" (Dateiname, Art/Anzahl der Fehler). Abbrechen: nichts.
+
+### C) Prüfkontext und Abgleich
+- **Vergleichsbasis:** der **archivierte XML-Text des letzten SEND**, mit demselben DML-Leser gelesen — damit wird gegen exakt das verglichen, was der Partner erhalten hat (PROJ-8 Gruppe G).
+- **Zuordnung** REPLY-Eintrag ↔ SEND-Eintrag ↔ Eintrag der Anwendung über den **DMC**.
+- **Weitere Kontextdaten:** MI des Systems, DML-Typ, Partner des letzten SEND, archivierte REPLYs (Duplikat), DMRL-Status.
+- Das Ergebnis des Abgleichs (je Eintrag: Antwort, Begründung, künftiger Status) wird einmal berechnet und für Regelwerk, Zusammenfassung und Übernahme genutzt.
+
+### D) Ablauf
+1. Datei wählen → Typ/Größe prüfen.
+2. XSD-Prüfung über den Server mit dem Issue des Systems → Fehler/nicht wohlgeformt: Bericht + Verlauf „abgelehnt"; nicht verfügbar: Abbruch ohne Verlauf.
+3. DML-Leser (Issue des Systems) → gemeinsames Prüfformat → Regelwerk (A–E, I, G, H) → Fehler: Bericht + Verlauf „abgelehnt".
+4. Zusammenfassung aus dem Abgleich.
+5. „Übernehmen" → Verfügbarkeit erneut prüfen (Status noch *gesendet*, gleicher letzter SEND) → atomare Speicherung → Ansicht aktualisiert, Erfolgsmeldung. Sonst „Die DMRL wartet nicht mehr auf eine Antwort", nichts gespeichert.
+
+### E) Verfügbarkeitsregel
+| Aktion | Verfügbar wenn | sonst |
+|---|---|---|
+| REPLY importieren | berechtigt (PROJ-2) · Status *gesendet* | nicht angezeigt bzw. gesperrt mit Grund |
+
+### F) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Erst XSD (Server), dann Regelwerk (Browser) | Spec PROJ-11; fachliche Prüfung nur bei strukturell korrekter Datei. |
+| Vergleich gegen den archivierten SEND-Text | Exakt das, was der Partner erhalten hat — nicht ein später veränderter Stand. |
+| Abgleich einmal berechnet für Prüfung, Zusammenfassung, Übernahme | Keine Abweichung zwischen Anzeige und Speicherung. |
+| Übernahme inkl. Freigabestand in einer Speicherung | Freigabe und Einträge können nicht auseinanderlaufen (PROJ-14-Grundregel). |
+| Originaldatei unverändert archiviert | Byte-genauer Nachweis (PRD); Beispieldateien enthalten CRLF. |
+| Mehrstufiger Dialog wie beim Check-in | Einheitliche Bedienung (PROJ-10). |
+
+### G) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.**
+
+### H) Testbarkeit
+- Unit-Tests: Abgleich (y/n je Eintragstyp, ungeprüfte Einträge, `d` + `y` bleibt bestehen), DMRL-Status, Freigabestand nur bei vollständiger Freigabe, Antworten nur bei geprüften Einträgen ersetzt, Verlauf.
+- Integration: Demo-REPLY besteht XSD und Regelwerk → 30/2, DMRL *in Bearbeitung*; Beispieldatei 02 im Demo-Stand → abgelehnt (Bezug/Duplikat); Testdateien 1–4.
+- E2E: REPLY importieren, Zusammenfassung, Übernahme; Archiv enthält REPLY byte-genau.
 
 ## QA Test Results
 _To be added by /qa_
