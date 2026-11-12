@@ -29,7 +29,8 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 
 ### System
 - Bezeichnung
-- Systemart: Fahrzeug / Fluggerät / Schiff / Gerät
+- Beschreibung (optional)
+- (keine Systemart; genau eine DMRL je System — PROJ-5)
 - S1000D-Issue: 2.3 / 4.2 / 5.0
 - Model Ident Code (`modelic`)
 
@@ -61,7 +62,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 |--------|--------|
 | Organisationen | `D0815` (neutraler Name, Sender der Demo-DMRLs); `C1234` (neutraler Name, Partner der Demo-DMRLs) |
 | Benutzer | Systemkonto „Administrator", 2 Bearbeiter (alle aktiv, keine Organisation) |
-| System 1 | PHUNGUN — Gerät — Issue 2.3 |
+| System 1 | PHUNGUN — Issue 2.3 |
 | System 2 | Fiktives Fahrzeug — Issue 4.2 |
 | System 3 | Fiktives Fluggerät — Issue 5.0 |
 | DMRL PHUNGUN | Austauschkette aus den 3 Beispieldateien im Archiv (SEND 00001-2026 → REPLY C1234 00001-2026 → SEND 00002-2026); aktueller Stand = SEND 00002-2026 (11 Einträge `d`, 21 Einträge `n`), DMRL-Status *gesendet* |
