@@ -1,6 +1,6 @@
 # PROJ-6: DMRL anlegen
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -99,7 +99,7 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 ## Edge Cases
 - **System wird nach Löschen der DMRL wieder frei:** erscheint erneut in der Systemauswahl; Systembezeichnung ist wieder änderbar (PROJ-5).
 - **Originator-Organisation einer DMRL ohne Workflow soll gelöscht werden:** gesperrt, bis Originator geändert oder DMRL gelöscht wird (PROJ-4).
-- **DMRL ist gerade ausgecheckt und soll gelöscht werden:** ein Check-out ist bereits ein Workflow → Löschen gesperrt.
+- **DMRL ist gerade ausgecheckt und soll gelöscht werden:** Löschen gesperrt mit „Die DMRL ist ausgecheckt von [Name]" (eigener Sperrgrund; „im Workflow benutzt" gilt erst nach abgeschlossenem Check-in, PROJ-9). Nach Rücknahme des Check-outs ohne Check-in wieder löschbar.
 - **Sicherheitseinstufung der DMRL `01`, Einträge `02`:** zulässig, keine Abhängigkeit.
 - **Zwei Tabs, gleichzeitiges Bearbeiten:** letzter Speichervorgang gewinnt (Prototyp, PROJ-1).
 
@@ -109,7 +109,7 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar
 
 ## Open Questions
-- [ ] Bedeutung der DML-Typen `c`, `p`, `s` für die Anzeige (Klartext-Bezeichnungen)? Bis zur Klärung werden nur die Kürzel angezeigt.
+- [x] Bedeutung der DML-Typen `c`, `p`, `s` für die Anzeige? → S1000D: „c – vollständig", „p – partiell", „s – Status" in der Auswahl; in Listen nur das Kürzel (2026-11-12)
 
 ## Decision Log
 
@@ -127,17 +127,70 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 | Berechtigungen als eigenes Feature (PROJ-17) | Vorgabe Product Owner — Single Responsibility | 2026-11-12 |
 | Ausführender Bearbeiter wird je Workflow-Schritt gespeichert | Vorgabe Product Owner — Nachvollziehbarkeit | 2026-11-12 |
 | Löschen nur ohne Workflow-Historie; Einträge und Berechtigungen werden mitgelöscht | Vorgabe Product Owner, analog PROJ-4/5 | 2026-11-12 |
+| DML-Typ-Klartexte „c – vollständig", „p – partiell", „s – Status" in der Auswahl | S1000D-Bedeutung; offene Frage geschlossen | 2026-11-12 |
 | Originator und DML-Typ fest ab erstem Workflow; Sicherheitseinstufung bleibt änderbar | Originator/DML-Typ stehen im DML-Code archivierter Stände; Einstufung wirkt erst beim nächsten SEND | 2026-11-12 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Verwaltungsmuster (PROJ-3) und Regel „im Workflow benutzt" (PROJ-4) wiederverwendet | Einheitliche Umsetzung | 2026-11-12 |
+| DMRL-Liste dient auch als Einstieg für PROJ-17 (Spalte „Bearbeiter", Aktion „Berechtigungen") | Alles zu einer DMRL an einer Stelle | 2026-11-12 |
+| Löschen atomar: DMRL, Einträge, Berechtigungen, Verlauf | Keine verwaisten Daten | 2026-11-12 |
+| Ausgecheckte DMRL nicht löschbar (eigener Sperrgrund) | Konsistenz mit PROJ-9 | 2026-11-12 |
+| Kopfdaten-Änderungen erzeugen Verlaufseintrag in derselben Speicherung | PROJ-15 | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+### Überblick
+Die DMRL-Verwaltung nutzt das **Verwaltungsmuster aus PROJ-3** und die **Regel „im Workflow benutzt" aus PROJ-4**. Dieselbe Liste ist später auch der Einstieg für die Berechtigungen (PROJ-17: zusätzliche Spalte „Bearbeiter" und Aktion „Berechtigungen"). Kein Backend nötig.
+
+### A) Komponentenstruktur
+```
+Seite „Verwaltung → DMRLs" (/verwaltung/dmrl)
++-- Zugriffswächter „Administrator?" (PROJ-2)
++-- Verwaltungs-Seitenrahmen (PROJ-3)
+    +-- Titel „DMRLs" · Button „DMRL anlegen" (gesperrt mit Tooltip, wenn kein System ohne DMRL)
+    +-- Suchfeld (Systembezeichnung, MI, Originator)
+    +-- Tabelle
+    |   +-- Spalten: System · MI · Issue · Originator (CAGE) · DML-Typ · Sicherheitseinstufung · Status · [Bearbeiter — PROJ-17] · Aktionen
+    |   +-- Aktionen: „Öffnen" (DMRL-Ansicht) · „Bearbeiten" · [„Berechtigungen" — PROJ-17] · „Löschen" (gesperrt mit Tooltip)
+    |   +-- Leer: „Noch keine DMRLs angelegt" + Aktion
+    +-- Formular-Dialog „DMRL anlegen / bearbeiten"
+    |   +-- System (Auswahl: nur Systeme ohne DMRL; beim Bearbeiten fest)
+    |   +-- Originator (Auswahl: CAGE-Code + Name; Hinweis, falls keine Organisation existiert)
+    |   +-- DML-Typ (Auswahl „c – vollständig" / „p – partiell" / „s – Status", vorbelegt c)
+    |   +-- Sicherheitseinstufung (2 Ziffern, vorbelegt 01)
+    |   +-- gesperrte Felder ausgegraut mit Hinweis „wird in Workflows verwendet"
+    +-- Bestätigungsdialog „Löschen" (Hinweis: Einträge und Berechtigungen werden mitgelöscht)
+```
+
+### B) Datenmodell (in Klartext)
+Keine Änderung — DMRL laut PROJ-1. Beim **Anlegen** entsteht eine DMRL mit Status *in Bearbeitung*, ohne Einträge, ohne Berechtigungen, ohne Sperre, ohne Archiv/Verlauf. Beim **Löschen** werden in einem Schritt entfernt: DMRL, ihre Einträge, ihre Berechtigungen und eventuelle Verlaufseinträge (nur „Kopfdaten geändert"/Check-out-Rücknahmen möglich, da ohne Workflow).
+
+### C) Fachregeln (eine Stelle, ohne Oberfläche)
+- **Prüfung:** System Pflicht und ohne DMRL; Originator Pflicht und existierend; DML-Typ `c`/`p`/`s`; Sicherheitseinstufung `01`–`20`.
+- **Zustand:** *ohne Workflow* / *im Workflow benutzt* (Regel PROJ-4) — bestimmt Feldsperren laut Regel-Tabelle; Sperren gelten in der Oberfläche und beim Speichern.
+- **Sperrgründe Löschen:** im Workflow benutzt (dauerhaft) · ausgecheckt (vorübergehend).
+- **Verlauf:** Jede Änderung von Originator, DML-Typ oder Sicherheitseinstufung erzeugt einen Verlaufseintrag „Kopfdaten geändert: Feld alt → neu" mit Benutzer (PROJ-15) — in derselben Speicherung.
+
+### D) Technische Entscheidungen (für PM erklärt)
+| Entscheidung | Warum |
+|---|---|
+| Verwaltungsmuster und Regel „im Workflow benutzt" wiederverwendet | Einheitlich mit PROJ-3/4/5. |
+| Eine Liste für DMRL-Verwaltung und Berechtigungen | Administrator findet alles zu einer DMRL an einer Stelle (PROJ-17 ergänzt Spalte/Aktion). |
+| Löschen als ein atomarer Schritt (DMRL + Einträge + Berechtigungen + Verlauf) | Keine verwaisten Daten. |
+| Ausgecheckte DMRL nicht löschbar (eigener Sperrgrund) | Konsistent mit PROJ-9 („benutzt" erst nach Check-in), ohne laufende Bearbeitung zu zerstören. |
+| Kopfdaten-Änderungen im Verlauf | Nachvollziehbarkeit (PROJ-15). |
+| Klartext der DML-Typen nur in der Auswahl | Verständlich beim Anlegen, kompakt in Listen. |
+
+### E) Abhängigkeiten (Pakete)
+- **Keine neuen Pakete.**
+
+### F) Testbarkeit
+- Unit-Tests: Prüfungen, Systemauswahl (nur ohne DMRL), Feldsperren je Zustand, Sperrgründe Löschen (benutzt / ausgecheckt), Löschen entfernt Einträge und Berechtigungen, Verlaufseintrag bei Kopfdatenänderung.
+- E2E: Anlegen (inkl. „kein System frei"), Bearbeiten, Löschen; Demo-Daten: PHUNGUN nur Sicherheitseinstufung änderbar, Fahrzeug/Fluggerät löschbar.
 
 ## QA Test Results
 _To be added by /qa_
