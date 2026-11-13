@@ -90,7 +90,8 @@ describe("DMRL-Ansicht PHUNGUN (Demo)", () => {
 
   it("zeigt die Aktionsleiste; Aktionen ohne Feature sind gesperrt; Administrator sieht „SEND zurückziehen\"", () => {
     const toolbar = screen.getByRole("toolbar", { name: "Aktionen" })
-    for (const label of ["Check-out", "SEND", "REPLY importieren", "Exportieren", "Archiv"]) {
+    expect(within(toolbar).getByRole("button", { name: "REPLY importieren" })).toBeEnabled()
+    for (const label of ["Check-out", "SEND", "Exportieren", "Archiv"]) {
       expect(within(toolbar).getByRole("button", { name: label })).toBeDisabled()
     }
     expect(within(toolbar).getByLabelText(/Die DMRL wartet auf die Antwort des Partners/)).toBeInTheDocument()

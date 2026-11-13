@@ -27,7 +27,7 @@
 | PROJ-10 | Check-in CSV — Import mit Regelprüfung, Übernahme, Entsperren · P0 · Deps: PROJ-8, PROJ-9 | In Progress | [PROJ-10](PROJ-10-check-in-csv.md) | 2026-11-11 |
 | PROJ-11 | XSD-Validierung — Prüfung gegen dml.xsd (2.3/4.2/5.0) via xmllint · P0 · Deps: PROJ-5 | In Progress | [PROJ-11](PROJ-11-xsd-validierung.md) | 2026-11-11 |
 | PROJ-12 | SEND-Export — S1000D-DMRL-XML mit Versionsindex NNNNN-JJJJ · P0 · Deps: PROJ-7, PROJ-11 | In Progress | [PROJ-12](PROJ-12-send-export.md) | 2026-11-11 |
-| PROJ-13 | REPLY-Import — Partner-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | Architected | [PROJ-13](PROJ-13-reply-import.md) | 2026-11-11 |
+| PROJ-13 | REPLY-Import — Partner-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | In Progress | [PROJ-13](PROJ-13-reply-import.md) | 2026-11-11 |
 | PROJ-14 | Freigabestatus DMRL — Statusmodell, Freigabe-Nachweis, Freigabestand (CSV/XML) · P0 · Deps: PROJ-10, PROJ-13, PROJ-18 | Architected | [PROJ-14](PROJ-14-freigabestatus.md) | 2026-11-11 |
 | PROJ-15 | Archiv SEND/REPLY — alle Austauschstände einsehen und herunterladen · P0 · Deps: PROJ-12, PROJ-13 | Architected | [PROJ-15](PROJ-15-archiv.md) | 2026-11-11 |
 | PROJ-16 | Dashboard — Übersicht aller DMRLs und ihres Status · P1 · Deps: PROJ-14 | Architected | [PROJ-16](PROJ-16-dashboard.md) | 2026-11-11 |

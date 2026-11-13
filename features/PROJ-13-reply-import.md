@@ -1,8 +1,8 @@
 # PROJ-13: REPLY-Import
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Dependencies
 - Requires: PROJ-12 (SEND-Export) — letzter SEND, Partner, Status *gesendet*
@@ -214,6 +214,28 @@ Abgelehnte Datei: nur Verlaufseintrag „REPLY abgelehnt" (Dateiname, Art/Anzahl
 - Unit-Tests: Abgleich (y/n je Eintragstyp, ungeprüfte Einträge, `d` + `y` bleibt bestehen), DMRL-Status, Freigabestand nur bei vollständiger Freigabe, Antworten nur bei geprüften Einträgen ersetzt, Verlauf.
 - Integration: Demo-REPLY besteht XSD und Regelwerk → 30/2, DMRL *in Bearbeitung*; Beispieldatei 02 im Demo-Stand → abgelehnt (Bezug/Duplikat); Testdateien 1–4.
 - E2E: REPLY importieren, Zusammenfassung, Übernahme; Archiv enthält REPLY byte-genau.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-13`_
+
+**Umgesetzt**
+- `src/lib/workflows/reply.ts`:
+  - Verfügbarkeit (Berechtigung, Status *gesendet*).
+  - Datei lesen **unverändert** in der Kodierung laut XML-Deklaration (UTF-8, ISO-8859-1 …; Zeilenenden und BOM bleiben erhalten).
+  - Prüfkontext mit dem **archivierten XML-Text des letzten SEND** als Vergleichsbasis.
+  - Abgleich `replyOutcome` (einmal berechnet für Zusammenfassung und Übernahme): `y` → Eintragstyp leer, *freigegeben*; `n` → Typ bleibt, *zu überarbeiten*; nur geprüfte Einträge (Typ n/c/d mit Antwort) ändern sich, übrige behalten Status und frühere Antwort; künftiger DMRL-Status.
+  - Atomare Übernahme `executeReplyImport`: Einträge, DMRL-Status, Partner-Bemerkung, Archiv (byte-genau, mit SEND verknüpft, Anzahlen), Verlauf; bei vollständiger Genehmigung zusätzlich **Freigabe-Nachweis und Freigabestand** (PROJ-14). Prüft vorher erneut Status und letzten SEND („Die DMRL wartet nicht mehr auf eine Antwort.").
+  - Verlaufseintrag „REPLY … abgelehnt — XSD-Prüfung / Regelwerk, n Fehler".
+- `src/components/workflows/reply-import-dialog.tsx` — mehrstufiger Dialog: Datei wählen (Ziehen & Ablegen oder Auswahl; `.xml`, max. 5 MB) → „Schemaprüfung …" → „Fachliche Prüfung …" → XSD-Bericht bzw. Regelwerk-Bericht (mit „XSD-Prüfung bestanden"), jeweils „Andere Datei wählen" · „Schließen"; bei nicht verfügbarer Prüfung „Erneut versuchen" (ohne Verlaufseintrag) → Zusammenfassung (Absender, „REPLY C1234 00002-2026 auf SEND 00002-2026", künftiger DMRL-Status als Badge, freigegeben/zu überarbeiten, Tabelle der abgelehnten Einträge mit Begründung, Bemerkung des Partners) → „Übernehmen" · „Abbrechen".
+- `src/lib/dmrl/actions.ts`, `src/components/dmrl/dmrl-view.tsx` — Aktion „REPLY importieren" angebunden (sichtbar, bei anderem Status gesperrt mit Grund).
+
+**Tests**
+- Unit: `reply.test.ts` (10, u. a. Demo-REPLY 30/2, alle genehmigt → Freigabe + Freigabestand, `d` + `y` bleibt bestehen, ungeprüfte Einträge unverändert, Beispieldatei 02 abgelehnt, zurückgezogener SEND, Kodierung, vollständiger Zyklus 4.2 SEND → REPLY), `reply-import-dialog.test.tsx` (5); insgesamt 354 Unit-Tests grün.
+- E2E: `tests/PROJ-13-reply.spec.ts` (3) mit echter XSD-Prüfung — Demo-REPLY übernommen und byte-genau archiviert; alle genehmigt → freigegeben; Testdateien 1–4 scheitern wie erwartet (XSD, XSD, Wohlgeformtheit, Regelwerk).
+
+**Hinweise / Abweichungen**
+- „REPLY importieren" bleibt in der Aktionsleiste sichtbar und ist außerhalb des Status *gesendet* gesperrt (Tooltip mit Grund) — wie bei den übrigen Aktionen.
+- Die Statusübergänge sind in `reply.ts` umgesetzt; das zentrale Statusmodul (PROJ-14 Tech Design C) kann sie später übernehmen.
 
 ## QA Test Results
 _To be added by /qa_

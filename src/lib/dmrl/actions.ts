@@ -2,6 +2,7 @@ import { canAccessAdministration } from "@/lib/auth/permissions"
 import type { Dataset, Dmrl, User } from "@/lib/data/schema"
 import { checkInBlocked } from "@/lib/workflows/check-in"
 import { checkOutBlocked, isLockHolder, releaseLockBlocked } from "@/lib/workflows/check-out"
+import { replyBlocked } from "@/lib/workflows/reply"
 import { sendBlocked, withdrawSendBlocked } from "@/lib/workflows/send"
 
 /**
@@ -39,7 +40,7 @@ export function dmrlActions(data: Dataset, dmrl: Dmrl, user: User | null): DmrlA
     { id: "check_out", label: "Check-out", visible: !holder, blocked: checkOutBlocked(data, dmrl, user) },
     { id: "check_in", label: "Check-in", visible: holder, blocked: checkInBlocked(dmrl, user) },
     { id: "send", label: "SEND", visible: true, blocked: sendBlocked(data, dmrl, user) },
-    { id: "reply_import", label: "REPLY importieren", visible: true, blocked: notYet("PROJ-13 (REPLY-Import)") },
+    { id: "reply_import", label: "REPLY importieren", visible: true, blocked: replyBlocked(dmrl, user) },
     { id: "export", label: "Exportieren", visible: true, blocked: notYet("PROJ-18 (DMRL-Export)") },
     { id: "archive", label: "Archiv", visible: true, blocked: notYet("PROJ-15 (Archiv)") },
     { id: "check_out_zuruecknehmen", label: "Check-out zurücknehmen", visible: holder, blocked: null },
