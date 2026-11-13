@@ -1,5 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/page-placeholder"
+import { UserManagement } from "@/components/admin/users/user-management"
 
-export default function Page() {
-  return <PagePlaceholder title="Benutzer" feature="PROJ-3 (Benutzerverwaltung)" />
+export default function BenutzerPage() {
+  return <UserManagement />
 }

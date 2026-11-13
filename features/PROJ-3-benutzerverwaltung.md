@@ -1,6 +1,6 @@
 # PROJ-3: Benutzerverwaltung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -205,6 +205,23 @@ Keine Änderung am Datenbestand — Benutzer sind in PROJ-1 definiert: ID, Name,
 ### H) Testbarkeit
 - Unit-Tests der Fachregeln: Namensprüfung (Länge, Leerzeichen, Eindeutigkeit inkl. eigener Name), Sperrgründe 1–4 einzeln und kombiniert, Schutz Systemkonto.
 - E2E: Anlegen mit Fehlern/erfolgreich, Bearbeiten, Deaktivieren gesperrt (Demo: Anna Bearbeitung hat letzten SEND PHUNGUN ausgelöst) und erfolgreich, Aktivieren, Bearbeiter ohne Zugriff.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-3`_
+
+**Umgesetzt**
+- `src/lib/rules/users.ts` — Fachregeln ohne Oberfläche: Namensprüfung (Randleerzeichen, 2–80 Zeichen, eindeutig ohne Groß-/Kleinschreibung, eigener Name ausgenommen), Rolle Pflicht, Sperrgründe für Deaktivieren (Systemkonto, man selbst, ausgecheckte DMRL, letzter nicht zurückgezogener SEND einer gesendeten DMRL), Schutz des Systemkontos; Speicherfunktionen prüfen erneut.
+- **Gemeinsames Verwaltungsmuster** (`src/components/admin/`): `AdminPage` (Seitenrahmen), `SearchField`, `BlockedAction` (gesperrte Aktion mit Tooltip-Begründung, per Tastatur erreichbar), `ConfirmDialog` (Bestätigung oder „nicht möglich, weil …").
+- `src/components/admin/users/` — `UserManagement` (Tabelle sortiert nach Name, Suche, Badges Rolle/Status/Systemkonto, Aktionen Bearbeiten/Deaktivieren/Aktivieren) und `UserFormDialog` (react-hook-form + Zod, deutsche Fehlermeldungen).
+- Eigene Rolle auf Bearbeiter geändert → Wechsel zum Dashboard mit Hinweis.
+- `src/lib/ids.ts` — Erzeugung eindeutiger IDs; `TooltipProvider` im geschützten Bereich.
+
+**Tests**: `users.test.ts` (20), `user-management.test.tsx` (6) — insgesamt 89 Tests grün.
+
+**Abweichungen / Hinweise**
+- Systemkonto: „Bearbeiten" und „Deaktivieren" sind sichtbar, aber gesperrt (Tooltip-Begründung) — die Spec lässt „nicht änderbar oder nicht angeboten" offen.
+- Selbst-Deaktivierung, ausgecheckte DMRL und offener SEND: Klick auf „Deaktivieren" zeigt den Dialog „Deaktivieren nicht möglich" mit allen Gründen.
+- Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_
