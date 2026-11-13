@@ -1,5 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/page-placeholder"
+import { SystemManagement } from "@/components/admin/systems/system-management"
 
-export default function Page() {
-  return <PagePlaceholder title="Systeme" feature="PROJ-5 (Systemverwaltung)" />
+export default function SystemePage() {
+  return <SystemManagement />
 }

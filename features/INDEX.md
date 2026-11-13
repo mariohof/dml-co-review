@@ -19,7 +19,7 @@
 | PROJ-2 | Simulierte Anmeldung & Rollenwechsel — Benutzerauswahl, Rollen Administrator/Bearbeiter · P0 · Deps: PROJ-1 | In Progress | [PROJ-2](PROJ-2-simulierte-anmeldung-rollen.md) | 2026-11-11 |
 | PROJ-3 | Benutzerverwaltung — Admin legt Benutzer an und bearbeitet sie · P0 · Deps: PROJ-2 | In Progress | [PROJ-3](PROJ-3-benutzerverwaltung.md) | 2026-11-11 |
 | PROJ-4 | Organisationsverwaltung — Admin verwaltet Organisationen (CAGE-Code, Name) · P0 · Deps: PROJ-2 | In Progress | [PROJ-4](PROJ-4-organisationsverwaltung.md) | 2026-11-11 |
-| PROJ-5 | Systemverwaltung — Admin verwaltet Systeme inkl. S1000D-Issue (2.3/4.2/5.0) · P0 · Deps: PROJ-2 | Architected | [PROJ-5](PROJ-5-systemverwaltung.md) | 2026-11-11 |
+| PROJ-5 | Systemverwaltung — Admin verwaltet Systeme inkl. S1000D-Issue (2.3/4.2/5.0) · P0 · Deps: PROJ-2 | In Progress | [PROJ-5](PROJ-5-systemverwaltung.md) | 2026-11-11 |
 | PROJ-6 | DMRL anlegen — Admin legt DMRL zu einem System an (Originator, DML-Typ, Sicherheitseinstufung) · P0 · Deps: PROJ-4, PROJ-5 | Architected | [PROJ-6](PROJ-6-dmrl-anlegen.md) | 2026-11-11 |
 | PROJ-7 | DMRL-Ansicht — Anzeige der DMRL mit Einträgen und Eintragsstatus · P0 · Deps: PROJ-6, PROJ-17 | Architected | [PROJ-7](PROJ-7-dmrl-ansicht.md) | 2026-11-11 |
 | PROJ-8 | Fachliches Regelwerk — gemeinsame Prüfregeln für Check-in und REPLY · P0 · Deps: PROJ-7 | Architected | [PROJ-8](PROJ-8-fachliches-regelwerk.md) | 2026-11-11 |

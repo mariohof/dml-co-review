@@ -1,6 +1,6 @@
 # PROJ-5: Systemverwaltung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -186,6 +186,19 @@ Keine Änderung — System laut PROJ-1: ID, Bezeichnung, Beschreibung, S1000D-Is
 ### F) Testbarkeit
 - Unit-Tests: Prüfungen (Bezeichnung/MI eindeutig, Längen, Zeichen), Zustandsermittlung (keine DMRL / ohne Workflow / benutzt), Feldsperren und Löschrecht je Zustand, Speichern mit gesperrtem Feld wird abgelehnt.
 - E2E: Anlegen/Bearbeiten/Löschen; Demo-Daten: PHUNGUN vollständig gesperrt, Fahrzeug/Fluggerät mit MI und Bezeichnung gesperrt, Issue änderbar.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-5`_
+
+**Umgesetzt**
+- `src/lib/rules/systems.ts` — Prüfung (Bezeichnung 2–120 eindeutig, Issue 2.3/4.2/5.0, MI 2–14 Buchstaben/Ziffern in Großbuchstaben eindeutig, Beschreibung ≤ 500), Zustand *keine DMRL* / *DMRL ohne Workflow* / *im Workflow benutzt* (Regel aus PROJ-4), Feldsperren und Löschrecht laut Regel-Tabelle; Speichern lehnt Änderungen gesperrter Felder ab.
+- `src/components/admin/systems/` — Verwaltungsseite (Verwaltungsmuster PROJ-3): Tabelle sortiert nach Bezeichnung (mit Beschreibung), Suche über Bezeichnung und MI, Spalte DMRL („vorhanden" + Status als Link zur DMRL-Ansicht bzw. „— keine —"), Löschen gesperrt mit Tooltip; Dialog mit Issue-Auswahl, MI in Großbuchstaben, Zeichenzähler für die Beschreibung, gesperrte Felder mit Hinweis.
+- `src/components/admin/field-lock-hint.tsx` — gemeinsamer Hinweis unter gesperrten Formularfeldern (auch für PROJ-6).
+
+**Tests**: `systems.test.ts` (21), `system-management.test.tsx` (5) — insgesamt 141 Tests grün.
+
+**Hinweise**
+- Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_
