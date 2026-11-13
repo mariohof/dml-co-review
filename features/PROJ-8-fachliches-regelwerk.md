@@ -1,6 +1,6 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -358,6 +358,28 @@ Das Regelwerk **speichert nichts**. Ein Prüfbericht existiert nur, solange der 
 - DML-Leser: PHUNGUN-Beispieldateien (2.3), S1000DBIKE-Beispiel (4.2), 5.0 sobald Beispiel vorliegt.
 - Gesamttests: Demo-REPLY (fehlerfrei, 30/2), unveränderter Check-in der Demo-DMRLs (fehlerfrei), Demo-Testdatei 4 (Regelwerk-Fehler).
 - Performance: 1.000 Einträge unter 1 Sekunde.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-8`_
+
+**Umgesetzt** (`src/lib/rules/check/`, alles im Browser, speichert nichts)
+- `types.ts` — gemeinsames Prüfformat (Kandidat mit Zeile/Position + 27 Feldern), Befunde (Fehler/Hinweis, Regelgruppe, Zeile, DMC, Feld, Meldung), Prüfbericht.
+- `csv-reader.ts` — CSV-Leser mit **PapaParse** (Semikolon, UTF-8 mit/ohne BOM, Anführungszeichen), Gruppe S (fehlende/unbekannte/doppelte/vertauschte Spalten → Abbruch, falsche Spaltenzahl, leere Zeilen übersprungen, „keine Einträge"), Randleerzeichen entfernt, **Auffüllen führender Nullen** (security, issno, day, month) als Hinweis.
+- `entry-rules.ts` — Gruppen A (Formate inkl. Datum, ISO 639-1 / 3166-1), B (Pflichtfelder Check-in bzw. REPLY mit optionalen Ausgabedaten), C, D, E, I.
+- `checkin.ts` — **Abgleich** mit dem Stand beim Check-out (über DMC; neu/geändert/unverändert, fehlende Einträge — von PROJ-10 wiederverwendbar), Gruppen F und K, `runCheckinCheck` mit Zusammenfassung.
+- `reply.ts` — Gruppen G (Kopf: Richtung, MI, DML-Typ, Status, Absender, Bezug auf letzten SEND, Duplikat; Einträge: gleiche DMCs, keine Feldänderungen außer Antworten, fehlende Ausgabedaten erlaubt) und H, `runReplyCheck` mit Zusammenfassung.
+- `report.ts` + `src/components/check/check-report-view.tsx` — Prüfbericht-Anzeige (Sortierung nach Zeile/Regel, über 100 Meldungen gekürzt mit „Weitere anzeigen", Download als CSV mit BOM).
+- `src/lib/rules/iso-codes.ts` — feste ISO-Listen (183 Sprachen, 249 Länder).
+- `src/lib/data/dml-parser-4x.ts` + `dml-reader.ts` — **DML-Leser für Issue 4.2/5.0** und gemeinsamer Einstieg je Issue (an den Beispieldateien geprüft).
+- Gemeinsame Bausteine für PROJ-9 ff.: `src/lib/files/csv-writer.ts` (CSV-Schreiber, Rundlauf Schreiben → Lesen geprüft), `src/lib/files/download.ts`.
+
+**Tests**: 50 neue (Check-in 29, REPLY 9, Bericht 3+3, CSV-Schreiber 3, DML-Leser 4.2/5.0 3) — insgesamt 254 Tests grün. Akzeptanzkriterien „Demo-Datei 02 fehlerfrei gegen passenden SEND" und „unveränderter Check-in PHUNGUN fehlerfrei" sind als Tests abgedeckt (Datei 02 gegen den Demo-Stand wird erwartungsgemäß abgelehnt; die Demo-REPLY auf SEND 00002 ist fehlerfrei).
+
+**Abweichungen / Hinweise**
+- Eintragstyp, DM-Ausgabetyp und Antworten werden nur in Kleinschreibung akzeptiert; DMC-Teile in beliebiger Groß-/Kleinschreibung (alphanumerisch).
+- Zeilennummern im CSV-Bericht entsprechen den Dateizeilen; bei Werten mit Zeilenumbruch innerhalb von Anführungszeichen können sie abweichen.
+- Paket **papaparse 5.5.3** (+ `@types/papaparse`) hinzugefügt. `npm audit` meldet bestehende Schwachstellen in Paketen der Projektvorlage (nicht in papaparse) — vor einer Weitergabe prüfen.
+- Keine eigene Seite; die Anzeige wird mit PROJ-10/11/13 eingebunden.
 
 ## QA Test Results
 _To be added by /qa_
