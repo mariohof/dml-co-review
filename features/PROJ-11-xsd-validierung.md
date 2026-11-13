@@ -232,7 +232,27 @@ _Stand 2026-11-13 — `/frontend` (PROJ-11)_
 
 **Hinweise**
 - Kein wohlgeformtes XML: ein Fehler „Die Datei ist kein gültiges XML (Zeile X) — {xmllint-Meldung}"; Folgemeldungen von xmllint erscheinen als Hinweise, damit die Fehlerzahl nicht künstlich steigt.
-- Sichtbar wird die Prüfung erst mit SEND, REPLY und Export (PROJ-12, 13, 18). Bis die Serverfunktion steht (`/backend`), meldet der Prüfdienst „nicht verfügbar".
+- Sichtbar wird die Prüfung erst mit SEND, REPLY und Export (PROJ-12, 13, 18).
+
+## Implementation Notes (Backend)
+_Stand 2026-11-13 — `/backend` (PROJ-11)_
+
+**Umgesetzt**
+- `src/app/api/xsd-pruefung/route.ts` — Serverfunktion `POST /api/xsd-pruefung?issue=…` (Node.js-Laufzeit, nicht zwischengespeichert). Issue per Zod gegen die Whitelist 2.3/4.2/5.0 geprüft (sonst 400), leere Datei 400, über 5 MB 413. Antwort: Ergebnis laut Vertrag (`src/lib/xsd/types.ts`), Status 200 bzw. 503 bei „nicht verfügbar".
+- `src/lib/xsd/server/xmllint.ts` — Aufruf `xmllint --noout --nonet --schema schemas/s1000d/issue-X/dml.xsd -`:
+  - Datei über die Standardeingabe → **keine Zwischendateien**, nichts wird gespeichert oder protokolliert.
+  - ohne Shell, feste Argumente, Schemapfad nur aus dem Issue; offline (`--nonet`), keine Ersetzung externer Entities (geprüft: kein Lesen lokaler Dateien über `<!ENTITY … SYSTEM>`).
+  - Zeitlimit 20 s (Prozess wird beendet → „zeitlimit"), Ausgabe auf 4 MB begrenzt.
+  - Auswertung der Exit-Codes: 0 gültig · 3/4 Schemafehler · 1 mit „parser error" nicht wohlgeformt · 5 Schema fehlt · Programm nicht gefunden → `programm_fehlt` · alles andere → `unerwartet`. Meldungsformat von libxml2 2.9 und 2.13+ wird erkannt.
+
+**Einstellung**
+- `XMLLINT_PATH` (optional): Pfad zum xmllint-Programm, Standard `xmllint` im Systempfad — z. B. unter Windows `C:\\libxml2\\bin\\xmllint.exe`. Wird vom Python-Startskript (PROJ-19) gesetzt bzw. geprüft. _(Eintrag in `.env.local.example` steht noch aus — Zugriff auf `.env`-Dateien ist für die KI gesperrt.)_
+- Die Schemas werden relativ zum Arbeitsverzeichnis gesucht (`schemas/s1000d/…`); die App muss daher aus dem Projektordner gestartet werden (PROJ-19).
+
+**Sicherheit**
+- Kein Zugriffsschutz (lokaler Betrieb, siehe Decision Log). Zusätzlich werden Browser-Anfragen fremder Webseiten (Origin ≠ eigener Host) mit 403 abgewiesen, damit eine fremde Seite die lokale Prüffunktion nicht nutzen kann.
+
+**Tests**: `xmllint.test.ts` (9, mit echtem xmllint; übersprungen, wenn nicht installiert), `route.test.ts` (5). Geprüft: Demo-REPLY und Testdatei 4 gültig; S1000DBIKE 4.2/5.0 gültig (5.0 offline); Testdatei 1 und 2 sowie 4.2-Datei gegen 2.3 → Schemafehler; Testdatei 3 → nicht wohlgeformt (Zeile 987); Programm fehlt, Schema fehlt, Zeitlimit → nicht verfügbar. Rauchtest am laufenden Produktionsserver bestanden. Insgesamt 308 Unit-Tests grün.
 
 ## QA Test Results
 _To be added by /qa_
