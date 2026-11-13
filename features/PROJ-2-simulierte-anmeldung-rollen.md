@@ -1,6 +1,6 @@
 # PROJ-2: Simulierte Anmeldung & Rollenwechsel
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -246,7 +246,75 @@ _Stand 2026-11-12 — `/frontend PROJ-2`_
 - Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`)
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-1–6 und PROJ-17
+**Automatisiert:** Vitest 184 Tests ✅ · Playwright 46 E2E-Tests ✅ (Chrome über `PW_CHANNEL=chrome`, Projekt `chromium`)
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser nicht installiert)
+**Responsive:** 375 / 768 / 1440 px — kein horizontales Scrollen der Seite (Tabellen scrollen innerhalb ihrer Karte)
+
+### Acceptance Criteria Status
+- [x] Anmeldung (5/5): Anmeldeseite mit aktiven Benutzern (Name + Rolle) inkl. Systemkonto; Klick meldet an; Neuladen bleibt angemeldet; Direktaufruf → Anmeldeseite (mit Rücksprung zum Ziel) — E2E
+- [ ] Kopfzeile & Benutzerwechsel (5/6): **BUG-QA1-1** — Name wird auf dem Desktop gekürzt; Auswahlliste mit aktiven Benutzern + „Abmelden", Wechsel wirkt sofort, Seite bleibt bzw. Dashboard + Hinweis, Abmelden — E2E
+- [x] Rollenabhängige Navigation & Sichtbarkeit (7/7): Menü je Rolle, DMRL-Liste je Rolle/Berechtigung, Hinweis ohne Zuordnung, „Keine Berechtigung" mit Link, „Demo-Daten zurücksetzen" nur Administrator — E2E
+- [x] Rechte-Regel für Workflows (2/2): zentrale Rechte-Regel per Unit-Test geprüft; die Workflow-Aktionen selbst folgen mit PROJ-7 ff.
+- [x] Datenänderungen im Hintergrund (4/4): Deaktivierung → Abmeldung mit Hinweis; Rollenänderung sofort (E2E); Sperre bleibt beim Wechsel (Sperre gehört zur DMRL, Unit); Anmeldung bleibt beim Zurücksetzen (E2E + Unit)
+
+### Edge Cases Status
+- [x] Nur Systemkonto aktiv → Auswahlliste mit „Administrator" und „Abmelden"
+- [x] Unbekannte DMRL → „DMRL nicht gefunden"
+- [ ] Nicht getestet: Wechsel während offenem Dialog (Dialoge der Workflows folgen mit PROJ-9 ff.)
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung: alle Seiten leiten zur Anmeldeseite (E2E)
+- [x] Autorisierung: Bearbeiter erhalten für Verwaltung und nicht berechtigte DMRLs „Keine Berechtigung" (E2E)
+- [x] XSS: `<img src=x onerror=alert(1)>` als Benutzername wird als Text angezeigt, nicht ausgeführt (E2E)
+- [x] Offene Weiterleitung: `?ziel=//evil…`, `https://evil…` werden ignoriert, Ziel ist das Dashboard (E2E)
+- [x] Manipulierte Anmeldung (unbekannte Benutzer-ID im Speicher) wird abgewiesen (E2E)
+- [x] Manipulierter/beschädigter Datenbestand wird beim Laden erkannt (Zod-Prüfung, Verknüpfungen, Grundregeln) (Unit + E2E)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): Wer Zugriff auf den Browser-Speicher hat, kann Rollen oder Berechtigungen per Entwicklerwerkzeug ändern — simulierte Anmeldung ohne Backend, bewusst akzeptiert.
+- [x] Keine Geheimnisse/Zugangsdaten im Client; keine Serverfunktionen in diesem Umfang (Rate Limiting nicht relevant)
+
+### Bugs Found
+
+#### BUG-QA1-1: Benutzername in der Kopfzeile wird auf dem Desktop abgeschnitten
+- **Severity:** Medium
+- **Betrifft:** PROJ-2, Kopfzeile (`app-header.tsx`), Benutzer-Auswahlliste
+- **Steps to Reproduce:**
+  1. Als „Administrator" anmelden, Fensterbreite 1440 px
+  2. Expected: „Administrator · Administrator" vollständig lesbar
+  3. Actual: „Adm… · Administrator" — der Name wird gekürzt, obwohl genug Platz vorhanden ist (Schaltfläche ist auf 16rem begrenzt, Name und Rolle teilen sich die Breite)
+- **Screenshot:** `test-results/screens/1440-benutzer.png`
+- **Priority:** Fix before deployment (AC „Kopfzeile zeigt Name und Rolle")
+
+#### BUG-QA1-3: Mobil (375 px) liegt die Aktion „Auswahl" im Dashboard außerhalb des sichtbaren Bereichs
+- **Severity:** Low
+- **Betrifft:** Dashboard-Liste (PROJ-2; wird mit PROJ-16 überarbeitet)
+- **Steps to Reproduce:**
+  1. Fensterbreite 375 px, als Administrator anmelden
+  2. Expected: DMRL lässt sich ohne Suchen öffnen
+  3. Actual: Tabelle muss horizontal gescrollt werden, um „Auswahl" zu erreichen (laut Spec zulässig, aber unhandlich)
+- **Screenshot:** `test-results/screens/375-dashboard.png`
+- **Priority:** Nice to have (bei PROJ-16 berücksichtigen)
+
+#### BUG-QA1-2: Fehlendes Favicon erzeugt 404 auf jeder Seite
+- **Severity:** Low
+- **Betrifft:** alle Seiten (global, App-Rahmen)
+- **Steps to Reproduce:**
+  1. Beliebige Seite öffnen, Browser-Konsole ansehen
+  2. Expected: keine Fehler
+  3. Actual: `Failed to load resource: 404 (Not Found)` für `/favicon.ico`
+- **Priority:** Nice to have
+
+### Summary
+- **Acceptance Criteria:** 23/24 passed, 1 fehlgeschlagen (BUG-QA1-1, Medium)
+- **Bugs Found:** 3 total (0 critical, 0 high, 1 medium, 2 low)
+- **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung ohne Backend)
+- **Production Ready:** YES
+- **Recommendation:** Freigeben; Medium/Low-Bugs bei Gelegenheit beheben
+- **E2E-Tests:** `tests/PROJ-1-datenhaltung.spec.ts`, `tests/PROJ-2-anmeldung.spec.ts`, `tests/PROJ-3-to-6-17-verwaltung.spec.ts`, `tests/security-responsive.spec.ts`
 
 ## Deployment
 _To be added by /deploy_

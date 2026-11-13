@@ -1,6 +1,6 @@
 # PROJ-5: Systemverwaltung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -201,7 +201,44 @@ _Stand 2026-11-13 — `/frontend PROJ-5`_
 - Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`)
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-1–6 und PROJ-17
+**Automatisiert:** Vitest 184 Tests ✅ · Playwright 46 E2E-Tests ✅ (Chrome über `PW_CHANNEL=chrome`, Projekt `chromium`)
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser nicht installiert)
+**Responsive:** 375 / 768 / 1440 px — kein horizontales Scrollen der Seite (Tabellen scrollen innerhalb ihrer Karte)
+
+### Acceptance Criteria Status
+- [x] Zugriff (2/2) — E2E
+- [x] Liste (6/6): sortiert, DMRL-Spalte („vorhanden" + Status als Link / „— keine —"), Suche über Bezeichnung und MI, Keine Treffer — E2E + Komponententest
+- [x] Anlegen (8/8): Dialog, Pflichtfelder, MI-Großschreibung, MI-Format/Eindeutigkeit, Bezeichnung eindeutig, Beschreibung ≤ 500 — E2E + Unit
+- [x] Bearbeiten (4/4): Feldsperren je Zustand inkl. Hinweisen, Issue-Wechsel ohne Workflow — E2E + Unit
+- [x] Löschen (4/4): ohne DMRL möglich, sonst gesperrt mit Begründung/Tooltip — E2E + Unit
+- [x] Demo-Daten (1/1)
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung: alle Seiten leiten zur Anmeldeseite (E2E)
+- [x] Autorisierung: Bearbeiter erhalten für Verwaltung und nicht berechtigte DMRLs „Keine Berechtigung" (E2E)
+- [x] XSS: `<img src=x onerror=alert(1)>` als Benutzername wird als Text angezeigt, nicht ausgeführt (E2E)
+- [x] Offene Weiterleitung: `?ziel=//evil…`, `https://evil…` werden ignoriert, Ziel ist das Dashboard (E2E)
+- [x] Manipulierte Anmeldung (unbekannte Benutzer-ID im Speicher) wird abgewiesen (E2E)
+- [x] Manipulierter/beschädigter Datenbestand wird beim Laden erkannt (Zod-Prüfung, Verknüpfungen, Grundregeln) (Unit + E2E)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): Wer Zugriff auf den Browser-Speicher hat, kann Rollen oder Berechtigungen per Entwicklerwerkzeug ändern — simulierte Anmeldung ohne Backend, bewusst akzeptiert.
+- [x] Keine Geheimnisse/Zugangsdaten im Client; keine Serverfunktionen in diesem Umfang (Rate Limiting nicht relevant)
+
+### Bugs Found
+
+Keine Bugs in diesem Feature.
+
+### Summary
+- **Acceptance Criteria:** 25/25 passed
+- **Bugs Found:** 0 total (0 critical, 0 high, 0 medium, 0 low)
+- **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung ohne Backend)
+- **Production Ready:** YES
+- **Recommendation:** Freigeben; Medium/Low-Bugs bei Gelegenheit beheben
+- **E2E-Tests:** `tests/PROJ-1-datenhaltung.spec.ts`, `tests/PROJ-2-anmeldung.spec.ts`, `tests/PROJ-3-to-6-17-verwaltung.spec.ts`, `tests/security-responsive.spec.ts`
 
 ## Deployment
 _To be added by /deploy_
