@@ -298,6 +298,7 @@ _Stand 2026-11-12 — `/frontend PROJ-2`_
   3. Actual: Tabelle muss horizontal gescrollt werden, um „Auswahl" zu erreichen (laut Spec zulässig, aber unhandlich)
 - **Screenshot:** `test-results/screens/375-dashboard.png`
 - **Priority:** Nice to have (bei PROJ-16 berücksichtigen)
+- **Status:** Behoben mit PROJ-16 (2026-11-13) — Aktionsspalte bleibt beim waagerechten Scrollen sichtbar (fixiert am rechten Rand), zusätzlich ist der Systemname ein Link; E2E-Test `tests/PROJ-16-dashboard.spec.ts`
 
 #### BUG-QA1-2: Fehlendes Favicon erzeugt 404 auf jeder Seite
 - **Severity:** Low

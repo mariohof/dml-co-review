@@ -30,7 +30,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | SEND-Export & REPLY-Import | In Progress (PROJ-12, PROJ-13) |
 | P0 (MVP) | Freigabestatus & Archiv | In Progress (PROJ-14, PROJ-15) |
 | P0 (MVP) | Lokaler Start (Python-Startskript) | Architected (PROJ-19) |
-| P1 | Dashboard / Übersicht | Architected (PROJ-16) |
+| P1 | Dashboard / Übersicht | In Progress (PROJ-16) |
 
 Details und Abhängigkeiten: siehe `features/INDEX.md`.
 

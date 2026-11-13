@@ -1,8 +1,8 @@
 # PROJ-16: Dashboard
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung & Rollen) — Dashboard als Startseite, DMRL-Liste nach Rolle
@@ -213,6 +213,30 @@ Keine Änderung, nichts gespeichert. **Berechnet** je Anzeige aus dem Datenbesta
 ### F) Testbarkeit
 - Unit-Tests: Auswertung mit Demo-Daten (Admin: 3 / 1 / 20 / 0; Anna Bearbeitung nur PHUNGUN + Fahrzeug), Aufgaben (ausgecheckt, zu überarbeiten, Wartezeit ≥ 1 Tag), Versionsindex mit zurückgezogenem SEND, Filter/Suche.
 - E2E: Kachel-Filter an/aus, Issue-Filter 4.2, Suche „PHUN", „Auswahl" öffnet DMRL, Benutzerwechsel aktualisiert die Sicht.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-16`_
+
+**Umgesetzt**
+- `src/lib/dashboard.ts` — **eine Auswertung** für Kennzahlen, Tabelle und Aufgaben, bei jeder Anzeige berechnet:
+  - Zeilenwerte: Kennung `MI–CAGE–Typ`, Version (letzter nicht zurückgezogener SEND), Einträge, freigegeben, offene Änderungen, abgelehnte Einträge, Sperrinhaber inkl. „inaktiv", Zeitpunkt des offenen SEND.
+  - Kennzahlen (unabhängig von Filter/Suche).
+  - „Meine Aufgaben": eigene Sperre, Einträge zu überarbeiten, wartet ≥ 1 Tag auf REPLY.
+  - Filter (Kachel, Status mehrfach, Issue, Suche nach System/MI) mit Umwandlung von und in die Seitenadresse.
+- `src/components/dashboard/dashboard.tsx` (ersetzt die Liste aus PROJ-2) — Aufbau laut Wireframe:
+  - 4 Kacheln als Schaltflächen mit Zustand (`aria-pressed`); „Bestände" setzt alle Filter zurück.
+  - „Meine Aufgaben" nur bei vorhandenen Aufgaben, mit Links zur DMRL.
+  - Karte „DMRL-Bestände" mit Zähler, Suche, Status-Mehrfachauswahl, Issue-Auswahl und „Filter zurücksetzen".
+  - Tabelle mit System/Kennung, Issue, Version, Einträge, Fortschritt (Balken), Workflow-Status mit „ausgecheckt von …" und „n zu überarbeiten", „Auswahl"; seitenweise ab 25; Leerhinweise laut PROJ-2 und „Keine DMRL entspricht dem Filter".
+- Filterzustand steht in der Adresse (Zurück-Taste und Links behalten die Ansicht); maßgeblich ist der Zustand im Speicher, die Adresse wird nachgeführt.
+- **BUG-QA1-3 behoben:** Die Spalte „Auswahl" bleibt beim waagerechten Scrollen am rechten Rand sichtbar; der Systemname ist zusätzlich ein Link.
+
+**Tests**
+- Unit: `dashboard.test.ts` (9, Admin 3/1/20/0, Anna nur PHUNGUN + Fahrzeug, 3 + 2 = 5 offene Änderungen, zurückgezogener SEND, Aufgaben inkl. Sichtbarkeit, Filter, Adresse) und `dashboard.test.tsx` (6, inkl. Regressionstest Zurücksetzen + Tippen); insgesamt 416 Unit-Tests grün.
+- E2E: `tests/PROJ-16-dashboard.spec.ts` (2) — Kacheln, Kachel-Filter an/aus, Issue 4.2, Suche „PHUN", Zurück-Navigation behält den Filter, Benutzerwechsel; mobil 375 px „Auswahl" sichtbar.
+
+**Gefunden und behoben**
+- Beim ersten E2E-Lauf kehrte nach „Filter zurücksetzen" beim sofortigen Tippen der alte Filter zurück, weil die Adresse noch nicht aktualisiert war. Seither ist der Zustand im Speicher maßgeblich (Regressionstest vorhanden).
 
 ## QA Test Results
 _To be added by /qa_
