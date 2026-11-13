@@ -1,0 +1,5 @@
+# Startdateien (PROJ-19): Zeilenenden je Betriebssystem festlegen, damit sie nach ZIP/Git-Klon funktionieren
+*.bat     text eol=crlf
+*.command text eol=lf
+*.sh      text eol=lf
+*.py      text eol=lf

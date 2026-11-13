@@ -62,6 +62,8 @@ npm run start        # Production server
 npm test             # Vitest unit/integration tests
 npm run test:e2e     # Playwright E2E tests
 npm run test:all     # Both test suites
+python3 scripts/start.py   # Lokaler Start wie für Anwender (PROJ-19, Port 8877; siehe START-HIER.md)
+python3 -m unittest discover -s scripts -p "test_*.py"   # Tests des Startskripts
 ```
 
 ## Product Context

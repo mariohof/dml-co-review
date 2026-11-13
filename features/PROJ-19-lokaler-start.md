@@ -1,8 +1,8 @@
 # PROJ-19: Lokaler Start (Python-Startskript)
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Dependencies
 - Requires: PROJ-11 (XSD-Validierung) — xmllint wird als Voraussetzung geprüft
@@ -220,6 +220,39 @@ Das Skript speichert nur **einen kleinen Stand-Vermerk** im Projektordner (nicht
 ### H) Testbarkeit
 - Unit-Tests des Startskripts mit der Python-Standard-Testbibliothek: Versionsvergleich, Fingerabdruck/Update-Erkennung, Port-Prüfung, Optionen, Installationshinweise je Betriebssystem.
 - Manuelle Prüfung je Betriebssystem (macOS, Windows 11, Linux): Erststart, Zweitstart ohne Build, Update, fehlendes Node.js/xmllint, belegter Port, Beenden per Strg+C und Fensterschließen, Pfad mit Leerzeichen/Umlauten.
+
+## Implementation Notes
+_Stand 2026-11-13 — `/frontend PROJ-19` (keine App-Oberfläche; Startskript, Startdateien, Kurzanleitung)_
+
+**Umgesetzt**
+- `scripts/start.py` (nur Python-Standardbibliothek):
+  - Prüfung Python ≥ 3.9 (vor allen anderen Anweisungen), Node.js ≥ 20 und xmllint (Pfad aus `XMLLINT_PATH` wie in PROJ-11, sonst Systempfad). Bei Fehlen: Installationshinweise je Betriebssystem; es wird nichts installiert oder gestartet.
+  - Port prüfen (Standard 8877): Verbindung und Bindung an 127.0.0.1; belegt → „Port 8877 ist belegt — läuft die Anwendung bereits? …".
+  - Anderer Port nur ausdrücklich, mit Hinweis auf den eigenen Datenbestand im Browser.
+  - Stand-Vermerk `.start-stand.json` (nicht in Git): Fingerabdruck der Lock-Datei sowie des Projektstands (`src`, `public`, `schemas`, Paket- und Build-Konfiguration; ohne Testdateien).
+  - `npm ci` nur bei fehlenden Paketen oder geänderter Lock-Datei; Build nur bei fehlendem Build, geändertem Projektstand oder `--neu-bauen` (löscht `.next`).
+  - Start: Produktionsserver von Next.js direkt über Node (ohne Shell), **nur an 127.0.0.1**, Telemetrie aus, Arbeitsordner = Projektordner (Schemas für PROJ-11).
+  - Warten bis erreichbar (max. 60 s), danach Browser öffnen (außer `--kein-browser`); ist das nicht möglich, steht die Adresse in der Konsole.
+  - Deutsche Kurzmeldungen in der Konsole; ausführliche Ausgaben in `start.log` (nicht in Git), bei Fehlern mit den letzten Zeilen. Gesonderte Hinweise bei fehlender Internetverbindung beim ersten Start und bei Build-Fehlern (`--neu-bauen`).
+  - Beenden mit Strg+C, SIGTERM/SIGHUP (Fenster schließen) bzw. SIGBREAK (Windows): Server samt Unterprozessen stoppen (eigene Prozessgruppe; Windows `taskkill /T`).
+- `Start.command` (macOS), `start.sh` (Linux), `Start.bat` (Windows, probiert `py -3`, dann `python`):
+  - Wechsel in den Projektordner (Pfade mit Leerzeichen/Umlauten), Meldung bei fehlendem Python 3.
+  - Fenster bleibt bei Fehlern offen (nicht bei Strg+C).
+  - Ausführbar-Kennzeichen gesetzt; Zeilenenden über `.gitattributes` festgelegt (`.bat` CRLF, `.command`/`.sh`/`.py` LF).
+- `START-HIER.md` — Voraussetzungen je Betriebssystem, Doppelklick-Start, macOS „Rechtsklick → Öffnen", Beenden, Update, Fehlerbehebung, Optionen.
+- `package.json` — `engines.node >= 20`; `.gitignore` — Stand-Vermerk und Protokoll; `CLAUDE.md` — Befehle ergänzt.
+
+**Tests**
+- `scripts/test_start.py` (12, `python3 -m unittest discover -s scripts -p "test_*.py"`): Versionen, Hinweise je Betriebssystem, `XMLLINT_PATH`, Port frei/belegt, Optionen, Fingerabdruck (Testdateien ignoriert, Umlaute/Leerzeichen), Installieren/Bauen nur bei Bedarf, Abbruch ohne Installation/Start.
+- Echter Lauf auf macOS (Port 8899, `--kein-browser`):
+  - Erststart baut und startet; HTTP 200; XSD-Prüfung über die Serverfunktion liefert „gültig"; Server lauscht nur auf `127.0.0.1`.
+  - Zweiter Start bei laufender App → Abbruch „Port … ist belegt".
+  - Zweitstart ohne Änderung → „kein Neubau nötig", erreichbar nach ca. 1 s.
+  - Strg+C und SIGTERM → Server beendet, Port frei.
+
+**Noch nicht geprüft (manuell bei QA)**
+- `npm ci` beim allerersten Start auf einem frischen Rechner (hier waren die Pakete bereits passend installiert; der Stand-Vermerk wurde dafür vorbelegt).
+- Windows 11 und Linux, macOS-Doppelklick inkl. Gatekeeper, Python < 3.9, Fensterschließen unter Windows.
 
 ## QA Test Results
 _To be added by /qa_

@@ -42,3 +42,7 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Lokaler Start (PROJ-19)
+/.start-stand.json
+/start.log
