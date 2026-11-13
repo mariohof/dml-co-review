@@ -1,8 +1,8 @@
 # PROJ-11: XSD-Validierung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Dependencies
 - Requires: PROJ-5 (Systemverwaltung) — S1000D-Issue des Systems bestimmt das Schema
@@ -218,6 +218,20 @@ Nichts wird gespeichert. **Ergebnis einer Prüfung:** Zustand (gültig / Schemaf
 ### I) Testbarkeit
 - Integrationstests mit echtem xmllint: PHUNGUN-Dateien gültig (2.3), S1000DBIKE-Beispiel gültig (4.2), leere/fehlerhafte Dateien → Schemafehler, kaputtes XML → nicht wohlgeformt, unbekanntes Issue abgelehnt, falscher Programmpfad → nicht verfügbar. Tests werden übersprungen (mit Hinweis), wenn xmllint auf dem Testrechner fehlt.
 - Demo-Testdateien (PROJ-1): 1–3 scheitern wie erwartet, 4 und Demo-REPLY bestehen.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend` (PROJ-11)_
+
+**Umgesetzt (Browser-Seite)**
+- `src/lib/xsd/types.ts` — **Vertrag zur Serverfunktion**: `POST /api/xsd-pruefung?issue=2.3|4.2|5.0`, Body = XML-Datei roh (höchstens 5 MB); Antwort JSON mit Zustand `gueltig` / `schemafehler` (Zeile + Originalmeldung je Fehler) / `nicht_wohlgeformt` / `nicht_verfuegbar` (Grund: `programm_fehlt`, `schema_fehlt`, `zeitlimit`, `unerwartet`, `nicht_erreichbar`). Die Antwort wird mit Zod geprüft.
+- `src/lib/xsd/client.ts` — XSD-Prüfdienst `validateXml(xml, issue)`: wirft nie; Netzfehler, fehlende Serverfunktion, unerwartete Antwort und Zeitlimit (30 s im Browser) ergeben „nicht verfügbar" → Vorgang blockiert. Übersetzung in den gemeinsamen Prüfbericht (Regelgruppe „XSD", Bezug „Zeile"), deutsche Überschriften, Dateiannahme REPLY (`.xml`, höchstens 5 MB, nicht leer). Die Datei wird roh übertragen, damit xmllint die Kodierung aus der XML-Deklaration auswertet.
+- `src/components/check/xsd-check-panel.tsx` — Anzeige für die Dialoge von SEND, REPLY und Export: „Schemaprüfung läuft …", „XSD-Prüfung bestanden (S1000D Issue X)", Prüfbericht (PROJ-8-Anzeige mit Download, „… und N weitere") bzw. „XSD-Prüfung nicht verfügbar …" mit Grund und ohne Weiter-Möglichkeit; `xsdPassed()` für die aufrufenden Dialoge.
+
+**Tests**: `client.test.ts` (9), `xsd-check-panel.test.tsx` (5).
+
+**Hinweise**
+- Kein wohlgeformtes XML: ein Fehler „Die Datei ist kein gültiges XML (Zeile X) — {xmllint-Meldung}"; Folgemeldungen von xmllint erscheinen als Hinweise, damit die Fehlerzahl nicht künstlich steigt.
+- Sichtbar wird die Prüfung erst mit SEND, REPLY und Export (PROJ-12, 13, 18). Bis die Serverfunktion steht (`/backend`), meldet der Prüfdienst „nicht verfügbar".
 
 ## QA Test Results
 _To be added by /qa_
