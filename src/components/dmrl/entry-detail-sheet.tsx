@@ -16,10 +16,12 @@ const GROUPS: { title: string; fields: (typeof ENTRY_FIELD_NAMES)[number][] }[] 
 interface EntryDetailSheetProps {
   entry: EntrySnapshot | null
   onClose: () => void
+  /** Inhalt einer archivierten Datei: ohne Eintragsstatus (PROJ-15) */
+  fileView?: boolean
 }
 
 /** Detailfenster: alle 27 Felder eines Eintrags, nur lesend (PROJ-7) */
-export function EntryDetailSheet({ entry, onClose }: EntryDetailSheetProps) {
+export function EntryDetailSheet({ entry, onClose, fileView = false }: EntryDetailSheetProps) {
   return (
     <Sheet open={entry !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
@@ -29,7 +31,7 @@ export function EntryDetailSheet({ entry, onClose }: EntryDetailSheetProps) {
               <SheetTitle className="break-all font-mono text-base">{formatDmc(entry.fields)}</SheetTitle>
               <SheetDescription asChild>
                 <div className="flex flex-wrap items-center gap-2">
-                  <EntryStatusBadge status={entry.status} />
+                  {!fileView && <EntryStatusBadge status={entry.status} />}
                   <EntryTypeLabel type={entry.fields.dmentryType} />
                   {isDmDeleted(entry.fields) && <DmDeletedBadge />}
                 </div>

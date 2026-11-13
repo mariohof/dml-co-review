@@ -1,4 +1,4 @@
-import { canAccessAdministration } from "@/lib/auth/permissions"
+import { canAccessAdministration, canAccessDmrl } from "@/lib/auth/permissions"
 import type { Dataset, Dmrl, User } from "@/lib/data/schema"
 import { checkInBlocked } from "@/lib/workflows/check-in"
 import { checkOutBlocked, isLockHolder, releaseLockBlocked } from "@/lib/workflows/check-out"
@@ -42,7 +42,7 @@ export function dmrlActions(data: Dataset, dmrl: Dmrl, user: User | null): DmrlA
     { id: "send", label: "SEND", visible: true, blocked: sendBlocked(data, dmrl, user) },
     { id: "reply_import", label: "REPLY importieren", visible: true, blocked: replyBlocked(dmrl, user) },
     { id: "export", label: "Exportieren", visible: true, blocked: notYet("PROJ-18 (DMRL-Export)") },
-    { id: "archive", label: "Archiv", visible: true, blocked: notYet("PROJ-15 (Archiv)") },
+    { id: "archive", label: "Archiv", visible: true, blocked: canAccessDmrl(user, dmrl) ? null : "Keine Berechtigung für diese DMRL." },
     { id: "check_out_zuruecknehmen", label: "Check-out zurücknehmen", visible: holder, blocked: null },
     { id: "csv_erneut_herunterladen", label: "CSV erneut herunterladen", visible: holder, blocked: null },
     { id: "sperre_aufheben", label: "Sperre aufheben", visible: isAdmin && !!dmrl.lock && !holder, blocked: releaseLockBlocked(dmrl, user) },

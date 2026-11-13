@@ -1,8 +1,8 @@
 # PROJ-15: Archiv SEND/REPLY
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Aktion „Archiv", Tabellendarstellung
@@ -210,6 +210,39 @@ Keine Änderung, nur Lesen (PROJ-1): Archivstände (inkl. Originaldatei, Zuordnu
 ### F) Testbarkeit
 - Unit-Tests: Sortierung und Kettenanzeige, zurückgezogener SEND, Namensauflösung (inaktiv, umbenannt), Verlaufsfilter.
 - E2E: Demo PHUNGUN — 3 Archivstände, Download byte-genau (CRLF erhalten), Anzeige REPLY C1234 mit Antworten, Verlauf mit 3 Einträgen; DMRL ohne Austausch zeigt Leerhinweise; Bearbeiter ohne Berechtigung.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-15`_
+
+**Umgesetzt**
+- `src/lib/dmrl/archive.ts`:
+  - Archivstände neueste oben, Kette „SEND … → REPLY … → SEND …".
+  - Bezug lesbar („eigener Stand (erster SEND)" bzw. „C1234 00001-2026").
+  - Aktuelle Namen über IDs (Benutzer mit Kennzeichen „inaktiv", Organisation mit CAGE-Code und aktuellem Namen).
+  - Archivierte Datei neu einlesen (DML-Leser des Issues; nicht lesbar → null).
+  - **Byte-genauer Download**: Bytes in der Kodierung laut XML-Deklaration (UTF-8 inkl. BOM, ISO-8859-1; Zeilenenden bleiben).
+  - Verlauf mit Aktionsnamen und Filtergruppen (Check-out/Check-in, SEND, REPLY, Kopfdaten).
+- `src/components/archive/archive-view.tsx` + Seite `/dmrl/[id]/archiv?ansicht=austausch|freigaben|verlauf` — Registerkarten, die gewählte Karte steht in der Adresse.
+  - **Austausch:** Tabelle mit Stand (Badge SEND/REPLY + Versionsindex), Partner, Datum, Bearbeiter, Bezug, Einträge (REPLY: freigegeben/zu überarbeiten), Datei; Kennzeichen „zurückgezogen am … von … — Begründung"; „Anzeigen" und „Herunterladen".
+  - **Freigabestände:** neueste oben, mit „Anzeigen" (→ Freigabestand-Seite), „Als CSV exportieren" und „Als XML exportieren".
+  - **Verlauf:** neueste oben, Filter nach Aktionsart, je 50 Einträge mit „Weitere anzeigen".
+  - Leerhinweise laut Spec.
+- `src/components/archive/archived-file-view.tsx` + Seite `/dmrl/[id]/archiv/[standId]`:
+  - Kopfdaten und Bemerkung der Datei; Kennzeichen „zurückgezogen"; „Herunterladen".
+  - Eintragstabelle in der neuen **Datei-Ansicht** (ohne Status, mit Spalte „Antwort" und Partner-Kommentar).
+  - Nicht lesbare Datei → „Inhalt kann nicht angezeigt werden" (Download bleibt möglich).
+- `src/components/dmrl/entry-table.tsx` / `entry-detail-sheet.tsx` — Option `fileView` (keine Zählerleiste, kein Statusfilter, keine Statusspalte).
+- `src/components/dmrl/release-export.tsx` — Export eines Freigabestands (CSV/XML mit XSD-Prüfung) als gemeinsamer Baustein für die Freigabestand-Seite (PROJ-14) und das Archiv.
+- `src/lib/files/download.ts` — `downloadBytes`.
+- Aktion „Archiv" in der DMRL-Ansicht öffnet die Archivseite.
+
+**Tests**
+- Unit: `archive.test.ts` (7), `archive-view.test.tsx` (8); insgesamt 388 Unit-Tests grün.
+- E2E: `tests/PROJ-15-archiv.spec.ts` (2) — Kette, **Download byte-identisch mit der Originaldatei (CRLF)**, Anzeige REPLY mit Antworten, Verlauf über die Adresse, fehlende Berechtigung.
+
+**Hinweise**
+- In der Austausch-Tabelle zeigt ein SEND die Anzahl der Einträge der Datei; ein REPLY zeigt freigegeben/zu überarbeiten (gespeicherte Anzahlen der Übernahme).
+- Kein Verlaufseintrag für Archiv-Downloads (Out of Scope: Protokoll von Exporten).
 
 ## QA Test Results
 _To be added by /qa_

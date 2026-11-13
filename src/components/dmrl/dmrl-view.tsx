@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { useDataStore } from "@/components/data/data-store-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,6 +19,7 @@ import { EntryTable } from "./entry-table"
 /** DMRL-Ansicht (PROJ-7): Kopfbereich, Aktionsleiste, Eintragstabelle — reine Anzeige; Workflows über Dialoge */
 export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
   const { data } = useDataStore()
+  const router = useRouter()
   const entries = useMemo(() => data.entries.filter((entry) => entry.dmrlId === dmrl.id), [data.entries, dmrl.id])
   const [checkOutDialog, setCheckOutDialog] = useState<CheckOutDialogKind | null>(null)
   const [checkInOpen, setCheckInOpen] = useState(false)
@@ -40,6 +42,9 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
         break
       case "send_zurueckziehen":
         setWithdrawOpen(true)
+        break
+      case "archive":
+        router.push(`/dmrl/${encodeURIComponent(dmrl.id)}/archiv`)
         break
       case "reply_import":
         setReplyOpen(true)
