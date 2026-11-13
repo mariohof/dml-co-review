@@ -1,23 +1,40 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 
 import { useDataStore } from "@/components/data/data-store-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckOutDialogs, downloadLockCsv, type CheckOutDialogKind } from "@/components/workflows/check-out-dialogs"
 import type { Dmrl } from "@/lib/data/schema"
+import type { DmrlActionId } from "@/lib/dmrl/actions"
+import { checkOutFileName } from "@/lib/workflows/check-out"
 import { DmrlActionBar } from "./dmrl-action-bar"
 import { DmrlHeader } from "./dmrl-header"
 import { EntryTable } from "./entry-table"
 
-/** DMRL-Ansicht (PROJ-7): Kopfbereich, Aktionsleiste, Eintragstabelle — reine Anzeige */
+/** DMRL-Ansicht (PROJ-7): Kopfbereich, Aktionsleiste, Eintragstabelle — reine Anzeige; Workflows über Dialoge */
 export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
   const { data } = useDataStore()
   const entries = useMemo(() => data.entries.filter((entry) => entry.dmrlId === dmrl.id), [data.entries, dmrl.id])
+  const [checkOutDialog, setCheckOutDialog] = useState<CheckOutDialogKind | null>(null)
+
+  const handleAction = (id: DmrlActionId) => {
+    switch (id) {
+      case "check_out":
+      case "check_out_zuruecknehmen":
+      case "sperre_aufheben":
+        setCheckOutDialog(id)
+        break
+      case "csv_erneut_herunterladen":
+        if (dmrl.lock) downloadLockCsv(dmrl, checkOutFileName(data, dmrl, dmrl.lock.since))
+        break
+    }
+  }
 
   return (
     <div className="space-y-6">
       <DmrlHeader dmrl={dmrl} />
-      <DmrlActionBar dmrl={dmrl} />
+      <DmrlActionBar dmrl={dmrl} onAction={handleAction} />
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Einträge</CardTitle>
@@ -26,6 +43,7 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
           <EntryTable entries={entries} />
         </CardContent>
       </Card>
+      <CheckOutDialogs dmrl={dmrl} open={checkOutDialog} onClose={() => setCheckOutDialog(null)} />
     </div>
   )
 }

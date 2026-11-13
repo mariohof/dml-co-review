@@ -1,6 +1,6 @@
 # PROJ-9: Check-out CSV
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -215,6 +215,21 @@ Keine neuen Objekte — genutzt wird die **Sperre an der DMRL** aus PROJ-1: Benu
 ### H) Testbarkeit
 - Unit-Tests: Verfügbarkeitsregeln (alle Zeilen der Tabelle), CSV-Schreiber (Kopfzeile, Reihenfolge, BOM, Anführungszeichen, führende Nullen, Umlaute), Rundlauf CSV schreiben → CSV lesen (PROJ-8) ohne Änderung, Sperre/Verlauf nach Check-out, Rücknahme, Aufhebung.
 - E2E: Check-out Demo PHUNGUN nicht möglich (gesendet); Check-out Fahrzeug → Datei `DML-GTFDEMO-D0815-C-[Jahr].csv`, Sperre sichtbar; anderer Benutzer sieht Sperre; Rücknahme; Admin hebt Sperre auf.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-9`_
+
+**Umgesetzt**
+- `src/lib/workflows/check-out.ts` — **Muster für Workflow-Aktionen**: Verfügbarkeitsregeln mit Grund (Check-out: Berechtigung, bestehende Sperre „Ausgecheckt von … seit …", Status gesendet; Sperre aufheben: nur Administrator bei fremder Sperre) und atomare Ausführung inkl. Verlaufseintrag (Check-out mit Kopie aller Einträge in der Sperre, Check-out zurücknehmen, Sperre aufheben mit Sperrinhaber im Verlauf). Dateiname `DML-{MI}-{CAGE}-{DML-Typ}-{Jahr}.csv` (Jahr des Check-outs), CSV aus der gespeicherten Kopie über den gemeinsamen CSV-Schreiber (PROJ-8).
+- `src/lib/dmrl/actions.ts` — Aktionsleiste nutzt die echten Regeln; Sperrinhaber sieht „Check-out zurücknehmen" und „CSV erneut herunterladen" statt „Check-out".
+- `src/components/workflows/check-out-dialogs.tsx` — Bestätigungsdialoge (Dateiname + Sperrhinweis; Zurücknehmen mit Warnung; Aufheben mit Name des Sperrinhabers); Reihenfolge **erst speichern, dann herunterladen**.
+- `src/components/dmrl/dmrl-view.tsx` — Aktionen an die Dialoge angebunden.
+
+**Tests**: `check-out.test.ts` (10), `check-out-dialogs.test.tsx` (3) — insgesamt 267 Tests grün. Rundlauf Check-out-CSV → CSV-Leser (PROJ-8) geprüft; Check-out allein zählt nicht als „im Workflow verwendet".
+
+**Hinweise**
+- Der Sperrinhaber sieht „Check-out" nicht (stattdessen seine Sperr-Aktionen); andere Benutzer sehen es gesperrt mit Grund.
+- Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_

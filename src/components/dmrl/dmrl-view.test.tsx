@@ -93,7 +93,8 @@ describe("DMRL-Ansicht PHUNGUN (Demo)", () => {
     for (const label of ["Check-out", "Check-in", "SEND", "REPLY importieren", "Exportieren", "Archiv", "SEND zurückziehen"]) {
       expect(within(toolbar).getByRole("button", { name: label })).toBeDisabled()
     }
-    expect(within(toolbar).getByLabelText("Diese Funktion folgt mit PROJ-9 (Check-out CSV).")).toBeInTheDocument()
+    expect(within(toolbar).getByLabelText(/Die DMRL wartet auf die Antwort des Partners/)).toBeInTheDocument()
+    expect(within(toolbar).getByLabelText("Diese Funktion folgt mit PROJ-10 (Check-in CSV).")).toBeInTheDocument()
   })
 
   it("bietet keine Möglichkeit, Einträge direkt zu ändern", () => {
