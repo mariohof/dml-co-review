@@ -6,6 +6,7 @@ import { useDataStore } from "@/components/data/data-store-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckInDialog } from "@/components/workflows/check-in-dialog"
 import { CheckOutDialogs, downloadLockCsv, type CheckOutDialogKind } from "@/components/workflows/check-out-dialogs"
+import { SendDialog, WithdrawSendDialog } from "@/components/workflows/send-dialogs"
 import type { Dmrl } from "@/lib/data/schema"
 import type { DmrlActionId } from "@/lib/dmrl/actions"
 import { checkOutFileName } from "@/lib/workflows/check-out"
@@ -19,6 +20,8 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
   const entries = useMemo(() => data.entries.filter((entry) => entry.dmrlId === dmrl.id), [data.entries, dmrl.id])
   const [checkOutDialog, setCheckOutDialog] = useState<CheckOutDialogKind | null>(null)
   const [checkInOpen, setCheckInOpen] = useState(false)
+  const [sendOpen, setSendOpen] = useState(false)
+  const [withdrawOpen, setWithdrawOpen] = useState(false)
 
   const handleAction = (id: DmrlActionId) => {
     switch (id) {
@@ -29,6 +32,12 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
         break
       case "check_in":
         setCheckInOpen(true)
+        break
+      case "send":
+        setSendOpen(true)
+        break
+      case "send_zurueckziehen":
+        setWithdrawOpen(true)
         break
       case "csv_erneut_herunterladen":
         if (dmrl.lock) downloadLockCsv(dmrl, checkOutFileName(data, dmrl, dmrl.lock.since))
@@ -50,6 +59,8 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
       </Card>
       <CheckOutDialogs dmrl={dmrl} open={checkOutDialog} onClose={() => setCheckOutDialog(null)} />
       <CheckInDialog dmrl={dmrl} open={checkInOpen} onClose={() => setCheckInOpen(false)} />
+      <SendDialog dmrl={dmrl} open={sendOpen} onClose={() => setSendOpen(false)} />
+      <WithdrawSendDialog dmrl={dmrl} open={withdrawOpen} onClose={() => setWithdrawOpen(false)} />
     </div>
   )
 }

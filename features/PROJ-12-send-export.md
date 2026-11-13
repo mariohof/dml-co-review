@@ -1,8 +1,8 @@
 # PROJ-12: SEND-Export
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Aktion „SEND", Statusanzeige
@@ -257,6 +257,25 @@ Schlägt die XSD-Prüfung fehl: nur Verlaufseintrag „SEND fehlgeschlagen — X
 - Unit-Tests: Versionsindex (fortlaufend, Jahreswechsel, zurückgezogene), `dmlref` (erster SEND, nach REPLY, nach Zurückziehen), DML-Schreiber je Issue (Kopf, Einträge, BREX bei 4.2/5.0, kein `answer`, Sonderzeichen), Rundlauf Schreiber → Leser, Statuswirkung, Zurückziehen.
 - Integration mit xmllint: erzeugte Dateien für 2.3/4.2/5.0 sind schemagültig.
 - E2E: Demo Fahrzeug (4.2) senden → Download `DML-GTFDEMO-D0815-C-[Jahr]-00001_001-00.XML`, Status gesendet; PHUNGUN nicht sendbar (gesendet); Admin zieht SEND zurück; erneuter SEND erhält nächste seqnum.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-12`_
+
+**Umgesetzt**
+- `src/lib/data/dml-writer.ts` — **DML-Schreiber je Issue** (gemeinsamer Baustein für PROJ-12/14/18): feste Struktur nach `docs/dmrl-mapping.md` und den Schemas; 2.3 (`dmlc`, `dmentry/addresdm/…`) bzw. 4.2/5.0 (`identAndStatusSection`, `dmlContent/dmlEntry`, Standard-BREX `S1000D-F-…` / `S1000D-G-…`); Antworten nur auf Wunsch (`answers`), beim SEND nie; Eintrag ohne Eintragstyp ohne Attribut; leere optionale Angaben (Ausgabedaten, Info Name, Sprache, Bemerkungen) werden weggelassen; mehrzeilige Bemerkungen in 4.2/5.0 als mehrere `simplePara`; Sonderzeichen maskiert, unzulässige Steuerzeichen entfernt; UTF-8 mit XML-Deklaration.
+- `src/lib/workflows/send.ts` — Voraussetzungen mit Gründen (Berechtigung → ausgecheckt → gesendet → abgelehnte Einträge → keine Änderungen), Partnerliste (ohne Originator) und Vorbelegung, Versionsindex (seqnum je DMRL + Absender + Jahr, zurückgezogene zählen mit), `dmlref` (erster SEND → eigener Code, sonst letzter REPLY; `issno` 001), Dateiname, Vorschau, `prepareSend` (alle Einträge nach DMC, ohne `answer`), atomares `executeSend` (Archiv byte-genau, Einträge n/c/d → gesendet, DMRL → gesendet, Verlauf „SEND … an …"; prüft Voraussetzungen und Versionsindex erneut), `recordFailedSend`, `executeWithdrawSend`.
+- `src/components/workflows/send-dialogs.tsx` — SEND-Dialog (Partner Pflicht, Hinweis „Abweichend vom letzten Partner …", Bemerkung max. 2.000 Zeichen mit Zähler, Vorschau Versionsindex/Dateiname/Anzahlen; Hinweis mit Link, wenn kein Partner existiert) → „XML wird erzeugt und geprüft …" → XSD-Prüfung (PROJ-11) → speichern → Download. Schemafehler: „Anwendungsfehler — SEND abgebrochen" + Prüfbericht, Verlauf „SEND fehlgeschlagen". Prüfung nicht verfügbar: blockiert, nichts gespeichert, „Erneut versuchen". Dialog „SEND zurückziehen" mit Pflicht-Begründung.
+- `src/lib/dmrl/actions.ts`, `src/components/dmrl/dmrl-view.tsx` — Aktionen „SEND" und „SEND zurückziehen" angebunden.
+- `src/test/setup.ts` — jsdom-Ergänzungen für Radix-Auswahllisten (erster Test, der eine Auswahlliste bedient).
+
+**Tests**
+- Unit: `dml-writer.test.ts` (9, u. a. Rundlauf Schreiben → Lesen für 2.3/4.2/5.0), `dml-writer.xsd.test.ts` (3, **erzeugte Dateien gegen alle drei Schemas mit echtem xmllint gültig**), `send.test.ts` (14, inkl. Rundlauf SEND → Partner-REPLY → REPLY-Prüfung PROJ-8 fehlerfrei), `send-dialogs.test.tsx` (5); insgesamt 339 Unit-Tests grün.
+- E2E: `tests/PROJ-12-send.spec.ts` (2) — Fahrzeug 4.2 und Hubschrauber 5.0 senden, PHUNGUN 2.3 nach Zurückziehen erneut senden (00003); jeweils mit echter XSD-Prüfung über die Serverfunktion.
+
+**Hinweise / Abweichungen**
+- Die Vorschau im Dialog wird beim Öffnen berechnet; beim Senden wird der Versionsindex neu ermittelt. Hat er sich geändert (paralleler Tab, Jahreswechsel), wird der SEND mit Meldung abgelehnt.
+- „XSD-Prüfung nicht verfügbar" wird nicht im Verlauf protokolliert (es ist kein fachlicher Fehlschlag); nur echte Schemafehler erzeugen „SEND fehlgeschlagen".
+- Freigabestand-Export (PROJ-14) und Export (PROJ-18) können den Schreiber direkt nutzen (`answers: true`).
 
 ## QA Test Results
 _To be added by /qa_

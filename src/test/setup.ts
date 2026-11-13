@@ -28,4 +28,10 @@ if (typeof window !== 'undefined') {
   if (!usable) {
     Object.defineProperty(window, 'localStorage', { value: createMemoryStorage(), configurable: true })
   }
+
+  // jsdom kennt einige DOM-Funktionen nicht, die Radix-Auswahllisten (shadcn Select) aufrufen
+  const proto = window.HTMLElement.prototype
+  if (!proto.scrollIntoView) proto.scrollIntoView = () => {}
+  if (!proto.hasPointerCapture) proto.hasPointerCapture = () => false
+  if (!proto.releasePointerCapture) proto.releasePointerCapture = () => {}
 }
