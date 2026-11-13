@@ -90,11 +90,12 @@ describe("DMRL-Ansicht PHUNGUN (Demo)", () => {
 
   it("zeigt die Aktionsleiste; Aktionen ohne Feature sind gesperrt; Administrator sieht „SEND zurückziehen\"", () => {
     const toolbar = screen.getByRole("toolbar", { name: "Aktionen" })
-    for (const label of ["Check-out", "Check-in", "SEND", "REPLY importieren", "Exportieren", "Archiv", "SEND zurückziehen"]) {
+    for (const label of ["Check-out", "SEND", "REPLY importieren", "Exportieren", "Archiv", "SEND zurückziehen"]) {
       expect(within(toolbar).getByRole("button", { name: label })).toBeDisabled()
     }
     expect(within(toolbar).getByLabelText(/Die DMRL wartet auf die Antwort des Partners/)).toBeInTheDocument()
-    expect(within(toolbar).getByLabelText("Diese Funktion folgt mit PROJ-10 (Check-in CSV).")).toBeInTheDocument()
+    // Check-in sieht nur der Sperrinhaber (PROJ-10)
+    expect(within(toolbar).queryByRole("button", { name: "Check-in" })).toBeNull()
   })
 
   it("bietet keine Möglichkeit, Einträge direkt zu ändern", () => {

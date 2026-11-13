@@ -24,7 +24,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Benutzer-, Organisations-, System- und DMRL-Verwaltung, DMRL-Berechtigungen (Admin) | Approved (PROJ-3–6, PROJ-17) |
 | P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | In Progress (PROJ-7) |
 | P0 (MVP) | Fachliches Regelwerk | In Progress (PROJ-8) |
-| P0 (MVP) | Check-out/Check-in CSV mit Sperre | In Progress (PROJ-9); PROJ-10 Architected |
+| P0 (MVP) | Check-out/Check-in CSV mit Sperre | In Progress (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML (jederzeit, ohne Sperre) | Architected (PROJ-18) |
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Architected (PROJ-11) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Architected (PROJ-12, PROJ-13) |

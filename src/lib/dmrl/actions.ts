@@ -1,5 +1,6 @@
 import { canAccessAdministration } from "@/lib/auth/permissions"
 import type { Dataset, Dmrl, User } from "@/lib/data/schema"
+import { checkInBlocked } from "@/lib/workflows/check-in"
 import { checkOutBlocked, isLockHolder, releaseLockBlocked } from "@/lib/workflows/check-out"
 
 /**
@@ -35,7 +36,7 @@ export function dmrlActions(data: Dataset, dmrl: Dmrl, user: User | null): DmrlA
   const holder = isLockHolder(dmrl, user)
   return [
     { id: "check_out", label: "Check-out", visible: !holder, blocked: checkOutBlocked(data, dmrl, user) },
-    { id: "check_in", label: "Check-in", visible: true, blocked: notYet("PROJ-10 (Check-in CSV)") },
+    { id: "check_in", label: "Check-in", visible: holder, blocked: checkInBlocked(dmrl, user) },
     { id: "send", label: "SEND", visible: true, blocked: notYet("PROJ-12 (SEND-Export)") },
     { id: "reply_import", label: "REPLY importieren", visible: true, blocked: notYet("PROJ-13 (REPLY-Import)") },
     { id: "export", label: "Exportieren", visible: true, blocked: notYet("PROJ-18 (DMRL-Export)") },

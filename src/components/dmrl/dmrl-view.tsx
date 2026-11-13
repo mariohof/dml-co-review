@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 
 import { useDataStore } from "@/components/data/data-store-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { CheckInDialog } from "@/components/workflows/check-in-dialog"
 import { CheckOutDialogs, downloadLockCsv, type CheckOutDialogKind } from "@/components/workflows/check-out-dialogs"
 import type { Dmrl } from "@/lib/data/schema"
 import type { DmrlActionId } from "@/lib/dmrl/actions"
@@ -17,6 +18,7 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
   const { data } = useDataStore()
   const entries = useMemo(() => data.entries.filter((entry) => entry.dmrlId === dmrl.id), [data.entries, dmrl.id])
   const [checkOutDialog, setCheckOutDialog] = useState<CheckOutDialogKind | null>(null)
+  const [checkInOpen, setCheckInOpen] = useState(false)
 
   const handleAction = (id: DmrlActionId) => {
     switch (id) {
@@ -24,6 +26,9 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
       case "check_out_zuruecknehmen":
       case "sperre_aufheben":
         setCheckOutDialog(id)
+        break
+      case "check_in":
+        setCheckInOpen(true)
         break
       case "csv_erneut_herunterladen":
         if (dmrl.lock) downloadLockCsv(dmrl, checkOutFileName(data, dmrl, dmrl.lock.since))
@@ -44,6 +49,7 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
         </CardContent>
       </Card>
       <CheckOutDialogs dmrl={dmrl} open={checkOutDialog} onClose={() => setCheckOutDialog(null)} />
+      <CheckInDialog dmrl={dmrl} open={checkInOpen} onClose={() => setCheckInOpen(false)} />
     </div>
   )
 }
