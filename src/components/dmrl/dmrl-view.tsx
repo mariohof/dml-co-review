@@ -7,6 +7,7 @@ import { useDataStore } from "@/components/data/data-store-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckInDialog } from "@/components/workflows/check-in-dialog"
 import { CheckOutDialogs, downloadLockCsv, type CheckOutDialogKind } from "@/components/workflows/check-out-dialogs"
+import { useDmrlExport } from "@/components/workflows/dmrl-export"
 import { ReplyImportDialog } from "@/components/workflows/reply-import-dialog"
 import { SendDialog, WithdrawSendDialog } from "@/components/workflows/send-dialogs"
 import type { Dmrl } from "@/lib/data/schema"
@@ -26,6 +27,7 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
   const [sendOpen, setSendOpen] = useState(false)
   const [withdrawOpen, setWithdrawOpen] = useState(false)
   const [replyOpen, setReplyOpen] = useState(false)
+  const exporter = useDmrlExport(dmrl)
 
   const handleAction = (id: DmrlActionId) => {
     switch (id) {
@@ -58,7 +60,7 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
   return (
     <div className="space-y-6">
       <DmrlHeader dmrl={dmrl} />
-      <DmrlActionBar dmrl={dmrl} onAction={handleAction} />
+      <DmrlActionBar dmrl={dmrl} onAction={handleAction} onExport={(format) => void exporter.run(format)} exportBusy={exporter.busy} />
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Einträge</CardTitle>
@@ -72,6 +74,7 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
       <SendDialog dmrl={dmrl} open={sendOpen} onClose={() => setSendOpen(false)} />
       <WithdrawSendDialog dmrl={dmrl} open={withdrawOpen} onClose={() => setWithdrawOpen(false)} />
       <ReplyImportDialog dmrl={dmrl} open={replyOpen} onClose={() => setReplyOpen(false)} />
+      {exporter.dialog}
     </div>
   )
 }

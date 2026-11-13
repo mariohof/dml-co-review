@@ -1,4 +1,3 @@
-import { writeDml } from "@/lib/data/dml-writer"
 import { formatDate } from "@/lib/data/queries"
 import {
   versionIndexOf,
@@ -10,8 +9,8 @@ import {
   type ReleaseSnapshot,
   type User,
 } from "@/lib/data/schema"
-import { compareByDmc } from "@/lib/dmrl/entries"
 import { writeEntriesCsv } from "@/lib/files/csv-writer"
+import { isoDate, writeExportDml } from "./export"
 
 /** Freigabe-Nachweis und Freigabestand (PROJ-14) */
 
@@ -52,12 +51,6 @@ export function releaseLabel(info: ReleaseInfo): string {
   return `${formatDate(info.snapshot.createdAt)}, ${["REPLY", info.partner?.code, info.versionIndex].filter(Boolean).join(" ")}`
 }
 
-const isoDate = (iso: string) => {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
-
 /** DML-{MI}-{CAGE}-{DML-Typ}-Freigabe-{JJJJ-MM-TT} (Datum der Freigabe) */
 export function releaseFileBase(data: Dataset, dmrl: Dmrl, snapshot: ReleaseSnapshot): string {
   const system = data.systems.find((s) => s.id === dmrl.systemId)
@@ -71,7 +64,7 @@ export function releaseCsv(data: Dataset, dmrl: Dmrl, snapshot: ReleaseSnapshot)
 }
 
 /**
- * XML im Aufbau des Exports (PROJ-18): Richtung send, issno 000 / inwork 01, ohne answer;
+ * XML mit der Kopf-Variante „Export" (PROJ-18, writeExportDml): Richtung send, issno 000 / inwork 01, ohne answer;
  * dmlc = SEND, auf den der Freigabe-REPLY antwortete (kein neuer Versionsindex), dmlref = Freigabe-REPLY,
  * remarks „Freigabestand vom … — Export vom …".
  */
@@ -86,25 +79,16 @@ export function releaseXml(data: Dataset, dmrl: Dmrl, snapshot: ReleaseSnapshot,
     sendid: originator?.code ?? "",
     dmltype: dmrl.dmlType,
     diyear: String(new Date(snapshot.createdAt).getFullYear()),
-    seqnum: "00000",
+    seqnum: "00001", // Schema: positiveInteger — 00000 ist ungültig (Entscheidung PO 2026-11-13)
   }
-  const date = new Date(at)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  const content = writeDml(
-    {
-      header: {
-        direction: "send",
-        dmlc: ownDmlc,
-        issno: { issno: "000", inwork: "01", type: "new" },
-        issdate: { day: pad(date.getDate()), month: pad(date.getMonth() + 1), year: String(date.getFullYear()) },
-        security: dmrl.security,
-        dmlref: { dmlc: info.reply?.dmlc ?? ownDmlc, issno: { issno: "001", inwork: "00", type: "" } },
-        remarks: `Freigabestand vom ${formatDate(snapshot.createdAt)} — Export vom ${formatDate(at)}`,
-      },
-      entries: [...snapshot.entries].sort(compareByDmc).map((e) => e.fields),
-    },
-    system.s1000dIssue,
-    { answers: false }
-  )
+  const content = writeExportDml({
+    dmrl,
+    issue: system.s1000dIssue,
+    dmlc: ownDmlc,
+    dmlref: { dmlc: info.reply?.dmlc ?? ownDmlc, issno: { issno: "001", inwork: "00", type: "" } },
+    remarks: `Freigabestand vom ${formatDate(snapshot.createdAt)} — Export vom ${formatDate(at)}`,
+    entries: snapshot.entries,
+    at,
+  })
   return { fileName: `${releaseFileBase(data, dmrl, snapshot)}.XML`, content, issue: system.s1000dIssue }
 }

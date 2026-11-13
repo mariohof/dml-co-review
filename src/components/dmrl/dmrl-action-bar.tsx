@@ -1,11 +1,12 @@
 "use client"
 
-import { Archive, Download, FileDown, FileUp, LockOpen, RotateCcw, Send, Undo2, Upload } from "lucide-react"
+import { Archive, ChevronDown, Download, FileCode2, FileDown, FileSpreadsheet, FileUp, Loader2, LockOpen, RotateCcw, Send, Undo2, Upload } from "lucide-react"
 
 import { BlockedAction } from "@/components/admin/blocked-action"
 import { useSession } from "@/components/auth/session-provider"
 import { useDataStore } from "@/components/data/data-store-provider"
 import { Button } from "@/components/ui/button"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Dmrl } from "@/lib/data/schema"
 import { dmrlActions, type DmrlActionId } from "@/lib/dmrl/actions"
 
@@ -26,10 +27,14 @@ interface DmrlActionBarProps {
   dmrl: Dmrl
   /** Aufruf einer erlaubten Aktion — die Workflow-Features hängen hier ihre Dialoge ein */
   onAction?: (id: DmrlActionId) => void
+  /** „Exportieren" als Aufklappmenü mit CSV/XML (PROJ-18) */
+  onExport?: (format: "csv" | "xml") => void
+  /** XML-Export läuft */
+  exportBusy?: boolean
 }
 
 /** Aktionsleiste der DMRL-Ansicht (PROJ-7); Verfügbarkeit und Gründe aus den Workflow-Regeln */
-export function DmrlActionBar({ dmrl, onAction }: DmrlActionBarProps) {
+export function DmrlActionBar({ dmrl, onAction, onExport, exportBusy = false }: DmrlActionBarProps) {
   const { data } = useDataStore()
   const { currentUser } = useSession()
   const actions = dmrlActions(data, dmrl, currentUser).filter((action) => action.visible)
@@ -38,6 +43,29 @@ export function DmrlActionBar({ dmrl, onAction }: DmrlActionBarProps) {
     <div role="toolbar" aria-label="Aktionen" className="flex flex-wrap gap-2">
       {actions.map((action) => {
         const Icon = ICONS[action.id]
+        if (action.id === "export" && !action.blocked && onExport) {
+          return (
+            <DropdownMenu key={action.id}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={exportBusy}>
+                  {exportBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <Icon className="mr-2 h-4 w-4" aria-hidden />}
+                  {action.label}
+                  <ChevronDown className="ml-1 h-4 w-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onSelect={() => onExport("csv")}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" aria-hidden />
+                  Als CSV exportieren
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onExport("xml")}>
+                  <FileCode2 className="mr-2 h-4 w-4" aria-hidden />
+                  Als XML exportieren
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        }
         return (
           <BlockedAction key={action.id} reason={action.blocked}>
             <Button

@@ -1,8 +1,8 @@
 # PROJ-18: DMRL-Export (CSV/XML)
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Aktion „Exportieren"
@@ -36,7 +36,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 | Feld | Wert |
 |---|---|
 | Richtung | `send` |
-| `dmlc` | MI · CAGE Originator · DML-Typ · Jahr und seqnum des **letzten SEND**; ohne SEND: aktuelles Jahr und `00000` |
+| `dmlc` | MI · CAGE Originator · DML-Typ · Jahr und seqnum des **letzten SEND**; ohne SEND: aktuelles Jahr und `00001` (Schema verlangt eine positive Zahl) |
 | `issno` / `inwork` | **`000` / `01`** (S1000D-Arbeitsstand; SEND hat `001` / `00`) |
 | `issdate` | Datum des Exports |
 | `security` | Sicherheitseinstufung der DMRL |
@@ -83,7 +83,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 
 ### XML
 - [ ] Angenommen PHUNGUN (letzter SEND 00002-2026) wird als XML exportiert, wenn die Datei gespeichert wird, dann heißt sie `DML-PHUNGUN-D0815-C-2026-00002_000-01.XML` und hat `issno` `000`, `inwork` `01`
-- [ ] Angenommen eine DMRL wurde nie gesendet, wenn als XML exportiert wird, dann hat `dmlc` die seqnum `00000` und das aktuelle Jahr, und `dmlref` verweist auf sich selbst
+- [ ] Angenommen eine DMRL wurde nie gesendet, wenn als XML exportiert wird, dann hat `dmlc` die seqnum `00001` und das aktuelle Jahr, und `dmlref` verweist auf sich selbst
 - [ ] Angenommen ein XML-Export wird erzeugt, wenn er geöffnet wird, dann enthält `remarks` „Export vom [Datum] — kein offizieller Austauschstand" und kein Eintrag hat `answer`
 - [ ] Angenommen das System hat Issue 2.3 / 4.2 / 5.0, wenn als XML exportiert wird, dann besteht die Datei die XSD-Prüfung des jeweiligen Issues
 - [ ] Angenommen die XSD-Prüfung schlägt fehl oder ist nicht verfügbar, wenn als XML exportiert wird, dann wird nichts heruntergeladen und eine Meldung erscheint
@@ -93,7 +93,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 ## Edge Cases
 - **Export während eines laufenden Check-ins (Zusammenfassung offen):** exportiert den Stand vor der Übernahme.
 - **Jahreswechsel:** `dmlc` behält Jahr/seqnum des letzten SEND; Export-Datum ist das aktuelle Datum.
-- **Zurückgezogener letzter SEND:** `dmlc` verwendet den letzten nicht zurückgezogenen SEND (bzw. `00000`).
+- **Zurückgezogener letzter SEND:** `dmlc` verwendet den letzten nicht zurückgezogenen SEND (bzw. `00001`).
 - **Gleicher Dateiname bei mehreren Exporten am selben Tag:** Browser vergibt ggf. Zusatz; kein Problem für die Anwendung.
 - **Sehr große DMRL:** Fortschrittsanzeige während XML-Erzeugung und Prüfung.
 
@@ -112,6 +112,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 | Export jederzeit, ohne Sperre, Status, Versionsindex, Archiv oder Verlauf | Vorgabe Product Owner (PROJ-9) | 2026-11-12 |
 | XML-Export mit `issno` 000 / `inwork` 01 und Hinweis in `remarks` | Kennzeichnung als Arbeitsstand, keine Verwechslung mit SEND | 2026-11-12 |
 | `dmlc` übernimmt den letzten SEND (ohne SEND: 00000) | Kein neuer Versionsindex | 2026-11-12 |
+| Ohne SEND seqnum `00001` statt `00000` | Alle drei Schemas (2.3/4.2/5.0) erlauben für `seqnum` nur positive Zahlen; `00000` scheitert an der XSD-Prüfung. Arbeitsstand bleibt durch `issno` 000 / `inwork` 01, Dateiname `_000-01` und `remarks` vom SEND unterscheidbar — Entscheidung Product Owner | 2026-11-13 |
 | Einträge wie SEND, ohne `answer` | Gleicher Aufbau, keine Sonderlogik | 2026-11-12 |
 | CSV-Export mit Zusatz „Export" und Datum im Dateinamen | Unterscheidbar von der Check-out-Datei | 2026-11-12 |
 | Freigabestand-Export nutzt denselben Aufbau | Konsistenz mit PROJ-14 | 2026-11-12 |
@@ -151,7 +152,7 @@ Keine Änderung, keine Speicherung: kein Versionsindex, kein Archiv, kein Verlau
 |---|---|---|
 | Verfügbarkeitsregel „Exportieren" | neu (einfach) | berechtigt (PROJ-2) — sonst keine Einschränkung |
 | CSV-Schreiber | PROJ-9 | aktuelle Einträge; Dateiname `…-Export-{JJJJ-MM-TT}.csv` |
-| DML-Schreiber je Issue | PROJ-12 | mit **Kopf-Variante „Export"**: `issno` 000 / `inwork` 01, `dmlc` aus letztem SEND bzw. seqnum `00000` + aktuelles Jahr, `remarks` mit Export-Hinweis |
+| DML-Schreiber je Issue | PROJ-12 | mit **Kopf-Variante „Export"**: `issno` 000 / `inwork` 01, `dmlc` aus letztem SEND bzw. seqnum `00001` + aktuelles Jahr, `remarks` mit Export-Hinweis |
 | Bezugs-Ermittlung `dmlref` | PROJ-12 | wie beim nächsten SEND |
 | XSD-Prüfdienst | PROJ-11 | vor jedem XML-Download |
 | Download-Helfer | PROJ-9 | Dateien speichern |
@@ -172,6 +173,29 @@ Keine Änderung, keine Speicherung: kein Versionsindex, kein Archiv, kein Verlau
 - Unit-Tests: Export-Kopf (mit/ohne SEND, nach zurückgezogenem SEND), Dateinamen, keine Datenänderung nach Export.
 - Integration mit xmllint: Export-XML für 2.3/4.2/5.0 schemagültig (inkl. `issno` 000 / `inwork` 01).
 - E2E: Export während Sperre durch anderen Benutzer und bei Status *gesendet*; XML-Export ohne Einträge → Meldung.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-18`_
+
+**Umgesetzt**
+- `src/lib/workflows/export.ts` — liest nur, schreibt nichts in den Datenbestand:
+  - Verfügbarkeit: nur Berechtigung, sonst jederzeit (auch bei Sperre oder Status *gesendet*).
+  - CSV über den gemeinsamen CSV-Schreiber (`…-Export-{JJJJ-MM-TT}.csv`).
+  - **Kopf-Variante „Export"** `writeExportDml` (Richtung `send`, `issno` 000 / `inwork` 01, Datum des Exports, ohne `answer`, Einträge nach DMC; keine Einträge → „Die DMRL hat keine Einträge.").
+  - XML-Export: `dmlc` = letzter nicht zurückgezogener SEND (sonst aktuelles Jahr + `00001`), `dmlref` wie beim nächsten SEND, `remarks` „Export vom … — kein offizieller Austauschstand", Dateiname `…_000-01.XML`.
+- `src/lib/workflows/release.ts` — der Freigabestand-Export (PROJ-14) nutzt jetzt dieselbe Kopf-Variante.
+- `src/components/workflows/dmrl-export.tsx` — CSV sofort; XML mit Meldung „XML wird erzeugt und geprüft …", danach Download nur bei bestandener XSD-Prüfung.
+  - Schemafehler: Dialog „Anwendungsfehler" mit Bericht.
+  - Nicht verfügbar oder keine Einträge: Fehlermeldung.
+- `src/components/dmrl/dmrl-action-bar.tsx` — „Exportieren" als Aufklappmenü („Als CSV exportieren" · „Als XML exportieren"); Ladeanzeige während der Prüfung.
+- `src/lib/dmrl/actions.ts` — alle Platzhalter „Diese Funktion folgt mit …" sind ersetzt.
+
+**Tests**
+- Unit: `export.test.ts` (9, u. a. **XML-Export für 2.3/4.2/5.0 mit echtem xmllint gültig**, fremde Sperre, zurückgezogener SEND, Jahreswechsel, keine Einträge, Datenbestand unverändert), `dmrl-export.test.tsx` (4); insgesamt 401 Unit-Tests grün.
+- E2E: `tests/PROJ-18-export.spec.ts` — PHUNGUN *gesendet* als CSV und XML (Datenbestand unverändert); Fahrzeug bei fremder Sperre, nie gesendet, als XML (`…-00001_000-01.XML`) mit echter XSD-Prüfung.
+
+**Abweichung**
+- seqnum `00001` statt `00000` ohne SEND (siehe Decision Log); gilt ebenso als Rückfallwert im Freigabestand-Export.
 
 ## QA Test Results
 _To be added by /qa_

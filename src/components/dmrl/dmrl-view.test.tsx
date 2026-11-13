@@ -88,11 +88,12 @@ describe("DMRL-Ansicht PHUNGUN (Demo)", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument()
   })
 
-  it("zeigt die Aktionsleiste; Aktionen ohne Feature sind gesperrt; Administrator sieht „SEND zurückziehen\"", () => {
+  it("zeigt die Aktionsleiste mit Gründen für gesperrte Aktionen; Administrator sieht „SEND zurückziehen\"", () => {
     const toolbar = screen.getByRole("toolbar", { name: "Aktionen" })
     expect(within(toolbar).getByRole("button", { name: "REPLY importieren" })).toBeEnabled()
     expect(within(toolbar).getByRole("button", { name: "Archiv" })).toBeEnabled()
-    for (const label of ["Check-out", "SEND", "Exportieren"]) {
+    expect(within(toolbar).getByRole("button", { name: "Exportieren" })).toBeEnabled()
+    for (const label of ["Check-out", "SEND"]) {
       expect(within(toolbar).getByRole("button", { name: label })).toBeDisabled()
     }
     expect(within(toolbar).getByLabelText(/Die DMRL wartet auf die Antwort des Partners/)).toBeInTheDocument()
