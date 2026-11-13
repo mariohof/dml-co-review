@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { BadgeCheck, Lock, MessageSquareQuote, TriangleAlert } from "lucide-react"
 
 import { useDataStore } from "@/components/data/data-store-provider"
@@ -8,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Card, CardContent } from "@/components/ui/card"
 import { formatDate, formatDateTime, latestSendInfo } from "@/lib/data/queries"
 import { versionIndexOf, type Dmrl } from "@/lib/data/schema"
+import { latestRelease, releaseInfo, releaseLabel } from "@/lib/workflows/release"
 
 function Item({ label, children, mono }: { label: string; children: React.ReactNode; mono?: boolean }) {
   return (
@@ -32,6 +34,9 @@ export function DmrlHeader({ dmrl }: { dmrl: Dmrl }) {
   const releaseText = release && releaseReply
     ? `${formatDate(release.at)} durch REPLY ${releasePartner?.code ?? ""} ${versionIndexOf(releaseReply.dmlc)}`
     : null
+  const latestSnapshot = latestRelease(data, dmrl.id)
+  const lastRelease = latestSnapshot ? releaseInfo(data, latestSnapshot) : null
+  const snapshotHref = (snapshotId: string) => `/dmrl/${encodeURIComponent(dmrl.id)}/freigabestand/${encodeURIComponent(snapshotId)}`
 
   return (
     <div className="space-y-4">
@@ -57,9 +62,12 @@ export function DmrlHeader({ dmrl }: { dmrl: Dmrl }) {
           <AlertTitle>Nicht freigegeben</AlertTitle>
           <AlertDescription>
             Darf nicht in einem Technische-Publikation-Projekt verwendet werden.
-            {releaseText && (
-              <span className="mt-1 block text-sm">
-                Letzte Freigabe: {releaseText}. „Freigabestand anzeigen“ folgt mit PROJ-14.
+            {lastRelease && (
+              <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                <span>Letzte Freigabe: {releaseLabel(lastRelease)}</span>
+                <Link href={snapshotHref(lastRelease.snapshot.id)} className="font-medium text-primary underline-offset-4 hover:underline">
+                  Freigabestand anzeigen
+                </Link>
               </span>
             )}
           </AlertDescription>
@@ -73,6 +81,11 @@ export function DmrlHeader({ dmrl }: { dmrl: Dmrl }) {
           <AlertDescription>
             Freigegeben am {releaseText}
             {releaseUser && ` — übernommen von ${releaseUser.name}`}
+            {lastRelease && (
+              <Link href={snapshotHref(lastRelease.snapshot.id)} className="ml-3 font-medium text-green-900 underline underline-offset-4">
+                Freigabestand anzeigen
+              </Link>
+            )}
           </AlertDescription>
         </Alert>
       )}

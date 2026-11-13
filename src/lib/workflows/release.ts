@@ -1,0 +1,110 @@
+import { writeDml } from "@/lib/data/dml-writer"
+import { formatDate } from "@/lib/data/queries"
+import {
+  versionIndexOf,
+  type ArchiveEntry,
+  type Dataset,
+  type DmlCode,
+  type Dmrl,
+  type Organisation,
+  type ReleaseSnapshot,
+  type User,
+} from "@/lib/data/schema"
+import { compareByDmc } from "@/lib/dmrl/entries"
+import { writeEntriesCsv } from "@/lib/files/csv-writer"
+
+/** Freigabe-Nachweis und Freigabestand (PROJ-14) */
+
+/** Alle Freigabestände einer DMRL, neuester zuerst */
+export function releaseSnapshots(data: Dataset, dmrlId: string): ReleaseSnapshot[] {
+  return data.releases.filter((r) => r.dmrlId === dmrlId).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+}
+
+/** „Letzte Freigabe" = neuester Freigabestand */
+export const latestRelease = (data: Dataset, dmrlId: string): ReleaseSnapshot | null => releaseSnapshots(data, dmrlId)[0] ?? null
+
+export interface ReleaseInfo {
+  snapshot: ReleaseSnapshot
+  reply: ArchiveEntry | null
+  /** SEND, auf den der REPLY geantwortet hat */
+  send: ArchiveEntry | null
+  partner: Organisation | null
+  user: User | null
+  /** Versionsindex des REPLY */
+  versionIndex: string
+}
+
+export function releaseInfo(data: Dataset, snapshot: ReleaseSnapshot): ReleaseInfo {
+  const reply = data.archive.find((a) => a.id === snapshot.replyArchiveId) ?? null
+  return {
+    snapshot,
+    reply,
+    send: reply?.sendArchiveId ? (data.archive.find((a) => a.id === reply.sendArchiveId) ?? null) : null,
+    partner: reply ? (data.organisations.find((o) => o.id === reply.partnerOrganisationId) ?? null) : null,
+    // deaktivierte Benutzer bleiben mit Namen sichtbar
+    user: data.users.find((u) => u.id === snapshot.userId) ?? null,
+    versionIndex: reply ? versionIndexOf(reply.dmlc) : "—",
+  }
+}
+
+/** „12.11.2026, REPLY C1234 00002-2026" */
+export function releaseLabel(info: ReleaseInfo): string {
+  return `${formatDate(info.snapshot.createdAt)}, ${["REPLY", info.partner?.code, info.versionIndex].filter(Boolean).join(" ")}`
+}
+
+const isoDate = (iso: string) => {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** DML-{MI}-{CAGE}-{DML-Typ}-Freigabe-{JJJJ-MM-TT} (Datum der Freigabe) */
+export function releaseFileBase(data: Dataset, dmrl: Dmrl, snapshot: ReleaseSnapshot): string {
+  const system = data.systems.find((s) => s.id === dmrl.systemId)
+  const originator = data.organisations.find((o) => o.id === dmrl.originatorOrganisationId)
+  return `DML-${system?.modelic ?? "DMRL"}-${originator?.code ?? "XXXXX"}-${dmrl.dmlType.toUpperCase()}-Freigabe-${isoDate(snapshot.createdAt)}`
+}
+
+/** CSV im Aufbau von PROJ-9 (27 Spalten, nach DMC) aus dem Freigabestand */
+export function releaseCsv(data: Dataset, dmrl: Dmrl, snapshot: ReleaseSnapshot): { fileName: string; content: string } {
+  return { fileName: `${releaseFileBase(data, dmrl, snapshot)}.csv`, content: writeEntriesCsv(snapshot.entries) }
+}
+
+/**
+ * XML im Aufbau des Exports (PROJ-18): Richtung send, issno 000 / inwork 01, ohne answer;
+ * dmlc = SEND, auf den der Freigabe-REPLY antwortete (kein neuer Versionsindex), dmlref = Freigabe-REPLY,
+ * remarks „Freigabestand vom … — Export vom …".
+ */
+export function releaseXml(data: Dataset, dmrl: Dmrl, snapshot: ReleaseSnapshot, at = new Date().toISOString()) {
+  const system = data.systems.find((s) => s.id === dmrl.systemId)
+  if (!system) throw new Error("System der DMRL fehlt.")
+  if (snapshot.entries.length === 0) throw new Error("Der Freigabestand hat keine Einträge.")
+  const info = releaseInfo(data, snapshot)
+  const originator = data.organisations.find((o) => o.id === dmrl.originatorOrganisationId)
+  const ownDmlc: DmlCode = info.send?.dmlc ?? {
+    modelic: system.modelic,
+    sendid: originator?.code ?? "",
+    dmltype: dmrl.dmlType,
+    diyear: String(new Date(snapshot.createdAt).getFullYear()),
+    seqnum: "00000",
+  }
+  const date = new Date(at)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const content = writeDml(
+    {
+      header: {
+        direction: "send",
+        dmlc: ownDmlc,
+        issno: { issno: "000", inwork: "01", type: "new" },
+        issdate: { day: pad(date.getDate()), month: pad(date.getMonth() + 1), year: String(date.getFullYear()) },
+        security: dmrl.security,
+        dmlref: { dmlc: info.reply?.dmlc ?? ownDmlc, issno: { issno: "001", inwork: "00", type: "" } },
+        remarks: `Freigabestand vom ${formatDate(snapshot.createdAt)} — Export vom ${formatDate(at)}`,
+      },
+      entries: [...snapshot.entries].sort(compareByDmc).map((e) => e.fields),
+    },
+    system.s1000dIssue,
+    { answers: false }
+  )
+  return { fileName: `${releaseFileBase(data, dmrl, snapshot)}.XML`, content, issue: system.s1000dIssue }
+}

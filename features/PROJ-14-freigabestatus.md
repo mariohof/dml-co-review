@@ -1,8 +1,8 @@
 # PROJ-14: Freigabestatus DMRL
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-13
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Kopfbereich, Banner, Tabelle
@@ -197,6 +197,44 @@ Keine neuen Objekte — Freigabe-Nachweis (an der DMRL) und Freigabestände (eig
 ### G) Testbarkeit
 - Unit-Tests: jede Zeile beider Übergangstabellen, Grundregel (inkl. DMRL ohne Einträge), „letzte Freigabe" bei mehreren Freigabeständen, Gültigkeitsprüfung erkennt Verstoß.
 - E2E: Demo-REPLY mit nur `y` (angepasste Testdatei) → freigegeben + Nachweis; Check-in mit Änderung → Banner + „Letzte Freigabe"; Freigabestand anzeigen, CSV/XML exportieren.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-14`_
+
+**Umgesetzt**
+- `src/lib/workflows/release.ts`:
+  - Freigabestände einer DMRL (neuester zuerst), „Letzte Freigabe" = neuester Freigabestand.
+  - Angaben zur Freigabe: REPLY, zugehöriger SEND, Partner, Bearbeiter (bleibt auch bei deaktivierten Benutzern sichtbar), Versionsindex; Beschriftung „12.11.2026, REPLY C1234 00002-2026".
+  - Dateinamen `DML-{MI}-{CAGE}-{DML-Typ}-Freigabe-{JJJJ-MM-TT}` (Datum der Freigabe).
+  - CSV über den gemeinsamen CSV-Schreiber.
+  - XML über den DML-Schreiber (PROJ-12) mit dem Export-Kopf aus PROJ-18: Richtung `send`, `issno` 000 / `inwork` 01, ohne `answer`, `remarks` „Freigabestand vom … — Export vom …".
+- `src/components/dmrl/release-snapshot-view.tsx` + Seite `/dmrl/[id]/freigabestand/[standId]`:
+  - Deutlich gekennzeichnet „Freigabestand vom … (REPLY C1234 00002-2026)" mit dem Hinweis, dass es nicht der aktuelle Stand ist; bei älteren Ständen „Es gibt einen neueren Freigabestand".
+  - Eintragstabelle aus PROJ-7 (nur lesend, mit Suche und Filter).
+  - „Als CSV exportieren" und „Als XML exportieren" (vorher XSD-Prüfung; bei Fehler oder nicht verfügbarer Prüfung Dialog mit Bericht, kein Download).
+  - Zugriffsschutz wie die DMRL-Ansicht; unbekannter Stand → „Freigabestand nicht gefunden".
+- `src/components/dmrl/dmrl-header.tsx`:
+  - Nicht freigegeben, früher schon freigegeben: „Letzte Freigabe: …" mit Link „Freigabestand anzeigen".
+  - Freigegeben: Link „Freigabestand anzeigen" zusätzlich im Freigabe-Nachweis.
+- Freigabe-Nachweis und Freigabestand werden beim REPLY-Import gespeichert (PROJ-13).
+
+**Tests**
+- Unit: `release.test.ts` (13). Abgedeckt:
+  - jede Zeile beider Übergangstabellen über die echten Workflows (Check-in, SEND, REPLY, Zurückziehen);
+  - Invariante inkl. DMRL ohne Einträge;
+  - Demo-Szenario: Freigabe → Check-in mit Änderung → letzter Freigabestand bleibt;
+  - Check-in ohne Änderung: kein neuer Stand;
+  - zwei Freigaben;
+  - Zurückziehen nach Freigabe;
+  - CSV und XML, **XML-Export in 2.3/4.2/5.0 mit echtem xmllint gültig**.
+- Unit: `release-snapshot-view.test.tsx` (6).
+- Insgesamt 373 Unit-Tests grün.
+- E2E: `tests/PROJ-14-freigabe.spec.ts` — Freigabe per REPLY, Freigabestand anzeigen, CSV- und XML-Export mit echter XSD-Prüfung; keine Sperre, keine Status- oder Archivänderung.
+
+**Abweichungen / Hinweise**
+- **Kein eigenes zentrales Statusmodul (Tech Design C):** Die Übergänge stehen weiterhin in den Workflow-Bausteinen (`check-in.ts`, `send.ts`, `reply.ts`). Die Konsistenz sichern die Tabellen-Tests und die Gültigkeitsprüfung beim Laden. Ein Umbau ohne fachlichen Mehrwert hätte die bereits getesteten Workflows erneut berührt.
+- **XML-Kopf des Freigabestands:** `dmlc` = SEND, auf den der Freigabe-REPLY antwortete (kein neuer Versionsindex), `dmlref` = Freigabe-REPLY. Das ist die sinngemäße Anwendung von PROJ-18 („`dmlc` übernimmt den letzten SEND, `dmlref` auf den letzten REPLY") auf den Zeitpunkt der Freigabe.
+- Eine Liste aller Freigabestände folgt mit dem Archiv (PROJ-15).
 
 ## QA Test Results
 _To be added by /qa_
