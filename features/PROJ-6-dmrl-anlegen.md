@@ -1,6 +1,6 @@
 # PROJ-6: DMRL anlegen
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -191,6 +191,20 @@ Keine Änderung — DMRL laut PROJ-1. Beim **Anlegen** entsteht eine DMRL mit St
 ### F) Testbarkeit
 - Unit-Tests: Prüfungen, Systemauswahl (nur ohne DMRL), Feldsperren je Zustand, Sperrgründe Löschen (benutzt / ausgecheckt), Löschen entfernt Einträge und Berechtigungen, Verlaufseintrag bei Kopfdatenänderung.
 - E2E: Anlegen (inkl. „kein System frei"), Bearbeiten, Löschen; Demo-Daten: PHUNGUN nur Sicherheitseinstufung änderbar, Fahrzeug/Fluggerät löschbar.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-6`_
+
+**Umgesetzt**
+- `src/lib/rules/dmrls.ts` — Prüfung (System Pflicht und ohne DMRL, Originator Pflicht, DML-Typ c/p/s, Sicherheitseinstufung 01–20), Rechte (System immer fest; mit Workflow nur Sicherheitseinstufung änderbar), Sperrgründe Löschen (im Workflow benutzt — dauerhaft; ausgecheckt — vorübergehend, mit Name), „DMRL anlegen" nur bei freiem System. Bearbeiten erzeugt bei jeder Änderung einen Verlaufseintrag „Kopfdaten geändert: Feld alt → neu" in derselben Speicherung; Löschen entfernt DMRL, Einträge, Berechtigungen und Verlauf in einem Schritt.
+- `src/components/admin/dmrls/` — Seite „DMRLs & Berechtigungen" (`/verwaltung/dmrl`, Verwaltungsmuster PROJ-3): Tabelle sortiert nach System (System mit Anzahl Einträge, MI, Issue, Originator, DML-Typ, Sicherheitseinstufung, Status), Suche über System, MI und Originator, Aktionen Öffnen / Bearbeiten / Löschen; Dialog mit Systemauswahl (nur freie Systeme), Originator, DML-Typ mit Klartext, Sicherheitseinstufung (vorbelegt c / 01), gesperrte Felder mit Hinweis, Hinweis bei fehlenden Organisationen.
+
+**Tests**: `dmrls.test.ts` (22), `dmrl-management.test.tsx` (5) — insgesamt 168 Tests grün.
+
+**Hinweise**
+- Spalte „Bearbeiter" und Aktion „Berechtigungen" folgen mit PROJ-17 auf derselben Seite.
+- Bearbeiten ohne Änderung speichert nichts und erzeugt keinen Verlaufseintrag.
+- Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_
