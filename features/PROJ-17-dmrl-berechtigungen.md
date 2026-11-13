@@ -1,6 +1,6 @@
 # PROJ-17: DMRL-Berechtigungen
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -153,6 +153,21 @@ Keine Änderung — die DMRL speichert die Liste der berechtigten Bearbeiter (ID
 ### F) Testbarkeit
 - Unit-Tests: Auswahlliste (aktive Bearbeiter, keine Admins, inaktive nur abwählbar), Sperrinhaber nicht entfernbar, Rechte-Regel mit Berechtigung (aktiv / inaktiv / befördert).
 - E2E: Berechtigung vergeben → Bearbeiter sieht DMRL; entziehen → „Keine Berechtigung"; Sperrinhaber nicht entfernbar; Demo-Berechtigungen laut PROJ-1.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-17`_
+
+**Umgesetzt**
+- `src/lib/rules/permissions-admin.ts` — Auswahlliste (aktive Bearbeiter + bereits berechtigte inaktive; keine Administratoren; Sperrinhaber gesperrt mit Hinweis), Spalte „Bearbeiter", Speichern mit Prüfungen (nur Bearbeiter, inaktive nicht neu hinzufügbar, Sperrinhaber nicht entfernbar). Gespeicherte Berechtigungen von zum Administrator beförderten Benutzern bleiben beim Speichern erhalten (wirkungslos, wirken nach Rückstufung wieder).
+- `src/components/admin/dmrls/dmrl-permissions-dialog.tsx` — Dialog „Berechtigungen — [System]" mit Checkbox-Liste, Kennzeichen „inaktiv", Sperrhinweis, Hinweis bei fehlenden aktiven Bearbeitern; Abbrechen ändert nichts.
+- DMRL-Verwaltung (PROJ-6) ergänzt um Spalte „Bearbeiter" (Namen bzw. „— keine —", inaktive markiert) und Aktion „Berechtigungen".
+- Wirkung ausschließlich über die zentrale Rechte-Regel (PROJ-2): Dashboard, DMRL-Seiten und Direktaufrufe reagieren sofort.
+
+**Tests**: `permissions-admin.test.ts` (11), `dmrl-permissions.test.tsx` (5) — insgesamt 184 Tests grün.
+
+**Hinweise**
+- Änderungen werden laut Spec nicht im Verlauf protokolliert.
+- Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_

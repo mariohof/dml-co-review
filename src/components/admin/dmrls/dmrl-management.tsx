@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { FileStack, Pencil, Plus, Trash2 } from "lucide-react"
+import { FileStack, Pencil, Plus, Trash2, Users } from "lucide-react"
 import { toast } from "sonner"
 
 import { AdminPage } from "@/components/admin/admin-page"
@@ -12,22 +12,26 @@ import { SearchField } from "@/components/admin/search-field"
 import { useSession } from "@/components/auth/session-provider"
 import { useDataStore } from "@/components/data/data-store-provider"
 import { DmrlStatusBadge } from "@/components/dmrl/dmrl-status-badge"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { Dmrl } from "@/lib/data/schema"
 import { newId } from "@/lib/ids"
 import { createBlocked, createDmrl, deleteDmrl, dmrlRights, updateDmrl, type DmrlFormInput } from "@/lib/rules/dmrls"
+import { permittedEditors, setDmrlEditors } from "@/lib/rules/permissions-admin"
 import { DmrlFormDialog } from "./dmrl-form-dialog"
+import { DmrlPermissionsDialog } from "./dmrl-permissions-dialog"
 
 type FormState = { open: false } | { open: true; dmrl: Dmrl | null }
 
-/** DMRL-Verwaltung (PROJ-6); Spalte „Bearbeiter" und Aktion „Berechtigungen" folgen mit PROJ-17 */
+/** DMRL-Verwaltung (PROJ-6) mit Berechtigungen (PROJ-17) */
 export function DmrlManagement() {
   const { data, update } = useDataStore()
   const { currentUser } = useSession()
   const [search, setSearch] = useState("")
   const [formState, setFormState] = useState<FormState>({ open: false })
   const [toDelete, setToDelete] = useState<Dmrl | null>(null)
+  const [permissionsFor, setPermissionsFor] = useState<Dmrl | null>(null)
 
   const systemName = (dmrl: Dmrl) => data.systems.find((s) => s.id === dmrl.systemId)?.name ?? "—"
 
@@ -40,6 +44,7 @@ export function DmrlManagement() {
         originator: data.organisations.find((o) => o.id === dmrl.originatorOrganisationId),
         entryCount: data.entries.filter((e) => e.dmrlId === dmrl.id).length,
         rights: dmrlRights(data, dmrl),
+        editors: permittedEditors(data, dmrl),
       }))
       .filter(({ system, originator }) => {
         if (!term) return true
@@ -68,6 +73,18 @@ export function DmrlManagement() {
     return true
   }
 
+  const savePermissions = (selectedIds: string[]): boolean => {
+    if (!permissionsFor) return false
+    const result = setDmrlEditors(data, permissionsFor.id, selectedIds)
+    if (!result.ok) {
+      toast.error(result.message)
+      return false
+    }
+    if (!update(() => result.data)) return false
+    toast.success(`Berechtigungen für „${systemName(permissionsFor)}" gespeichert.`)
+    return true
+  }
+
   const confirmDelete = () => {
     if (!toDelete) return
     const name = systemName(toDelete)
@@ -91,7 +108,7 @@ export function DmrlManagement() {
   return (
     <AdminPage
       title="DMRLs & Berechtigungen"
-      description="DMRLs zu Systemen anlegen und Kopfangaben pflegen. Eine DMRL hat keine eigene Bezeichnung — angezeigt wird ihr System."
+      description="DMRLs zu Systemen anlegen, Kopfangaben pflegen und Bearbeiter berechtigen. Eine DMRL hat keine eigene Bezeichnung — angezeigt wird ihr System."
       action={createButton}
       toolbar={
         data.dmrls.length > 0 && (
@@ -117,18 +134,19 @@ export function DmrlManagement() {
                 <TableHead>DML-Typ</TableHead>
                 <TableHead>Sicherheit</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Bearbeiter</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="py-10 text-center text-muted-foreground">
                     Keine DMRLs gefunden
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map(({ dmrl, system, originator, entryCount, rights }) => (
+                rows.map(({ dmrl, system, originator, entryCount, rights, editors }) => (
                   <TableRow key={dmrl.id}>
                     <TableCell>
                       <div className="font-medium">{system?.name ?? "—"}</div>
@@ -145,6 +163,24 @@ export function DmrlManagement() {
                       <DmrlStatusBadge status={dmrl.status} />
                     </TableCell>
                     <TableCell>
+                      {editors.length === 0 ? (
+                        <span className="text-muted-foreground">— keine —</span>
+                      ) : (
+                        <ul className="space-y-0.5 text-sm">
+                          {editors.map((editor) => (
+                            <li key={editor.id} className="flex items-center gap-1.5 whitespace-nowrap">
+                              {editor.name}
+                              {!editor.active && (
+                                <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                                  inaktiv
+                                </Badge>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex justify-end gap-2">
                         <Button asChild variant="outline" size="sm">
                           <Link href={`/dmrl/${encodeURIComponent(dmrl.id)}`} aria-label={`DMRL ${system?.name ?? ""} öffnen`}>
@@ -158,6 +194,14 @@ export function DmrlManagement() {
                           aria-label={`DMRL ${system?.name ?? ""} bearbeiten`}
                         >
                           <Pencil className="h-4 w-4" aria-hidden />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPermissionsFor(dmrl)}
+                          aria-label={`Berechtigungen für ${system?.name ?? ""}`}
+                        >
+                          <Users className="h-4 w-4" aria-hidden />
                         </Button>
                         <BlockedAction reason={rights.deleteBlocked}>
                           <Button
@@ -187,6 +231,14 @@ export function DmrlManagement() {
         dmrl={editing}
         fieldBlocked={editing ? dmrlRights(data, editing).fieldBlocked : null}
         onSubmit={handleSubmit}
+      />
+
+      <DmrlPermissionsDialog
+        data={data}
+        dmrl={permissionsFor}
+        systemName={permissionsFor ? systemName(permissionsFor) : ""}
+        onClose={() => setPermissionsFor(null)}
+        onSubmit={savePermissions}
       />
 
       <ConfirmDialog
