@@ -176,6 +176,7 @@ Nur **Administrator**, nur bei Status *gesendet*:
 | seqnum je DMRL und Absender pro Jahr | PRD | 2026-11-12 |
 | Einträge `n`/`c`/`d` → *gesendet*, übrige unverändert | Nur geänderte Einträge werden vom Partner geprüft | 2026-11-12 |
 | SEND zurückziehen nur durch Administrator, mit Begründung; Archiveintrag bleibt markiert | Blockade durch fehlenden REPLY auflösbar, nachvollziehbar | 2026-11-12 |
+| DM-Ausgabedaten je Issue schemakonform: 2.3 `addresdm/issno` (`@issno`, `@type`); 4.2/5.0 `dmRefIdent/issueInfo` (`@issueNumber`, `@inWork`) + `dmlEntry/@issueType` | In 4.2/5.0 gibt es kein `issno` und kein `@type` an `issueInfo`; geprüft mit xmllint, bestätigt durch Product Owner | 2026-11-13 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
