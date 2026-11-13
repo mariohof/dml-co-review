@@ -1,6 +1,6 @@
 # PROJ-4: Organisationsverwaltung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -180,6 +180,20 @@ Keine Änderung — Organisation laut PROJ-1: ID, CAGE-Code, Name. Verknüpfunge
 ### F) Testbarkeit
 - Unit-Tests: CAGE-Prüfung (Länge, Zeichen, Groß-/Kleinschreibung, Eindeutigkeit), Regel „im Workflow benutzt" (Originator mit Check-in, Originator mit Archiv, Partner im Archiv, zugeordnet ohne Workflow, unbenutzt), Rechte-Tabelle.
 - E2E: Anlegen/Bearbeiten/Löschen; Demo-Daten: D0815 und C1234 als benutzt erkennbar, Löschen und CAGE-Änderung gesperrt.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-4`_
+
+**Umgesetzt**
+- `src/lib/rules/workflow-usage.ts` — **gemeinsame Regel „im Workflow benutzt"** für DMRL, Organisation und System (abgeleitet: abgeschlossener Check-in im Verlauf oder Archivstand; Organisation zusätzlich als Partner eines Archivstands). Wird von PROJ-5/6 wiederverwendet.
+- `src/lib/rules/organisations.ts` — Prüfung CAGE-Code (5 Buchstaben/Ziffern, Großbuchstaben, eindeutig) und Name (2–120), Rechte je Situation laut Regel-Tabelle mit Begründungstexten, Anlegen/Bearbeiten/Löschen mit erneuter Prüfung (gesperrter CAGE-Code kann nicht überschrieben werden).
+- `src/components/admin/organisations/` — Verwaltungsseite (Verwaltungsmuster PROJ-3): Tabelle sortiert nach CAGE-Code, Suche über Code und Name, Spalten zugeordnete DMRLs und „im Workflow benutzt", Löschen gesperrt mit Tooltip-Begründung; Dialog mit automatischer Großschreibung und gesperrtem CAGE-Code-Feld inkl. Hinweis.
+
+**Tests**: `organisations.test.ts` (21, inkl. Regel „im Workflow benutzt"), `organisation-management.test.tsx` (5) — insgesamt 115 Tests grün.
+
+**Hinweise**
+- Der Leerhinweis „Noch keine Organisationen angelegt" ist umgesetzt, im Demo-Bestand aber nicht erreichbar (Demo-DMRLs brauchen Organisationen).
+- Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_

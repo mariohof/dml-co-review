@@ -1,5 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/page-placeholder"
+import { OrganisationManagement } from "@/components/admin/organisations/organisation-management"
 
-export default function Page() {
-  return <PagePlaceholder title="Organisationen" feature="PROJ-4 (Organisationsverwaltung)" />
+export default function OrganisationenPage() {
+  return <OrganisationManagement />
 }
