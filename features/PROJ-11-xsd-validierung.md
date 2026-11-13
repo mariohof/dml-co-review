@@ -127,6 +127,7 @@ Für die Vorführung werden fehlerhafte REPLY-Dateien bereitgestellt (auf Basis 
 | Keine eigenständige „XML prüfen"-Funktion im MVP | Prüfung läuft in allen Workflows; REPLY-Abbruch ist folgenlos | 2026-11-12 |
 | Demo-Testdateien mit typischen Fehlern | PRD-Erfolgskriterium: fehlerhafte Dateien zuverlässig erkannt | 2026-11-12 |
 | Lokale `xml.xsd` für Issue 5.0 | Offline-Validierung mit `xmllint --nonet` | 2026-11-12 |
+| Kein wohlgeformtes XML: genau ein Fehler, weitere xmllint-Meldungen nur als Hinweise | Fehlerzahl bleibt aussagekräftig (Folgefehler); bestätigt durch Product Owner | 2026-11-13 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
