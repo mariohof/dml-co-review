@@ -1,6 +1,6 @@
 # PROJ-7: DMRL-Ansicht
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -228,6 +228,21 @@ Keine Änderung — liest DMRL, Einträge, Archivstände, Freigabe-Nachweis und 
 ### F) Testbarkeit
 - Unit-Tests: DMC-Darstellung (inkl. leerer Teilfelder), Filter/Suche, Zähler, Ableitung Versionsindex (inkl. zurückgezogener SEND).
 - E2E: Demo PHUNGUN (32 Einträge gesendet, Versionsindex 00002-2026, Banner), Filter/Suche, Detailfenster, Bearbeiter ohne Berechtigung, unbekannte DMRL.
+
+## Implementation Notes (Frontend)
+_Stand 2026-11-13 — `/frontend PROJ-7`_
+
+**Umgesetzt**
+- `src/lib/dmrl/entries.ts` — gemeinsame Bausteine: DMC-Darstellung (gleich für 2.3/4.2/5.0), Sortierung nach DMC, Filter (Eintragsstatus, Eintragstyp inkl. „ohne Typ", Suche in DMC/Tech Name/Info Name), Zähler je Status, Feldbeschriftungen, Kennzeichen „DM gelöscht".
+- `src/lib/dmrl/actions.ts` — Verfügbarkeit der Aktionen (sichtbar / gesperrt + Grund). Workflow-Aktionen sind vorerst gesperrt mit Hinweis „folgt mit PROJ-x"; Sperrinhaber- und Administrator-Aktionen erscheinen nur in der passenden Situation.
+- `src/components/dmrl/` — `DmrlView` (Seite `/dmrl/[ID]`), `DmrlHeader` (Stammdaten, Versionsindex + letzter SEND, Status, Sperre, Banner „Nicht freigegeben", Freigabe-Nachweis bzw. „Letzte Freigabe", Partner-Bemerkung), `DmrlActionBar`, **wiederverwendbare `EntryTable`** (Zählerleiste als Filter, Suche, Filter, 50 je Seite mit deutscher Seitennavigation, Löschungen durchgestrichen, „zu überarbeiten" hervorgehoben, Leer-/Keine-Treffer-Zustand mit „Filter zurücksetzen"), `EntryDetailSheet` (alle 27 Felder in Gruppen, per Klick oder Tastatur), Status-/Typ-Badges.
+- `src/lib/data/queries.ts` — letzter SEND mit Partner/Bearbeiter, deutsche Datumsformate.
+
+**Tests**: `entries.test.ts` (9), `dmrl-view.test.tsx` (11) — insgesamt 204 Tests grün.
+
+**Hinweise**
+- Aktionen (Check-out, Check-in, SEND, REPLY, Export, Archiv) werden mit PROJ-9/10/12/13/15/18 aktiviert; „Freigabestand anzeigen" folgt mit PROJ-14.
+- Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
 _To be added by /qa_

@@ -13,3 +13,29 @@ export function currentVersionIndex(data: Dataset, dmrlId: string): string | nul
   const send = latestSend(data, dmrlId)
   return send ? versionIndexOf(send.dmlc) : null
 }
+
+/** Letzter nicht zurückgezogener SEND mit Partner und Bearbeiter (für den Kopfbereich der DMRL-Ansicht) */
+export function latestSendInfo(data: Dataset, dmrlId: string) {
+  const send = latestSend(data, dmrlId)
+  if (!send) return null
+  return {
+    send,
+    versionIndex: versionIndexOf(send.dmlc),
+    partner: data.organisations.find((org) => org.id === send.partnerOrganisationId) ?? null,
+    user: data.users.find((user) => user.id === send.createdByUserId) ?? null,
+  }
+}
+
+/** Datum/Uhrzeit deutsch formatiert, z. B. „29.09.2026, 11:00" */
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+}
+
+/** Datum deutsch formatiert, z. B. „29.09.2026" */
+export function formatDate(iso: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+}
