@@ -46,3 +46,4 @@ next-env.d.ts
 # Lokaler Start (PROJ-19)
 /.start-stand.json
 /start.log
+__pycache__/
