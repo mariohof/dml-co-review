@@ -1,8 +1,10 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-14
+
+> **Refinement 2026-11-14 (über `/refine PROJ-10`, Anlass PROJ-20):** Regel K ist kein Fehler mehr — abweichende Antwortfelder werden beim Check-in zur optionalen Übernahme angeboten (Details PROJ-10). Umsetzung zusammen mit PROJ-10.
 
 ## Dependencies
 - Requires: PROJ-1 (Datenhaltung) — Einträge, Feldnamen, Archiv (letzter SEND)
@@ -29,7 +31,7 @@ Quellen: `docs/dmrl-mapping.md`, Anforderungen DMRLMS 01/02, NSG-Verfahrensbesch
 | E | SNS → Tech Name eindeutig | ✓ | ✓ |
 | I | Infocode → Info Name eindeutig | ✓ | ✓ |
 | F | Eintragstyp plausibel zum bisherigen Stand | ✓ | — |
-| K | `answer`/`answer_comment` unverändert | ✓ | — |
+| K | `answer`/`answer_comment` abweichend → **kein Fehler**, Abweichungen werden ermittelt und im Check-in zur Übernahme angeboten (PROJ-10) *(Refinement 2026-11-14)* | ✓ | — |
 | G | REPLY passt zum letzten SEND | — | ✓ |
 | H | Antworten vollständig | — | ✓ |
 
@@ -102,8 +104,10 @@ Der Eintragstyp wird **vom Bearbeiter manuell** gesetzt. Das Regelwerk prüft nu
 
 „Fachliche Felder" = alle Felder außer `dmentryType`, `answer`, `answer_comment`.
 
-### K — Antwortfelder (nur Check-in)
-`answer` und `answer_comment` dürfen vom Bearbeiter nicht verändert werden: Sie müssen dem Stand der Anwendung entsprechen; bei neuen Einträgen leer sein.
+### K — Antwortfelder (nur Check-in) *(Refinement 2026-11-14)*
+~~`answer` und `answer_comment` dürfen vom Bearbeiter nicht verändert werden.~~ (bis 2026-11-14)
+
+Weichen `answer` oder `answer_comment` vom Stand der Anwendung ab (bei neuen Einträgen: nicht leer), ist das **kein Fehler**. Regel K ermittelt die abweichenden Einträge; der Check-in (PROJ-10) bietet sie dem Bearbeiter zur Übernahme an (eine Entscheidung für alle). Übernommene Antworten sind nur Information und setzen nie *freigegeben* oder *zu überarbeiten*. Das Format von `answer` (leer, `y`, `n`) prüft weiterhin Regel A.
 
 ### G — REPLY passt zum letzten SEND (nur REPLY)
 **Kopf**
@@ -198,7 +202,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 - [ ] Angenommen bei einem bestehenden Eintrag wurde der Tech Name geändert und kein Eintragstyp gesetzt, wenn geprüft wird, dann wird „Geänderter Eintrag ohne Eintragstyp" gemeldet
 - [ ] Angenommen ein bisheriger Eintrag fehlt in der Datei, wenn geprüft wird, dann wird „Eintrag [DMC] fehlt — Einträge können nicht entfernt werden" gemeldet
 - [ ] Angenommen ein bestehender, unveränderter Eintrag hat Eintragstyp `n`, `c` oder `d`, wenn geprüft wird, dann wird kein Fehler gemeldet
-- [ ] Angenommen der Bearbeiter hat `answer` oder `answer_comment` verändert, wenn geprüft wird, dann wird „[Feld] darf nur durch REPLY gesetzt werden" gemeldet
+- [ ] Angenommen der Bearbeiter hat `answer` oder `answer_comment` verändert, wenn geprüft wird, dann ist das kein Fehler, und die betroffenen Einträge werden als „abweichende Partnerantworten" an den Check-in übergeben (PROJ-10) *(Refinement 2026-11-14; vorher: Fehler „[Feld] darf nur durch REPLY gesetzt werden")*
 - [ ] Angenommen ein neuer Eintrag hat einen Wert in `answer`, wenn geprüft wird, dann wird ein Fehler gemeldet
 
 ### REPLY gegen letzten SEND
@@ -255,7 +259,8 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 | Eintragstyp wird manuell gesetzt; Regelwerk prüft nur Widersprüche | Vorgabe Product Owner — Bearbeiter weiß am besten, ob ein DM neu/geändert/gelöscht ist | 2026-11-12 |
 | Einträge können nicht entfernt werden (Fehlen = Fehler) | Löschung nur über `d` / `deleted` (Anforderung 02, NSG) | 2026-11-12 |
 | `answer` nur an Einträgen mit Eintragstyp n/c/d; Begründung bei `n` Pflicht | Vorgabe Product Owner, NSG 1.2.1 | 2026-11-12 |
-| `answer`/`answer_comment` beim Check-in nicht veränderbar | Keine vorgetäuschte Partner-Freigabe | 2026-11-12 |
+| ~~`answer`/`answer_comment` beim Check-in nicht veränderbar~~ — ersetzt 2026-11-14 | Keine vorgetäuschte Partner-Freigabe | 2026-11-12 |
+| Abweichende `answer`/`answer_comment` beim Check-in kein Fehler, sondern optionale Übernahme nur als Information | Altbestände mit Partnerantworten übernehmbar (PROJ-20); vorgetäuschte Freigabe weiterhin ausgeschlossen, da übernommene Antworten den Status nie auf *freigegeben* setzen | 2026-11-14 |
 | Pflichtfelder inkl. `infoname`, `rpc`, `issno`, `type`, Datum | Vorgabe Product Owner | 2026-11-12 |
 | `issno`/`type`/Datum im REPLY-XML optional, in der Anwendung Pflicht | NSG und Beispieldateien enthalten sie nicht; Demo-Einträge werden ergänzt | 2026-11-12 |
 | REPLY: Partner, `dmlref` auf letzten SEND, gleiche DMCs, keine Feldänderungen | Nachvollziehbarer Zyklus (NSG 1.2.3, PROJ-6) | 2026-11-12 |

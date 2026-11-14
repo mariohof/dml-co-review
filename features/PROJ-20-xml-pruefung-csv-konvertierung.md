@@ -124,7 +124,7 @@ Ist die XSD-Prüfung **nicht verfügbar** (xmllint fehlt), wird trotzdem eingele
 ## Open Questions
 - [x] Wie behandelt der Check-in eingehende `answer`/`answer_comment` aus einer konvertierten Partner-XML? → Optional übernehmen mit Abfrage, nur als Information (Status bleibt *in Bearbeitung*); Umsetzung per `/refine PROJ-10` (2026-11-14)
 - [x] Antwortzählung bei SEND-Dateien ausblenden? → Nein, immer anzeigen (2026-11-14)
-- [ ] `/refine PROJ-10` (und Regel K in PROJ-8) durchführen, bevor PROJ-20 als Ganzes abgenommen wird — sonst weist der Check-in konvertierte Partner-CSVs mit Antworten ab
+- [x] `/refine PROJ-10` (und Regel K in PROJ-8) durchgeführt (2026-11-14): eine Abfrage für alle abweichenden Antworten, standardmäßig aus; übernommene Antwortänderung zählt als Änderung. Umsetzung von PROJ-10/PROJ-8 muss vor der Gesamtabnahme von PROJ-20 erfolgen
 
 ## Decision Log
 
