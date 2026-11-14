@@ -1,6 +1,6 @@
 # PROJ-15: Archiv SEND/REPLY
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -245,7 +245,48 @@ _Stand 2026-11-13 — `/frontend PROJ-15`_
 - Kein Verlaufseintrag für Archiv-Downloads (Out of Scope: Protokoll von Exporten).
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [x] Zugriff (3/3), Austausch (5/5) inkl. **byte-identischem Download** (E2E-Vergleich mit Originaldatei, CRLF), Freigabestände (3/3), Verlauf (7/7) — Unit, Komponententests, E2E (`PROJ-15-archiv.spec.ts`)
+
+### Edge Cases Status
+- [x] Deaktivierter Benutzer („inaktiv"), umbenannte Organisation, CRLF, DMRL-Löschung nur ohne Workflow, Demo neu laden
+- [ ] **Sehr viele Archiveinträge / große DMRLs:** siehe BUG-QA2-2
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
+- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
+
+
+### Bugs Found
+
+#### BUG-QA2-2: Browser-Speicher reicht bei großen DMRLs nur für wenige Austauschzyklen
+- **Severity:** Medium
+- **Betrifft:** Archiv (PROJ-15) und alle Workflows, die archivieren (PROJ-12, PROJ-13, PROJ-14); Ursache Datenhaltung im `localStorage` (PROJ-1)
+- **Messung (Chrome):** Kapazität ≈ **5,16 Mio. Zeichen** je Adresse (E2E `QA-proj7-19.spec.ts`). Eine DMRL mit **1.000 Einträgen** belegt ca. 0,49 Mio. (Einträge), je Check-out weitere 0,49 Mio. (Sperrkopie), je SEND-/REPLY-Datei ca. 0,93 Mio., je Freigabestand 0,49 Mio.
+- **Steps to Reproduce:**
+  1. DMRL mit ca. 1.000 Einträgen anlegen (Check-in)
+  2. Zwei vollständige Zyklen SEND → REPLY durchlaufen
+  3. Expected: Alle Stände werden dauerhaft archiviert (PRD)
+  4. Actual: Ab etwa dem zweiten Zyklus meldet die App „Der Browser-Speicher ist voll"; SEND/REPLY sind nicht mehr möglich (kein Datenverlust, Änderung wird verworfen)
+- **Hinweis:** Mit den Demo-Daten (32/10/10 Einträge, ≈ 0,09 Mio. Zeichen) reicht der Speicher für sehr viele Zyklen. Abhilfe z. B. IndexedDB (deutlich größere Kapazität) — Architekturentscheidung (`/architecture`)
+- **Priority:** Fix in next sprint (für die Vorführung mit Demo-Daten unkritisch)
+
+### Summary
+- **Acceptance Criteria:** 18/18 passed
+- **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low)
+- **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_

@@ -1,6 +1,6 @@
 # PROJ-11: XSD-Validierung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -255,7 +255,46 @@ _Stand 2026-11-13 — `/backend` (PROJ-11)_
 **Tests**: `xmllint.test.ts` (9, mit echtem xmllint; übersprungen, wenn nicht installiert), `route.test.ts` (5). Geprüft: Demo-REPLY und Testdatei 4 gültig; S1000DBIKE 4.2/5.0 gültig (5.0 offline); Testdatei 1 und 2 sowie 4.2-Datei gegen 2.3 → Schemafehler; Testdatei 3 → nicht wohlgeformt (Zeile 987); Programm fehlt, Schema fehlt, Zeitlimit → nicht verfügbar. Rauchtest am laufenden Produktionsserver bestanden. Insgesamt 308 Unit-Tests grün.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [x] Schema-Auswahl (4/4): 2.3/4.2/5.0, 4.2-Datei gegen 2.3 abgelehnt, 5.0 offline — Integration mit xmllint
+- [x] REPLY (5/5), SEND/Export (3/3), Nicht verfügbar (1/1), Demo (2/2) — Unit, Integration, E2E (`PROJ-13-reply.spec.ts` Testdateien 1–4)
+
+### Edge Cases Status
+- [x] > 100 Fehler gekürzt; Kodierung laut Deklaration; externe Verweise nicht nachgeladen (XXE-Test); Schema fehlt → nicht verfügbar; Zeitlimit; Issue fest nach Workflow
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
+- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
+- [x] Pfad-Manipulation über `issue` abgewiesen (400), > 5 MB auch ohne Längenangabe abgewiesen (413), fremde Herkunft (Origin) → 403, keine Shell, keine Entity-Ersetzung
+- [ ] **BUG-QA2-3 (Low):** Host-Kopf wird nicht geprüft — bei DNS-Rebinding (Host = Origin = fremde Domain, die auf 127.0.0.1 zeigt) wird die Anfrage angenommen
+
+### Bugs Found
+
+#### BUG-QA2-3: Serverfunktion prüft den Host-Kopf nicht (DNS-Rebinding)
+- **Severity:** Low (Sicherheit)
+- **Steps to Reproduce:**
+  1. `curl -X POST -H "Host: angreifer.example:3000" -H "Origin: http://angreifer.example:3000" --data-binary @datei.xml "http://localhost:3000/api/xsd-pruefung?issue=2.3"`
+  2. Expected: 403 (nur `localhost`/`127.0.0.1` als Host zulässig)
+  3. Actual: 200 mit Prüfergebnis
+- **Auswirkung:** Eine fremde Webseite könnte die lokale Prüffunktion nutzen (Rechenlast); kein Zugriff auf Anwendungsdaten (liegen im Browser, an die Adresse gebunden)
+- **Priority:** Nice to have
+
+### Summary
+- **Acceptance Criteria:** 15/15 passed
+- **Bugs Found:** 1 total (0 critical, 0 high, 0 medium, 1 low)
+- **Security:** Issues found (siehe Bugs)
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_

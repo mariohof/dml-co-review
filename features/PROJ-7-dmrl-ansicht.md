@@ -1,6 +1,6 @@
 # PROJ-7: DMRL-Ansicht
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -245,7 +245,41 @@ _Stand 2026-11-13 — `/frontend PROJ-7`_
 - Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [x] Zugriff (4/4): Dashboard → Ansicht (Bearbeiter, Admin), „Keine Berechtigung", „DMRL nicht gefunden" mit Link „Zum Dashboard" — E2E
+- [x] Kopfbereich (6/6): Stammdaten, Versionsindex + letzter SEND, „— noch nicht gesendet —", Sperre, Banner, Freigabe-Nachweis — Komponententests + E2E
+- [x] Zählerleiste (2/2), Eintragstabelle (9/9) inkl. DMC-Aufbau, Eintragstyp-Texte, Durchstreichen bei `d`, „DM gelöscht", Hervorhebung „zu überarbeiten", Detailfenster per Klick/Tastatur, Leerhinweis
+- [x] Filter & Suche (4/4), Reine Anzeige (1/1)
+- [x] Aktionsleiste (1/1): alle Aktionen angebunden; „Check-in" nur für den Sperrinhaber sichtbar (Festlegung PROJ-10)
+
+### Edge Cases Status
+- [x] Große DMRL: Seiten zu 50 Einträgen (Komponententest 60 Einträge); leere DMC-Teile; lange Namen gekürzt/Detail vollständig; Sperre aus anderem Tab beim nächsten Laden; Berechtigungsentzug; `d` + `y`; mobile Ansicht (375 px ohne waagerechtes Scrollen der Seite)
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
+- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
+
+
+### Bugs Found
+
+Keine neuen Bugs in diesem Feature.
+
+### Summary
+- **Acceptance Criteria:** 27/27 passed
+- **Bugs Found:** 0 total (0 critical, 0 high, 0 medium, 0 low)
+- **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_

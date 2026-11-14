@@ -1,6 +1,6 @@
 # PROJ-12: SEND-Export
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -279,7 +279,38 @@ _Stand 2026-11-13 — `/frontend PROJ-12`_
 - Freigabestand-Export (PROJ-14) und Export (PROJ-18) können den Schreiber direkt nutzen (`answers: true`).
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [x] Voraussetzungen (5/5), Dialog (5/5), XML (10/10), Wirkung (6/6), Zurückziehen (4/4) — Unit (`send.test.ts`, `dml-writer*.test.ts`), Dialogtests, E2E (`PROJ-12-send.spec.ts`, alle drei Issues mit echter XSD-Prüfung)
+
+### Edge Cases Status
+- [x] Download blockiert (Archiv verfügbar), XSD nicht verfügbar, Jahreswechsel (Versionsindex neu ermittelt, Ablehnung mit Meldung), Partner = Originator anderer DMRL, nur Originator vorhanden (Hinweis mit Link), `d` + `y` aus früherem Zyklus, große DMRL (Fortschrittsanzeige), Speicher voll
+- [ ] Siehe BUG-QA2-2 (PROJ-15): Speicherkapazität bei sehr großen DMRLs
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
+- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
+
+
+### Bugs Found
+
+Keine neuen Bugs in diesem Feature.
+
+### Summary
+- **Acceptance Criteria:** 30/30 passed
+- **Bugs Found:** 0 total (0 critical, 0 high, 0 medium, 0 low)
+- **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_

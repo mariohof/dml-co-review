@@ -1,6 +1,6 @@
 # PROJ-16: Dashboard
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -239,7 +239,48 @@ _Stand 2026-11-13 — `/frontend PROJ-16`_
 - Beim ersten E2E-Lauf kehrte nach „Filter zurücksetzen" beim sofortigen Tippen der alte Filter zurück, weil die Adresse noch nicht aktualisiert war. Seither ist der Zustand im Speicher maßgeblich (Regressionstest vorhanden).
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [x] Kennzahlen (5/5), Meine Aufgaben (5/5), DMRL-Tabelle (9/9), Aktualität (2/2) — Unit (`dashboard.test.ts`), Komponententests, E2E (`PROJ-16-dashboard.spec.ts`)
+
+### Edge Cases Status
+- [x] DMRL ohne Einträge (0 / 0), System ohne DMRL, Berechtigungsentzug, inaktiver Sperrinhaber, zurückgezogener SEND, viele DMRLs (Seiten zu 25; Kennzahlen unabhängig von Suche)
+- [x] BUG-QA1-3 (PROJ-2) behoben: „Auswahl" mobil sichtbar (E2E)
+- [ ] Zurück-Navigation behält den Filter nicht zuverlässig (Tech-Entscheidung „Filterzustand in der Adresse") — siehe BUG-QA2-4
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
+- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
+
+
+### Bugs Found
+
+#### BUG-QA2-4: Zurück-Taste stellt einen älteren Dashboard-Filter wieder her
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. Dashboard: Kachel „Offene SEND" an- und abschalten, Issue-Filter setzen und zurücksetzen, „PHUN" in die Suche tippen
+  2. „Auswahl PHUNGUN" öffnen, dann im Browser „Zurück"
+  3. Expected: Dashboard mit Suche „PHUN" (Adresse `?suche=PHUN`)
+  4. Actual: unter Last (paralleler Testlauf) in 5 von 6 Läufen ein älterer Stand (`/`, `?issue=4.2` oder `?kachel=send`); im Einzellauf meist korrekt
+- **Ursache (vermutet):** mehrere schnell aufeinanderfolgende `router.replace`-Aufrufe des Next.js-Routers überholen sich; die zuletzt angezeigte Liste stimmt (Zustand im Speicher), die Adresse nicht
+- **Test:** `tests/PROJ-16-dashboard.spec.ts` „Filter bleibt bei Zurück-Navigation erhalten (BUG-QA2-4)" — als `test.fixme` hinterlegt, nach der Behebung aktivieren
+- **Priority:** Fix in next sprint
+
+### Summary
+- **Acceptance Criteria:** 21/21 passed
+- **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low)
+- **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_

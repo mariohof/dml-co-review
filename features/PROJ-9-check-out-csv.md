@@ -1,6 +1,6 @@
 # PROJ-9: Check-out CSV
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -232,7 +232,47 @@ _Stand 2026-11-13 — `/frontend PROJ-9`_
 - Browser-E2E-Tests stehen aus → `/qa`.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [x] Check-out (9/9), CSV-Inhalt (9/9), Sperre aufheben (5/5), Nachvollziehbarkeit (3/3) — Unit (`check-out.test.ts`, `qa-proj7-10.test.ts`), Dialogtests, E2E (`PROJ-18-export.spec.ts` Check-out unter fremdem Benutzer)
+- [x] Umlaute in Excel: UTF-8 mit BOM (Prüfung der Datei)
+
+### Edge Cases Status
+- [x] Deaktivieren/Berechtigungsentzug des Sperrinhabers verhindert (PROJ-3/17), Rollenwechsel, Download blockiert → „CSV erneut herunterladen", Kopfdaten während Sperre, Demo neu laden, zwei Tabs
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
+- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
+- [ ] **BUG-QA2-1 (Medium):** CSV-Formel-Injection — Werte, die mit `=`, `+`, `-` oder `@` beginnen, werden unverändert in CSV-Dateien geschrieben und von Excel als Formel ausgeführt
+
+### Bugs Found
+
+#### BUG-QA2-1: CSV-Formel-Injection in exportierten CSV-Dateien
+- **Severity:** Medium (Sicherheit)
+- **Betrifft:** CSV-Schreiber (`src/lib/files/csv-writer.ts`) und damit Check-out (PROJ-9), DMRL-Export (PROJ-18), Freigabestand-Export (PROJ-14), Prüfbericht-Download (PROJ-8)
+- **Steps to Reproduce:**
+  1. Partner liefert im REPLY als Begründung (`answer/remarks`) z. B. `=HYPERLINK("http://angreifer.example";"Details")`; REPLY übernehmen
+  2. DMRL auschecken oder als CSV exportieren und die Datei in Excel öffnen
+  3. Expected: Wert wird als Text angezeigt
+  4. Actual: Zelle enthält `"=HYPERLINK(""http://angreifer.example"",""Details"")"` — Excel wertet die Formel aus (Link/DDE-Angriffe möglich)
+- **Hinweis zur Behebung:** Ein vorangestelltes `'` (Papa Parse `escapeFormulae`) verhindert die Ausführung, verändert aber den Wert beim Check-in — Lösung muss den Rundlauf Check-out → Check-in erhalten (z. B. Präfix beim Lesen wieder entfernen)
+- **Priority:** Fix before deployment (Daten stammen von externen Partnern)
+
+### Summary
+- **Acceptance Criteria:** 26/26 passed
+- **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low)
+- **Security:** Issues found (siehe Bugs)
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_

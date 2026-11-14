@@ -1,6 +1,6 @@
 # PROJ-13: REPLY-Import
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -238,7 +238,38 @@ _Stand 2026-11-13 — `/frontend PROJ-13`_
 - Die Statusübergänge sind in `reply.ts` umgesetzt; das zentrale Statusmodul (PROJ-14 Tech Design C) kann sie später übernehmen.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [x] Zugriff (3/3), Prüfung (4/4), Übernahme (11/11), Demo (2/2) — Unit (`reply.test.ts`), Dialogtests, E2E (`PROJ-13-reply.spec.ts`, `QA-proj7-19.spec.ts`)
+- [x] „REPLY importieren" bleibt sichtbar und ist außerhalb von *gesendet* gesperrt (mit Grund) — erfüllt „nicht verfügbar"
+
+### Edge Cases Status
+- [x] REPLY auf zurückgezogenen SEND, anderer Partner, `answer` ohne Eintragstyp, fehlende Ausgabedaten, alle `n`, SEND während der Zusammenfassung zurückgezogen, Speicher voll, Demo-Stand
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
+- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
+
+
+### Bugs Found
+
+Keine neuen Bugs in diesem Feature.
+
+### Summary
+- **Acceptance Criteria:** 21/21 passed
+- **Bugs Found:** 0 total (0 critical, 0 high, 0 medium, 0 low)
+- **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_

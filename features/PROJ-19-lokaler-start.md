@@ -1,6 +1,6 @@
 # PROJ-19: Lokaler Start (Python-Startskript)
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -255,7 +255,39 @@ _Stand 2026-11-13 — `/frontend PROJ-19` (keine App-Oberfläche; Startskript, S
 - Windows 11 und Linux, macOS-Doppelklick inkl. Gatekeeper, Python < 3.9, Fensterschließen unter Windows.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [ ] Startdateien (0/5 geprüft, **ausstehend manuell**): Doppelklick macOS/Windows/Linux, Meldung bei fehlendem Python, Fenster bleibt offen — Skripte syntaktisch geprüft (`bash -n`, CRLF für `.bat`), echte Doppelklick-Tests stehen aus
+- [x] Voraussetzungen (3/4): Node.js fehlt/zu alt, xmllint fehlt (Hinweise je Betriebssystem), Abbruch ohne Installation/Start — Unit; **ausstehend:** Python < 3.9 (Codeprüfung ok)
+- [x] Installieren, Bauen, Starten (7/9): Zweitstart ohne Neubau (≈ 1 s), Update-Erkennung, `--neu-bauen`, Port belegt → Abbruch, anderer Port mit Hinweis, nur `127.0.0.1` (geprüft mit `lsof`), `--kein-browser` — echter Lauf auf macOS + Unit; **ausstehend:** Paketinstallation beim allerersten Start auf frischem Rechner, Meldung bei fehlgeschlagener Installation/Build im echten Lauf
+- [x] Betrieb & Beenden (3/3): XSD-Prüfung im Produktionsbetrieb, Strg+C und SIGTERM beenden den Server (Port frei), Daten im Browser bleiben
+- [x] Weitergabe (1/1): `START-HIER.md`
+
+### Edge Cases Status
+- [x] Pfad mit Leerzeichen/Umlauten (Fingerabdruck-Test), xmllint-Pfad unter Windows (Hinweis), zweimal gestartet, Port belegt, Browser nicht öffnbar (Adresse in der Konsole)
+- [ ] Ausstehend manuell: Gatekeeper (macOS), keine Internetverbindung beim ersten Start, beschädigter Build-Ordner im echten Lauf
+
+### Security Audit Results
+- [x] Server nur an `127.0.0.1` gebunden (aus dem Netzwerk nicht erreichbar), Aufrufe ohne Shell, Next.js-Telemetrie aus, keine Geheimnisse; Stand-Vermerk und Protokoll nicht in Git
+
+### Bugs Found
+
+Keine Bugs gefunden. (Während der Umsetzung behoben: geerbtes „SIGINT ignorieren" verschluckte Strg+C.)
+
+### Summary
+- **Acceptance Criteria:** 14/22 passed, 8 ausstehend (manuelle Prüfung auf Windows 11, Linux, macOS-Doppelklick, frischer Rechner)
+- **Bugs Found:** 0 total
+- **Security:** Pass
+- **Production Ready:** NO — erst nach manueller Prüfung auf den drei Betriebssystemen (Status bleibt *In Review*)
 
 ## Deployment
 _To be added by /deploy_

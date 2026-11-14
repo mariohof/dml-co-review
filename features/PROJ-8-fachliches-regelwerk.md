@@ -1,6 +1,6 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-12
 
@@ -382,7 +382,39 @@ _Stand 2026-11-13 — `/frontend PROJ-8`_
 - Keine eigene Seite; die Anzeige wird mit PROJ-10/11/13 eingebunden.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-13
+**App URL:** http://localhost:3000 (`npm run dev`); PROJ-19 zusätzlich Produktionsstart über `scripts/start.py`
+**Tester:** QA Engineer (AI)
+**Testumfang:** gemeinsamer QA-Lauf PROJ-7 bis PROJ-19
+**Automatisiert:** Vitest 424 Tests ✅ · Startskript 12 Tests ✅ · Playwright 62/63 ✅ (1 ausstehend: BUG-QA2-4) — 58 Regressionstests + 5 neue QA-Tests (Chrome über `PW_CHANNEL=chrome`)
+**Echte XSD-Prüfung:** xmllint (libxml2 2.9.13) in Unit-, Integrations- und E2E-Tests
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser für diese Version nicht installiert)
+**Responsive:** 375 px für alle Workflow-Seiten und Dialoge, 375/768/1440 px für die übrigen Seiten — kein waagerechtes Scrollen der Seite
+
+### Acceptance Criteria Status
+- [x] Dateistruktur (6/6), Format & Pflicht (12/12), Fachliche Zusammenhänge (6/6), Eintragstyp & Antwortfelder (6/6), REPLY gegen letzten SEND (9/9), Antworten vollständig (3/3), Prüfergebnis (7/7) — Unit (`checkin.test.ts`, `reply.test.ts`, `qa-proj7-10.test.ts`) + Dialogtests
+- [x] Nachweis neu in dieser QA: REPLY mit `security` = `1` → Formatfehler (kein Auffüllen); Datei einer anderen DMRL scheitert an D und F
+- [x] Zusammenfassung Check-in zeigt geprüft/neu/geändert/unverändert (Festlegung PROJ-10 statt „Löschung")
+
+### Edge Cases Status
+- [x] Führende Nullen (Auffüllen nur security/issno/day/month), Groß-/Kleinschreibung (`N` ungültig), Leerzeichen am Rand entfernt, E/I über alle Einträge, viele Fehler (Anzeige 100 + „Weitere anzeigen", Download alle), erster REPLY, abweichende Ausgabedaten im REPLY (Fehler G), Datei einer anderen DMRL
+
+### Security Audit Results
+- [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
+- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
+
+
+### Bugs Found
+
+Keine neuen Bugs in diesem Feature.
+
+### Summary
+- **Acceptance Criteria:** 49/49 passed
+- **Bugs Found:** 0 total (0 critical, 0 high, 0 medium, 0 low)
+- **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_
