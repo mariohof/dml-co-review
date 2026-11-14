@@ -10,11 +10,9 @@ import { saveDataset, saveSessionUserId } from "@/lib/data/storage"
 import { Dashboard } from "./dashboard"
 
 let search = new URLSearchParams()
-const replace = vi.fn((url: string) => {
-  search = new URLSearchParams(url.split("?")[1] ?? "")
-})
+const replace = vi.spyOn(window.history, "replaceState")
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), replace }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
   usePathname: () => "/",
   useSearchParams: () => search,
 }))
@@ -57,12 +55,12 @@ describe("Dashboard", () => {
   it("Kachel „Offene SEND\" filtert und ist hervorgehoben; erneuter Klick hebt auf", async () => {
     renderDashboard(DEMO_IDS.admin)
     fireEvent.click(await screen.findByRole("button", { name: /^Offene SEND/ }))
-    expect(replace).toHaveBeenLastCalledWith("/?kachel=send", { scroll: false })
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/?kachel=send")
     expect(tile("Offene SEND")).toHaveAttribute("aria-pressed", "true")
     expect(tableRows()).toHaveLength(1)
     expect(screen.getByText("1 sichtbare Bestände")).toBeInTheDocument()
     fireEvent.click(tile("Offene SEND"))
-    expect(replace).toHaveBeenLastCalledWith("/", { scroll: false })
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/")
   })
 
   it("Issue 4.2 und Suche „PHUN\" aus der Adresse; keine Treffer; Zurücksetzen und sofort tippen", async () => {
@@ -79,7 +77,7 @@ describe("Dashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filter zurücksetzen" }))
     fireEvent.change(screen.getByLabelText("DMRLs nach System oder MI suchen"), { target: { value: "PHUN" } })
     expect(tableRows()).toHaveLength(1)
-    expect(replace).toHaveBeenLastCalledWith("/?suche=PHUN", { scroll: false })
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/?suche=PHUN")
   })
 
   it("Bearbeiterin sieht nur ihre DMRLs; Aufgaben verlinken auf die DMRL; ohne Aufgaben kein Bereich", async () => {

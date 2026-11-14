@@ -38,9 +38,8 @@ test("Kennzahlen, Kachel-Filter, Issue-Filter, Suche, Auswahl, Benutzerwechsel",
   await expect(page.getByRole("link", { name: "PHUNGUN", exact: true })).toHaveCount(0)
 })
 
-// BUG-QA2-4: Unter Last überholen sich schnelle Adressänderungen; nach „Zurück" erscheint ein älterer Filter.
-// Nach der Behebung `test.fixme` durch `test` ersetzen.
-test.fixme("Filter bleibt bei Zurück-Navigation erhalten (BUG-QA2-4)", async ({ page }) => {
+// Regression BUG-QA2-4: schnelle Filteränderungen — nach „Zurück" muss der zuletzt gesetzte Filter erscheinen
+test("Filter bleibt bei Zurück-Navigation erhalten (BUG-QA2-4)", async ({ page }) => {
   await startAs(page, "Administrator")
   await kpi(page, "Offene SEND").click()
   await kpi(page, "Offene SEND").click()

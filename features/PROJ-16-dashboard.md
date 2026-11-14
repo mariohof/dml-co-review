@@ -1,8 +1,8 @@
 # PROJ-16: Dashboard
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-14
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung & Rollen) — Dashboard als Startseite, DMRL-Liste nach Rolle
@@ -255,7 +255,7 @@ _Stand 2026-11-13 — `/frontend PROJ-16`_
 ### Edge Cases Status
 - [x] DMRL ohne Einträge (0 / 0), System ohne DMRL, Berechtigungsentzug, inaktiver Sperrinhaber, zurückgezogener SEND, viele DMRLs (Seiten zu 25; Kennzahlen unabhängig von Suche)
 - [x] BUG-QA1-3 (PROJ-2) behoben: „Auswahl" mobil sichtbar (E2E)
-- [ ] Zurück-Navigation behält den Filter nicht zuverlässig (Tech-Entscheidung „Filterzustand in der Adresse") — siehe BUG-QA2-4
+- [x] Zurück-Navigation behält den Filter — BUG-QA2-4 behoben 2026-11-14
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
@@ -275,6 +275,7 @@ _Stand 2026-11-13 — `/frontend PROJ-16`_
 - **Ursache (vermutet):** mehrere schnell aufeinanderfolgende `router.replace`-Aufrufe des Next.js-Routers überholen sich; die zuletzt angezeigte Liste stimmt (Zustand im Speicher), die Adresse nicht
 - **Test:** `tests/PROJ-16-dashboard.spec.ts` „Filter bleibt bei Zurück-Navigation erhalten (BUG-QA2-4)" — als `test.fixme` hinterlegt, nach der Behebung aktivieren
 - **Priority:** Fix in next sprint
+- **Status:** Behoben 2026-11-14 (`/frontend`) — Filteradresse wird mit dem nativen `window.history.replaceState` (von Next.js unterstützt) statt `router.replace` geschrieben: wirkt sofort, schnelle Änderungen überholen sich nicht. E2E „Filter bleibt bei Zurück-Navigation erhalten (BUG-QA2-4)" wieder aktiv; unter Last 24/24 Durchläufe grün (vorher 5 von 6 fehlerhaft)
 
 ### Summary
 - **Acceptance Criteria:** 21/21 passed

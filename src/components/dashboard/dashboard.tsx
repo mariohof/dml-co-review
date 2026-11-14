@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { ChevronDown, ChevronLeft, ChevronRight, ClipboardList, FileX, Inbox, Lock } from "lucide-react"
 
 import { SearchField } from "@/components/admin/search-field"
@@ -43,7 +43,6 @@ const PAGE_SIZE = 25
 export function Dashboard() {
   const { data } = useDataStore()
   const { currentUser } = useSession()
-  const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
   // Zustand im Speicher (sofort aktuell), zusätzlich in der Adresse (Zurück-Taste, Links)
@@ -62,7 +61,9 @@ export function Dashboard() {
     const next = { ...filter, ...change }
     setFilterState(next)
     setPage(1)
-    router.replace(`${pathname}${dashboardFilterQuery(next)}`, { scroll: false })
+    // Natives replaceState (von Next.js unterstützt) statt router.replace: wirkt sofort, schnelle Änderungen können sich
+    // nicht überholen — die Adresse entspricht immer dem angezeigten Filter (BUG-QA2-4)
+    window.history.replaceState(null, "", `${pathname}${dashboardFilterQuery(next)}`)
   }
 
   const tiles: { key: Tile | null; label: string; value: number }[] = [
