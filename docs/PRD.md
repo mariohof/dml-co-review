@@ -29,7 +29,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Approved (PROJ-11) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Approved (PROJ-12, PROJ-13) |
 | P0 (MVP) | Freigabestatus & Archiv | Approved (PROJ-14, PROJ-15) |
-| P0 (MVP) | Lokaler Start (Python-Startskript) | In Review (PROJ-19) |
+| P0 (MVP) | Lokaler Start (Python-Startskript) | In Progress (PROJ-19, Bugfix) |
 | P1 | Dashboard / Übersicht | Approved (PROJ-16) |
 
 Details und Abhängigkeiten: siehe `features/INDEX.md`.

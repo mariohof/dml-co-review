@@ -1,6 +1,6 @@
 # PROJ-19: Lokaler Start (Python-Startskript)
 
-## Status: In Review
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -40,7 +40,7 @@ Alle drei liegen im Hauptordner des Projekts.
 **Optionen:** Port als Zahl (z. B. `8877`), `--open` / `--kein-browser`, `--neu-bauen`.
 
 ## Weitergabe & Update
-- Weitergabe als **Projektordner** (ZIP oder Git-Klon) mit Kurzanleitung **`START-HIER.md`** (Voraussetzungen je Betriebssystem, Doppelklick-Start, macOS „Rechtsklick → Öffnen" beim ersten Start, Beenden).
+- Weitergabe als **Projektordner** (ZIP oder Git-Klon) mit Kurzanleitung **`START-HIER.md`** (Voraussetzungen je Betriebssystem, Doppelklick-Start, macOS-Freigabe der blockierten Startdatei beim ersten Start, Beenden).
 - **Update:** neuer Projektstand wird eingespielt; das Skript erkennt die Änderung beim nächsten Start und installiert/baut neu.
 - **Daten** bleiben im Browser; bei geändertem Datenformat greift PROJ-1 (Hinweis + „Demo-Daten neu laden").
 
@@ -95,10 +95,10 @@ Alle drei liegen im Hauptordner des Projekts.
 - [ ] Angenommen Daten wurden in der Anwendung geändert, wenn die App beendet und erneut gestartet wird, dann sind die Daten im selben Browser weiterhin vorhanden
 
 ### Weitergabe
-- [ ] Angenommen der Projektordner wird weitergegeben, wenn `START-HIER.md` geöffnet wird, dann beschreibt sie Voraussetzungen je Betriebssystem, den Start per Doppelklick, den macOS-Hinweis „Rechtsklick → Öffnen" und das Beenden
+- [ ] Angenommen der Projektordner wird weitergegeben, wenn `START-HIER.md` geöffnet wird, dann beschreibt sie Voraussetzungen je Betriebssystem, den Start per Doppelklick, den macOS-Hinweis zum Freigeben der blockierten Startdatei (ab macOS 15: Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“; bis macOS 14: „Rechtsklick → Öffnen“) und das Beenden
 
 ## Edge Cases
-- **macOS blockiert die Startdatei (Gatekeeper/Quarantäne):** Kurzanleitung beschreibt „Rechtsklick → Öffnen"; Startdatei ist als ausführbar gespeichert.
+- **macOS blockiert die Startdatei (Gatekeeper/Quarantäne):** Kurzanleitung beschreibt die Freigabe über Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“ (ab macOS 15), „Rechtsklick → Öffnen“ (bis macOS 14) und alternativ `xattr -dr com.apple.quarantine` im Terminal; Startdatei ist als ausführbar gespeichert.
 - **Projektordner mit Leerzeichen oder Umlauten im Pfad** (z. B. „DMRL Prüfung"): Start funktioniert trotzdem.
 - **Windows: xmllint nicht im Systempfad:** Hinweis, den Pfad in der Einstellung von PROJ-11 anzugeben bzw. in den Systempfad aufzunehmen.
 - **Zweimal gestartet:** zweiter Start bricht ab, da Port 8877 belegt ist; Hinweis, die bereits laufende Anwendung im Browser zu öffnen.
@@ -128,6 +128,7 @@ Alle drei liegen im Hauptordner des Projekts.
 | Nur localhost erreichbar | Lokaler Betrieb laut PRD; keine Zugriffssteuerung nötig (PROJ-11) | 2026-11-12 |
 | Weitergabe als Projektordner mit `START-HIER.md`; Update durch neuen Projektstand, automatischer Neubau | Einfach, ohne Installer | 2026-11-12 |
 | Fenster bleibt bei Fehlern offen | Meldungen bleiben lesbar | 2026-11-12 |
+| macOS-Freigabe in `START-HIER.md` je macOS-Version beschrieben (ab 15 Systemeinstellungen, bis 14 Rechtsklick) plus Terminal-Alternative | Apple hat „Rechtsklick → Öffnen“ mit macOS 15 entfernt (BUG-QA3-2); eine Signierung/Notarisierung ist für den Prototyp nicht vorgesehen | 2026-11-14 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
@@ -239,7 +240,7 @@ _Stand 2026-11-13 — `/frontend PROJ-19` (keine App-Oberfläche; Startskript, S
   - Wechsel in den Projektordner (Pfade mit Leerzeichen/Umlauten), Meldung bei fehlendem Python 3.
   - Fenster bleibt bei Fehlern offen (nicht bei Strg+C).
   - Ausführbar-Kennzeichen gesetzt; Zeilenenden über `.gitattributes` festgelegt (`.bat` CRLF, `.command`/`.sh`/`.py` LF).
-- `START-HIER.md` — Voraussetzungen je Betriebssystem, Doppelklick-Start, macOS „Rechtsklick → Öffnen", Beenden, Update, Fehlerbehebung, Optionen.
+- `START-HIER.md` — Voraussetzungen je Betriebssystem, Doppelklick-Start, macOS-Freigabe der blockierten Startdatei (BUG-QA3-2: ab macOS 15 über „Dennoch öffnen“ in den Systemeinstellungen, bis macOS 14 „Rechtsklick → Öffnen“, alternativ `xattr` im Terminal), Beenden, Update, Fehlerbehebung, Optionen.
 - `package.json` — `engines.node >= 20`; `.gitignore` — Stand-Vermerk und Protokoll; `CLAUDE.md` — Befehle ergänzt.
 
 **Tests**
@@ -338,6 +339,7 @@ Keine Bugs gefunden. (Während der Umsetzung behoben: geerbtes „SIGINT ignorie
   4. Actual: Seit macOS 15 (Sequoia) hat Apple das Umgehen über „Rechtsklick → Öffnen“ entfernt; der Weg führt über **Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“** (alternativ im Terminal `xattr -d com.apple.quarantine Start.command`)
 - **Hinweis:** Der Dialog selbst ist ohne Bildschirmbedienung nicht prüfbar. Bitte beim manuellen Test bestätigen.
 - **Priority:** Fix before Weitergabe (sonst bleibt der Empfänger am ersten Start hängen)
+- **Status:** Behoben 2026-11-14 (`/frontend`) — `START-HIER.md` hat einen eigenen Abschnitt „macOS: blockierte Startdatei freigeben“: ab macOS 15 Schritt für Schritt über Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“, bis macOS 14 „Rechtsklick → Öffnen“, alternativ `xattr -dr com.apple.quarantine <Projektordner>` im Terminal. Die Terminal-Alternative ist geprüft: Nach dem Befehl hat der Ordner keine Quarantäne-Markierung mehr. Akzeptanzkriterium und Edge Case sind angepasst. Bestätigung des Dialogablaufs durch `/qa` bzw. den manuellen Test ausstehend.
 
 ### Summary (Re-Test 2026-11-14)
 - **Acceptance Criteria:** 20/22 passed, 2 ausstehend (Windows 11 und Linux, nur manuell prüfbar)

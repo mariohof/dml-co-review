@@ -22,7 +22,19 @@ Fehlt etwas, meldet das Startskript, was zu tun ist — es installiert nichts se
 
 - Der **erste Start** dauert einige Minuten: Pakete werden installiert (Internetverbindung nötig) und die Anwendung gebaut.
 - Danach öffnet sich der Browser mit **http://localhost:8877**. Folgende Starts gehen in wenigen Sekunden.
-- **macOS, erster Start:** Falls macOS die Datei blockiert („kann nicht geöffnet werden"), **Rechtsklick auf `Start.command` → Öffnen → Öffnen**. Danach genügt der Doppelklick.
+- **macOS, erster Start:** Wurde der Ordner als ZIP oder Download weitergegeben, blockiert macOS die Startdatei beim ersten Doppelklick („„Start.command“ wurde nicht geöffnet“). So gibst du sie einmalig frei (siehe unten).
+
+### macOS: blockierte Startdatei freigeben (nur beim ersten Start)
+
+**macOS 15 (Sequoia) und neuer:**
+1. Im Hinweisfenster **„Fertig“** klicken (nicht „In den Papierkorb legen“).
+2. **Systemeinstellungen → Datenschutz & Sicherheit** öffnen und nach unten zum Bereich **Sicherheit** scrollen.
+3. Bei „„Start.command“ wurde blockiert …“ auf **„Dennoch öffnen“** klicken und mit dem Passwort bzw. Touch ID bestätigen.
+4. `Start.command` erneut doppelklicken und im Hinweisfenster **„Dennoch öffnen“** wählen. Danach genügt der normale Doppelklick.
+
+**Ältere macOS-Versionen (bis 14):** Rechtsklick auf `Start.command` → **Öffnen** → **Öffnen**.
+
+**Alternative im Terminal (alle Versionen):** `xattr -dr com.apple.quarantine ` eingeben (mit Leerzeichen am Ende), den Projektordner in das Terminalfenster ziehen und Enter drücken. Danach startet `Start.command` per Doppelklick ohne Rückfrage.
 
 ## 3. Beenden
 
