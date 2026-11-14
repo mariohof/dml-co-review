@@ -2,6 +2,7 @@ import Papa from "papaparse"
 
 import { emptyEntryFields, ENTRY_FIELD_NAMES, type EntryFields } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
+import { unguardCsvCell } from "@/lib/files/csv-formula"
 import type { Candidate, Finding } from "./types"
 
 /**
@@ -83,7 +84,8 @@ export function readCheckinCsv(text: string): CsvReadResult {
     }
     const fields = emptyEntryFields()
     ENTRY_FIELD_NAMES.forEach((name, column) => {
-      fields[name] = (row[column] ?? "").trim()
+      // Entschärfung gegen Formel-Injection aus Check-out/Export rückgängig machen (BUG-QA2-1)
+      fields[name] = unguardCsvCell((row[column] ?? "").trim())
     })
     const padded = padLeadingZeros(fields, line)
     findings.push(...padded.hints)

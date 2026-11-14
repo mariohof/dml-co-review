@@ -219,7 +219,7 @@ _Stand 2026-11-13 — `/frontend PROJ-18`_
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
 - [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
-- [ ] Siehe BUG-QA2-1 (PROJ-9): CSV-Formel-Injection betrifft auch den CSV-Export
+- [x] BUG-QA2-1 (PROJ-9): CSV-Formel-Injection — behoben 2026-11-14, gilt auch für den CSV-Export
 
 ### Bugs Found
 

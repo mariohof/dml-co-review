@@ -114,3 +114,29 @@ test("Speicherkapazität des Browsers (Messung für BUG-QA2-2)", async ({ page }
   console.log("Speicherkapazität:", JSON.stringify(capacity))
   expect(capacity.freeChars).toBeGreaterThan(1_000_000)
 })
+
+test("BUG-QA2-1: Formel aus REPLY ist in der Check-out-CSV entschärft und übersteht den Check-in unverändert", async ({ page }) => {
+  await startAs(page, "Anna Bearbeitung")
+  const formula = '=HYPERLINK("http://angreifer.example";"Details")'
+  const xml = readFileSync(join(DEMO, DEMO_REPLY), "utf8").replace("Infocode nicht im beauftragten Leistungsumfang", formula.replace(/"/g, "&quot;"))
+  await importReply(page, xml)
+
+  // Check-out: Datei herunterladen
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-out" }).click()
+  const downloadPromise = page.waitForEvent("download")
+  await page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click()
+  const download = await downloadPromise
+  const csv = readFileSync((await download.path())!, "utf8")
+  expect(csv).toContain(`"'=HYPERLINK(""http://angreifer.example"";""Details"")"`)
+  expect(csv.split("\r\n").slice(1).flatMap((line) => line.split(";")).some((cell) => /^"?[=+@]/.test(cell))).toBe(false)
+
+  // dieselbe Datei unverändert einchecken
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByLabel("CSV-Datei für den Check-in").setInputFiles({ name: download.suggestedFilename(), mimeType: "text/csv", buffer: Buffer.from(csv) })
+  await expect(dialog.getByText(/Keine Änderungen/)).toBeVisible()
+  await dialog.getByRole("button", { name: "Übernehmen" }).click()
+  await expect(dialog).toBeHidden()
+  const data = await readDataset(page)
+  expect(data.entries.some((e: { fields: { answer_comment: string } }) => e.fields.answer_comment === formula)).toBe(true)
+})

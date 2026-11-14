@@ -1,8 +1,8 @@
 # PROJ-9: Check-out CSV
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-14
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung & Rollen) — angemeldeter Benutzer, Rolle
@@ -267,6 +267,7 @@ _Stand 2026-11-13 — `/frontend PROJ-9`_
   4. Actual: Zelle enthält `"=HYPERLINK(""http://angreifer.example"",""Details"")"` — Excel wertet die Formel aus (Link/DDE-Angriffe möglich)
 - **Hinweis zur Behebung:** Ein vorangestelltes `'` (Papa Parse `escapeFormulae`) verhindert die Ausführung, verändert aber den Wert beim Check-in — Lösung muss den Rundlauf Check-out → Check-in erhalten (z. B. Präfix beim Lesen wieder entfernen)
 - **Priority:** Fix before deployment (Daten stammen von externen Partnern)
+- **Status:** Behoben 2026-11-14 (`/frontend`) — Neuer Baustein `src/lib/files/csv-formula.ts`: Werte, die mit `=`, `+`, `-`, `@`, Tab oder Wagenrücklauf beginnen (auch nach vorangestellten Apostrophen), erhalten beim Schreiben ein `'`; der CSV-Leser des Check-ins entfernt genau dieses eine Zeichen wieder → Rundlauf Check-out → Check-in verlustfrei. Gilt für alle CSV-Dateien (Check-out, Export, Freigabestand, Prüfbericht). Tests: `csv-formula.test.ts` (6) und E2E „BUG-QA2-1" in `tests/QA-proj7-19.spec.ts` (REPLY mit Formel → Check-out-CSV entschärft → Check-in ohne Änderung)
 
 ### Summary
 - **Acceptance Criteria:** 26/26 passed
