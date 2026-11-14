@@ -108,12 +108,14 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="h-9 max-w-[16rem] border-white/30 bg-white text-brand-darkest hover:bg-white/90"
+                className="h-9 max-w-[16rem] border-white/30 bg-white text-brand-darkest hover:bg-white/90 md:max-w-[24rem] lg:max-w-[32rem]"
                 aria-label={`Benutzer: ${currentUser.name}, ${ROLE_LABEL[currentUser.role]}. Benutzer wechseln`}
+                title={`${currentUser.name} · ${ROLE_LABEL[currentUser.role]}`}
               >
                 <UserRound className="mr-2 h-4 w-4 shrink-0" aria-hidden />
-                <span className="truncate">{currentUser.name}</span>
-                <span className="ml-1 hidden text-muted-foreground md:inline">· {ROLE_LABEL[currentUser.role]}</span>
+                {/* Name vorrangig; gekürzt wird nur ein sehr langer Name, die Rolle nie (BUG-QA1-1) */}
+                <span className="min-w-0 truncate">{currentUser.name}</span>
+                <span className="ml-1 hidden shrink-0 whitespace-nowrap text-muted-foreground md:inline">· {ROLE_LABEL[currentUser.role]}</span>
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0" aria-hidden />
               </Button>
             </DropdownMenuTrigger>

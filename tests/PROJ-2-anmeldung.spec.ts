@@ -106,3 +106,25 @@ test.describe("PROJ-2 Simulierte Anmeldung & Rollenwechsel", () => {
     await expect(bodyRows(page)).toHaveCount(3)
   })
 })
+
+test.describe("Kopfzeile: Name und Rolle (BUG-QA1-1)", () => {
+  for (const name of ["Administrator", "Anna Bearbeitung", "Ben Bearbeiter"]) {
+    test(`1440 px: „${name}“ wird vollständig mit Rolle angezeigt`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 })
+      await startAs(page, name)
+      const button = page.getByRole("button", { name: new RegExp(`^Benutzer: ${name}`) })
+      await expect(button).toContainText(name)
+      const truncated = await button.evaluate((el) =>
+        Array.from(el.querySelectorAll("span")).some((span) => span.scrollWidth > span.clientWidth + 1)
+      )
+      expect(truncated).toBe(false)
+    })
+  }
+
+  test("375 px: Kopfzeile ohne waagerechtes Scrollen der Seite", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 })
+    await startAs(page, "Anna Bearbeitung")
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+    expect(overflow).toBeLessThanOrEqual(1)
+  })
+})

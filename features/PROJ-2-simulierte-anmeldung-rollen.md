@@ -1,8 +1,8 @@
 # PROJ-2: Simulierte Anmeldung & Rollenwechsel
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-14
 
 ## Dependencies
 - Requires: PROJ-1 (Datenhaltung + Demo-Daten) — Benutzer mit Rolle stammen aus dem Datenbestand
@@ -288,6 +288,7 @@ _Stand 2026-11-12 — `/frontend PROJ-2`_
   3. Actual: „Adm… · Administrator" — der Name wird gekürzt, obwohl genug Platz vorhanden ist (Schaltfläche ist auf 16rem begrenzt, Name und Rolle teilen sich die Breite)
 - **Screenshot:** `test-results/screens/1440-benutzer.png`
 - **Priority:** Fix before deployment (AC „Kopfzeile zeigt Name und Rolle")
+- **Status:** Behoben 2026-11-14 (`/frontend`) — Benutzer-Schaltfläche darf ab 768 px bis 24rem, ab 1024 px bis 32rem breit werden; die Rolle wird nie gekürzt, nur ein sehr langer Name (vollständig im Tooltip). E2E „Kopfzeile: Name und Rolle (BUG-QA1-1)" in `tests/PROJ-2-anmeldung.spec.ts` (1440 px alle Demo-Benutzer ungekürzt, 375 px ohne waagerechtes Scrollen); Gegenprobe mit altem Code schlägt fehl
 
 #### BUG-QA1-3: Mobil (375 px) liegt die Aktion „Auswahl" im Dashboard außerhalb des sichtbaren Bereichs
 - **Severity:** Low
