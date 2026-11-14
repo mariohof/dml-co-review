@@ -1,6 +1,14 @@
 import type { Dataset, Dmrl, DmrlEntry, HistoryEntry, User } from "@/lib/data/schema"
 import { newId } from "@/lib/ids"
-import { runCheckinCheck, type CheckinResult } from "@/lib/rules/check/checkin"
+import {
+  ANSWER_TAKEOVER_BLOCKED,
+  answerDeviations,
+  answerTakeoverBlockers,
+  checkinSummary,
+  effectiveClassification,
+  runCheckinCheck,
+  type CheckinResult,
+} from "@/lib/rules/check/checkin"
 import { errorCount } from "@/lib/rules/check/types"
 import { isLockHolder, type WorkflowResult } from "./check-out"
 
@@ -55,13 +63,18 @@ export function recordRejectedCheckIn(data: Dataset, dmrlId: string, user: User,
 /**
  * Übernahme in einer Speicherung (PROJ-10 Tech Design B):
  * Einträge durch Dateiinhalt ersetzen (IDs per DMC erhalten), Status laut Spec, DMRL-Status, Sperre aufheben, Verlauf.
+ *
+ * Partnerantworten (Tech Design I, Refinement 2026-11-14): Ohne `takeAnswers` behalten bestehende Einträge ihre bisherigen
+ * Antwortfelder, neue erhalten leere. Mit `takeAnswers` gelten die Werte aus der Datei; eine reine Antwortabweichung zählt
+ * als Änderung (*in Bearbeitung*). Übernommene Antworten setzen nie *freigegeben* oder *zu überarbeiten*.
  */
 export function executeCheckIn(
   data: Dataset,
   dmrlId: string,
   user: User | null,
   result: CheckinResult,
-  at: string = new Date().toISOString()
+  at: string = new Date().toISOString(),
+  takeAnswers = false
 ): WorkflowResult {
   const dmrl = data.dmrls.find((d) => d.id === dmrlId)
   if (!dmrl || !user) return { ok: false, message: "DMRL oder Benutzer nicht gefunden." }
@@ -70,18 +83,26 @@ export function executeCheckIn(
   const blocked = checkInBlocked(dmrl, user)
   if (blocked) return { ok: false, message: blocked }
   if (!result.comparison || errorCount(result.report) > 0) return { ok: false, message: "Die Datei enthält Fehler und kann nicht übernommen werden." }
+  if (takeAnswers && answerTakeoverBlockers(result.comparison).length > 0) return { ok: false, message: ANSWER_TAKEOVER_BLOCKED }
 
   const currentStatus = new Map(data.entries.filter((e) => e.dmrlId === dmrlId).map((e) => [e.id, e.status]))
-  const entries: DmrlEntry[] = result.comparison.entries.map(({ candidate, classification, previous }) => {
+  const entries: DmrlEntry[] = result.comparison.entries.map((compared) => {
+    const { candidate, previous } = compared
+    const fields = takeAnswers
+      ? candidate.fields
+      : { ...candidate.fields, answer: previous?.fields.answer ?? "", answer_comment: previous?.fields.answer_comment ?? "" }
+    const classification = effectiveClassification(compared, takeAnswers)
     if (classification === "neu" || !previous) {
-      return { id: newId("entry"), dmrlId, status: "in_bearbeitung", fields: candidate.fields }
+      return { id: newId("entry"), dmrlId, status: "in_bearbeitung", fields }
     }
     const status = classification === "geaendert" ? "in_bearbeitung" : (currentStatus.get(previous.id) ?? previous.status)
-    return { id: previous.id, dmrlId, status, fields: candidate.fields }
+    return { id: previous.id, dmrlId, status, fields }
   })
 
-  const { neu, geaendert, unveraendert } = result.summary
+  const { neu, geaendert, unveraendert } = checkinSummary(result.candidates, result.comparison, takeAnswers)
   const changed = neu + geaendert > 0
+  const takenAnswers = takeAnswers ? answerDeviations(result.comparison).length : 0
+  const answersNote = takenAnswers > 0 ? `; ${takenAnswers} Antworten aus der Datei übernommen` : ""
   return {
     ok: true,
     data: {
@@ -90,7 +111,7 @@ export function executeCheckIn(
       dmrls: data.dmrls.map((d) => (d.id === dmrlId ? { ...d, lock: null, status: changed ? "in_bearbeitung" : d.status } : d)),
       history: [
         ...data.history,
-        historyEntry(dmrlId, user.id, at, "check_in", `Check-in — ${neu} neu, ${geaendert} geändert, ${unveraendert} unverändert`),
+        historyEntry(dmrlId, user.id, at, "check_in", `Check-in — ${neu} neu, ${geaendert} geändert, ${unveraendert} unverändert${answersNote}`),
       ],
     },
   }

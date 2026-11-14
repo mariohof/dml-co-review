@@ -64,7 +64,7 @@ interface EntryTableProps {
   fileView?: boolean;
 }
 
-const ANSWER_LABEL: Record<string, string> = {
+export const ANSWER_LABEL: Record<string, string> = {
   y: "genehmigt (y)",
   n: "abgelehnt (n)",
 };

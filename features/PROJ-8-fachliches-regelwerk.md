@@ -1,10 +1,10 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
-> **Refinement 2026-11-14 (über `/refine PROJ-10`, Anlass PROJ-20):** Regel K ist kein Fehler mehr — abweichende Antwortfelder werden beim Check-in zur optionalen Übernahme angeboten (Details PROJ-10). Umsetzung zusammen mit PROJ-10.
+> **Refinement 2026-11-14 (über `/refine PROJ-10`, Anlass PROJ-20):** Regel K ist kein Fehler mehr — abweichende Antwortfelder werden beim Check-in zur optionalen Übernahme angeboten (Details PROJ-10). Umgesetzt 2026-11-14 zusammen mit PROJ-10 (`checkin.ts`: `answerDeviations`, `answerTakeoverBlockers`; Details in PROJ-10, Implementation Notes).
 
 ## Dependencies
 - Requires: PROJ-1 (Datenhaltung) — Einträge, Feldnamen, Archiv (letzter SEND)

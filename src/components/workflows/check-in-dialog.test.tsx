@@ -25,10 +25,19 @@ const stored = () => {
 }
 const vehicle = (data: Dataset) => data.dmrls.find((d) => d.id === DEMO_IDS.dmrlVehicle)!
 
-/** Demo-Datenbestand mit Fahrzeug-DMRL, ausgecheckt von Ben */
-function setupCheckedOut() {
+/** Demo-Datenbestand mit Fahrzeug-DMRL, ausgecheckt von Ben; optional erster Eintrag vorher freigegeben (ohne Eintragstyp) */
+function setupCheckedOut(firstReleased = false) {
   window.localStorage.clear()
-  const demo = buildDemoDataset()
+  const original = buildDemoDataset()
+  const firstId = original.entries.find((e) => e.dmrlId === DEMO_IDS.dmrlVehicle)!.id
+  const demo: Dataset = firstReleased
+    ? {
+        ...original,
+        entries: original.entries.map((e) =>
+          e.id === firstId ? { ...e, status: "freigegeben", fields: { ...e.fields, dmentryType: "", answer: "y" } } : e
+        ),
+      }
+    : original
   const result = executeCheckOut(demo, DEMO_IDS.dmrlVehicle, demo.users.find((u) => u.id === DEMO_IDS.editorBen) as User)
   if (!result.ok) throw new Error(result.message)
   saveDataset(result.data)
@@ -125,8 +134,73 @@ describe("Check-in in der DMRL-Ansicht", () => {
     renderAs(DEMO_IDS.editorBen)
     const dialog = await openAndUpload(csvOf(data))
     expect(await within(dialog).findByText(/Keine Änderungen/)).toBeInTheDocument()
+    expect(within(dialog).queryByText(/Abweichende Partnerantworten/)).toBeNull()
+    expect(within(dialog).queryByLabelText("Antworten aus der Datei übernehmen")).toBeNull()
     fireEvent.click(within(dialog).getByRole("button", { name: "Abbrechen" }))
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
     expect(vehicle(stored()).lock).not.toBeNull()
+  })
+
+  describe("Abweichende Partnerantworten (Refinement 2026-11-14)", () => {
+    const tile = (summary: HTMLElement, label: string) => within(summary).getByText(label).nextSibling
+
+    it("Abschnitt mit alt → neu, Häkchen standardmäßig aus, Zahlen schalten um; Übernahme mit Häkchen speichert die Antworten", async () => {
+      renderAs(DEMO_IDS.editorBen)
+      const csv = csvOf(data, (rows) => {
+        Object.assign(rows[0].fields, { answer: "n", answer_comment: "Partner lehnt ab" }) // Eintragstyp n bleibt
+        return rows
+      })
+      const dialog = await openAndUpload(csv)
+      expect(await within(dialog).findByText("Abweichende Partnerantworten (1 Eintrag)")).toBeInTheDocument()
+      expect(within(dialog).getByText(/Nur Information — freigegeben wird ein Eintrag weiterhin nur durch einen REPLY/)).toBeInTheDocument()
+      const checkbox = within(dialog).getByRole("checkbox", { name: "Antworten aus der Datei übernehmen" })
+      expect(checkbox).not.toBeChecked()
+      const summary = within(dialog).getByLabelText("Zusammenfassung")
+      expect(tile(summary, "geändert")).toHaveTextContent("0")
+      expect(tile(summary, "unverändert")).toHaveTextContent("10")
+
+      fireEvent.click(within(dialog).getByRole("button", { name: /GTFDEMO-.*abgelehnt \(n\)/ }))
+      expect(within(dialog).getByText("Partner lehnt ab")).toBeInTheDocument()
+
+      fireEvent.click(checkbox)
+      expect(tile(summary, "geändert")).toHaveTextContent("1")
+      expect(tile(summary, "unverändert")).toHaveTextContent("9")
+
+      fireEvent.click(within(dialog).getByRole("button", { name: "Übernehmen" }))
+      await waitFor(() => expect(vehicle(stored()).lock).toBeNull())
+      expect(stored().entries.find((e) => e.fields.answer_comment === "Partner lehnt ab")?.status).toBe("in_bearbeitung")
+      expect(stored().history.at(-1)?.details).toBe("Check-in — 0 neu, 1 geändert, 9 unverändert; 1 Antworten aus der Datei übernommen")
+    })
+
+    it("ohne Häkchen bleiben die bisherigen Antworten", async () => {
+      renderAs(DEMO_IDS.editorBen)
+      const dialog = await openAndUpload(csvOf(data, (rows) => {
+        rows[0].fields.answer_comment = "nicht übernehmen"
+        return rows
+      }))
+      fireEvent.click(await within(dialog).findByRole("button", { name: "Übernehmen" }))
+      await waitFor(() => expect(vehicle(stored()).lock).toBeNull())
+      expect(stored().entries.some((e) => e.fields.answer_comment === "nicht übernehmen")).toBe(false)
+      expect(stored().history.at(-1)?.details).toBe("Check-in — 0 neu, 0 geändert, 10 unverändert")
+    })
+
+    it("Eintrag ohne Eintragstyp: Häkchen sperrt „Übernehmen\" mit Meldung, ohne Häkchen wieder möglich", async () => {
+      data = setupCheckedOut(true)
+      renderAs(DEMO_IDS.editorBen)
+      const dialog = await openAndUpload(csvOf(data, (rows) => {
+        rows[0].fields.answer = "n"
+        return rows
+      }))
+      const checkbox = await within(dialog).findByRole("checkbox", { name: "Antworten aus der Datei übernehmen" })
+      const confirm = within(dialog).getByRole("button", { name: "Übernehmen" })
+      expect(confirm).toBeEnabled()
+      fireEvent.click(checkbox)
+      expect(within(dialog).getByText("Übernehmen nicht möglich")).toBeInTheDocument()
+      expect(within(dialog).getByText(/Eintragstyp setzen \(n, c oder d\)/)).toBeInTheDocument()
+      expect(confirm).toBeDisabled()
+      fireEvent.click(checkbox)
+      expect(within(dialog).queryByText("Übernehmen nicht möglich")).toBeNull()
+      expect(confirm).toBeEnabled()
+    })
   })
 })

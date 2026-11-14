@@ -126,6 +126,66 @@ describe("Übernahme", () => {
     })
   })
 
+  describe("Partnerantworten aus der Datei (Refinement 2026-11-14)", () => {
+    const ben = (data: Dataset) => user(data, DEMO_IDS.editorBen)
+    const newEntry = (rows: EntrySnapshot[], answer: string) => ({
+      id: "neu",
+      status: "in_bearbeitung" as const,
+      fields: { ...rows[9].fields, itemloc: "B", dmentryType: "n", answer, answer_comment: "aus Altbestand" },
+    })
+
+    it("ohne Übernahme: bisherige Antworten bleiben, reine Antwortabweichung ist keine Änderung, neue Einträge ohne Antwort", () => {
+      const data = checkedOut(true) // alle Einträge freigegeben, ohne Eintragstyp
+      const csv = csvOf(data, (rows) => {
+        rows[0].fields.answer = "n"
+        rows[0].fields.answer_comment = "anders"
+        return [...rows, newEntry(rows, "y")]
+      })
+      const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), check(data, csv), AT)
+      if (!result.ok) throw new Error(result.message)
+      const entries = vehicleEntries(result.data)
+      const first = entries.find((e) => e.id === vehicleEntries(data)[0].id)!
+      expect(first).toMatchObject({ status: "freigegeben", fields: { answer: vehicleEntries(data)[0].fields.answer, answer_comment: "" } })
+      const added = entries.find((e) => e.fields.itemloc === "B")!
+      expect(added).toMatchObject({ status: "in_bearbeitung", fields: { answer: "", answer_comment: "" } })
+      expect(result.data.history.at(-1)?.details).toBe("Check-in — 1 neu, 0 geändert, 10 unverändert")
+    })
+
+    it("mit Übernahme: Werte aus der Datei, betroffene Einträge in Bearbeitung (nie freigegeben), Freigabe entfällt, Verlaufszusatz", () => {
+      const data = checkedOut(true)
+      const csv = csvOf(data, (rows) => {
+        Object.assign(rows[0].fields, { dmentryType: "c", answer: "n", answer_comment: "Partner lehnt ab" })
+        return [...rows, newEntry(rows, "y")]
+      })
+      const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), check(data, csv), AT, true)
+      if (!result.ok) throw new Error(result.message)
+      const entries = vehicleEntries(result.data)
+      const first = entries.find((e) => e.id === vehicleEntries(data)[0].id)!
+      expect(first).toMatchObject({ status: "in_bearbeitung", fields: { answer: "n", answer_comment: "Partner lehnt ab" } })
+      const added = entries.find((e) => e.fields.itemloc === "B")!
+      expect(added).toMatchObject({ status: "in_bearbeitung", fields: { answer: "y", answer_comment: "aus Altbestand" } })
+      expect(entries.filter((e) => e.status === "freigegeben")).toHaveLength(9)
+      expect(dmrl(result.data, DEMO_IDS.dmrlVehicle).status).toBe("in_bearbeitung")
+      expect(result.data.history.at(-1)?.details).toBe("Check-in — 1 neu, 1 geändert, 9 unverändert; 2 Antworten aus der Datei übernommen")
+      expect(datasetSchema.safeParse(result.data).success).toBe(true)
+    })
+
+    it("mit Übernahme: Eintrag ohne Eintragstyp mit reiner Antwortabweichung sperrt die Übernahme; ohne Übernahme möglich", () => {
+      const data = checkedOut(true)
+      const checked = check(data, csvOf(data, (rows) => {
+        rows[0].fields.answer = "n"
+        return rows
+      }))
+      expect(executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), checked, AT, true)).toEqual({
+        ok: false,
+        message: "Eintragstyp setzen (n, c oder d), damit der Eintrag erneut gesendet werden kann — Datei korrigieren oder Antworten nicht übernehmen.",
+      })
+      const without = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), checked, AT, false)
+      if (!without.ok) throw new Error(without.message)
+      expect(dmrl(without.data, DEMO_IDS.dmrlVehicle).status).toBe("freigegeben")
+    })
+  })
+
   it("abgelehnter Check-in: nur Verlaufseintrag, Sperre und Einträge bleiben", () => {
     const data = checkedOut()
     const checked = check(data, "kaputt")

@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -330,6 +330,33 @@ _Stand 2026-11-13 — `/frontend` (PROJ-10)_
 **Hinweise**
 - Dateifehler (Typ, Größe, Kodierung) werden im Auswahlschritt gemeldet und nicht im Verlauf protokolliert; nur fachlich abgelehnte Dateien erzeugen „Check-in abgelehnt".
 - Browser-E2E-Tests stehen aus → `/qa`.
+
+### Refinement 2026-11-14 — Partnerantworten aus der Datei übernehmen
+_Stand 2026-11-14 — `/frontend proj-10` (Tech Design I)_
+
+**Umgesetzt**
+- `src/lib/rules/check/checkin.ts`
+  - Der Abgleich trennt Antwortfelder von den übrigen Feldern: `changedFields` enthält keine Antwortfelder mehr, neues Merkmal `answerChanged` je Eintrag (bei neuen Einträgen: Antwort oder Begründung nicht leer). *neu/geändert/unverändert* richtet sich nur nach den übrigen Feldern.
+  - Regel K liefert keine Fehler mehr: `answerDeviations` (Liste der Abweichungen) und `answerTakeoverBlockers` (Einträge ohne Eintragstyp mit reiner Antwortabweichung). Die Gruppe K kommt im Prüfbericht nicht mehr vor.
+  - `effectiveClassification` und `checkinSummary(…, takeAnswers)`: Mit Übernahme zählt eine reine Antwortabweichung als *geändert*; beide Zählungen kommen aus demselben Abgleich.
+- `src/lib/workflows/check-in.ts` — `executeCheckIn(…, at, takeAnswers = false)`:
+  - Ohne Übernahme behalten bestehende Einträge ihre Antworten aus dem Stand beim Check-out, neue Einträge bekommen leere Antwortfelder.
+  - Mit Übernahme gelten die Werte aus der Datei; betroffene Einträge werden *in Bearbeitung* (nie *freigegeben*/*zu überarbeiten*).
+  - Bei Übernahme mit betroffenen Einträgen ohne Eintragstyp wird abgelehnt (erneute Prüfung beim Speichern).
+  - Verlaufszusatz „; N Antworten aus der Datei übernommen“.
+- `src/components/workflows/check-in-dialog.tsx` — neuer Abschnitt „Abweichende Partnerantworten (N Einträge)“ in der Zusammenfassung:
+  - aufklappbare Liste (Accordion) mit DMC, Antwort bisher → aus der Datei, Tabelle Antwort/Kommentar
+  - Kästchen „Antworten aus der Datei übernehmen“ (Checkbox, standardmäßig aus) mit Hinweis „Nur Information …“
+  - Kacheln schalten sofort um
+  - bei Häkchen und betroffenen Einträgen ohne Eintragstyp: rote Meldung mit Liste, „Übernehmen“ gesperrt
+  - Erfolgsmeldung nennt die übernommenen Antworten
+- `src/components/dmrl/entry-table.tsx` — `ANSWER_LABEL` exportiert („genehmigt (y)“ / „abgelehnt (n)“) und im Dialog wiederverwendet.
+
+**Tests**
+- Unit: `checkin.test.ts` — Gruppe K neu (5 Tests: keine Fehler, Liste inkl. neuer Einträge, Trennung der Felder und Zahlen mit/ohne Übernahme, Sperre nur ohne Eintragstyp, ungültiger Antwortwert bleibt Formatfehler A); `check-in.test.ts` (+3: ohne Übernahme, mit Übernahme inkl. Verlauf und DMRL-Status, Sperre); `check-in-dialog.test.tsx` (+3: Abschnitt/Häkchen/Zahlen/Übernahme, ohne Häkchen, Sperre mit Meldung). Insgesamt 442 Unit-Tests grün.
+- E2E: `tests/PROJ-10-checkin-antworten.spec.ts` (3): echte Check-out-CSV mit geänderter Begründung → mit Häkchen übernommen bzw. ohne Häkchen unverändert; 375 px ohne waagerechtes Scrollen. Regression Check-in/Freigabe/SEND/Archiv (14 E2E-Tests) grün.
+
+**Hinweis:** Der Durchlauf mit einer über PROJ-20 konvertierten CSV folgt, sobald PROJ-20 umgesetzt ist.
 
 ## QA Test Results
 

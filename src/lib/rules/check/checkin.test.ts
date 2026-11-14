@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest"
 
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
 import { ENTRY_FIELD_NAMES, type EntrySnapshot } from "@/lib/data/schema"
+import { formatDmc } from "@/lib/dmrl/entries"
 import { writeEntriesCsv } from "@/lib/files/csv-writer"
-import { runCheckinCheck, type CheckinContext } from "./checkin"
+import { answerDeviations, answerTakeoverBlockers, checkinSummary, runCheckinCheck, type CheckinContext } from "./checkin"
 import { readCheckinCsv } from "./csv-reader"
 import { errorCount } from "./types"
 
@@ -203,13 +204,59 @@ describe("Gruppe F — Eintragstyp gegen den bisherigen Stand", () => {
   })
 })
 
-describe("Gruppe K — Antwortfelder", () => {
-  it("meldet veränderte answer/answer_comment und Antworten bei neuen Einträgen", () => {
-    const csv = vehicleCsv((rows) => {
-      rows[0].fields.answer = "y"
-      return [...rows, { id: "neu", status: "in_bearbeitung", fields: { ...rows[9].fields, itemloc: "B", dmentryType: "n", answer: "", answer_comment: "x" } }]
-    })
-    const k = runCheckinCheck(csv, vehicleContext).report.findings.filter((f) => f.group === "K").map((f) => f.message)
-    expect(k).toEqual(["answer darf nur durch REPLY gesetzt werden.", "answer_comment darf nur durch REPLY gesetzt werden."])
+describe("Gruppe K — abweichende Partnerantworten (Refinement 2026-11-14)", () => {
+  // Ausgangsstand: erster Eintrag freigegeben (ohne Eintragstyp), übrige wie im Demo-Bestand
+  const base = structuredClone(vehicle)
+  base[0] = { ...base[0], status: "freigegeben", fields: { ...base[0].fields, dmentryType: "" } }
+  const context: CheckinContext = { ...vehicleContext, snapshot: base }
+  const dmcOf = (i: number) => formatDmc(base[i].fields)
+  const NEW_DMC = formatDmc({ ...base[9].fields, itemloc: "B" })
+
+  const withAnswers = () => {
+    const rows = structuredClone(base)
+    rows[0].fields.answer = "y" // nur Antwort geändert, ohne Eintragstyp → sperrt die Übernahme
+    rows[1].fields.answer_comment = "Begründung" // nur Antwort geändert, Eintragstyp n → keine Sperre
+    Object.assign(rows[2].fields, { remarks: "Geändert", dmentryType: "c", answer: "n" }) // fachlich geändert und Antwort
+    rows.push({ id: "neu", status: "in_bearbeitung", fields: { ...rows[9].fields, itemloc: "B", dmentryType: "n", answer: "", answer_comment: "x" } })
+    return writeEntriesCsv(rows)
+  }
+  const byDmc = (result: ReturnType<typeof runCheckinCheck>, dmc: string) => result.comparison!.entries.find((e) => formatDmc(e.candidate.fields) === dmc)!
+
+  it("meldet abweichende Antworten nicht als Fehler, sondern liefert sie als Liste (auch bei neuen Einträgen)", () => {
+    const result = runCheckinCheck(withAnswers(), context)
+    expect(result.report.findings).toEqual([])
+    const deviations = answerDeviations(result.comparison!).map((d) => formatDmc(d.candidate.fields))
+    expect(deviations.sort()).toEqual([dmcOf(0), dmcOf(1), dmcOf(2), NEW_DMC].sort())
+  })
+
+  it("trennt Antwortfelder von fachlichen Änderungen; ohne Übernahme zählt eine reine Antwortabweichung als unverändert", () => {
+    const result = runCheckinCheck(withAnswers(), context)
+    expect(byDmc(result, dmcOf(0))).toMatchObject({ classification: "unveraendert", answerChanged: true, changedFields: [] })
+    expect(byDmc(result, dmcOf(1))).toMatchObject({ classification: "unveraendert", answerChanged: true })
+    expect(byDmc(result, dmcOf(2))).toMatchObject({ classification: "geaendert", answerChanged: true, changedFields: ["dmentryType", "remarks"] })
+    expect(byDmc(result, NEW_DMC)).toMatchObject({ classification: "neu", answerChanged: true })
+    expect(result.summary).toMatchObject({ geprueft: 11, neu: 1, geaendert: 1, unveraendert: 9 })
+    expect(checkinSummary(result.candidates, result.comparison, true)).toMatchObject({ geprueft: 11, neu: 1, geaendert: 3, unveraendert: 7 })
+  })
+
+  it("sperrt die Übernahme nur für Einträge ohne Eintragstyp mit reiner Antwortabweichung", () => {
+    const result = runCheckinCheck(withAnswers(), context)
+    expect(answerTakeoverBlockers(result.comparison!).map((e) => formatDmc(e.candidate.fields))).toEqual([dmcOf(0)])
+    const typed = structuredClone(base)
+    Object.assign(typed[0].fields, { answer: "y", dmentryType: "c" })
+    expect(answerTakeoverBlockers(runCheckinCheck(writeEntriesCsv(typed), context).comparison!)).toEqual([])
+  })
+
+  it("ungültiger Antwortwert bleibt ein Formatfehler (Gruppe A)", () => {
+    const rows = structuredClone(base)
+    rows[1].fields.answer = "j"
+    expect(messages(writeEntriesCsv(rows), context).some((m) => m.startsWith("A: Format: leer, y oder n"))).toBe(true)
+  })
+
+  it("ohne Antwortabweichung: keine Liste, keine Sperre, Zahlen mit und ohne Übernahme gleich", () => {
+    const result = runCheckinCheck(writeEntriesCsv(base), context)
+    expect(answerDeviations(result.comparison!)).toEqual([])
+    expect(answerTakeoverBlockers(result.comparison!)).toEqual([])
+    expect(checkinSummary(result.candidates, result.comparison, true)).toEqual(result.summary)
   })
 })
