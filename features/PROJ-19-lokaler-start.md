@@ -1,6 +1,6 @@
 # PROJ-19: Lokaler Start (Python-Startskript)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -346,6 +346,25 @@ Keine Bugs gefunden. (Während der Umsetzung behoben: geerbtes „SIGINT ignorie
 - **Bugs Found:** 2 total (0 critical, 0 high, 0 medium, 2 low)
 - **Security:** Pass
 - **Production Ready:** keine Critical/High-Bugs. Der Status bleibt *In Review*, bis die Starts unter Windows 11 und Linux manuell bestätigt sind
+
+### Re-Test 2026-11-14 (QA-Lauf 4: manuelle Prüfung durch den Product Owner, Bestätigung BUG-QA3-2)
+
+**Manuell durch den Product Owner geprüft** (Rückmeldung 2026-11-14, ohne Detailprotokoll):
+- [x] Windows 11, `Start.bat` per Doppelklick: App startet, Browser öffnet `http://localhost:8877`, XSD-Prüfung läuft, Fenster schließen beendet die App
+- [x] Linux, `./start.sh`: App startet, Browser öffnet sich, XSD-Prüfung läuft, Strg+C beendet die App
+- [x] macOS, entpacktes ZIP: Die Freigabe über Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“ funktioniert wie in `START-HIER.md` beschrieben, die Beschriftungen stimmen
+
+**BUG-QA3-2 bestätigt behoben:** Der neue Abschnitt in `START-HIER.md` ist geprüft (alle macOS-Versionen abgedeckt, Terminal-Alternative entfernt die Quarantäne-Markierung rekursiv, auch bei Leerzeichen und Umlauten im Pfad). Den Dialogablauf hat der Product Owner bestätigt.
+
+**BUG-QA3-1 bleibt offen (Low):** Der Windows-Test lief vermutlich mit installiertem Python; der Fall „kein Python, Store-Platzhalter aktiv“ ist nicht nachgestellt. Er betrifft nur die Fehlermeldung bei fehlender Voraussetzung.
+
+**Regression:** Seit QA-Lauf 3 wurde nur `START-HIER.md` geändert, kein Code. 12 Unit-Tests des Startskripts und 432 Unit-Tests der App sind grün. Der vollständige E2E-Lauf (69/69) aus dem Re-Test der Bugfixes vom selben Tag gilt weiter.
+
+### Summary (QA-Lauf 4, 2026-11-14)
+- **Acceptance Criteria:** 22/22 passed (Windows 11 und Linux durch manuelle Prüfung des Product Owners)
+- **Bugs:** BUG-QA3-2 behoben; offen 1 Low (BUG-QA3-1)
+- **Security:** Pass
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_
