@@ -1,8 +1,8 @@
 # PROJ-11: XSD-Validierung
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-14
 
 ## Dependencies
 - Requires: PROJ-5 (Systemverwaltung) — S1000D-Issue des Systems bestimmt das Schema
@@ -251,6 +251,7 @@ _Stand 2026-11-13 — `/backend` (PROJ-11)_
 
 **Sicherheit**
 - Kein Zugriffsschutz (lokaler Betrieb, siehe Decision Log). Zusätzlich werden Browser-Anfragen fremder Webseiten (Origin ≠ eigener Host) mit 403 abgewiesen, damit eine fremde Seite die lokale Prüffunktion nicht nutzen kann.
+- **Host-Prüfung (BUG-QA2-3, 2026-11-14):** Der Host-Kopf muss `localhost`, `127.0.0.1` oder `[::1]` sein (beliebiger Port), sonst 403. Das verhindert DNS-Rebinding: Eine fremde Domain, die auf 127.0.0.1 zeigt, schickt ihren eigenen Namen als Host und Origin mit — beide Köpfe passten bisher zueinander, die Anfrage wurde angenommen. Fehlt der Host-Kopf, wird ebenfalls abgewiesen. Zwei zusätzliche Tests in `route.test.ts` (fremde Hosts → 403, lokale Hosts → durchgelassen).
 
 **Tests**: `xmllint.test.ts` (9, mit echtem xmllint; übersprungen, wenn nicht installiert), `route.test.ts` (5). Geprüft: Demo-REPLY und Testdatei 4 gültig; S1000DBIKE 4.2/5.0 gültig (5.0 offline); Testdatei 1 und 2 sowie 4.2-Datei gegen 2.3 → Schemafehler; Testdatei 3 → nicht wohlgeformt (Zeile 987); Programm fehlt, Schema fehlt, Zeitlimit → nicht verfügbar. Rauchtest am laufenden Produktionsserver bestanden. Insgesamt 308 Unit-Tests grün.
 
@@ -277,7 +278,7 @@ _Stand 2026-11-13 — `/backend` (PROJ-11)_
 - [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 - [x] Pfad-Manipulation über `issue` abgewiesen (400), > 5 MB auch ohne Längenangabe abgewiesen (413), fremde Herkunft (Origin) → 403, keine Shell, keine Entity-Ersetzung
-- [ ] **BUG-QA2-3 (Low):** Host-Kopf wird nicht geprüft — bei DNS-Rebinding (Host = Origin = fremde Domain, die auf 127.0.0.1 zeigt) wird die Anfrage angenommen
+- [x] **BUG-QA2-3 (Low) — behoben 2026-11-14:** Host-Kopf wird nicht geprüft — bei DNS-Rebinding (Host = Origin = fremde Domain, die auf 127.0.0.1 zeigt) wird die Anfrage angenommen
 
 ### Bugs Found
 
@@ -289,6 +290,7 @@ _Stand 2026-11-13 — `/backend` (PROJ-11)_
   3. Actual: 200 mit Prüfergebnis
 - **Auswirkung:** Eine fremde Webseite könnte die lokale Prüffunktion nutzen (Rechenlast); kein Zugriff auf Anwendungsdaten (liegen im Browser, an die Adresse gebunden)
 - **Priority:** Nice to have
+- **Status:** Behoben 2026-11-14 — nur lokale Hostnamen zulässig; Nachstellung mit curl liefert jetzt 403, lokale Anfragen weiter 200. Bestätigung durch `/qa` ausstehend.
 
 ### Summary
 - **Acceptance Criteria:** 15/15 passed

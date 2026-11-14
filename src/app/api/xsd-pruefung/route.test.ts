@@ -39,6 +39,21 @@ describe("POST /api/xsd-pruefung — Eingaben", () => {
     const response = await POST(request("?issue=2.3", "<dml/>", { origin: "https://fremd.example" }))
     expect(response.status).toBe(403)
   })
+
+  it("403 bei fremdem Host-Kopf, auch wenn Origin dazu passt (DNS-Rebinding, BUG-QA2-3)", async () => {
+    for (const host of ["angreifer.example:3000", "angreifer.example", "localhost.angreifer.example:3000", "127.0.0.1.nip.io:8877"]) {
+      const response = await POST(request("?issue=2.3", "<dml/>", { host, origin: `http://${host}` }))
+      expect(response.status, host).toBe(403)
+    }
+  })
+
+  it("lokale Hosts sind zulässig (localhost, 127.0.0.1, [::1], beliebiger Port)", async () => {
+    for (const host of ["localhost:3000", "127.0.0.1:8877", "[::1]:8877", "localhost"]) {
+      // ohne Datei → 400 statt 403: die Host-Prüfung hat die Anfrage durchgelassen
+      const response = await POST(request("?issue=2.3", "", { host, origin: `http://${host}` }))
+      expect(response.status, host).toBe(400)
+    }
+  })
 })
 
 describe.skipIf(!hasXmllint)("POST /api/xsd-pruefung — Prüfung", () => {
