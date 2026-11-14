@@ -167,8 +167,8 @@ describe("QA PROJ-10 Refinement 2026-11-14 — Partnerantworten aus der Datei", 
     expect(after.entries.find((e) => e.id === firstId)?.fields.answer_comment).toBe(payload)
   })
 
-  // BUG-QA4-1: nach der Behebung aktivieren (it.skip → it)
-  it.skip("BUG-QA4-1: Eintrag, der durch den Check-in ohne Eintragstyp „in Bearbeitung“ würde, wird abgewiesen bzw. gesperrt", () => {
+  // BUG-QA4-1: behoben 2026-11-14 — Test aktiv
+  it("BUG-QA4-1: Eintrag, der durch den Check-in ohne Eintragstyp „in Bearbeitung“ würde, wird abgewiesen bzw. gesperrt", () => {
     const demo = buildDemoDataset()
     const data = checkedOut(demo, DEMO_IDS.dmrlVehicle, DEMO_IDS.editorBen)
     const firstId = dmrl(data, DEMO_IDS.dmrlVehicle).lock!.entries[0].id

@@ -55,16 +55,29 @@ export function compareWithSnapshot(snapshot: EntrySnapshot[], candidates: Candi
 /** Fachliche Felder = alle außer Eintragstyp und Antwortfeldern */
 const NON_BUSINESS: (keyof EntryFields)[] = ["dmentryType", "answer", "answer_comment"]
 
-/** Gruppe F — Eintragstyp plausibel (manuell gesetzt) */
+export const IN_PROGRESS_WITHOUT_TYPE = "Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden."
+
+/**
+ * Gruppe F — Eintragstyp plausibel (manuell gesetzt).
+ * Grundsatz (Refinement 2026-11-14, BUG-QA4-1): Nach dem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp —
+ * SEND nimmt nur Einträge mit n/c/d mit. Betrifft geänderte Einträge (auch nur Eintragstyp entfernt) und unveränderten
+ * Altbestand, der bereits *in Bearbeitung* ohne Eintragstyp ist. Unveränderte freigegebene Einträge ohne Typ bleiben erlaubt.
+ */
 export function checkEntryTypes(comparison: Comparison): Finding[] {
   const findings: Finding[] = []
-  for (const { candidate: c, classification, changedFields } of comparison.entries) {
+  for (const { candidate: c, classification, changedFields, previous } of comparison.entries) {
     const dmc = formatDmc(c.fields)
+    const withoutType = c.fields.dmentryType === ""
     if (classification === "neu" && c.fields.dmentryType !== "n") {
       findings.push({ severity: "fehler", group: "F", line: c.line, dmc, field: "dmentryType", message: "Neuer Eintrag muss Eintragstyp ‚n' haben." })
     }
-    if (classification === "geaendert" && c.fields.dmentryType === "" && changedFields.some((f) => !NON_BUSINESS.includes(f))) {
-      findings.push({ severity: "fehler", group: "F", line: c.line, dmc, field: "dmentryType", message: "Geänderter Eintrag ohne Eintragstyp (n, c oder d setzen)." })
+    if (classification === "geaendert" && withoutType) {
+      const businessChange = changedFields.some((f) => !NON_BUSINESS.includes(f))
+      const message = businessChange ? "Geänderter Eintrag ohne Eintragstyp (n, c oder d setzen)." : IN_PROGRESS_WITHOUT_TYPE
+      findings.push({ severity: "fehler", group: "F", line: c.line, dmc, field: "dmentryType", message })
+    }
+    if (classification === "unveraendert" && withoutType && previous?.status === "in_bearbeitung") {
+      findings.push({ severity: "fehler", group: "F", line: c.line, dmc, field: "dmentryType", message: IN_PROGRESS_WITHOUT_TYPE })
     }
   }
   for (const entry of comparison.missing) {

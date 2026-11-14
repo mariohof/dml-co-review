@@ -105,3 +105,16 @@ test("768 px: Abschnitt aufgeklappt mit Häkchen ohne waagerechtes Scrollen der 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow).toBeLessThanOrEqual(1)
 })
+
+test("BUG-QA4-1: entfernter Eintragstyp → Prüfbericht „Eintrag in Bearbeitung braucht einen Eintragstyp“, keine Übernahme", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  const file = await checkOut(page)
+  const lines = file.csv.split("\r\n")
+  const cells = lines[1].split(";")
+  cells[0] = "" // dmentryType n → leer
+  lines[1] = cells.join(";")
+  const dialog = await upload(page, { ...file, csv: lines.join("\r\n") })
+  await expect(dialog.getByText("Check-in nicht möglich")).toBeVisible()
+  await expect(dialog.getByText(/Eintrag in Bearbeitung braucht einen Eintragstyp \(n, c oder d\)/)).toBeVisible()
+  await expect(dialog.getByRole("button", { name: "Übernehmen" })).toHaveCount(0)
+})

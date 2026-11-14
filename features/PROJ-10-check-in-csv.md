@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -368,6 +368,8 @@ _Stand 2026-11-14 — `/frontend proj-10` (Tech Design I)_
 
 **Hinweis:** Der Durchlauf mit einer über PROJ-20 konvertierten CSV folgt, sobald PROJ-20 umgesetzt ist.
 
+**Bugfix BUG-QA4-1 (2026-11-14):** Regel F erweitert — siehe Bug-Status im QA-Lauf 4. Keine Änderung am Dialog nötig: Die Meldung erscheint im bestehenden Prüfbericht, „Übernehmen“ ist bei Fehlern ohnehin nicht verfügbar. Die bedingte Sperre der Antwortübernahme bleibt für reine Antwortabweichungen ohne Eintragstyp.
+
 ## QA Test Results
 
 **Tested:** 2026-11-13
@@ -449,6 +451,7 @@ Keine neuen Bugs in diesem Feature.
 - **Test:** `src/lib/workflows/qa-proj7-10.test.ts` „BUG-QA4-1 …“ als `it.skip` hinterlegt (schlägt mit dem aktuellen Code fehl) — nach der Behebung aktivieren
 - **Priority:** Fix before Weitergabe
 - **Status:** Spec geklärt 2026-11-14 (`/refine PROJ-10`): Regel F verlangt für jeden Eintrag, der nach dem Check-in *in Bearbeitung* wäre, einen Eintragstyp (auch Altbestand). Umsetzung offen → `/frontend bug-qa4-1`
+- **Status:** Behoben 2026-11-14 (`/frontend bug-qa4-1`) — `checkEntryTypes` (Regel F) meldet „Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden.“ bei geänderten Einträgen ohne Eintragstyp ohne fachliche Änderung (z. B. nur Eintragstyp entfernt) und bei unverändertem Altbestand *in Bearbeitung* ohne Eintragstyp; bei fachlicher Änderung ohne Typ bleibt die bisherige Meldung (keine Doppelmeldung). Freigegebene unveränderte Einträge ohne Typ bleiben erlaubt. Tests: `checkin.test.ts` (+4), QA-Test „BUG-QA4-1“ in `qa-proj7-10.test.ts` aktiviert (vorher Gegenprobe rot), E2E „BUG-QA4-1“ in `tests/PROJ-10-checkin-antworten.spec.ts`. Bestätigung durch `/qa` ausstehend
 
 ##### BUG-QA4-2: Akzeptanzkriterium zur Antwortübernahme bei freigegebenen Einträgen ist nicht erreichbar (Spec)
 - **Severity:** Low (Dokumentation)

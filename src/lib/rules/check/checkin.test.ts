@@ -192,6 +192,38 @@ describe("Gruppe F — Eintragstyp gegen den bisherigen Stand", () => {
     expect(messages(csv).some((m) => m.startsWith("F: Eintrag GTFDEMO-A-00-00-00-00A-001A-A fehlt"))).toBe(true)
   })
 
+  describe("kein Eintrag „in Bearbeitung“ ohne Eintragstyp (BUG-QA4-1)", () => {
+    const IN_PROGRESS = "F: Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden."
+
+    it("meldet einen nur entfernten Eintragstyp (n → leer)", () => {
+      const csv = vehicleCsv((rows) => {
+        rows[0].fields.dmentryType = ""
+        return rows
+      })
+      expect(messages(csv)).toEqual([IN_PROGRESS])
+    })
+
+    it("meldet Altbestand, der bereits „in Bearbeitung“ ohne Eintragstyp ist, auch wenn er unverändert bleibt", () => {
+      const snapshot = structuredClone(vehicle)
+      snapshot[0].fields.dmentryType = "" // in Bearbeitung, ohne Typ (vor der Korrektur entstanden)
+      expect(messages(writeEntriesCsv(snapshot), { ...vehicleContext, snapshot })).toEqual([IN_PROGRESS])
+    })
+
+    it("erlaubt unveränderte freigegebene Einträge ohne Eintragstyp", () => {
+      const snapshot = structuredClone(vehicle)
+      snapshot[0] = { ...snapshot[0], status: "freigegeben", fields: { ...snapshot[0].fields, dmentryType: "" } }
+      expect(messages(writeEntriesCsv(snapshot), { ...vehicleContext, snapshot })).toEqual([])
+    })
+
+    it("fachliche Änderung ohne Eintragstyp behält die bisherige Meldung (keine doppelte Meldung)", () => {
+      const csv = vehicleCsv((rows) => {
+        Object.assign(rows[0].fields, { remarks: "Geändert", dmentryType: "" })
+        return rows
+      })
+      expect(messages(csv)).toEqual(["F: Geänderter Eintrag ohne Eintragstyp (n, c oder d setzen)."])
+    })
+  })
+
   it("erlaubt unveränderte Einträge mit c/d sowie bestehende Einträge mit n", () => {
     const csv = vehicleCsv((rows) => {
       rows[0].fields.dmentryType = "c"
