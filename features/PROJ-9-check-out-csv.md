@@ -1,6 +1,6 @@
 # PROJ-9: Check-out CSV
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -274,6 +274,19 @@ _Stand 2026-11-13 — `/frontend PROJ-9`_
 - **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low)
 - **Security:** Issues found (siehe Bugs)
 - **Production Ready:** YES (keine Critical/High-Bugs)
+
+### Re-Test 2026-11-14 (Bestätigung der Bugfixes)
+- [x] **BUG-QA2-1 bestätigt behoben:** Formel aus REPLY steht in der Check-out-CSV mit `'` entschärft; keine Zelle beginnt mit `=`, `+`, `-`, `@`; Check-in derselben Datei meldet „Keine Änderungen“, Wert unverändert (Unit + E2E)
+- [x] Zusätzlich geprüft: Werte, die schon mit Apostroph beginnen (`'=x`, `''=x`), und harmlose Werte (`Bremse - vorne`, `A00`) überstehen den Rundlauf unverändert
+- [ ] Hinweis (kein Bug): Speichert Excel die Datei neu, kann es das führende `'` als Eingabe-Präfix entfernen. Für normale Werte ist das ohne Folgen; nur ein Wert, der selbst mit `'=` beginnt, verliert dann ein Apostroph — praktisch nicht relevant
+- Automatisierte Tests: 432 Unit-Tests (48 Dateien) und 69 E2E-Tests (Chromium/Chrome) grün — keine Regressionen
+- Nicht getestet: Firefox und Safari (nicht installiert)
+
+**Ergebnis Re-Test**
+- **Acceptance Criteria:** 26/26 passed
+- **Offene Bugs:** keine
+- **Security:** Pass
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

@@ -1,6 +1,6 @@
 # PROJ-11: XSD-Validierung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -297,6 +297,19 @@ _Stand 2026-11-13 — `/backend` (PROJ-11)_
 - **Bugs Found:** 1 total (0 critical, 0 high, 0 medium, 1 low)
 - **Security:** Issues found (siehe Bugs)
 - **Production Ready:** YES (keine Critical/High-Bugs)
+
+### Re-Test 2026-11-14 (Bestätigung der Bugfixes)
+- [x] **BUG-QA2-3 bestätigt behoben:** Nachstellung aus dem Fehlerbericht (Host = Origin = `angreifer.example:3000`) → 403; lokale Anfragen (`localhost`, `127.0.0.1`, `[::1]`) → 200 mit Prüfergebnis
+- [x] Umgehungsversuche abgewiesen (403): `localhost:3000@angreifer.example`, `angreifer.example#localhost`, `localhost.angreifer.example`, `127.0.0.1.nip.io`, fremder Host mit `X-Forwarded-Host: localhost`, fehlender Host-Kopf, lokaler Host mit fremdem Origin bzw. `Origin: null`
+- [x] Harmlos durchgelassen: `LOCALHOST`, `127.0.0.1.` (werden zu lokalen Adressen normalisiert; eine IP-Adresse lässt sich nicht per DNS umleiten)
+- Automatisierte Tests: 432 Unit-Tests (48 Dateien) und 69 E2E-Tests (Chromium/Chrome) grün — keine Regressionen
+- Nicht getestet: Firefox und Safari (nicht installiert)
+
+**Ergebnis Re-Test**
+- **Acceptance Criteria:** 15/15 passed
+- **Offene Bugs:** keine
+- **Security:** Pass
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

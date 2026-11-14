@@ -1,6 +1,6 @@
 # PROJ-2: Simulierte Anmeldung & Rollenwechsel
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -318,6 +318,19 @@ _Stand 2026-11-12 — `/frontend PROJ-2`_
 - **Production Ready:** YES
 - **Recommendation:** Freigeben; Medium/Low-Bugs bei Gelegenheit beheben
 - **E2E-Tests:** `tests/PROJ-1-datenhaltung.spec.ts`, `tests/PROJ-2-anmeldung.spec.ts`, `tests/PROJ-3-to-6-17-verwaltung.spec.ts`, `tests/security-responsive.spec.ts`
+
+### Re-Test 2026-11-14 (Bestätigung der Bugfixes)
+- [x] **BUG-QA1-1 bestätigt behoben:** 1440 px alle Demo-Benutzer mit vollständigem Namen und Rolle; 768 px und 375 px ohne waagerechtes Scrollen (E2E)
+- [x] **BUG-QA1-2 bestätigt behoben:** `/favicon.ico` und `/icon.svg` liefern 200, Icon-Verweis im Seitenkopf, keine 404 beim Laden (E2E); beide Dateien im Produktions-Build
+- [x] BUG-QA1-3 bereits mit PROJ-16 behoben (E2E)
+- Automatisierte Tests: 432 Unit-Tests (48 Dateien) und 69 E2E-Tests (Chromium/Chrome) grün — keine Regressionen
+- Nicht getestet: Firefox und Safari (nicht installiert)
+
+**Ergebnis Re-Test**
+- **Acceptance Criteria:** 24/24 passed
+- **Offene Bugs:** keine
+- **Security:** Pass
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

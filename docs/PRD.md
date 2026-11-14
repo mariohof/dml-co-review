@@ -20,17 +20,17 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | Priority | Feature | Status |
 |----------|---------|--------|
 | P0 (MVP) | Datenhaltung (JSON/localStorage) + Demo-Daten | Approved |
-| P0 (MVP) | Simulierte Anmeldung & Rollenwechsel | In Progress (PROJ-2, Bugfix) |
+| P0 (MVP) | Simulierte Anmeldung & Rollenwechsel | Approved (PROJ-2) |
 | P0 (MVP) | Benutzer-, Organisations-, System- und DMRL-Verwaltung, DMRL-Berechtigungen (Admin) | Approved (PROJ-3–6, PROJ-17) |
 | P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | Approved (PROJ-7) |
 | P0 (MVP) | Fachliches Regelwerk | Approved (PROJ-8) |
-| P0 (MVP) | Check-out/Check-in CSV mit Sperre | In Progress (PROJ-9, Bugfix); Approved (PROJ-10) |
+| P0 (MVP) | Check-out/Check-in CSV mit Sperre | Approved (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML (jederzeit, ohne Sperre) | Approved (PROJ-18) |
-| P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | In Progress (PROJ-11, Bugfix) |
+| P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Approved (PROJ-11) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Approved (PROJ-12, PROJ-13) |
 | P0 (MVP) | Freigabestatus & Archiv | Approved (PROJ-14, PROJ-15) |
 | P0 (MVP) | Lokaler Start (Python-Startskript) | In Review (PROJ-19) |
-| P1 | Dashboard / Übersicht | In Progress (PROJ-16, Bugfix) |
+| P1 | Dashboard / Übersicht | Approved (PROJ-16) |
 
 Details und Abhängigkeiten: siehe `features/INDEX.md`.
 

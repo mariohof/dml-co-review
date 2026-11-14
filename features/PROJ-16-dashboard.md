@@ -1,6 +1,6 @@
 # PROJ-16: Dashboard
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -282,6 +282,17 @@ _Stand 2026-11-13 — `/frontend PROJ-16`_
 - **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low)
 - **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
 - **Production Ready:** YES (keine Critical/High-Bugs)
+
+### Re-Test 2026-11-14 (Bestätigung der Bugfixes)
+- [x] **BUG-QA2-4 bestätigt behoben:** E2E „Filter bleibt bei Zurück-Navigation erhalten“ im Gesamtlauf grün und im Lasttest 12/12 Durchläufe mit 4 parallelen Workern grün
+- Automatisierte Tests: 432 Unit-Tests (48 Dateien) und 69 E2E-Tests (Chromium/Chrome) grün — keine Regressionen
+- Nicht getestet: Firefox und Safari (nicht installiert)
+
+**Ergebnis Re-Test**
+- **Acceptance Criteria:** 21/21 passed
+- **Offene Bugs:** keine
+- **Security:** Pass
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_
