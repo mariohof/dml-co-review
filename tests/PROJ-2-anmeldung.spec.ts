@@ -128,3 +128,18 @@ test.describe("Kopfzeile: Name und Rolle (BUG-QA1-1)", () => {
     expect(overflow).toBeLessThanOrEqual(1)
   })
 })
+
+test("BUG-QA1-2: Favicon vorhanden — keine 404-Fehler beim Laden der Seiten", async ({ page, request }) => {
+  const missing: string[] = []
+  page.on("response", (response) => {
+    if (response.status() === 404) missing.push(response.url())
+  })
+  for (const path of ["/favicon.ico", "/icon.svg"]) {
+    const response = await request.get(path)
+    expect(response.status(), path).toBe(200)
+  }
+  await startAs(page, "Administrator")
+  await page.goto("/verwaltung")
+  await expect(page.locator('link[rel="icon"]').first()).toHaveAttribute("href", /favicon|icon/)
+  expect(missing).toEqual([])
+})

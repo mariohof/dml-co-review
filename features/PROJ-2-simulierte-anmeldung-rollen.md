@@ -309,6 +309,7 @@ _Stand 2026-11-12 — `/frontend PROJ-2`_
   2. Expected: keine Fehler
   3. Actual: `Failed to load resource: 404 (Not Found)` für `/favicon.ico`
 - **Priority:** Nice to have
+- **Status:** Behoben 2026-11-14 — App-Icon in den Firmenfarben (Liste, #00406e/weiß): `src/app/icon.svg` für moderne Browser, `src/app/favicon.ico` (16/32/48 px) für die direkte Abfrage; Next.js setzt die `<link rel="icon">`-Verweise automatisch. E2E-Test `tests/PROJ-2-anmeldung.spec.ts` („BUG-QA1-2“: beide Dateien 200, keine 404 beim Laden); Gegenprobe ohne Icons schlägt fehl. Bestätigung durch `/qa` ausstehend.
 
 ### Summary
 - **Acceptance Criteria:** 23/24 passed, 1 fehlgeschlagen (BUG-QA1-1, Medium)
