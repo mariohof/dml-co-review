@@ -52,6 +52,8 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 
 **Eintrag ohne Eintragstyp** *(Refinement 2026-11-14)*: Weicht bei einem Eintrag ohne Eintragstyp (z. B. *freigegeben*) nur die Antwort ab und ist die Übernahme gewählt, braucht er einen Eintragstyp (`n`, `c` oder `d`) — sonst könnte er nie erneut gesendet und freigegeben werden. Solange solche Einträge betroffen sind, ist „Übernehmen“ bei angekreuzter Übernahme gesperrt; ohne Häkchen ist der Check-in normal möglich.
 
+**Grundsatz Eintragstyp** *(Refinement 2026-11-14, BUG-QA4-1)*: Nach dem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp (`n`, `c` oder `d`) — SEND nimmt nur solche Einträge mit. Ein entfernter Eintragstyp bei einem Eintrag, der *in Bearbeitung* wäre, ist ein Fehler (PROJ-8 Regel F); das gilt auch für Altbestand, der bereits *in Bearbeitung* ohne Eintragstyp ist.
+
 **Übernommene Partnerantworten** *(Refinement 2026-11-14)* setzen den Eintrag nie auf *freigegeben* oder *zu überarbeiten* — diese Status entstehen nur durch einen REPLY (PRD). Eine übernommene Antwortänderung zählt als Änderung (Eintrag *in Bearbeitung*, eine Freigabe der DMRL wird aufgehoben), damit *freigegeben* immer durch eine echte Partnerantwort belegt ist.
 
 **DMRL-Status**
@@ -108,6 +110,9 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 - [ ] Angenommen ein Eintrag wurde geändert, wenn die Zusammenfassung angezeigt wird, dann sind je geändertem Feld alter und neuer Wert sichtbar
 - [ ] Angenommen in der Datei wurde `security` von `01` zu `1` (Excel), wenn geprüft wird, dann gilt der Eintrag als unverändert und ein Hinweis auf das Auffüllen erscheint
 
+- [ ] Angenommen bei einem Eintrag wurde der Eintragstyp entfernt (mit oder ohne geänderte Antwort) und er wäre nach dem Check-in *in Bearbeitung*, wenn geprüft wird, dann meldet der Prüfbericht „Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden.“ und der Check-in ist nicht möglich *(Refinement 2026-11-14, BUG-QA4-1)*
+- [ ] Angenommen ein Eintrag ist bereits *in Bearbeitung* ohne Eintragstyp (Altbestand vor der Korrektur), wenn eine Datei eingecheckt wird, in der er unverändert ist, dann wird derselbe Fehler gemeldet, damit der Eintragstyp nachgetragen wird *(Refinement 2026-11-14)*
+
 ### Übernehmen / Abbrechen
 - [ ] Angenommen die Zusammenfassung ist sichtbar, wenn „Abbrechen" gewählt wird, dann wird nichts übernommen und die Sperre bleibt bestehen
 - [ ] Angenommen die Zusammenfassung ist sichtbar, wenn „Übernehmen" gewählt wird, dann werden alle Einträge übernommen, die Sperre ist aufgehoben und eine Erfolgsmeldung erscheint
@@ -122,7 +127,8 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 - [ ] Angenommen abweichende Antworten werden angezeigt, wenn die Zusammenfassung erscheint, dann ist „Antworten aus der Datei übernehmen" nicht angekreuzt und der Hinweis „nur Information — freigegeben wird nur durch einen REPLY" sichtbar
 - [ ] Angenommen „Antworten aus der Datei übernehmen" ist nicht angekreuzt, wenn übernommen wird, dann behalten alle Einträge ihre bisherigen Antworten, und Einträge, bei denen nur die Antworten abweichen, gelten als unverändert
 - [ ] Angenommen „Antworten aus der Datei übernehmen" ist angekreuzt, wenn übernommen wird, dann stehen bei allen betroffenen Einträgen die Werte aus der Datei, und diese Einträge haben den Status *in Bearbeitung*
-- [ ] Angenommen ein *freigegebener* Eintrag hat in der Datei nur eine geänderte Antwort und die Übernahme ist angekreuzt, wenn übernommen wird, dann ist der Eintrag *in Bearbeitung* und eine Freigabe der DMRL ist aufgehoben
+- [ ] Angenommen ein Eintrag *zu überarbeiten* (mit Eintragstyp) hat in der Datei nur eine geänderte Antwort und die Übernahme ist angekreuzt, wenn übernommen wird, dann ist er *in Bearbeitung* mit den Werten aus der Datei *(korrigiert 2026-11-14, BUG-QA4-2; vorher: „freigegebener Eintrag …“ — nicht erreichbar, da freigegebene Einträge keinen Eintragstyp haben und die Übernahme dann gesperrt ist)*
+- [ ] Angenommen die DMRL ist *freigegeben*, wenn eine Datei mit nur geänderten Antworten bei freigegebenen Einträgen geprüft und das Häkchen gesetzt wird, dann ist „Übernehmen“ gesperrt — eine Freigabe lässt sich durch übernommene Antworten allein nie aufheben oder herbeiführen *(2026-11-14)*
 - [ ] Angenommen ein neuer Eintrag hat in der Datei die Antwort `y` und die Übernahme ist angekreuzt, wenn übernommen wird, dann ist er *in Bearbeitung* (nicht *freigegeben*) mit `answer` = `y`
 - [ ] Angenommen die Datei enthält in `answer` einen ungültigen Wert (nicht leer, `y` oder `n`), wenn geprüft wird, dann ist das weiterhin ein Formatfehler (PROJ-8 A) und der Check-in wird abgelehnt
 - [ ] Angenommen Antworten wurden übernommen, wenn der Workflow-Verlauf betrachtet wird, dann enthält der Check-in-Eintrag „N Antworten aus der Datei übernommen"
@@ -155,6 +161,8 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 - **Nur `answer_comment` weicht ab** (Antwort gleich): wird wie jede Antwortabweichung behandelt *(Refinement 2026-11-14)*.
 - **Antwort entfernt** (in der Datei leer, in der DMRL `y`/`n`): gilt als abweichende Antwort; bei Übernahme ist die Antwort danach leer *(Refinement 2026-11-14)*.
 - **Eintrag mit fachlicher Änderung und abweichender Antwort, Übernahme nicht gewählt:** fachliche Änderung wird übernommen (*in Bearbeitung*), die bisherige Antwort bleibt *(Refinement 2026-11-14)*.
+- **Eintragstyp entfernt** (z. B. `n` → leer): Fehler nach Regel F, wenn der Eintrag *in Bearbeitung* wäre — unabhängig von der Antwortübernahme *(Refinement 2026-11-14, BUG-QA4-1)*.
+- **Altbestand *in Bearbeitung* ohne Eintragstyp** (vor der Korrektur entstanden): beim nächsten Check-in Fehler, bis ein Eintragstyp gesetzt ist — repariert den Zustand *(Refinement 2026-11-14)*.
 - **Zwei Tabs:** Übernahme im zweiten Tab nach bereits erfolgtem Check-in schlägt fehl, da keine Sperre mehr besteht.
 
 ## Technical Requirements (optional)
@@ -182,6 +190,8 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 | Eine Abfrage für alle abweichenden Antworten (Kästchen, standardmäßig aus) statt je Eintrag | Einfach; bewusste Entscheidung, keine unbemerkte Übernahme | 2026-11-14 |
 | Übernommene Antworten sind nur Information; Status nie *freigegeben*/*zu überarbeiten* | PRD: Freigabe nur durch Partner per REPLY | 2026-11-14 |
 | Übernommene Antwortänderung zählt als Änderung (*in Bearbeitung*, Freigabe der DMRL aufgehoben) | *freigegeben* bleibt immer durch einen REPLY belegt | 2026-11-14 |
+| Nach dem Check-in kein Eintrag *in Bearbeitung* ohne Eintragstyp — Fehler nach Regel F, auch bei entferntem Eintragstyp und für Altbestand | QA-Befund BUG-QA4-1: solche Einträge würden nie gesendet, die DMRL nie wieder freigegeben | 2026-11-14 |
+| Kriterium „freigegebener Eintrag mit geänderter Antwort → in Bearbeitung“ ersetzt durch Eintrag *zu überarbeiten*; freigegebene Einträge ohne Typ sind bei Antwortübernahme immer gesperrt | QA-Befund BUG-QA4-2: Widerspruch zur Entscheidung „Eintragstyp verlangen“ | 2026-11-14 |
 | Antwortübernahme bei Einträgen ohne Eintragstyp verlangt einen Eintragstyp; sonst „Übernehmen“ gesperrt (nur bei angekreuzter Übernahme) | Sonst entstünde ein Eintrag *in Bearbeitung*, der nie gesendet und freigegeben werden kann; entspricht Regel F | 2026-11-14 |
 
 ### Technical Decisions
@@ -438,12 +448,14 @@ Keine neuen Bugs in diesem Feature.
 - **Vorschlag:** Regel F: Jeder Eintrag, der nach dem Check-in *in Bearbeitung* wäre, braucht `n`, `c` oder `d` (deckt beide Wege ab; die bedingte Sperre der Antwortübernahme kann darin aufgehen). Produktentscheidung nötig, ob das Entfernen des Eintragstyps je erlaubt sein soll.
 - **Test:** `src/lib/workflows/qa-proj7-10.test.ts` „BUG-QA4-1 …“ als `it.skip` hinterlegt (schlägt mit dem aktuellen Code fehl) — nach der Behebung aktivieren
 - **Priority:** Fix before Weitergabe
+- **Status:** Spec geklärt 2026-11-14 (`/refine PROJ-10`): Regel F verlangt für jeden Eintrag, der nach dem Check-in *in Bearbeitung* wäre, einen Eintragstyp (auch Altbestand). Umsetzung offen → `/frontend bug-qa4-1`
 
 ##### BUG-QA4-2: Akzeptanzkriterium zur Antwortübernahme bei freigegebenen Einträgen ist nicht erreichbar (Spec)
 - **Severity:** Low (Dokumentation)
 - **Beschreibung:** Das Kriterium „Angenommen ein *freigegebener* Eintrag hat in der Datei nur eine geänderte Antwort und die Übernahme ist angekreuzt … dann ist der Eintrag *in Bearbeitung* und eine Freigabe der DMRL ist aufgehoben“ widerspricht der späteren Entscheidung „Eintragstyp verlangen“: Freigegebene Einträge haben nie einen Eintragstyp (der REPLY entfernt ihn), die Übernahme ist deshalb immer gesperrt. Die Umsetzung folgt korrekt der späteren Entscheidung.
 - **Vorschlag:** Kriterium per `/refine PROJ-10` umformulieren, z. B. „… ein Eintrag *zu überarbeiten* (mit Eintragstyp) …“ bzw. „ein freigegebener Eintrag mit gesetztem Eintragstyp `c` …“
 - **Priority:** Nice to have
+- **Status:** Behoben 2026-11-14 (`/refine PROJ-10`) — Kriterium auf einen Eintrag *zu überarbeiten* umgestellt; neues Kriterium zur Sperre bei freigegebener DMRL
 
 #### Summary
 - **Acceptance Criteria (Refinement):** 11/12 passed, 1 nicht erreichbar (BUG-QA4-2, Spec)

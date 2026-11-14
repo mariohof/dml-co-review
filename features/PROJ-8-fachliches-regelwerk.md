@@ -97,12 +97,15 @@ Der Eintragstyp wird **vom Bearbeiter manuell** gesetzt. Das Regelwerk prüft nu
 |---|---|
 | DMC neu (vorher nicht in der DMRL) und Eintragstyp ≠ `n` | Fehler |
 | Bestehender Eintrag mit geänderten fachlichen Feldern, aber **ohne** Eintragstyp | Fehler |
+| Eintrag wäre nach dem Check-in *in Bearbeitung*, hat aber **keinen** Eintragstyp — z. B. Eintragstyp entfernt, oder Altbestand bereits *in Bearbeitung* ohne Eintragstyp *(Refinement 2026-11-14, BUG-QA4-1)* | Fehler „Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden.“ |
 | Bisheriger Eintrag fehlt in der Datei | Fehler (Einträge werden nicht entfernt, sondern mit `d` / `deleted` gekennzeichnet) |
 | Bestehender Eintrag mit `n` | erlaubt (erneutes Senden nach Absprache, NSG) |
 | Unveränderter Eintrag mit `c` oder `d` | erlaubt |
 | Eintragstyp `d` ohne DM-Ausgabetyp `deleted` oder umgekehrt | erlaubt (unabhängig, PROJ-7) |
 
 „Fachliche Felder" = alle Felder außer `dmentryType`, `answer`, `answer_comment`.
+
+**Grundsatz *(Refinement 2026-11-14)*:** Nach einem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp — SEND nimmt nur Einträge mit `n`, `c` oder `d` mit, ein solcher Eintrag könnte nie freigegeben werden. Unveränderte Einträge ohne Eintragstyp, die *freigegeben* sind oder bleiben, sind erlaubt. Für die Übernahme von Partnerantworten gilt dasselbe als bedingte Sperre (PROJ-10).
 
 ### K — Antwortfelder (nur Check-in) *(Refinement 2026-11-14)*
 ~~`answer` und `answer_comment` dürfen vom Bearbeiter nicht verändert werden.~~ (bis 2026-11-14)
@@ -200,6 +203,9 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 ### Eintragstyp & Antwortfelder (Check-in)
 - [ ] Angenommen ein neuer DMC hat nicht den Eintragstyp `n`, wenn geprüft wird, dann wird „Neuer Eintrag muss Eintragstyp ‚n' haben" gemeldet
 - [ ] Angenommen bei einem bestehenden Eintrag wurde der Tech Name geändert und kein Eintragstyp gesetzt, wenn geprüft wird, dann wird „Geänderter Eintrag ohne Eintragstyp" gemeldet
+- [ ] Angenommen bei einem Eintrag *in Bearbeitung* wurde nur der Eintragstyp entfernt, wenn geprüft wird, dann wird „Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d)“ gemeldet *(Refinement 2026-11-14)*
+- [ ] Angenommen ein Eintrag ist bereits *in Bearbeitung* ohne Eintragstyp (Altbestand) und in der Datei unverändert, wenn geprüft wird, dann wird derselbe Fehler gemeldet *(Refinement 2026-11-14)*
+- [ ] Angenommen ein *freigegebener* Eintrag ohne Eintragstyp ist in der Datei unverändert, wenn geprüft wird, dann ist das kein Fehler *(Refinement 2026-11-14)*
 - [ ] Angenommen ein bisheriger Eintrag fehlt in der Datei, wenn geprüft wird, dann wird „Eintrag [DMC] fehlt — Einträge können nicht entfernt werden" gemeldet
 - [ ] Angenommen ein bestehender, unveränderter Eintrag hat Eintragstyp `n`, `c` oder `d`, wenn geprüft wird, dann wird kein Fehler gemeldet
 - [ ] Angenommen der Bearbeiter hat `answer` oder `answer_comment` verändert, wenn geprüft wird, dann ist das kein Fehler, und die betroffenen Einträge werden als „abweichende Partnerantworten" an den Check-in übergeben (PROJ-10) *(Refinement 2026-11-14; vorher: Fehler „[Feld] darf nur durch REPLY gesetzt werden")*
@@ -260,6 +266,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 | Einträge können nicht entfernt werden (Fehlen = Fehler) | Löschung nur über `d` / `deleted` (Anforderung 02, NSG) | 2026-11-12 |
 | `answer` nur an Einträgen mit Eintragstyp n/c/d; Begründung bei `n` Pflicht | Vorgabe Product Owner, NSG 1.2.1 | 2026-11-12 |
 | ~~`answer`/`answer_comment` beim Check-in nicht veränderbar~~ — ersetzt 2026-11-14 | Keine vorgetäuschte Partner-Freigabe | 2026-11-12 |
+| Kein Eintrag *in Bearbeitung* ohne Eintragstyp nach dem Check-in (Regel F erweitert, auch für Altbestand) | Solche Einträge würden nie gesendet; die DMRL könnte nicht mehr freigegeben werden (BUG-QA4-1) | 2026-11-14 |
 | Abweichende `answer`/`answer_comment` beim Check-in kein Fehler, sondern optionale Übernahme nur als Information | Altbestände mit Partnerantworten übernehmbar (PROJ-20); vorgetäuschte Freigabe weiterhin ausgeschlossen, da übernommene Antworten den Status nie auf *freigegeben* setzen | 2026-11-14 |
 | Pflichtfelder inkl. `infoname`, `rpc`, `issno`, `type`, Datum | Vorgabe Product Owner | 2026-11-12 |
 | `issno`/`type`/Datum im REPLY-XML optional, in der Anwendung Pflicht | NSG und Beispieldateien enthalten sie nicht; Demo-Einträge werden ergänzt | 2026-11-12 |
