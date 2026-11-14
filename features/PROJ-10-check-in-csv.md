@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -49,6 +49,8 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 | nur Antwortfelder abweichend, Übernahme **nicht gewählt** *(Refinement 2026-11-14)* | bleibt; die bisherigen Antworten bleiben erhalten, zählt nicht als Änderung |
 
 „Unverändert" wird nach dem Auffüllen führender Nullen beurteilt (`1` → `01` ist keine Änderung).
+
+**Eintrag ohne Eintragstyp** *(Refinement 2026-11-14)*: Weicht bei einem Eintrag ohne Eintragstyp (z. B. *freigegeben*) nur die Antwort ab und ist die Übernahme gewählt, braucht er einen Eintragstyp (`n`, `c` oder `d`) — sonst könnte er nie erneut gesendet und freigegeben werden. Solange solche Einträge betroffen sind, ist „Übernehmen“ bei angekreuzter Übernahme gesperrt; ohne Häkchen ist der Check-in normal möglich.
 
 **Übernommene Partnerantworten** *(Refinement 2026-11-14)* setzen den Eintrag nie auf *freigegeben* oder *zu überarbeiten* — diese Status entstehen nur durch einen REPLY (PRD). Eine übernommene Antwortänderung zählt als Änderung (Eintrag *in Bearbeitung*, eine Freigabe der DMRL wird aufgehoben), damit *freigegeben* immer durch eine echte Partnerantwort belegt ist.
 
@@ -125,6 +127,9 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 - [ ] Angenommen die Datei enthält in `answer` einen ungültigen Wert (nicht leer, `y` oder `n`), wenn geprüft wird, dann ist das weiterhin ein Formatfehler (PROJ-8 A) und der Check-in wird abgelehnt
 - [ ] Angenommen Antworten wurden übernommen, wenn der Workflow-Verlauf betrachtet wird, dann enthält der Check-in-Eintrag „N Antworten aus der Datei übernommen"
 - [ ] Angenommen keine Antwort weicht ab, wenn die Zusammenfassung erscheint, dann gibt es weder den Abschnitt noch das Kästchen
+- [ ] Angenommen bei einem Eintrag ohne Eintragstyp weicht nur die Antwort ab, wenn „Antworten aus der Datei übernehmen“ angekreuzt wird, dann ist „Übernehmen“ gesperrt und eine Meldung listet diese Einträge mit „Eintragstyp setzen (n, c oder d), damit der Eintrag erneut gesendet werden kann — Datei korrigieren oder Antworten nicht übernehmen“
+- [ ] Angenommen dieselbe Datei, wenn das Häkchen wieder entfernt wird, dann ist „Übernehmen“ wieder möglich und die bisherigen Antworten bleiben
+- [ ] Angenommen das Häkchen wird gesetzt oder entfernt, wenn die Zusammenfassung angezeigt wird, dann passen sich die Zahlen neu/geändert/unverändert sofort an
 
 ### DMRL-Status
 - [ ] Angenommen die DMRL ist *freigegeben* und mindestens ein Eintrag wurde geändert, wenn übernommen wird, dann ist die DMRL *in Bearbeitung* und das Banner „Nicht freigegeben" erscheint
@@ -177,6 +182,7 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 | Eine Abfrage für alle abweichenden Antworten (Kästchen, standardmäßig aus) statt je Eintrag | Einfach; bewusste Entscheidung, keine unbemerkte Übernahme | 2026-11-14 |
 | Übernommene Antworten sind nur Information; Status nie *freigegeben*/*zu überarbeiten* | PRD: Freigabe nur durch Partner per REPLY | 2026-11-14 |
 | Übernommene Antwortänderung zählt als Änderung (*in Bearbeitung*, Freigabe der DMRL aufgehoben) | *freigegeben* bleibt immer durch einen REPLY belegt | 2026-11-14 |
+| Antwortübernahme bei Einträgen ohne Eintragstyp verlangt einen Eintragstyp; sonst „Übernehmen“ gesperrt (nur bei angekreuzter Übernahme) | Sonst entstünde ein Eintrag *in Bearbeitung*, der nie gesendet und freigegeben werden kann; entspricht Regel F | 2026-11-14 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
@@ -187,6 +193,10 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 | Abgleich einmal berechnet für Regelwerk, Zusammenfassung und Übernahme | Konsistente Ergebnisse | 2026-11-12 |
 | Übernahme atomar (Einträge, DMRL-Status, Sperre, Verlauf) | Kein halber Check-in | 2026-11-12 |
 | Abgelehnter Check-in: nur Verlaufseintrag; Abbrechen: nichts | PROJ-15 | 2026-11-12 |
+| Abgleich trennt fachliche Änderung und Antwortabweichung; Zahlen für beide Fälle aus einem Abgleich | Häkchen schaltet sofort um, ohne erneute Prüfung; Anzeige und Speicherung bleiben deckungsgleich | 2026-11-14 |
+| Regel K liefert eine Liste statt Fehlern; „Eintragstyp bei Antwortübernahme“ als bedingte Sperre statt Fehler im Prüfbericht | Ohne Häkchen bleibt eine korrekte Datei fehlerfrei; die Sperre greift nur, wenn sie wirklich nötig ist | 2026-11-14 |
+| Ohne Übernahme erhalten neue Einträge leere Antwortfelder | „Bisherige Antworten bleiben“ — neue Einträge hatten keine | 2026-11-14 |
+| Kein neues Datenformat; Verlaufstext um Zusatz erweitert | Keine Migration der gespeicherten Daten nötig | 2026-11-14 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -258,6 +268,54 @@ Bei Ablehnung wegen Fehlern wird nur ein Verlaufseintrag „Check-in abgelehnt �
 ### H) Testbarkeit
 - Unit-Tests: Abgleich (neu/geändert/unverändert, Nullen aufgefüllt = unverändert, nur Eintragstyp geändert = geändert, veränderter DMC), Status nach Übernahme (Tabellen der Spec), DMRL-Status (freigegeben + Änderung → in Bearbeitung; ohne Änderung bleibt), Verlaufseinträge.
 - E2E: Fahrzeug auschecken → Eintrag ergänzen → einchecken (11 Einträge, 1 neu); fehlerhafte Datei → Bericht, Sperre bleibt; Abbrechen; Sperre zwischenzeitlich aufgehoben.
+
+### I) Refinement 2026-11-14 — Partnerantworten aus der Datei übernehmen
+Ergänzt das bestehende Design; alles Übrige (A–H) gilt unverändert. Weiterhin alles im Browser, kein Backend.
+
+**Komponenten (Änderungen im Check-in-Dialog, Schritt 3b „Zusammenfassung“)**
+```
+Zusammenfassung
++-- Zahlen: geprüft · neu · geändert · unverändert   ← passen sich dem Häkchen sofort an
++-- Hinweise, Liste neuer / geänderter Einträge       ← Antwortfelder erscheinen hier nicht mehr
++-- NEU: Abschnitt „Abweichende Partnerantworten (N Einträge)“ (nur wenn N > 0)
+|   +-- Liste je Eintrag (aufklappbar wie bisher, shadcn Accordion):
+|   |   DMC · Antwort alt → neu · Begründung alt → neu
+|   +-- Kästchen „Antworten aus der Datei übernehmen“ (shadcn Checkbox, standardmäßig aus)
+|   +-- Hinweis „Nur Information — freigegeben wird ein Eintrag weiterhin nur durch einen REPLY.“
+|   +-- bei Häkchen und betroffenen Einträgen ohne Eintragstyp:
+|       Meldung (shadcn Alert, rot) mit Liste der Einträge; „Übernehmen“ gesperrt
++-- „Übernehmen“ · „Abbrechen“
+```
+
+**Abgleich (Erweiterung von C)**
+- Der Abgleich trennt künftig zwei Arten von Abweichungen je Eintrag:
+  - **fachliche Änderung** (alle Felder außer `answer`/`answer_comment`, inkl. Eintragstyp) — bestimmt wie bisher *neu/geändert/unverändert*
+  - **Antwortabweichung** (`answer` oder `answer_comment` ≠ Stand beim Check-out; bei neuen Einträgen: nicht leer) — eigenes Merkmal
+- Ein Eintrag mit nur abweichenden Antworten gilt zunächst als *unverändert*. Erst wenn die Übernahme gewählt ist, zählt er als *geändert*. Die Zusammenfassung berechnet die Zahlen für beide Fälle aus demselben Abgleich; das Häkchen schaltet nur zwischen ihnen um.
+- Der Abgleich wird weiterhin einmal berechnet und von Regelwerk, Zusammenfassung und Übernahme gemeinsam genutzt.
+
+**Regelwerk (PROJ-8)**
+- **Regel K** erzeugt keine Fehler mehr, sondern liefert die Liste der Antwortabweichungen an den Dialog.
+- **Bedingte Prüfung „Eintragstyp bei Antwortübernahme“**: Einträge ohne Eintragstyp mit reiner Antwortabweichung werden vorab ermittelt. Sie sind keine Fehler im Prüfbericht (ohne Häkchen ist die Datei fehlerfrei), sperren aber „Übernehmen“, sobald das Häkchen gesetzt ist.
+- **Regel A** prüft `answer` weiterhin auf leer, `y` oder `n`; **Regel F** bleibt unverändert (Antwortfelder zählen nicht als fachliche Änderung).
+
+**Übernahme (Erweiterung von D, Schritt 5)**
+- Die Übernahme erhält zusätzlich die Wahl „Antworten übernehmen ja/nein“ und prüft sie erneut (bei Häkchen und betroffenen Einträgen ohne Eintragstyp: abgelehnt, nichts gespeichert).
+- **Ohne Übernahme:** bestehende Einträge behalten ihre bisherigen Antwortfelder; neue Einträge erhalten leere Antwortfelder (es gab keine bisherigen).
+- **Mit Übernahme:** alle Einträge erhalten die Antwortfelder aus der Datei; Einträge mit Antwortabweichung werden *in Bearbeitung*.
+- Status nie *freigegeben* oder *zu überarbeiten* durch die Übernahme; DMRL-Status wie bisher (*in Bearbeitung*, sobald irgendein Eintrag neu oder geändert ist).
+- Weiterhin **eine** atomare Speicherung.
+
+**Datenmodell**
+- Keine neuen Objekte und kein neues Datenformat (keine Migration im Browser-Speicher nötig).
+- Verlauf „Check-in“: Der Text erhält bei Übernahme den Zusatz „N Antworten aus der Datei übernommen“; der bestehende Eintragstyp „check_in“ bleibt.
+
+**Abhängigkeiten:** keine neuen Pakete (shadcn Checkbox, Alert, Accordion sind installiert).
+
+**Testbarkeit**
+- Unit: Abgleich trennt fachliche Änderung und Antwortabweichung; Zahlen mit/ohne Übernahme; Regel K ohne Fehler; bedingte Prüfung „ohne Eintragstyp“; Übernahme mit/ohne Häkchen (Antwortwerte, Status, DMRL-Status, Verlaufstext); neue Einträge ohne Übernahme → leere Antworten; erneute Prüfung bei der Übernahme.
+- Komponente: Abschnitt nur bei Abweichungen; Häkchen standardmäßig aus; Zahlen schalten um; Sperre von „Übernehmen“ samt Meldung.
+- E2E: Partnerantworten in der Check-out-CSV ändern → einchecken ohne Häkchen (Antworten bleiben, unverändert) und mit Häkchen (Werte übernommen, *in Bearbeitung*, Verlaufszusatz); freigegebenen Eintrag nur in der Antwort ändern → Sperre bei Häkchen; Durchlauf mit einer über PROJ-20 konvertierten CSV, sobald PROJ-20 umgesetzt ist.
 
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend` (PROJ-10)_

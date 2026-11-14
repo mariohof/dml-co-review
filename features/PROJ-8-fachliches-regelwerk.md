@@ -1,6 +1,6 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -107,7 +107,7 @@ Der Eintragstyp wird **vom Bearbeiter manuell** gesetzt. Das Regelwerk prüft nu
 ### K — Antwortfelder (nur Check-in) *(Refinement 2026-11-14)*
 ~~`answer` und `answer_comment` dürfen vom Bearbeiter nicht verändert werden.~~ (bis 2026-11-14)
 
-Weichen `answer` oder `answer_comment` vom Stand der Anwendung ab (bei neuen Einträgen: nicht leer), ist das **kein Fehler**. Regel K ermittelt die abweichenden Einträge; der Check-in (PROJ-10) bietet sie dem Bearbeiter zur Übernahme an (eine Entscheidung für alle). Übernommene Antworten sind nur Information und setzen nie *freigegeben* oder *zu überarbeiten*. Das Format von `answer` (leer, `y`, `n`) prüft weiterhin Regel A.
+Weichen `answer` oder `answer_comment` vom Stand der Anwendung ab (bei neuen Einträgen: nicht leer), ist das **kein Fehler**. Regel K ermittelt die abweichenden Einträge; der Check-in (PROJ-10) bietet sie dem Bearbeiter zur Übernahme an (eine Entscheidung für alle). Übernommene Antworten sind nur Information und setzen nie *freigegeben* oder *zu überarbeiten*. Das Format von `answer` (leer, `y`, `n`) prüft weiterhin Regel A. Zusätzlich ermittelt das Regelwerk Einträge **ohne Eintragstyp mit reiner Antwortabweichung**; sie sperren die Übernahme, wenn der Bearbeiter die Antworten übernehmen will (PROJ-10, Tech Design I).
 
 ### G — REPLY passt zum letzten SEND (nur REPLY)
 **Kopf**
