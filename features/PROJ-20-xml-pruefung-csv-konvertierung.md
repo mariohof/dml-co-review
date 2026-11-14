@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-14
 
@@ -280,7 +280,95 @@ Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod 
 - **Tests:** 19 Unit-Tests Prüfkern (inkl. Rundlauf CSV → Check-in-Regelprüfung, ISO-8859-1, falsche Issue in beide Richtungen, 4.2-Beispiel mit uneinheitlichem MI), 6 Komponententests, 10 E2E-Tests mit echter XSD-Serverfunktion (Menüpunkt, REPLY-Konvertierung, ohne Anmeldung, ohne Berechtigung, nicht wohlgeformt, Schemafehler, falsche Issue, 375/768/1440 px, Neuladen).
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-14
+**App URL:** http://localhost:3000/xml-pruefung
+**Tester:** QA Engineer (AI)
+**Browser:** Chrome (Playwright, echte XSD-Serverfunktion mit xmllint). Firefox und Safari nicht installiert — nicht getestet.
+
+### Automatische Tests
+- `npm test`: 474/474 grün (davon 19 Prüfkern, 6 Komponente) + QA-Datei `src/lib/workflows/qa-proj20.test.ts`: 6 grün, 1 übersprungen (BUG-QA1-1)
+- Playwright Gesamtlauf: 85/85 grün (16,5 min), darin 10 Tests `tests/PROJ-20-xml-pruefung.spec.ts`
+- QA-E2E `tests/PROJ-20-qa.spec.ts`: 8/8 grün
+
+### Acceptance Criteria Status
+**Zugang**
+- [x] Menüpunkt „XML prüfen“ für Bearbeiter und Administrator, führt zum Werkzeug
+- [x] Ohne Anmeldung → Anmeldeseite
+- [x] Bearbeiter ohne jede DMRL-Berechtigung kann das Werkzeug uneingeschränkt nutzen
+
+**Auswahl und Prüfung**
+- [x] Ohne Issue: „Prüfen“ gesperrt, Hinweis zur Auswahl
+- [x] Datei > 5 MB, Nicht-XML und leere Datei mit verständlicher Meldung abgewiesen
+- [x] Gültige Datei + passende Issue: Zusammenfassung, „Keine Fehler“, „CSV herunterladen“ (Rundlauf mit exportierter 4.2-XML)
+- [x] Nicht wohlgeformt: Fehler mit Zeile, keine CSV
+- [x] Schemafehler: XSD-Befunde mit Zeile, CSV mit Warnung
+- [x] Andere Issue gewählt: „Datei passt nicht zur gewählten Issue“, keine CSV (2.3 ↔ 4.2 in beide Richtungen)
+- [x] Regelverstöße (doppelter DMC, Pflichtfeld, Benennung, Infoname) je Eintrag, CSV mit Warnung und allen Einträgen
+- [x] MI uneinheitlich: Befund je abweichendem Eintrag, Zusammenfassung „uneinheitlich“ (4.2-Beispiel S1000DBIKE)
+- [x] XSD nicht verfügbar: Regelprüfung läuft, Hinweis „XSD-Prüfung nicht durchgeführt“, CSV mit Warnung
+
+**Ergebnis und CSV**
+- [x] Zusammenfassung mit Dateiname, Issue, Richtung, DML-Code, Ausgabestand, Datum, Sicherheitseinstufung, Bezugs-DMRL, MI, Einträgen und Antworten je Art
+- [x] CSV im Check-out-Format (27 Spalten, Semikolon, UTF-8 mit BOM, nach DMC sortiert), Name = XML-Name mit `.csv`
+- [x] Partnerantworten in `answer`/`answer_comment` (30 freigegeben / 2 zu überarbeiten mit Begründung)
+- [x] Formelschutz für `=`, `+`, `-`, `@`; der Check-in liest die Werte wieder unverändert
+- [x] Rundlauf: fehlerfreie konvertierte CSV besteht die Check-in-Regelprüfung der ausgecheckten DMRL (E2E); mit Partnerantworten meldet der Check-in sie als abweichende Antworten zur Übernahme (Unit)
+- [x] „Prüfbericht herunterladen“ als CSV wie beim Check-in
+
+**Keine Wirkung auf den Datenbestand**
+- [x] Datenbestand vor/nach Prüfung und Download identisch (auch bei 5-MB-Datei); localStorage unberührt
+- [x] Neuladen: Ergebnis ist weg
+
+**Darstellung**
+- [x] 375 / 768 / 1440 px mit Fehlerbericht ohne waagerechtes Scrollen
+
+### Edge Cases Status
+- [x] Falsche Issue gewählt → nicht lesbar, keine CSV
+- [x] XML ohne Einträge (Schemafehler) → CSV nur mit Kopfzeile, Warnung
+- [x] Partner-REPLY ohne Ausgabedaten → Pflichtfeld-Fehler genau für `issno`, `type`, `day`, `month`, `year` (Demo-Dateien)
+- [x] Keine DMRL-XML (anderes Wurzelelement) → „passt nicht zur gewählten Issue“, keine CSV
+- [x] ISO-8859-1 laut Deklaration korrekt gelesen
+- [ ] **BUG-QA1-1:** UTF-16 laut Deklaration wird nicht gelesen
+- [x] Externe Entities (XXE, `file:///etc/passwd`) nicht nachgeladen — kein Dateiinhalt in Seite oder CSV
+- [x] Sehr viele Einträge: 5.400 Einträge / 4,82 MB in 1,0 s geprüft und konvertiert
+- [x] Neue Datei während laufender Prüfung → altes Ergebnis verworfen (Komponententest)
+- [x] Benutzerwechsel bei angezeigtem Ergebnis → Seite bleibt offen
+- [x] Doppelter DMC → Regel C, CSV enthält beide Einträge
+
+### Security Audit Results
+- [x] Authentifizierung: Werkzeug nur nach Anmeldung erreichbar
+- [x] Autorisierung: Werkzeug liest und schreibt keine Systemdaten — keine DMRL-Daten über das Werkzeug einsehbar
+- [x] XSS: HTML in Feldwerten und im Dateinamen wird als Text angezeigt, nicht ausgeführt
+- [x] XXE: externe Entities werden weder vom Browser-Leser noch von xmllint aufgelöst
+- [x] CSV-Injection: Formelschutz greift
+- [x] Serverfunktion: unverändert (Host-/Origin-Schutz, 5-MB-Grenze, Zeitlimit aus PROJ-11/BUG-QA2-3)
+- [x] Keine Speicherung, keine Daten an Dritte
+
+### Bugs Found
+
+#### BUG-QA1-1: UTF-16-kodierte XML-Dateien werden nicht gelesen
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. Demo-REPLY als UTF-16 (mit BOM, `encoding="UTF-16"`) speichern
+  2. „XML prüfen“ → Issue 2.3 → Datei → „Prüfen“
+  3. Expected: Datei wird gelesen und geprüft (Spec, Edge Case „Kodierung“)
+  4. Actual: „Die Datei kann nicht geprüft werden — Die Datei kann nicht in der angegebenen Kodierung (utf-8) gelesen werden.“ Ohne BOM wird Zeichensalat gelesen → „Datei passt nicht zur gewählten Issue“.
+- **Ursache:** Die gemeinsame Kodierungserkennung (`declaredEncoding` in `src/lib/workflows/reply.ts`) liest den Dateianfang als Latin-1; bei UTF-16 verhindern die Nullbytes den Treffer der Deklaration, es wird UTF-8 angenommen. BOM wird nicht ausgewertet.
+- **Betrifft auch:** REPLY-Import (PROJ-13), gleicher Baustein.
+- **Workaround:** Datei als UTF-8 speichern.
+- **Priority:** Fix in next sprint (UTF-16-DMRLs sind selten)
+
+### Beobachtungen (kein Bug)
+- Der Prüfbericht hat zwei gleichwertige Download-Schaltflächen („Prüfbericht herunterladen“ im Bereich Herunterladen, „Bericht herunterladen“ über der Tabelle) — beide liefern dieselbe Datei.
+- Demo-Dateien enthalten keine Ausgabedaten; als Demo für „fehlerfreie Konvertierung“ eignet sich der XML-Export einer DMRL (PROJ-18).
+
+### Summary
+- **Acceptance Criteria:** 22/22 passed
+- **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low)
+- **Security:** Pass
+- **Production Ready:** YES
+- **Recommendation:** Freigeben; BUG-QA1-1 gemeinsam für PROJ-13/PROJ-20 beheben
 
 ## Deployment
 _To be added by /deploy_
