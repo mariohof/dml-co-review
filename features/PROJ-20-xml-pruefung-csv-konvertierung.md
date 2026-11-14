@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-14
 
@@ -148,12 +148,125 @@ Ist die XSD-Prüfung **nicht verfügbar** (xmllint fehlt), wird trotzdem eingele
 ### Technical Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Keine neue Serverfunktion; XSD über die bestehende Funktion aus PROJ-11 | xmllint ist bereits sicher angebunden (Host-/Origin-Schutz, Zeitlimit, keine externen Entities); alles Weitere geht im Browser | 2026-11-14 |
+| Einlesen, Regelprüfung und CSV im Browser mit den Bausteinen von Check-in, REPLY und Check-out | Gleiche Regeln und gleiches CSV-Format wie der Check-in, an den die CSV später geht; kein doppelter Code | 2026-11-14 |
+| Prüfkern als eigener Baustein ohne Bildschirmbezug | PROJ-21 nutzt denselben Kern und ergänzt nur den Abgleich mit einer DMRL | 2026-11-14 |
+| Regeln einzeln aufrufen (A, B Check-in, C, E, I) statt der Sammelprüfung | Die Sammelprüfung enthält Regel D (MI des Systems), die im Werkzeug ohne System nicht anwendbar ist | 2026-11-14 |
+| „MI einheitlich“: häufigster MI ist der Datei-MI, Abweichungen als Befund in der bestehenden Gruppe „Model Ident Code“ | Benennt die wenigen abweichenden Einträge statt aller; keine neue Regelgruppe im Prüfbericht nötig | 2026-11-14 |
+| Ergebnis nur im Arbeitsspeicher der Seite, kein localStorage | Spec: nichts speichern; schont den Browser-Speicher (BUG-QA2-2) | 2026-11-14 |
+| Laufende Prüfung über eine fortlaufende Prüfnummer verwerfen | Verhindert veraltete Ergebnisse bei neuer Datei, Issue-Wechsel oder Verlassen der Seite | 2026-11-14 |
+| Eigene Adresse /xml-pruefung, nur Anmeldesperre, keine DMRL-Berechtigung | Werkzeug liest und ändert keine Systemdaten (Spec) | 2026-11-14 |
+| Keine neuen Pakete | Alle benötigten Bausteine sind vorhanden | 2026-11-14 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### A) Überblick
+PROJ-20 ist ein **reines Browser-Werkzeug mit einer bestehenden Serverhilfe**: Das Einzige, was den Server braucht, ist die XSD-Prüfung (xmllint) — dafür wird die vorhandene Serverfunktion aus PROJ-11 unverändert genutzt, inklusive Host-/Origin-Schutz. Alles andere (Einlesen, Regelprüfung, CSV erzeugen) läuft im Browser mit den Bausteinen, die Check-in, REPLY und Check-out schon verwenden. **Es entsteht keine neue Serverfunktion und kein neuer Speicher.**
+
+Der Prüf- und Konvertierungskern wird als eigener, wiederverwendbarer Baustein gebaut, damit PROJ-21 („XML gegen DMRL prüfen“) ihn später nur um den Abgleich mit einer DMRL ergänzen muss.
+
+### B) Seitenstruktur
+```
+Kopfzeile (bestehend)
++-- Menüpunkt „XML prüfen“ (neu, neben „Dashboard“, für alle angemeldeten Benutzer)
+
+Seite „XML prüfen“ (neue Adresse /xml-pruefung, nur nach Anmeldung)
++-- Kopf: Titel + kurze Erklärung („Nichts wird gespeichert“)
++-- Auswahlkarte
+|   +-- S1000D-Issue (Auswahl 2.3 / 4.2 / 5.0, anfangs leer)
+|   +-- XML-Datei (Dateiauswahl, .xml, höchstens 5 MB)
+|   +-- Hinweis „Bitte zuerst die Issue wählen“ (solange keine Issue gewählt)
+|   +-- Schaltfläche „Prüfen“ (aus, solange Issue oder Datei fehlt / Prüfung läuft)
++-- Fortschrittsanzeige („Prüfe Schema …“, „Prüfe Regeln …“)
++-- Ergebnisbereich (nur nach einer Prüfung)
+    +-- Zusammenfassung (Kopfdaten der Datei)
+    |   +-- Dateiname, Issue, Richtung, DML-Code, Ausgabestand, Datum,
+    |   |   Sicherheitseinstufung, Bezugs-DMRL
+    |   +-- MI (oder „uneinheitlich“), Anzahl Einträge
+    |   +-- Antworten: freigegeben / zu überarbeiten / ohne Antwort
+    |   +-- Gesamtergebnis „Keine Fehler“ bzw. „N Fehler, M Hinweise“
+    +-- Hinweisbox „XSD-Prüfung nicht durchgeführt“ (nur wenn xmllint fehlt)
+    +-- Prüfbericht (bestehende Anzeige aus PROJ-8/10, gruppiert nach XSD und Regeln)
+    +-- Downloads
+        +-- „CSV herunterladen“ (nur bei lesbarer Datei)
+        +-- Warnhinweis an der Schaltfläche, wenn der Bericht Fehler enthält
+        +-- „Prüfbericht herunterladen“ (immer)
+```
+Die Seite wird aus vorhandenen shadcn/ui-Bausteinen zusammengesetzt (Card, Select, Input, Button, Alert, Badge). Der Prüfbericht ist die bestehende Komponente aus dem Check-in, damit Darstellung, Seitenweise-Anzeige (100 Befunde) und Download identisch sind.
+
+### C) Ablauf der Prüfung
+```
+Datei + Issue
+   │
+   ├─ 1. Dateiannahme (bestehend): Endung .xml, höchstens 5 MB, nicht leer
+   │
+   ├─ 2. XSD-Prüfung über die Serverfunktion (PROJ-11)
+   │      gültig ............ weiter
+   │      Schemafehler ...... Befunde merken, weiter
+   │      nicht wohlgeformt . Bericht, ENDE (keine CSV)
+   │      nicht verfügbar ... Hinweis merken, weiter
+   │
+   ├─ 3. Datei als Text lesen — in der Kodierung laut XML-Deklaration
+   │      (UTF-8 / UTF-16 / ISO-8859-1, bestehender Baustein aus PROJ-13)
+   │
+   ├─ 4. Einlesen mit dem Leser der gewählten Issue (bestehend)
+   │      nicht lesbar ...... Meldung „Datei passt nicht zur gewählten
+   │                          Issue — bitte Issue prüfen“, ENDE (keine CSV)
+   │
+   ├─ 5. Regelprüfung wie Check-in: A, B (Check-in-Pflichtfelder), C, E, I
+   │      + neue Prüfung „MI einheitlich in der Datei“ statt Regel D
+   │
+   └─ 6. Ergebnis: Zusammenfassung + Bericht (XSD- und Regelbefunde) + CSV
+```
+- **Nicht wohlgeformt, wenn xmllint fehlt:** Der Leser im Browser erkennt das ebenfalls; die Datei gilt dann als nicht lesbar → keine CSV.
+- **Externe Verweise/Entities** werden weder vom Server (PROJ-11) noch vom Browser-Leser nachgeladen.
+- **Veraltete Ergebnisse:** Jede Prüfung bekommt eine laufende Nummer. Wird eine neue Datei gewählt, die Issue geändert oder die Seite verlassen, wird die laufende Prüfung verworfen und ihr Ergebnis nicht mehr angezeigt.
+
+### D) Datenmodell (nur im Arbeitsspeicher der Seite)
+Ein Prüfergebnis besteht aus:
+- Dateiname und gewählte Issue
+- Kopfdaten der Datei (Richtung, DML-Code, Ausgabestand, Datum, Sicherheitseinstufung, Bezugs-DMRL) — leer, wenn nicht lesbar
+- Liste der Einträge mit allen 27 Feldern, wie aus der XML gelesen (inkl. Eintragstyp, Antwort, Begründung)
+- Prüfbericht (gemeinsames Format aller Prüfungen: Schwere, Regelgruppe, Eintrag/Zeile, DMC, Feld, Meldung)
+- Zustand der XSD-Prüfung (bestanden / Schemafehler / nicht durchgeführt)
+- Kennzahlen: MI oder „uneinheitlich“, Anzahl Einträge, Antworten je Art
+
+**Gespeichert wird nichts:** kein localStorage, kein Archiv, kein Verlauf, keine Sperre. Das Werkzeug liest auch keine Daten aus dem Datenbestand. Beim Verlassen oder Neuladen ist das Ergebnis weg.
+
+### E) Neue und wiederverwendete Bausteine
+| Baustein | Neu / bestehend | Zweck |
+|---|---|---|
+| XSD-Serverfunktion (PROJ-11) | bestehend, unverändert | Schema-Prüfung je Issue |
+| XSD-Aufruf und Umwandlung in Prüfbericht | bestehend | gleiche Meldungen wie bei SEND/REPLY |
+| Dateiannahme XML (5 MB) und Lesen in der deklarierten Kodierung | bestehend (PROJ-11/13) | Kodierung UTF-8/UTF-16/ISO-8859-1 |
+| DML-Leser je Issue | bestehend | Kopf und Einträge lesen |
+| Regeln A, B, C, E, I | bestehend (PROJ-8) | einzeln aufgerufen, ohne Regel D (MI des Systems) und ohne Regel F/K (brauchen eine DMRL) |
+| **Prüfung „MI einheitlich“** | **neu** | häufigster MI gilt als Datei-MI; jeder abweichende Eintrag erhält einen Befund in Gruppe „Model Ident Code“ mit Meldung „MI uneinheitlich“ |
+| **Prüfkern „XML prüfen“** | **neu** | verbindet die Schritte aus C) zu einem Ergebnis; ohne Bildschirmbezug, damit PROJ-21 ihn nutzen kann |
+| CSV-Schreiber (27 Spalten, BOM, nach DMC sortiert, Formelschutz) | bestehend (PROJ-9) | CSV im Check-out-Format |
+| Prüfbericht-Anzeige und -Download | bestehend (PROJ-8/10) | identische Darstellung |
+| **Seite „XML prüfen“ + Menüpunkt** | **neu** | Bedienoberfläche |
+
+Der Dateiname der CSV ist der Name der XML-Datei mit Endung `.csv`; der Prüfbericht heißt wie bei den anderen Prüfungen (Präfix + Dateiname + Zeitstempel).
+
+### F) Berechtigungen
+- Nur angemeldete Benutzer (bestehende Anmeldesperre wie bei allen Seiten); ohne Anmeldung erscheint die Anmeldeseite.
+- **Keine DMRL-Berechtigung nötig**, weil das Werkzeug keine Daten des Systems liest oder ändert. Ein Benutzerwechsel in der Kopfzeile lässt die Seite offen.
+
+### G) Leistung
+- Eine 5-MB-Datei: XSD-Prüfung auf dem Server (Zeitlimit wie PROJ-11), Einlesen und Regelprüfung im Browser in wenigen Sekunden — die Regeln sind dieselben, die beim Check-in schon große Dateien prüfen.
+- Der Browser-Speicher (BUG-QA2-2) ist nicht betroffen, weil nichts gespeichert wird.
+
+### H) Tests (für /frontend und /qa)
+- Unit-Tests für den Prüfkern: jede Stufe aus C) einzeln (gültig, Schemafehler, nicht wohlgeformt, XSD nicht verfügbar, falsche Issue, MI uneinheitlich, Antworten-Zählung) mit simulierter Serverantwort.
+- Rundlauf-Test: konvertierte CSV einer fehlerfreien Demo-XML besteht die Check-in-Regelprüfung.
+- Komponententest der Seite; E2E-Tests mit echter Serverfunktion für die Hauptfälle und die drei Bildschirmbreiten.
+
+### I) Abhängigkeiten (Pakete)
+Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod für die Serverantwort, shadcn/ui-Komponenten).
 
 ## QA Test Results
 _To be added by /qa_
