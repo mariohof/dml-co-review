@@ -73,6 +73,9 @@ export function AppHeader() {
           <NavLink href="/" active={pathname === "/"}>
             Dashboard
           </NavLink>
+          <NavLink href="/xml-pruefung" active={pathname === "/xml-pruefung"}>
+            XML prüfen
+          </NavLink>
           {isAdmin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

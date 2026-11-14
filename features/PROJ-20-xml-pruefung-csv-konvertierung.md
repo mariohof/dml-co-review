@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-14
 
@@ -267,6 +267,17 @@ Der Dateiname der CSV ist der Name der XML-Datei mit Endung `.csv`; der Prüfber
 
 ### I) Abhängigkeiten (Pakete)
 Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod für die Serverantwort, shadcn/ui-Komponenten).
+
+### Implementierungsnotizen (Frontend, 2026-11-14)
+- **Prüfkern** `src/lib/workflows/xml-check.ts` (ohne Bildschirmbezug, für PROJ-21 wiederverwendbar): Dateiannahme → XSD (bestehende Serverfunktion) → Lesen in deklarierter Kodierung → DML-Leser der gewählten Issue → Regeln A, B (Check-in), C, E, I + neue Prüfung „MI einheitlich“ (Gruppe „Model Ident Code“, häufigster MI gilt) → CSV mit dem bestehenden Check-out-Schreiber.
+- **Nicht lesbar** (nicht wohlgeformt laut xmllint bzw. Browser-Leser, oder Leser der gewählten Issue scheitert): Befund in Gruppe „Dateistruktur“ mit „Datei passt nicht zur gewählten Issue — bitte Issue prüfen.“, keine CSV, Zusammenfassung ohne Kopfdaten.
+- **XSD nicht verfügbar:** Hinweis-Befund „XSD-Prüfung nicht durchgeführt — …“ im Bericht, rote Hinweisbox auf der Seite, CSV mit eigener Warnung.
+- **Seite** `/xml-pruefung` (`src/app/(app)/xml-pruefung/page.tsx`, Komponente `src/components/xml-check/xml-check-tool.tsx`), Menüpunkt „XML prüfen“ in der Kopfzeile neben „Dashboard“; Anmeldesperre über das bestehende Layout, keine DMRL-Berechtigung.
+- **Prüfbericht:** gemeinsame Anzeige (PROJ-8); Spalte „Zeile / Eintrag“ (XSD-Befunde mit Dateizeile, Regelbefunde mit Eintragsposition), Anfangssortierung „nach Regel“ (XSD zuerst). `CheckReportView` dafür um zwei optionale Props erweitert (Text nach der Fehlerzahl, Anfangssortierung) — bestehende Aufrufer unverändert.
+- **Veraltete Ergebnisse:** fortlaufende Prüfnummer; neue Datei, Issue-Wechsel oder Verlassen der Seite verwirft die laufende Prüfung. Datei- und Issue-Auswahl bleiben während der Prüfung bedienbar.
+- **Dateinamen:** CSV = XML-Name mit `.csv`; Prüfbericht `Pruefbericht-XML-<XML-Name>-<Datum>.csv`.
+- **Beobachtung:** Die Demo-SEND/REPLY-Dateien enthalten keine Ausgabedaten (`issno`, `type`, Datum) — nach Check-in-Regeln ergeben sich daher Pflichtfeld-Fehler (laut Spec gewollt, Edge Case „Partner-REPLY ohne Ausgabedaten“).
+- **Tests:** 19 Unit-Tests Prüfkern (inkl. Rundlauf CSV → Check-in-Regelprüfung, ISO-8859-1, falsche Issue in beide Richtungen, 4.2-Beispiel mit uneinheitlichem MI), 6 Komponententests, 10 E2E-Tests mit echter XSD-Serverfunktion (Menüpunkt, REPLY-Konvertierung, ohne Anmeldung, ohne Berechtigung, nicht wohlgeformt, Schemafehler, falsche Issue, 375/768/1440 px, Neuladen).
 
 ## QA Test Results
 _To be added by /qa_

@@ -20,11 +20,21 @@ interface CheckReportViewProps {
   subject: string
   /** Überschrift bei Fehlern (Standard: „Prüfung nicht bestanden") */
   failTitle?: string
+  /** Satz nach der Fehlerzahl (Standard: „Die Datei wird nicht übernommen.") */
+  failNote?: string
+  /** Anfangssortierung (Standard: nach Zeile) */
+  defaultOrder?: ReportOrder
 }
 
 /** Gemeinsame Prüfbericht-Anzeige (PROJ-8; genutzt von PROJ-10, 11, 13) */
-export function CheckReportView({ report, subject, failTitle = "Prüfung nicht bestanden" }: CheckReportViewProps) {
-  const [order, setOrder] = useState<ReportOrder>("zeile")
+export function CheckReportView({
+  report,
+  subject,
+  failTitle = "Prüfung nicht bestanden",
+  failNote = "Die Datei wird nicht übernommen.",
+  defaultOrder = "zeile",
+}: CheckReportViewProps) {
+  const [order, setOrder] = useState<ReportOrder>(defaultOrder)
   const [limit, setLimit] = useState(FINDINGS_PAGE_SIZE)
   const errors = errorCount(report)
   const hints = hintCount(report)
@@ -39,7 +49,9 @@ export function CheckReportView({ report, subject, failTitle = "Prüfung nicht b
         <Alert variant="destructive">
           <TriangleAlert className="h-4 w-4" aria-hidden />
           <AlertTitle>{failTitle}</AlertTitle>
-          <AlertDescription>{summary}. Die Datei wird nicht übernommen.</AlertDescription>
+          <AlertDescription>
+            {summary}. {failNote}
+          </AlertDescription>
         </Alert>
       ) : (
         <Alert className="border-green-300 bg-green-50 text-green-950 [&>svg]:text-green-700">
