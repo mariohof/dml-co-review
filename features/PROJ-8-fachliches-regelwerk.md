@@ -1,6 +1,6 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -432,6 +432,10 @@ Keine neuen Bugs in diesem Feature.
 - [x] Regel K meldet keine Fehler mehr, liefert die Abweichungen; Regel A prüft `answer` weiterhin; Regel F unverändert — getestet zusammen mit PROJ-10 (Details dort, QA-Lauf 4)
 - [x] **BUG-QA4-1 (Medium) — behoben 2026-11-14 (`/frontend bug-qa4-1`, Bestätigung durch `/qa` ausstehend)** betrifft Regel F: Das Entfernen des Eintragstyps gilt nicht als fachliche Änderung, dadurch entstehen Einträge *in Bearbeitung* ohne Eintragstyp (Beschreibung in PROJ-10)
 - **Production Ready:** YES (keine Critical/High-Bugs)
+
+### QA-Lauf 5 — Bestätigung BUG-QA4-1 (2026-11-14)
+- [x] Regel F erweitert: kein Eintrag *in Bearbeitung* ohne Eintragstyp (entfernter Typ, Altbestand); freigegebene unveränderte Einträge ohne Typ erlaubt (Unit, E2E; Details PROJ-10 QA-Lauf 5)
+- **Offene Bugs:** keine · **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

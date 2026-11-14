@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -465,6 +465,23 @@ Keine neuen Bugs in diesem Feature.
 - **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
 - **Security:** Pass
 - **Production Ready:** YES (keine Critical/High-Bugs) — BUG-QA4-1 sollte vor einer Weitergabe behoben werden
+
+### QA-Lauf 5 — Bestätigung BUG-QA4-1 / BUG-QA4-2 (2026-11-14)
+**Automatisiert:** Vitest 449/449 ✅ (Test „BUG-QA4-1“ aktiv) · Playwright 75/75 ✅ (Chrome)
+
+**Neue bzw. geänderte Kriterien aus dem Refinement**
+- [x] Eintragstyp entfernt (mit oder ohne Antwort) → Prüfbericht „Eintrag in Bearbeitung braucht einen Eintragstyp …“, kein Check-in (Unit, E2E)
+- [x] Altbestand *in Bearbeitung* ohne Eintragstyp, unverändert → derselbe Fehler (Unit)
+- [x] Eintrag *zu überarbeiten* (mit Typ) mit nur geänderter Antwort + Übernahme → *in Bearbeitung* mit Werten aus der Datei (Unit)
+- [x] Freigegebene DMRL: Antwortübernahme bei freigegebenen Einträgen ohne Typ immer gesperrt (Unit, Komponente)
+
+**Umgehungsversuche (Red Team):** Eintragstyp „ “ (Leerzeichen) → Regel F; „N“ → Formatfehler A; Eintrag *zu überarbeiten* nur Eintragstyp entfernt → Regel F; unveränderter Eintrag *zu überarbeiten* → erlaubt (korrekt). Keine Doppelmeldung bei fachlicher Änderung ohne Typ.
+
+**Regression:** Freigabe-, SEND-, REPLY-, Archiv- und Export-Abläufe (E2E) unverändert grün; Demo-Daten enthalten keinen Altbestand ohne Eintragstyp.
+
+- **BUG-QA4-1:** bestätigt behoben · **BUG-QA4-2:** bestätigt behoben (Spec)
+- **Offene Bugs:** keine
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_
