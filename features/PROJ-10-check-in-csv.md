@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-14
 
@@ -391,6 +391,65 @@ Keine neuen Bugs in diesem Feature.
 - **Bugs Found:** 0 total (0 critical, 0 high, 0 medium, 0 low)
 - **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
 - **Production Ready:** YES (keine Critical/High-Bugs)
+
+### QA-Lauf 4 — Refinement 2026-11-14 (Partnerantworten aus der Datei übernehmen)
+
+**Tested:** 2026-11-14 · **Tester:** QA Engineer (AI) · **Browser:** Chrome (Playwright, `PW_CHANNEL=chrome`); Firefox/Safari nicht installiert
+**Automatisiert:** Vitest 444 ✅ (1 übersprungen: BUG-QA4-1, nach Behebung aktivieren) · Playwright 72/72 ✅ Gesamtlauf + 2 neue QA-Tests (XSS, 768 px) in `tests/PROJ-10-checkin-antworten.spec.ts`
+
+#### Acceptance Criteria Status (Abschnitt „Partnerantworten aus der Datei“)
+- [x] Abweichende Antworten sind kein Fehler; Abschnitt „Abweichende Partnerantworten (N Einträge)“ mit DMC und alt → neu (Unit, Komponente, E2E)
+- [x] Häkchen standardmäßig aus, Hinweis „Nur Information …“ sichtbar (Komponente, E2E)
+- [x] Ohne Häkchen: bisherige Antworten bleiben, reine Antwortabweichung = unverändert; neue Einträge ohne Antwort (Unit, Komponente, E2E)
+- [x] Mit Häkchen: Werte aus der Datei, betroffene Einträge *in Bearbeitung*; ein übernommenes `y` gibt nie frei — auch bei einem Eintrag *zu überarbeiten* (Unit, QA-Test neu)
+- [ ] **Nicht erreichbar (BUG-QA4-2):** „freigegebener Eintrag mit nur geänderter Antwort + Übernahme → *in Bearbeitung*, Freigabe der DMRL aufgehoben“ — freigegebene Einträge haben nie einen Eintragstyp, die Übernahme wird deshalb immer gesperrt (so beabsichtigt laut späterer Entscheidung)
+- [x] Neuer Eintrag mit `y` und Übernahme → *in Bearbeitung* mit `answer = y` (Unit)
+- [x] Ungültiger Antwortwert bleibt Formatfehler A (Unit)
+- [x] Verlauf „N Antworten aus der Datei übernommen“ (Unit, Komponente, E2E)
+- [x] Ohne Abweichung weder Abschnitt noch Häkchen (Komponente)
+- [x] Eintrag ohne Eintragstyp, nur Antwort abweichend: Häkchen sperrt „Übernehmen“ mit Meldung und Liste; ohne Häkchen wieder möglich (Komponente, Screenshot geprüft)
+- [x] Zahlen neu/geändert/unverändert schalten mit dem Häkchen sofort um (Komponente, E2E)
+- [x] Regression: alle bisherigen Kriterien von PROJ-10 und PROJ-8 (Unit + 72 E2E-Tests)
+
+#### Edge Cases Status
+- [x] Nur `answer_comment` weicht ab → wie jede Antwortabweichung (E2E)
+- [x] Antwort in der Datei entfernt → gilt als Abweichung; bei freigegebenem Eintrag gesperrt, bei Eintrag mit Typ übernommen (Unit)
+- [x] Fachliche Änderung + abweichende Antwort ohne Häkchen → fachliche Änderung übernommen, bisherige Antwort bleibt (Unit)
+- [ ] **Eintragstyp entfernt** (mit oder ohne Antwortübernahme) → Eintrag *in Bearbeitung* ohne Eintragstyp (BUG-QA4-1)
+
+#### Security Audit Results
+- [x] XSS: HTML in der Begründung wird im Abschnitt als Text angezeigt und unverändert als Text gespeichert; kein Skript ausgeführt (E2E, Unit)
+- [x] Formelschutz: Begründungen mit `=`… überstehen Check-out → Check-in unverändert (BUG-QA2-1-Test weiterhin grün)
+- [x] Keine vorgetäuschte Freigabe: Übernahme setzt nie *freigegeben*; Sperre wird beim Speichern erneut geprüft (Unit)
+- [x] Responsive: 375 px und 768 px ohne waagerechtes Scrollen (E2E); 1280 px per Screenshot geprüft
+
+#### Bugs Found
+
+##### BUG-QA4-1: Eintrag ohne Eintragstyp kann „in Bearbeitung“ werden und wird dann nie gesendet
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. Fahrzeug-DMRL auschecken (Einträge *in Bearbeitung*, Eintragstyp `n`)
+  2. In der CSV bei einem Eintrag den Eintragstyp leeren; optional zusätzlich `answer` auf `y` setzen
+  3. Einchecken (mit Antwort: „Antworten aus der Datei übernehmen“ ankreuzen) und übernehmen
+  4. Expected: Abweisung bzw. Sperre — ein Eintrag *in Bearbeitung* braucht einen Eintragstyp, sonst kann er nie gesendet und freigegeben werden (Begründung der Entscheidung vom 2026-11-14)
+  5. Actual: kein Fehler, keine Sperre; der Eintrag ist *in Bearbeitung* ohne Eintragstyp. SEND nimmt ihn nicht mit (nur `n`/`c`/`d`), ein REPLY ändert ihn nicht → die DMRL kann nicht mehr freigegeben werden, bis erneut ausgecheckt und ein Eintragstyp gesetzt wird
+- **Ursache:** Regel F verlangt einen Eintragstyp nur bei fachlichen Änderungen; das Entfernen des Eintragstyps zählt nicht als fachlich. Die neue Sperre der Antwortübernahme greift nur bei „nur Antwort abweichend“ — mit gleichzeitig entferntem Eintragstyp gilt der Eintrag als *geändert* und fällt durch.
+- **Hinweis:** Der Fall ohne Antwort bestand schon vor dem Refinement (seit dem MVP), wurde aber erst jetzt gefunden.
+- **Vorschlag:** Regel F: Jeder Eintrag, der nach dem Check-in *in Bearbeitung* wäre, braucht `n`, `c` oder `d` (deckt beide Wege ab; die bedingte Sperre der Antwortübernahme kann darin aufgehen). Produktentscheidung nötig, ob das Entfernen des Eintragstyps je erlaubt sein soll.
+- **Test:** `src/lib/workflows/qa-proj7-10.test.ts` „BUG-QA4-1 …“ als `it.skip` hinterlegt (schlägt mit dem aktuellen Code fehl) — nach der Behebung aktivieren
+- **Priority:** Fix before Weitergabe
+
+##### BUG-QA4-2: Akzeptanzkriterium zur Antwortübernahme bei freigegebenen Einträgen ist nicht erreichbar (Spec)
+- **Severity:** Low (Dokumentation)
+- **Beschreibung:** Das Kriterium „Angenommen ein *freigegebener* Eintrag hat in der Datei nur eine geänderte Antwort und die Übernahme ist angekreuzt … dann ist der Eintrag *in Bearbeitung* und eine Freigabe der DMRL ist aufgehoben“ widerspricht der späteren Entscheidung „Eintragstyp verlangen“: Freigegebene Einträge haben nie einen Eintragstyp (der REPLY entfernt ihn), die Übernahme ist deshalb immer gesperrt. Die Umsetzung folgt korrekt der späteren Entscheidung.
+- **Vorschlag:** Kriterium per `/refine PROJ-10` umformulieren, z. B. „… ein Eintrag *zu überarbeiten* (mit Eintragstyp) …“ bzw. „ein freigegebener Eintrag mit gesetztem Eintragstyp `c` …“
+- **Priority:** Nice to have
+
+#### Summary
+- **Acceptance Criteria (Refinement):** 11/12 passed, 1 nicht erreichbar (BUG-QA4-2, Spec)
+- **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
+- **Security:** Pass
+- **Production Ready:** YES (keine Critical/High-Bugs) — BUG-QA4-1 sollte vor einer Weitergabe behoben werden
 
 ## Deployment
 _To be added by /deploy_

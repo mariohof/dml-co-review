@@ -77,3 +77,31 @@ test("375 px: Abschnitt mit Häkchen ohne waagerechtes Scrollen der Seite", asyn
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow).toBeLessThanOrEqual(1)
 })
+
+test("XSS: HTML in der Begründung wird im Abschnitt als Text angezeigt, nicht ausgeführt", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  let dialogOpened = false
+  page.on("dialog", (d) => {
+    dialogOpened = true
+    void d.dismiss()
+  })
+  const payload = '<img src=x onerror="alert(1)">'
+  const file = await checkOut(page)
+  // Wert mit Anführungszeichen CSV-gerecht quoten
+  const dialog = await upload(page, { ...file, csv: withAnswerComment(file.csv, `"${payload.replace(/"/g, '""')}"`) })
+  await dialog.getByRole("button", { name: /GTFDEMO-/ }).first().click()
+  await expect(dialog.getByText(payload)).toBeVisible()
+  expect(await page.locator("img[src='x']").count()).toBe(0)
+  expect(dialogOpened).toBe(false)
+})
+
+test("768 px: Abschnitt aufgeklappt mit Häkchen ohne waagerechtes Scrollen der Seite", async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 1000 })
+  await startAs(page, "Ben Bearbeiter")
+  const file = await checkOut(page)
+  const dialog = await upload(page, { ...file, csv: withAnswerComment(file.csv, "Begründung ".repeat(30)) })
+  await dialog.getByRole("button", { name: /GTFDEMO-/ }).first().click()
+  await dialog.getByRole("checkbox", { name: "Antworten aus der Datei übernehmen" }).click()
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
+  expect(overflow).toBeLessThanOrEqual(1)
+})

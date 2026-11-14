@@ -120,3 +120,67 @@ describe("PROJ-10 — Check-in", () => {
     expect(executeCheckIn(first, DEMO_IDS.dmrlVehicle, user(first, DEMO_IDS.editorBen), result, AT)).toMatchObject({ ok: false })
   })
 })
+
+describe("QA PROJ-10 Refinement 2026-11-14 — Partnerantworten aus der Datei", () => {
+  /** Fahrzeug-DMRL: erster Eintrag *zu überarbeiten* (Typ c, Antwort n), ausgecheckt von Ben */
+  function withRejectedFirst() {
+    const demo = buildDemoDataset()
+    const first = demo.entries.find((e) => e.dmrlId === DEMO_IDS.dmrlVehicle)!
+    const data: Dataset = {
+      ...demo,
+      entries: demo.entries.map((e) =>
+        e.id === first.id ? { ...e, status: "zu_ueberarbeiten", fields: { ...e.fields, dmentryType: "c", answer: "n", answer_comment: "bitte präzisieren" } } : e
+      ),
+    }
+    return { data: checkedOut(data, DEMO_IDS.dmrlVehicle, DEMO_IDS.editorBen), firstId: first.id }
+  }
+
+  it("Eintrag „zu überarbeiten“ mit reiner Antwortänderung: ohne Übernahme bleibt Status und Antwort, mit Übernahme in Bearbeitung mit Werten aus der Datei", () => {
+    const { data, firstId } = withRejectedFirst()
+    const csv = csvFromLock(data, DEMO_IDS.dmrlVehicle, (rows) => {
+      Object.assign(rows.find((r) => r.id === firstId)!.fields, { answer: "y", answer_comment: "Partner hat telefonisch zugestimmt" })
+      return rows
+    })
+    const result = checkCheckinFile(data, dmrl(data, DEMO_IDS.dmrlVehicle), csv)
+    expect(errorCount(result.report)).toBe(0)
+
+    const without = ok(executeCheckIn(data, DEMO_IDS.dmrlVehicle, user(data, DEMO_IDS.editorBen), result, AT, false))
+    expect(without.entries.find((e) => e.id === firstId)).toMatchObject({ status: "zu_ueberarbeiten", fields: { answer: "n", answer_comment: "bitte präzisieren" } })
+
+    const withTake = ok(executeCheckIn(data, DEMO_IDS.dmrlVehicle, user(data, DEMO_IDS.editorBen), result, AT, true))
+    expect(withTake.entries.find((e) => e.id === firstId)).toMatchObject({
+      status: "in_bearbeitung",
+      fields: { dmentryType: "c", answer: "y", answer_comment: "Partner hat telefonisch zugestimmt" },
+    })
+    expect(withTake.entries.filter((e) => e.status === "freigegeben")).toHaveLength(0) // übernommenes y gibt nie frei
+  })
+
+  it("XSS-Text in der übernommenen Begründung wird unverändert als Text gespeichert", () => {
+    const { data, firstId } = withRejectedFirst()
+    const payload = '<img src=x onerror="alert(1)">'
+    const csv = csvFromLock(data, DEMO_IDS.dmrlVehicle, (rows) => {
+      rows.find((r) => r.id === firstId)!.fields.answer_comment = payload
+      return rows
+    })
+    const result = checkCheckinFile(data, dmrl(data, DEMO_IDS.dmrlVehicle), csv)
+    const after = ok(executeCheckIn(data, DEMO_IDS.dmrlVehicle, user(data, DEMO_IDS.editorBen), result, AT, true))
+    expect(after.entries.find((e) => e.id === firstId)?.fields.answer_comment).toBe(payload)
+  })
+
+  // BUG-QA4-1: nach der Behebung aktivieren (it.skip → it)
+  it.skip("BUG-QA4-1: Eintrag, der durch den Check-in ohne Eintragstyp „in Bearbeitung“ würde, wird abgewiesen bzw. gesperrt", () => {
+    const demo = buildDemoDataset()
+    const data = checkedOut(demo, DEMO_IDS.dmrlVehicle, DEMO_IDS.editorBen)
+    const firstId = dmrl(data, DEMO_IDS.dmrlVehicle).lock!.entries[0].id
+    // Eintragstyp n entfernt und Antwort gesetzt
+    const csv = csvFromLock(data, DEMO_IDS.dmrlVehicle, (rows) => {
+      Object.assign(rows.find((r) => r.id === firstId)!.fields, { dmentryType: "", answer: "y" })
+      return rows
+    })
+    const result = checkCheckinFile(data, dmrl(data, DEMO_IDS.dmrlVehicle), csv)
+    const outcome = executeCheckIn(data, DEMO_IDS.dmrlVehicle, user(data, DEMO_IDS.editorBen), result, AT, true)
+    // erwartet: kein Eintrag „in Bearbeitung“ ohne Eintragstyp nach dem Check-in
+    const stuck = outcome.ok ? outcome.data.entries.filter((e) => e.dmrlId === DEMO_IDS.dmrlVehicle && e.status === "in_bearbeitung" && e.fields.dmentryType === "") : []
+    expect(stuck).toEqual([])
+  })
+})
