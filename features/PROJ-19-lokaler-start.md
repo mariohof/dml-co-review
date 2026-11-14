@@ -289,5 +289,61 @@ Keine Bugs gefunden. (Während der Umsetzung behoben: geerbtes „SIGINT ignorie
 - **Security:** Pass
 - **Production Ready:** NO — erst nach manueller Prüfung auf den drei Betriebssystemen (Status bleibt *In Review*)
 
+### Re-Test 2026-11-14 (QA-Lauf 3: echte Startläufe auf macOS)
+
+**Umgebung:** macOS 27.2.1, Python 3.14.3, Node.js 26.8.1, xmllint (libxml2 2.9.13). Alle Läufe in einem **frischen Git-Klon** im Ordner „DMRL Prüfung“ (Leerzeichen und Umlaut im Pfad). Das Öffnen des Browsers wurde über die Umgebungsvariable `BROWSER` abgefangen und protokolliert. Linux war nicht prüfbar (Docker-Dienst nicht gestartet), Windows nicht verfügbar.
+
+**Startdateien**
+- [x] macOS `Start.command` wie per Doppelklick (Aufruf aus dem Home-Ordner als Arbeitsverzeichnis): startet auf Port 8877, Browser wird mit `http://localhost:8877` geöffnet
+- [ ] Windows 11 `Start.bat`: **ausstehend manuell**; Codeprüfung ergibt BUG-QA3-1
+- [ ] Linux `start.sh`: **ausstehend manuell** (gleicher Inhalt wie `Start.command`; die Fälle „Python fehlt“ und „wartet auf Taste“ sind mit bash geprüft)
+- [x] Python fehlt (`Start.command` und `start.sh`, PATH ohne Python): Meldung „Python 3 wurde nicht gefunden …“, das Fenster wartet auf einen Tastendruck, Exit 1
+- [x] Fehler aus dem Startskript (Port belegt): Meldung, Aufforderung „Taste drücken …“ im Terminal, Fenster bleibt offen bis zum Tastendruck; bei Strg+C (Exit 0) dagegen kein Warten
+
+**Voraussetzungen**
+- [x] Python älter als 3.9 (Version 3.8 simuliert): „Python 3.9 oder neuer wird benötigt (gefunden: 3.8)“, Exit 1, nichts gestartet. Die Syntax von `start.py` ist mit Python 3.6–3.8 lesbar (ast-Prüfung), die Versionsprüfung greift also
+
+**Installieren, Bauen, Starten**
+- [x] Erststart im frischen Klon: Pakete installiert, App gebaut und gestartet, Browser geöffnet; XSD-Prüfung im Produktionsbetrieb liefert „gültig“; nur an `127.0.0.1` gebunden (`lsof`)
+- [x] Zweitstart ohne Änderung: kein Installieren/Bauen (0,9 s); mit `--kein-browser` öffnet sich kein Browser
+- [x] Ohne Internet beim ersten Start (Registry nicht erreichbar, leerer Paket-Cache): Abbruch mit npm-Auszug und „Für den ersten Start ist eine Internetverbindung nötig.“, Exit 1, nichts gestartet
+- [x] Build schlägt fehl (absichtlicher Typfehler): „Bauen der Anwendung ist fehlgeschlagen“ mit Protokollauszug, der die fehlerhafte Zeile zeigt, Tipp `--neu-bauen`, Exit 1; nach der Korrektur automatischer Neubau und Start
+- [x] Build-Ordner beschädigt: Fehlt die Build-Kennung, wird automatisch neu gebaut. Fehlen Teile des Builds, erscheint „Die Anwendung ist nicht gestartet … Tipp: Mit „--neu-bauen“ erneut versuchen“; `--neu-bauen` repariert den Build
+
+**Betrieb & Beenden**
+- [x] Strg+C (SIGINT) und Fenster schließen (SIGHUP) beenden die App, der Port ist danach frei
+- [x] Stand-Vermerk und `start.log` erscheinen nicht im Git-Status
+
+**Automatisiert:** 12 Unit-Tests des Startskripts grün
+
+**Hinweis (kein Bug):** Der Protokollauszug bei einem Build-Fehler enthält Farbcodes von Next.js. Im Terminal werden sie als Farben angezeigt, in `start.log` erscheinen sie als Steuerzeichen.
+
+#### BUG-QA3-1: Windows — der Microsoft-Store-Platzhalter für Python verhindert die eigene Meldung
+- **Severity:** Low
+- **Gefunden durch:** Codeprüfung von `Start.bat`, nicht auf Windows ausgeführt
+- **Steps to Reproduce:**
+  1. Windows 11 ohne installiertes Python (die App-Ausführungsaliase für `python.exe` sind standardmäßig aktiv)
+  2. `Start.bat` doppelklicken
+  3. Expected: „Python 3 wurde nicht gefunden. Bitte Python 3 installieren und erneut starten.“
+  4. Actual (erwartet laut Code): `where python` findet den Platzhalter unter `%LOCALAPPDATA%\Microsoft\WindowsApps\python.exe`. Er wird ausgeführt und meldet auf Englisch bzw. Deutsch, dass Python im Microsoft Store installiert werden kann (Exit 9009). Das Fenster bleibt offen, aber die eigene Meldung mit dem Link zu python.org erscheint nicht.
+- **Hinweis zur Behebung:** Python nicht mit `where`, sondern durch einen Probeaufruf erkennen (z. B. `python -c "import sys"` mit Prüfung des Exit-Codes)
+- **Priority:** Nice to have
+
+#### BUG-QA3-2: macOS — Anleitung „Rechtsklick → Öffnen“ gilt seit macOS 15 nicht mehr
+- **Severity:** Low (Dokumentation)
+- **Steps to Reproduce:**
+  1. Projektordner als ZIP weitergeben und entpacken; `Start.command` erhält dabei die Quarantäne-Markierung
+  2. Doppelklick → macOS blockiert (geprüft: `spctl` lehnt die markierte Datei ab, „no usable signature“)
+  3. Expected: Der in `START-HIER.md` beschriebene Weg führt zum Start
+  4. Actual: Seit macOS 15 (Sequoia) hat Apple das Umgehen über „Rechtsklick → Öffnen“ entfernt; der Weg führt über **Systemeinstellungen → Datenschutz & Sicherheit → „Dennoch öffnen“** (alternativ im Terminal `xattr -d com.apple.quarantine Start.command`)
+- **Hinweis:** Der Dialog selbst ist ohne Bildschirmbedienung nicht prüfbar. Bitte beim manuellen Test bestätigen.
+- **Priority:** Fix before Weitergabe (sonst bleibt der Empfänger am ersten Start hängen)
+
+### Summary (Re-Test 2026-11-14)
+- **Acceptance Criteria:** 20/22 passed, 2 ausstehend (Windows 11 und Linux, nur manuell prüfbar)
+- **Bugs Found:** 2 total (0 critical, 0 high, 0 medium, 2 low)
+- **Security:** Pass
+- **Production Ready:** keine Critical/High-Bugs. Der Status bleibt *In Review*, bis die Starts unter Windows 11 und Linux manuell bestätigt sind
+
 ## Deployment
 _To be added by /deploy_
