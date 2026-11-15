@@ -30,8 +30,16 @@ export function replyBlocked(dmrl: Dmrl, user: User | null): string | null {
 
 // ---------------------------------------------------------------- Datei lesen
 
-/** Zeichenkodierung aus der XML-Deklaration (Standard UTF-8) */
+/**
+ * Zeichenkodierung der Datei: UTF-16 an BOM oder Bytemuster von „<?" erkannt (BUG-QA1-1),
+ * sonst aus der XML-Deklaration (Standard UTF-8)
+ */
 export function declaredEncoding(bytes: Uint8Array): string {
+  const [b0, b1, b2, b3] = bytes
+  if (b0 === 0xff && b1 === 0xfe) return "utf-16le"
+  if (b0 === 0xfe && b1 === 0xff) return "utf-16be"
+  if (b0 === 0x3c && b1 === 0x00 && b2 === 0x3f && b3 === 0x00) return "utf-16le"
+  if (b0 === 0x00 && b1 === 0x3c && b2 === 0x00 && b3 === 0x3f) return "utf-16be"
   const head = new TextDecoder("latin1").decode(bytes.subarray(0, 200))
   return /^﻿?<\?xml[^>]*encoding\s*=\s*["']([A-Za-z0-9._-]+)["']/.exec(head)?.[1]?.toLowerCase() ?? "utf-8"
 }

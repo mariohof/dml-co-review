@@ -27,11 +27,11 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Check-out/Check-in CSV mit Sperre | Approved (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML (jederzeit, ohne Sperre) | Approved (PROJ-18) |
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Approved (PROJ-11) |
-| P0 (MVP) | SEND-Export & REPLY-Import | Approved (PROJ-12, PROJ-13) |
+| P0 (MVP) | SEND-Export & REPLY-Import | Approved (PROJ-12); In Progress (PROJ-13, Bugfix) |
 | P0 (MVP) | Freigabestatus & Archiv | Approved (PROJ-14, PROJ-15) |
 | P0 (MVP) | Lokaler Start (Python-Startskript) | Approved (PROJ-19) |
 | P1 | Dashboard / Übersicht | Approved (PROJ-16) |
-| P1 | XML-Prüfung & CSV-Konvertierung (eigenständiges Werkzeug) | Approved (PROJ-20) |
+| P1 | XML-Prüfung & CSV-Konvertierung (eigenständiges Werkzeug) | In Progress (PROJ-20, Bugfix) |
 | P1 | XML gegen DMRL prüfen (aus der DMRL-Ansicht) | Roadmap (PROJ-21) |
 
 Details und Abhängigkeiten: siehe `features/INDEX.md`.

@@ -1,6 +1,6 @@
 # PROJ-13: REPLY-Import
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-13
 
@@ -236,6 +236,11 @@ _Stand 2026-11-13 — `/frontend PROJ-13`_
 **Hinweise / Abweichungen**
 - „REPLY importieren" bleibt in der Aktionsleiste sichtbar und ist außerhalb des Status *gesendet* gesperrt (Tooltip mit Grund) — wie bei den übrigen Aktionen.
 - Die Statusübergänge sind in `reply.ts` umgesetzt; das zentrale Statusmodul (PROJ-14 Tech Design C) kann sie später übernehmen.
+
+### Bugfix BUG-QA1-1 (2026-11-15) — UTF-16-Dateien
+- `declaredEncoding` (`src/lib/workflows/reply.ts`) erkennt UTF-16 jetzt am BOM (`FF FE` / `FE FF`) oder — ohne BOM — am Bytemuster von „<?“ (Little/Big Endian); sonst wie bisher die XML-Deklaration (Standard UTF-8). Gemeinsamer Baustein für REPLY-Import (PROJ-13) und „XML prüfen“ (PROJ-20).
+- Archiv-Download (`archiveFileBytes`, PROJ-15): UTF-16-Stände werden wieder als UTF-16 LE mit BOM ausgegeben (byte-genau für die übliche LE-Datei mit BOM; bei BE oder fehlendem BOM als LE mit BOM).
+- Tests: `reply.test.ts` (LE/BE, mit/ohne BOM), `archive.test.ts` (Rundlauf Download ↔ Lesen), `qa-proj20.test.ts` (UTF-16-Test aktiviert), E2E `PROJ-20-qa.spec.ts` „UTF-16-Datei“ mit echter xmllint-Prüfung; 483 Unit-Tests grün.
 
 ## QA Test Results
 

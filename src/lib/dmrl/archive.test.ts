@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { buildDemoDataset, DEMO_FILES, DEMO_IDS } from "@/lib/data/demo-data"
 import { DEMO_XML_FILES } from "@/lib/data/demo-xml.generated"
 import type { Dataset, User } from "@/lib/data/schema"
+import { readReplyFile } from "@/lib/workflows/reply"
 import { executeWithdrawSend } from "@/lib/workflows/send"
 import {
   archiveChain,
@@ -49,6 +50,16 @@ describe("Austausch", () => {
     const bytes = archiveFileBytes(latin1)
     expect(bytes.length).toBe(latin1.length)
     expect(bytes[bytes.indexOf(0x47) + 3]).toBe(0xe4)
+  })
+
+  it("UTF-16 (BUG-QA1-1): Download als UTF-16 LE mit BOM, Rundlauf über das Lesen beim Import", async () => {
+    const text = '\ufeff<?xml version="1.0" encoding="UTF-16"?>\r\n<dml>Gerät</dml>'
+    const bytes = archiveFileBytes(text)
+    expect([bytes[0], bytes[1], bytes[2], bytes[3]]).toEqual([0xff, 0xfe, 0x3c, 0x00])
+    expect(bytes.length).toBe(text.length * 2)
+    expect(await readReplyFile(new Blob([new Uint8Array(bytes)]))).toEqual({ ok: true, text })
+    // ohne BOM im Text: BOM wird ergänzt
+    expect([...archiveFileBytes(text.slice(1)).subarray(0, 2)]).toEqual([0xff, 0xfe])
   })
 
   it("aktuelle Namen über IDs; deaktivierte Benutzer gekennzeichnet; umbenannte Organisation", () => {

@@ -8,6 +8,7 @@ import { readDataset, startAs, switchUser } from "./helpers"
 
 const DEMO_DIR = join(__dirname, "..", "public", "demo-dateien")
 const REPLY = "DML-PHUNGUN-C1234-C-2026-00002_001-00.XML"
+const XSD_NOT_PERFORMED_TEXT = /XSD-Prüfung nicht durchgeführt/
 const replyXml = () => readFileSync(join(DEMO_DIR, REPLY), "utf8")
 
 async function checkContent(page: Page, name: string, content: string | Buffer, issue = "2.3") {
@@ -153,4 +154,16 @@ test("Große Datei (knapp 5 MB): Prüfung und Konvertierung in wenigen Sekunden,
   const { csv } = await downloadCsv(page)
   expect(csv.split("\r\n").filter(Boolean).length).toBe(entries.length + 33)
   expect(await readDataset(page)).toEqual(before)
+})
+
+test("UTF-16-Datei (BUG-QA1-1): XSD-Prüfung, Lesen und CSV in UTF-8", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  const xml = replyXml().replace(/^\ufeff/, "").replace(/encoding="[^"]*"/i, 'encoding="UTF-16"')
+  const utf16 = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(xml, "utf16le")])
+  await checkContent(page, "utf16.xml", utf16)
+  await expect(page.getByLabel("Zusammenfassung")).toContainText("30 freigegeben · 2 zu überarbeiten")
+  await expect(page.getByText("Die Datei kann nicht geprüft werden")).toHaveCount(0)
+  await expect(page.getByText(XSD_NOT_PERFORMED_TEXT)).toHaveCount(0)
+  const { csv } = await downloadCsv(page)
+  expect(csv.split("\r\n").filter(Boolean)).toHaveLength(33)
 })

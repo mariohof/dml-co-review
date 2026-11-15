@@ -30,8 +30,8 @@ describe("PROJ-20 QA", () => {
     expect(read.candidates.some((c) => c.fields.techname === "=1+1")).toBe(true)
   })
 
-  // BUG-QA1-1: UTF-16-Dateien werden nicht gelesen (Kodierungserkennung liest die Deklaration als Latin-1) — nach Fix aktivieren
-  it.skip("UTF-16 laut Deklaration wird korrekt gelesen; die CSV ist UTF-8 mit BOM", async () => {
+  // BUG-QA1-1 (behoben): UTF-16-Dateien werden gelesen
+  it("UTF-16 laut Deklaration wird korrekt gelesen; die CSV ist UTF-8 mit BOM", async () => {
     const xml = SEND.replace(/encoding="[^"]*"/i, 'encoding="UTF-16"').replace(/<techname>[^<]*<\/techname>/, "<techname>Prüfgerät ÄÖÜß</techname>")
     const bytes = new Uint8Array(2 + xml.length * 2)
     bytes[0] = 0xff

@@ -54,6 +54,27 @@ describe("Datei lesen", () => {
     expect(declaredEncoding(latin1)).toBe("iso-8859-1")
     expect(await readReplyFile(new Blob([latin1]))).toEqual({ ok: true, text: '<?xml version="1.0" encoding="ISO-8859-1"?><dml>Gerät</dml>' })
   })
+
+  it("liest UTF-16 LE/BE mit und ohne BOM (BUG-QA1-1); BOM bleibt erhalten", async () => {
+    const xml = '<?xml version="1.0" encoding="UTF-16"?>\r\n<dml>Gerät ÄÖÜß</dml>'
+    const utf16 = (text: string, bigEndian: boolean) => {
+      const bytes = new Uint8Array(text.length * 2)
+      for (let i = 0; i < text.length; i++) {
+        bytes[i * 2 + (bigEndian ? 1 : 0)] = text.charCodeAt(i) & 0xff
+        bytes[i * 2 + (bigEndian ? 0 : 1)] = text.charCodeAt(i) >> 8
+      }
+      return bytes
+    }
+    for (const bigEndian of [false, true]) {
+      const label = bigEndian ? "utf-16be" : "utf-16le"
+      const withBom = utf16(`\ufeff${xml}`, bigEndian)
+      expect(declaredEncoding(withBom)).toBe(label)
+      expect(await readReplyFile(new Blob([withBom]))).toEqual({ ok: true, text: `\ufeff${xml}` })
+      const withoutBom = utf16(xml, bigEndian)
+      expect(declaredEncoding(withoutBom)).toBe(label)
+      expect(await readReplyFile(new Blob([withoutBom]))).toEqual({ ok: true, text: xml })
+    }
+  })
 })
 
 describe("Prüfung im Demo-Stand", () => {

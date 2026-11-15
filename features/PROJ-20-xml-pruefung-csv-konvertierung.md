@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-14
 
@@ -279,6 +279,11 @@ Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod 
 - **Beobachtung:** Die Demo-SEND/REPLY-Dateien enthalten keine Ausgabedaten (`issno`, `type`, Datum) — nach Check-in-Regeln ergeben sich daher Pflichtfeld-Fehler (laut Spec gewollt, Edge Case „Partner-REPLY ohne Ausgabedaten“).
 - **Tests:** 19 Unit-Tests Prüfkern (inkl. Rundlauf CSV → Check-in-Regelprüfung, ISO-8859-1, falsche Issue in beide Richtungen, 4.2-Beispiel mit uneinheitlichem MI), 6 Komponententests, 10 E2E-Tests mit echter XSD-Serverfunktion (Menüpunkt, REPLY-Konvertierung, ohne Anmeldung, ohne Berechtigung, nicht wohlgeformt, Schemafehler, falsche Issue, 375/768/1440 px, Neuladen).
 
+### Bugfix BUG-QA1-1 (2026-11-15) — UTF-16-Dateien
+- `declaredEncoding` (`src/lib/workflows/reply.ts`) erkennt UTF-16 jetzt am BOM (`FF FE` / `FE FF`) oder — ohne BOM — am Bytemuster von „<?“ (Little/Big Endian); sonst wie bisher die XML-Deklaration (Standard UTF-8). Gemeinsamer Baustein für REPLY-Import (PROJ-13) und „XML prüfen“ (PROJ-20).
+- Archiv-Download (`archiveFileBytes`, PROJ-15): UTF-16-Stände werden wieder als UTF-16 LE mit BOM ausgegeben (byte-genau für die übliche LE-Datei mit BOM; bei BE oder fehlendem BOM als LE mit BOM).
+- Tests: `reply.test.ts` (LE/BE, mit/ohne BOM), `archive.test.ts` (Rundlauf Download ↔ Lesen), `qa-proj20.test.ts` (UTF-16-Test aktiviert), E2E `PROJ-20-qa.spec.ts` „UTF-16-Datei“ mit echter xmllint-Prüfung; 483 Unit-Tests grün.
+
 ## QA Test Results
 
 **Tested:** 2026-11-14
@@ -329,7 +334,7 @@ Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod 
 - [x] Partner-REPLY ohne Ausgabedaten → Pflichtfeld-Fehler genau für `issno`, `type`, `day`, `month`, `year` (Demo-Dateien)
 - [x] Keine DMRL-XML (anderes Wurzelelement) → „passt nicht zur gewählten Issue“, keine CSV
 - [x] ISO-8859-1 laut Deklaration korrekt gelesen
-- [ ] **BUG-QA1-1:** UTF-16 laut Deklaration wird nicht gelesen
+- [x] **BUG-QA1-1:** UTF-16 laut Deklaration wird nicht gelesen → behoben (2026-11-15), erneuter QA-Test offen
 - [x] Externe Entities (XXE, `file:///etc/passwd`) nicht nachgeladen — kein Dateiinhalt in Seite oder CSV
 - [x] Sehr viele Einträge: 5.400 Einträge / 4,82 MB in 1,0 s geprüft und konvertiert
 - [x] Neue Datei während laufender Prüfung → altes Ergebnis verworfen (Komponententest)
@@ -347,7 +352,7 @@ Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod 
 
 ### Bugs Found
 
-#### BUG-QA1-1: UTF-16-kodierte XML-Dateien werden nicht gelesen
+#### BUG-QA1-1: UTF-16-kodierte XML-Dateien werden nicht gelesen — behoben (2026-11-15)
 - **Severity:** Medium
 - **Steps to Reproduce:**
   1. Demo-REPLY als UTF-16 (mit BOM, `encoding="UTF-16"`) speichern

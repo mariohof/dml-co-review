@@ -52,12 +52,22 @@ export function readArchived(data: Dataset, entry: ArchiveEntry): ParsedDml | nu
 
 /**
  * Dateiinhalt wieder als Bytes in der Kodierung laut XML-Deklaration — damit der Download byte-genau der
- * gesendeten bzw. importierten Datei entspricht (UTF-8 inkl. BOM, ISO-8859-1; Zeilenenden bleiben).
+ * gesendeten bzw. importierten Datei entspricht (UTF-8 inkl. BOM, ISO-8859-1, UTF-16; Zeilenenden bleiben).
  */
 export function archiveFileBytes(content: string): Uint8Array {
   const encoding = /^﻿?<\?xml[^>]*encoding\s*=\s*["']([A-Za-z0-9._-]+)["']/.exec(content)?.[1]?.toLowerCase() ?? "utf-8"
   if (["iso-8859-1", "latin1", "iso8859-1", "l1"].includes(encoding)) {
     return Uint8Array.from(content, (char) => char.charCodeAt(0) & 0xff)
+  }
+  if (encoding.startsWith("utf-16")) {
+    // UTF-16 (BUG-QA1-1): Little Endian mit BOM — wie beim Import gelesen, BOM ergänzt, falls er fehlte
+    const text = content.startsWith("\ufeff") ? content : `\ufeff${content}`
+    const bytes = new Uint8Array(text.length * 2)
+    for (let i = 0; i < text.length; i++) {
+      bytes[i * 2] = text.charCodeAt(i) & 0xff
+      bytes[i * 2 + 1] = text.charCodeAt(i) >> 8
+    }
+    return bytes
   }
   return new TextEncoder().encode(content)
 }
