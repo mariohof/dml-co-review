@@ -27,14 +27,14 @@
 | PROJ-10 | Check-in CSV — Import mit Regelprüfung, Übernahme, Entsperren · P0 · Deps: PROJ-8, PROJ-9 | Approved | [PROJ-10](PROJ-10-check-in-csv.md) | 2026-11-11 |
 | PROJ-11 | XSD-Validierung — Prüfung gegen dml.xsd (2.3/4.2/5.0) via xmllint · P0 · Deps: PROJ-5 | Approved | [PROJ-11](PROJ-11-xsd-validierung.md) | 2026-11-11 |
 | PROJ-12 | SEND-Export — S1000D-DMRL-XML mit Versionsindex NNNNN-JJJJ · P0 · Deps: PROJ-7, PROJ-11 | Approved | [PROJ-12](PROJ-12-send-export.md) | 2026-11-11 |
-| PROJ-13 | REPLY-Import — Partner-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | In Progress | [PROJ-13](PROJ-13-reply-import.md) | 2026-11-11 |
+| PROJ-13 | REPLY-Import — Partner-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | Approved | [PROJ-13](PROJ-13-reply-import.md) | 2026-11-11 |
 | PROJ-14 | Freigabestatus DMRL — Statusmodell, Freigabe-Nachweis, Freigabestand (CSV/XML) · P0 · Deps: PROJ-10, PROJ-13, PROJ-18 | Approved | [PROJ-14](PROJ-14-freigabestatus.md) | 2026-11-11 |
 | PROJ-15 | Archiv SEND/REPLY — alle Austauschstände einsehen und herunterladen · P0 · Deps: PROJ-12, PROJ-13 | Approved | [PROJ-15](PROJ-15-archiv.md) | 2026-11-11 |
 | PROJ-16 | Dashboard — Übersicht aller DMRLs und ihres Status · P1 · Deps: PROJ-14 | Approved | [PROJ-16](PROJ-16-dashboard.md) | 2026-11-11 |
 | PROJ-17 | DMRL-Berechtigungen — Admin berechtigt Bearbeiter je DMRL/System · P0 · Deps: PROJ-3, PROJ-6 | Approved | [PROJ-17](PROJ-17-dmrl-berechtigungen.md) | 2026-11-12 |
 | PROJ-18 | DMRL-Export (CSV/XML) — jederzeit exportieren, ohne Sperre und ohne Workflow · P0 · Deps: PROJ-7, PROJ-9, PROJ-11, PROJ-12 | Approved | [PROJ-18](PROJ-18-dmrl-export.md) | 2026-11-12 |
 | PROJ-19 | Lokaler Start (Python-Startskript) — Voraussetzungen prüfen, App bauen, lokal starten, Browser öffnen · P0 · Deps: PROJ-11 | Approved | [PROJ-19](PROJ-19-lokaler-start.md) | 2026-11-12 |
-| PROJ-20 | XML-Prüfung & CSV-Konvertierung — beliebige DMRL-XML prüfen (XSD + Regelwerk) und als CSV herunterladen, ohne Speichern · P1 · Deps: PROJ-8, PROJ-10, PROJ-11 | In Progress | [PROJ-20](PROJ-20-xml-pruefung-csv-konvertierung.md) | 2026-11-14 |
+| PROJ-20 | XML-Prüfung & CSV-Konvertierung — beliebige DMRL-XML prüfen (XSD + Regelwerk) und als CSV herunterladen, ohne Speichern · P1 · Deps: PROJ-8, PROJ-10, PROJ-11 | Approved | [PROJ-20](PROJ-20-xml-pruefung-csv-konvertierung.md) | 2026-11-14 |
 | PROJ-21 | XML gegen DMRL prüfen — Aufruf aus der DMRL-Ansicht mit Abgleich gegen die DMRL · P1 · Deps: PROJ-7, PROJ-20 | Roadmap | — | 2026-11-14 |
 
 ## Next Available ID: PROJ-22

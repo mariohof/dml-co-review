@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-14
 
@@ -334,7 +334,7 @@ Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod 
 - [x] Partner-REPLY ohne Ausgabedaten → Pflichtfeld-Fehler genau für `issno`, `type`, `day`, `month`, `year` (Demo-Dateien)
 - [x] Keine DMRL-XML (anderes Wurzelelement) → „passt nicht zur gewählten Issue“, keine CSV
 - [x] ISO-8859-1 laut Deklaration korrekt gelesen
-- [x] **BUG-QA1-1:** UTF-16 laut Deklaration wird nicht gelesen → behoben (2026-11-15), erneuter QA-Test offen
+- [x] **BUG-QA1-1:** UTF-16 laut Deklaration wird nicht gelesen → behoben und bestätigt (2026-11-15)
 - [x] Externe Entities (XXE, `file:///etc/passwd`) nicht nachgeladen — kein Dateiinhalt in Seite oder CSV
 - [x] Sehr viele Einträge: 5.400 Einträge / 4,82 MB in 1,0 s geprüft und konvertiert
 - [x] Neue Datei während laufender Prüfung → altes Ergebnis verworfen (Komponententest)
@@ -374,6 +374,18 @@ Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod 
 - **Security:** Pass
 - **Production Ready:** YES
 - **Recommendation:** Freigeben; BUG-QA1-1 gemeinsam für PROJ-13/PROJ-20 beheben
+
+### Erneuter QA-Test BUG-QA1-1 (2026-11-15)
+**Ergebnis: behoben — bestätigt.**
+- REPLY-Import (PROJ-13) mit UTF-16 LE mit BOM: XSD + Regelwerk bestanden, Übernahme (30 freigegeben / 2 zu überarbeiten), Archivtext korrekt; Archiv-Download (PROJ-15) byte-genau gleich der hochgeladenen Datei.
+- REPLY-Import mit UTF-16 BE ohne BOM: gelesen, Abgleich REPLY ↔ SEND besteht (Umlaute in „Fähigkeitsträger…“ korrekt), übernommen.
+- „XML prüfen“ (PROJ-20): UTF-16 LE mit/ohne BOM und BE mit BOM gelesen, Zusammenfassung 30/2, CSV in UTF-8 mit BOM.
+- xmllint (Serverfunktion) akzeptiert UTF-16 LE/BE auch ohne BOM.
+- Regression: UTF-8 mit BOM und ISO-8859-1 unverändert; Download der Demo-Archivdateien weiterhin byte-genau.
+- Tests: `npm test` 483/483 grün (UTF-16-QA-Test aktiviert); E2E vollständig 98/98 grün (Chromium, neu: `tests/BUG-QA1-1-utf16.spec.ts`, 4 Tests). Firefox/Safari nicht installiert, nicht getestet.
+- Während des Tests: zwei Fehler in den Testdaten korrigiert (Gedankenstrich „–“ nicht in ISO-8859-1 darstellbar; geänderter techname verletzt korrekt die Regel REPLY ↔ SEND) — kein Fehler der App.
+- **Neue Bugs:** keine
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_
