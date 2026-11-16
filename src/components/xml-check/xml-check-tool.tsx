@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Download, FileUp, Loader2, SearchCheck, ShieldAlert, TriangleAlert } from "lucide-react"
+import { Download, FileUp, Loader2, RotateCw, SearchCheck, ShieldAlert, TriangleAlert } from "lucide-react"
 
 import { CheckReportView } from "@/components/check/check-report-view"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -34,6 +34,8 @@ export function XmlCheckTool() {
   const [file, setFile] = useState<File | null>(null)
   const [fileMessage, setFileMessage] = useState<string | null>(null)
   const [state, setState] = useState<State>({ kind: "leer" })
+  /** „Erneut prüfen" läuft: bisheriges Ergebnis bleibt sichtbar */
+  const [retrying, setRetrying] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   /** fortlaufende Prüfnummer: verwirft Ergebnisse veralteter Prüfungen */
   const runRef = useRef(0)
@@ -43,6 +45,7 @@ export function XmlCheckTool() {
 
   const reset = () => {
     runRef.current += 1
+    setRetrying(false)
     setState({ kind: "leer" })
   }
 
@@ -59,12 +62,15 @@ export function XmlCheckTool() {
     setFile(selected)
   }
 
-  const check = async () => {
+  /** `retry`: „Erneut prüfen" — das bisherige Ergebnis bleibt sichtbar, bis das neue vorliegt */
+  const check = async (retry = false) => {
     if (!issue || !file) return
     const run = ++runRef.current
-    setState({ kind: "laeuft" })
+    if (retry) setRetrying(true)
+    else setState({ kind: "laeuft" })
     const outcome = await runXmlCheck(file, issue)
     if (run !== runRef.current) return
+    setRetrying(false)
     setState(outcome.ok ? { kind: "ergebnis", result: outcome.result } : { kind: "fehler", message: outcome.message })
   }
 
@@ -133,7 +139,7 @@ export function XmlCheckTool() {
           )}
           {!issue && <p className="text-sm text-muted-foreground">Bitte zuerst die S1000D-Issue der Datei wählen.</p>}
 
-          <Button onClick={() => void check()} disabled={!issue || !file || running}>
+          <Button onClick={() => void check()} disabled={!issue || !file || running || retrying}>
             {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <SearchCheck className="mr-2 h-4 w-4" aria-hidden />}
             Prüfen
           </Button>
@@ -155,7 +161,7 @@ export function XmlCheckTool() {
         </Alert>
       )}
 
-      {state.kind === "ergebnis" && <XmlCheckResultView result={state.result} />}
+      {state.kind === "ergebnis" && <XmlCheckResultView result={state.result} onRetry={() => void check(true)} retrying={retrying} />}
     </div>
   )
 }
@@ -172,7 +178,14 @@ function Item({ label, children, mono }: { label: string; children: React.ReactN
 
 const DIRECTION_LABEL = { send: "SEND", reply: "REPLY" } as const
 
-function XmlCheckResultView({ result }: { result: XmlCheckResult }) {
+interface XmlCheckResultViewProps {
+  result: XmlCheckResult
+  /** XSD-Prüfung wiederholen (nur angeboten, wenn sie nicht durchgeführt wurde) */
+  onRetry: () => void
+  retrying: boolean
+}
+
+function XmlCheckResultView({ result, onRetry, retrying }: XmlCheckResultViewProps) {
   const errors = errorCount(result.report)
   const hints = hintCount(result.report)
   const header = result.parsed?.header
@@ -218,7 +231,13 @@ function XmlCheckResultView({ result }: { result: XmlCheckResult }) {
         <Alert variant="destructive" role="alert">
           <ShieldAlert className="h-4 w-4" aria-hidden />
           <AlertTitle>{XSD_NOT_PERFORMED}</AlertTitle>
-          <AlertDescription>{result.xsdUnavailableDetail} Die Einträge wurden nur nach dem Regelwerk geprüft.</AlertDescription>
+          <AlertDescription className="space-y-3">
+            <p>{result.xsdUnavailableDetail} Die Einträge wurden nur nach dem Regelwerk geprüft.</p>
+            <Button variant="outline" size="sm" onClick={onRetry} disabled={retrying}>
+              {retrying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : <RotateCw className="mr-2 h-4 w-4" aria-hidden />}
+              Erneut prüfen
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 

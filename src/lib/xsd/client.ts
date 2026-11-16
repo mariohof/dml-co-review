@@ -11,11 +11,19 @@ const UNAVAILABLE_DETAIL: Record<XsdUnavailableReason, string> = {
   programm_fehlt: "Das Programm xmllint wurde nicht gefunden.",
   schema_fehlt: "Das Schema (dml.xsd) fehlt oder ist beschädigt.",
   zeitlimit: "Prüfung hat zu lange gedauert.",
-  unerwartet: "xmllint hat ein unerwartetes Ergebnis geliefert.",
-  nicht_erreichbar: "Die Prüffunktion ist nicht erreichbar.",
+  unerwartet: "Die Prüffunktion hat unerwartet geantwortet.",
+  // PROJ-20 Refinement 2026-11-16: jede Meldung nennt die Handlung
+  nicht_erreichbar: "Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).",
+  zugriff_abgelehnt: "Zugriff abgelehnt — bitte die Anwendung über {adresse} öffnen.",
 }
 
-export const unavailableDetail = (reason: XsdUnavailableReason) => UNAVAILABLE_DETAIL[reason]
+/** Lokale Adresse mit dem Port der aktuellen Seite (Startskript 8877, Entwicklungsserver 3000) */
+function localAddress(): string {
+  const port = typeof window === "undefined" ? "" : window.location.port
+  return `http://localhost${port ? `:${port}` : ""}`
+}
+
+export const unavailableDetail = (reason: XsdUnavailableReason) => UNAVAILABLE_DETAIL[reason].replace("{adresse}", localAddress())
 
 const unavailable = (reason: XsdUnavailableReason): XsdResult => ({ state: "nicht_verfuegbar", reason })
 
@@ -42,7 +50,8 @@ export async function validateXml(
     })
     const json: unknown = await response.json().catch(() => null)
     const parsed = xsdResultSchema.safeParse(json)
-    if (!parsed.success) return unavailable(response.ok ? "unerwartet" : "nicht_erreichbar")
+    // 403: Serverfunktion lehnt fremde Adresse ab (Host-/Origin-Schutz, BUG-QA2-3)
+    if (!parsed.success) return unavailable(response.status === 403 ? "zugriff_abgelehnt" : "unerwartet")
     return parsed.data
   } catch (error) {
     return unavailable(controller.signal.aborted || (error as Error)?.name === "AbortError" ? "zeitlimit" : "nicht_erreichbar")

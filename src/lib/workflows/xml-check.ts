@@ -1,7 +1,7 @@
 import { DmlParseError, readDml, type ParsedDml } from "@/lib/data/dml-reader"
 import type { DmlCode, S1000dIssue } from "@/lib/data/schema"
 import { writeEntriesCsv } from "@/lib/files/csv-writer"
-import { checkFormats, checkInfocodeInfoname, checkMandatory, checkSnsTechname, checkUniqueDmc } from "@/lib/rules/check/entry-rules"
+import { checkFormats, checkInfocodeInfoname, checkMandatory, checkSnsTechname, checkUniqueDmc, OPTIONAL_IN_REPLY } from "@/lib/rules/check/entry-rules"
 import type { Candidate, Finding, Report } from "@/lib/rules/check/types"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { acceptXmlUpload, unavailableDetail, validateXml, xsdResultToReport } from "@/lib/xsd/client"
@@ -10,7 +10,8 @@ import { readReplyFile } from "./reply"
 
 /**
  * Prüfkern „XML prüfen" (PROJ-20 Tech Design C/E): XSD (PROJ-11) → Lesen in deklarierter Kodierung →
- * DML-Leser der gewählten Issue → Regeln wie Check-in (A, B, C, E, I) + „MI einheitlich" statt Regel D.
+ * DML-Leser der gewählten Issue → Regeln wie Check-in (A, B, C, E, I) + „MI einheitlich" statt Regel D;
+ * Pflichtfelder wie REPLY (Ausgabedaten optional, Sammelhinweis).
  * Ohne Bildschirmbezug und ohne Datenbestand — wird von PROJ-21 wiederverwendet. Speichert nichts.
  */
 
@@ -19,6 +20,8 @@ export const ISSUE_MISMATCH = "Datei passt nicht zur gewählten Issue — bitte 
 export const CSV_HAS_ERRORS = "Die CSV enthält Fehler aus der Prüfung — ein Check-in wird abgewiesen, bis sie behoben sind."
 export const CSV_WITHOUT_XSD = "Die XSD-Prüfung wurde nicht durchgeführt — der Check-in in eine DMRL prüft die Einträge erneut."
 export const MI_NOT_UNIFORM = "uneinheitlich"
+export const issueDataMissing = (count: number) =>
+  `Bei ${count} ${count === 1 ? "Eintrag fehlen" : "Einträgen fehlen"} Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.`
 
 export type XsdState = "bestanden" | "schemafehler" | "nicht_wohlgeformt" | "nicht_durchgefuehrt"
 
@@ -66,6 +69,15 @@ export function checkModelicUniform(candidates: Candidate[]): { modelic: string;
       finding("D", `MI uneinheitlich: ‚${c.fields.modelic}' statt ‚${major}' (häufigster MI der Datei).`, { line: c.line, dmc: formatDmc(c.fields), field: "modelic" })
     )
   return { modelic: MI_NOT_UNIFORM, findings }
+}
+
+/**
+ * Ausgabedaten (issno, type, issdate) sind in DMRL-XML optional (Refinement 2026-11-16): statt Pflichtfeld-Fehlern
+ * ein Sammelhinweis über alle Einträge, bei denen mindestens eines der Felder fehlt
+ */
+export function checkIssueDataHint(candidates: Candidate[]): Finding[] {
+  const count = candidates.filter((c) => OPTIONAL_IN_REPLY.some((field) => c.fields[field] === "")).length
+  return count === 0 ? [] : [{ severity: "hinweis", group: "B", message: issueDataMissing(count) }]
 }
 
 export function xmlCheckSummary(candidates: Candidate[], modelic: string): XmlCheckSummary {
@@ -120,7 +132,9 @@ export function checkXmlText(fileName: string, issue: S1000dIssue, text: string,
   const findings = [
     ...xsdFindings,
     ...checkFormats(candidates),
-    ...checkMandatory(candidates, "checkin"),
+    // Pflichtfelder wie beim REPLY-Import: Ausgabedaten optional, angefangenes Datum vollständig
+    ...checkMandatory(candidates, "reply"),
+    ...checkIssueDataHint(candidates),
     ...checkUniqueDmc(candidates),
     ...mi.findings,
     ...checkSnsTechname(candidates),

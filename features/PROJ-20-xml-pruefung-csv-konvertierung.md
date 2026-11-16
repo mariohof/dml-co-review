@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement: Ausgabedaten optional, XSD nicht erreichbar, Umbruch Zusammenfassung)
 
@@ -341,6 +341,14 @@ Hinweis „XSD-Prüfung nicht durchgeführt“
 - **Dateinamen:** CSV = XML-Name mit `.csv`; Prüfbericht `Pruefbericht-XML-<XML-Name>-<Datum>.csv`.
 - **Beobachtung:** Die Demo-SEND/REPLY-Dateien enthalten keine Ausgabedaten (`issno`, `type`, Datum) — nach Check-in-Regeln ergeben sich daher Pflichtfeld-Fehler (laut Spec gewollt, Edge Case „Partner-REPLY ohne Ausgabedaten“).
 - **Tests:** 19 Unit-Tests Prüfkern (inkl. Rundlauf CSV → Check-in-Regelprüfung, ISO-8859-1, falsche Issue in beide Richtungen, 4.2-Beispiel mit uneinheitlichem MI), 6 Komponententests, 10 E2E-Tests mit echter XSD-Serverfunktion (Menüpunkt, REPLY-Konvertierung, ohne Anmeldung, ohne Berechtigung, nicht wohlgeformt, Schemafehler, falsche Issue, 375/768/1440 px, Neuladen).
+
+### Implementierungsnotizen Refinement (Frontend, 2026-11-16)
+- **Ausgabedaten optional:** `src/lib/workflows/xml-check.ts` nutzt die Pflichtfeldregel in der REPLY-Variante; neu `checkIssueDataHint` (ein Hinweis, Gruppe Pflichtfeld, Text `issueDataMissing(n)`, Einzahl/Mehrzahl). Datei TWLBORFLOS (115 Einträge): vorher 575 Fehler, jetzt 0 Fehler + 1 Hinweis (+ ggf. XSD-Hinweis).
+- **XSD-Ursachen:** `src/lib/xsd/types.ts` neuer Grund `zugriff_abgelehnt`; `src/lib/xsd/client.ts`: Anfrage scheitert → „Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).“; Antwort 403 → „Zugriff abgelehnt — bitte die Anwendung über http://localhost:<Port der Seite> öffnen.“; sonstige Fehlerantwort → „Die Prüffunktion hat unerwartet geantwortet.“ Wirkt auch in REPLY-Import, SEND und DMRL-Export (gemeinsamer Text). Serverfunktion unverändert.
+- **„Erneut prüfen“:** `src/components/xml-check/xml-check-tool.tsx` — Schaltfläche im Hinweis „XSD-Prüfung nicht durchgeführt“; während der Wiederholung bleibt das Ergebnis sichtbar (Ladeanzeige, „Prüfen“ gesperrt); Datei-/Issue-Wechsel verwirft die Wiederholung (Prüfnummer).
+- **Umbruch:** `[overflow-wrap:anywhere]` statt `break-all` (bereits 213ad74).
+- **Tests:** `npm test` 488/488 grün (neu: Teil-Ausgabedaten, Einzahl, Zugriff abgelehnt, 2 Komponententests „Erneut prüfen“; angepasst: 4 Tests mit alten Erwartungen). E2E: `PROJ-20-xml-pruefung.spec.ts` +3 (Sammelhinweis, Server läuft nicht + Erneut prüfen, Zugriff abgelehnt) — PROJ-20 gesamt 22/22, verwandte Features (PROJ-12/13/14/18, BUG-QA1-1) 11/11 grün.
+- **Hinweis Umgebung:** Während der Tests hing der Entwicklungsserver beim Kompilieren (0 % CPU); Ursache war ein festgefahrener Turbopack-Zwischenspeicher `.next/dev`. Beiseitegelegt, danach lief alles normal — kein Fehler der App.
 
 ### Bugfix BUG-QA1-1 (2026-11-15) — UTF-16-Dateien
 - `declaredEncoding` (`src/lib/workflows/reply.ts`) erkennt UTF-16 jetzt am BOM (`FF FE` / `FE FF`) oder — ohne BOM — am Bytemuster von „<?“ (Little/Big Endian); sonst wie bisher die XML-Deklaration (Standard UTF-8). Gemeinsamer Baustein für REPLY-Import (PROJ-13) und „XML prüfen“ (PROJ-20).

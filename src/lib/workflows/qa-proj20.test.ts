@@ -78,10 +78,10 @@ describe("PROJ-20 QA", () => {
     expect(result.report.findings.filter((f) => f.group === "D")).toEqual([])
   })
 
-  it("Pflichtfeld-Fehler betreffen bei REPLY ohne Ausgabedaten genau die Ausgabedaten", () => {
+  it("REPLY ohne Ausgabedaten: keine Fehler, nur der Sammelhinweis (Refinement 2026-11-16)", () => {
     const result = checkXmlText("reply.xml", "2.3", DEMO_XML_FILES[DEMO_FILES.reply1], VALID)
-    const fields = new Set(result.report.findings.map((f) => f.field))
-    expect([...fields].sort()).toEqual(["day", "issno", "month", "type", "year"])
+    expect(errorCount(result.report)).toBe(0)
+    expect(result.report.findings.map((f) => f.severity)).toEqual(["hinweis"])
     expect(emptyEntryFields().issno).toBe("")
   })
 })

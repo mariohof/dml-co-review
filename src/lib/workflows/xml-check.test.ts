@@ -14,6 +14,7 @@ import {
   checkXmlText,
   formatDmlCode,
   ISSUE_MISMATCH,
+  issueDataMissing,
   MI_NOT_UNIFORM,
   runXmlCheck,
   XSD_NOT_PERFORMED,
@@ -78,11 +79,27 @@ describe("checkXmlText — gültige Datei", () => {
     expect(result.report.findings.filter((f) => f.group === "D").every((f) => f.message.includes("S1000DBIKE"))).toBe(true)
   })
 
-  it("SEND ohne Ausgabedaten: Pflichtfeld-Fehler nach Check-in-Regeln, CSV mit allen Einträgen", () => {
+  it("SEND ohne Ausgabedaten: keine Pflichtfeld-Fehler, ein Sammelhinweis, CSV mit allen Einträgen (Refinement 2026-11-16)", () => {
     const result = checkXmlText("send.XML", "2.3", DEMO_SEND, VALID)
-    const fields = new Set(result.report.findings.filter((f) => f.group === "B").map((f) => f.field))
-    expect([...fields].sort()).toEqual(["day", "issno", "month", "type", "year"])
-    expect(result.csv).not.toBeNull()
+    expect(errorCount(result.report)).toBe(0)
+    expect(result.report.findings).toEqual([{ severity: "hinweis", group: "B", message: issueDataMissing(result.candidates.length) }])
+    expect(result.csv!.split("\r\n").filter(Boolean)).toHaveLength(result.candidates.length + 1)
+  })
+
+  it("Ausgabedaten teilweise: kein Fehler für fehlende Ausgabenummer, aber unvollständiges Datum ist ein Fehler", () => {
+    const xml = withIssueData(DEMO_SEND)
+      .replace('<issno issno="001" type="new"></issno>', "")
+      .replace(/<issdate day="01" month="02" year="2027"><\/issdate>/, '<issdate day="" month="" year="2027"></issdate>')
+    const result = checkXmlText("send.XML", "2.3", xml, VALID)
+    const errors = result.report.findings.filter((f) => f.severity === "fehler")
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toMatchObject({ group: "B", field: "day", message: expect.stringContaining("Ausgabedatum ist unvollständig") })
+    expect(hintCount(result.report)).toBe(1)
+    expect(checkXmlText("send.XML", "2.3", withIssueData(DEMO_SEND), VALID).report.findings).toEqual([])
+  })
+
+  it("Sammelhinweis: Einzahl", () => {
+    expect(issueDataMissing(1)).toBe("Bei 1 Eintrag fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.")
   })
 })
 

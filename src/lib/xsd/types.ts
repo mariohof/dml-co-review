@@ -20,7 +20,7 @@ export const xsdFindingSchema = z.object({
   message: z.string(),
 })
 
-export const XSD_UNAVAILABLE_REASONS = ["programm_fehlt", "schema_fehlt", "zeitlimit", "unerwartet", "nicht_erreichbar"] as const
+export const XSD_UNAVAILABLE_REASONS = ["programm_fehlt", "schema_fehlt", "zeitlimit", "unerwartet", "nicht_erreichbar", "zugriff_abgelehnt"] as const
 
 export const xsdResultSchema = z.discriminatedUnion("state", [
   z.object({ state: z.literal("gueltig"), issue: z.enum(S1000D_ISSUES) }),

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { errorCount, hintCount } from "@/lib/rules/check/types"
-import { acceptXmlUpload, validateXml, xsdFailTitle, xsdResultToReport } from "./client"
+import { acceptXmlUpload, unavailableDetail, validateXml, xsdFailTitle, xsdResultToReport } from "./client"
 import { MAX_XML_BYTES, type XsdResult } from "./types"
 
 const respond = (body: unknown, status = 200) =>
@@ -17,17 +17,26 @@ describe("validateXml", () => {
     expect(await (init?.body as Blob).text()).toBe("<dml/>")
   })
 
-  it("ergibt „nicht verfügbar\" bei Netzfehler, fehlender Funktion (404), unerwarteter Antwort und Zeitlimit", async () => {
+  it("ergibt „nicht verfügbar\" bei Netzfehler, Fehlerantwort (404), unerwarteter Antwort und Zeitlimit", async () => {
     expect(await validateXml("<dml/>", "4.2", { fetchImpl: vi.fn<typeof fetch>().mockRejectedValue(new TypeError("fetch failed")) })).toEqual({
       state: "nicht_verfuegbar",
       reason: "nicht_erreichbar",
     })
-    expect(await validateXml("<dml/>", "4.2", { fetchImpl: respond("Not found", 404) })).toMatchObject({ reason: "nicht_erreichbar" })
+    expect(await validateXml("<dml/>", "4.2", { fetchImpl: respond("Not found", 404) })).toMatchObject({ reason: "unerwartet" })
     expect(await validateXml("<dml/>", "4.2", { fetchImpl: respond({ state: "irgendwas" }) })).toMatchObject({ reason: "unerwartet" })
     const hanging = vi.fn<typeof fetch>((_url, init) =>
       new Promise((_resolve, reject) => init?.signal?.addEventListener("abort", () => reject(new DOMException("abort", "AbortError"))))
     )
     expect(await validateXml("<dml/>", "5.0", { fetchImpl: hanging, timeoutMs: 10 })).toEqual({ state: "nicht_verfuegbar", reason: "zeitlimit" })
+  })
+
+  it("Zugriff abgelehnt (fremde Adresse, Antwort 403): eigener Grund mit Adresse samt Port der aktuellen Seite", async () => {
+    const result = await validateXml("<dml/>", "2.3", { fetchImpl: respond({ error: "Anfrage nicht erlaubt." }, 403) })
+    expect(result).toEqual({ state: "nicht_verfuegbar", reason: "zugriff_abgelehnt" })
+    const port = window.location.port
+    expect(unavailableDetail("zugriff_abgelehnt")).toBe(`Zugriff abgelehnt — bitte die Anwendung über http://localhost${port ? `:${port}` : ""} öffnen.`)
+    expect(unavailableDetail("nicht_erreichbar")).toContain("Der Server der Anwendung läuft nicht")
+    expect(unavailableDetail("nicht_erreichbar")).toContain("START-HIER.md")
   })
 
   it("übernimmt „nicht verfügbar\" der Serverfunktion (z. B. xmllint fehlt)", async () => {

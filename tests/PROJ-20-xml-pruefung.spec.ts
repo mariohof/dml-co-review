@@ -104,3 +104,41 @@ test("Neuladen: Ergebnis ist weg", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "XML prüfen." })).toBeVisible()
   await expect(page.getByLabel("Zusammenfassung")).toHaveCount(0)
 })
+
+// ---------------------------------------------------------------- Refinement 2026-11-16
+
+test("Ausgabedaten fehlen (Demo-REPLY): keine Fehler, ein Sammelhinweis, CSV ohne Warnung", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  await openTool(page)
+  await checkFile(page, REPLY)
+  await expect(page.getByText("0 Fehler, 1 Hinweis")).toBeVisible()
+  await expect(page.getByText(/Bei 32 Einträgen fehlen Ausgabedaten .* beim Check-in sind sie Pflicht/).first()).toBeVisible()
+  await expect(page.getByText(/ein Check-in wird abgewiesen/)).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "CSV herunterladen" })).toBeVisible()
+})
+
+test("Server läuft nicht: Ursache mit Anweisung; „Erneut prüfen“ prüft vollständig, sobald der Server wieder antwortet", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  await page.route("**/api/xsd-pruefung**", (route) => route.abort("connectionrefused"))
+  await openTool(page)
+  await checkFile(page, REPLY)
+  const alert = page.getByRole("alert").filter({ hasText: "XSD-Prüfung nicht durchgeführt" })
+  await expect(alert).toContainText("Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).")
+  await expect(page.getByLabel("Zusammenfassung")).toBeVisible()
+
+  await page.unroute("**/api/xsd-pruefung**")
+  await alert.getByRole("button", { name: "Erneut prüfen" }).click()
+  await expect(page.getByText("XSD-Prüfung nicht durchgeführt")).toHaveCount(0)
+  await expect(page.getByText("0 Fehler, 1 Hinweis")).toBeVisible()
+})
+
+test("Zugriff abgelehnt (Serverfunktion antwortet 403): Anweisung mit localhost und Port", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  await page.route("**/api/xsd-pruefung**", (route) => route.fulfill({ status: 403, contentType: "application/json", body: '{"error":"Anfrage nicht erlaubt."}' }))
+  await openTool(page)
+  await checkFile(page, REPLY)
+  const port = new URL(page.url()).port
+  await expect(page.getByRole("alert").filter({ hasText: "XSD-Prüfung nicht durchgeführt" })).toContainText(
+    `Zugriff abgelehnt — bitte die Anwendung über http://localhost:${port} öffnen.`
+  )
+})

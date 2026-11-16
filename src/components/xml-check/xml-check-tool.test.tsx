@@ -57,7 +57,7 @@ describe("XML prüfen (PROJ-20)", () => {
     expect(screen.getByRole("button", { name: "Prüfen" })).toBeDisabled()
   })
 
-  it("Demo-SEND: Zusammenfassung, Befunde, CSV mit Warnung und Namen der XML-Datei; nichts gespeichert", async () => {
+  it("Demo-SEND: Zusammenfassung, Sammelhinweis Ausgabedaten, CSV ohne Warnung mit Namen der XML-Datei; nichts gespeichert", async () => {
     render(<XmlCheckTool />)
     chooseIssue("2.3")
     await chooseFile(SEND, SEND_NAME)
@@ -66,7 +66,9 @@ describe("XML prüfen (PROJ-20)", () => {
     expect(within(summary).getByText("DML-PHUNGUN-D0815-C-2026-00002")).toBeInTheDocument()
     expect(within(summary).getByText("PHUNGUN")).toBeInTheDocument()
     expect(within(summary).getByText("SEND")).toBeInTheDocument()
-    expect(screen.getByText(/ein Check-in wird abgewiesen, bis sie behoben sind/)).toBeInTheDocument()
+    expect(screen.getByText("0 Fehler, 1 Hinweis")).toBeInTheDocument()
+    expect(screen.getAllByText(/Einträgen fehlen Ausgabedaten .* beim Check-in sind sie Pflicht/).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/ein Check-in wird abgewiesen, bis sie behoben sind/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "CSV herunterladen" }))
     const [fileName, csv] = download.mock.calls[0]
     expect(fileName).toBe("DML-PHUNGUN-D0815-C-2026-00002_001-00.csv")
@@ -95,6 +97,50 @@ describe("XML prüfen (PROJ-20)", () => {
     await check()
     expect((await screen.findAllByRole("alert")).some((a) => a.textContent?.startsWith("XSD-Prüfung nicht durchgeführt"))).toBe(true)
     expect(screen.getByRole("button", { name: "CSV herunterladen" })).toBeInTheDocument()
+  })
+
+  it("Server läuft nicht: Ursache mit Handlungsanweisung; „Erneut prüfen“ behält das Ergebnis und ersetzt es durch das neue", async () => {
+    validate.mockResolvedValue({ state: "nicht_verfuegbar", reason: "nicht_erreichbar" })
+    render(<XmlCheckTool />)
+    chooseIssue("2.3")
+    await chooseFile(SEND, SEND_NAME)
+    await check()
+    expect((await screen.findAllByText(/Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten/)).length).toBeGreaterThan(0)
+    let resolve: (value: XsdResult) => void = () => {}
+    validate.mockImplementation(() => new Promise((r) => (resolve = r)))
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Erneut prüfen" }))
+    })
+    // während der Wiederholung: bisheriges Ergebnis sichtbar, Schaltflächen gesperrt
+    expect(screen.getByLabelText("Zusammenfassung")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Erneut prüfen" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Prüfen" })).toBeDisabled()
+    await act(async () => {
+      resolve({ state: "gueltig", issue: "2.3" })
+    })
+    expect(screen.queryByText(/XSD-Prüfung nicht durchgeführt/)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Erneut prüfen" })).not.toBeInTheDocument()
+    expect(validate).toHaveBeenCalledTimes(2)
+  })
+
+  it("Erneut prüfen, dann andere Issue: Wiederholung wird verworfen", async () => {
+    validate.mockResolvedValue({ state: "nicht_verfuegbar", reason: "zugriff_abgelehnt" })
+    render(<XmlCheckTool />)
+    chooseIssue("2.3")
+    await chooseFile(SEND, SEND_NAME)
+    await check()
+    expect((await screen.findAllByText(/Zugriff abgelehnt — bitte die Anwendung über http:\/\/localhost/)).length).toBeGreaterThan(0)
+    let resolve: (value: XsdResult) => void = () => {}
+    validate.mockImplementation(() => new Promise((r) => (resolve = r)))
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Erneut prüfen" }))
+    })
+    chooseIssue("4.2")
+    await act(async () => {
+      resolve({ state: "gueltig", issue: "2.3" })
+    })
+    expect(screen.queryByLabelText("Zusammenfassung")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Prüfen" })).toBeEnabled()
   })
 
   it("neue Datei während der Prüfung: veraltetes Ergebnis wird verworfen", async () => {
