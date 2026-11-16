@@ -12,7 +12,7 @@ import { readReplyFile } from "./reply"
  * Prüfkern „XML prüfen" (PROJ-20 Tech Design C/E): XSD (PROJ-11) → Lesen in deklarierter Kodierung →
  * DML-Leser der gewählten Issue → Regeln wie Check-in (A, B, C, E, I) + „MI einheitlich" statt Regel D;
  * Pflichtfelder wie REPLY (Ausgabedaten optional, Sammelhinweis).
- * Ohne Bildschirmbezug und ohne Datenbestand — wird von PROJ-21 wiederverwendet. Speichert nichts.
+ * Ohne Bildschirmbezug und ohne Datenbestand. Speichert nichts.
  */
 
 export const XSD_NOT_PERFORMED = "XSD-Prüfung nicht durchgeführt"

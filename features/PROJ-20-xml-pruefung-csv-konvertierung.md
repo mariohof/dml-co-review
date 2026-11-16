@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement: Ausgabedaten optional, XSD nicht erreichbar, Umbruch Zusammenfassung)
 
@@ -11,7 +11,7 @@
 - Nutzt: PROJ-9 (Check-out CSV) — CSV-Aufbau; PROJ-10 (Check-in CSV) — Prüfbericht und Zielverwendung der CSV
 - **Erfordert Anpassung von PROJ-10 und PROJ-8 (per `/refine PROJ-10`):** Weichen `answer`/`answer_comment` in der eingecheckten CSV vom Stand der DMRL ab, wird das nicht mehr als Fehler abgewiesen (heute Regel K). Stattdessen fragt der Check-in, ob die Antworten übernommen werden. Übernommene Antworten sind **nur Information**: Der Eintragsstatus bleibt *in Bearbeitung*, freigegeben wird weiterhin nur durch einen REPLY; die Übernahme steht im Verlauf.
 - Betrifft PROJ-11 (XSD-Validierung, Refinement 2026-11-16): genauere Meldung, warum die XSD-Prüfung nicht erreichbar ist (Server beendet / fremde Adresse) — gilt überall, wo die XSD-Prüfung genutzt wird
-- Wird genutzt von: PROJ-21 (XML gegen DMRL prüfen) — gleicher Prüf- und Konvertierungskern mit Bezug zu einer DMRL
+- ~~Wird genutzt von: PROJ-21 (XML gegen DMRL prüfen)~~ — PROJ-21 entfällt (2026-11-16): Der Bedarf ist mit PROJ-20 abgedeckt
 
 ## Beschreibung
 Ein **eigenständiges Werkzeug** „XML prüfen“: Der Benutzer lädt eine beliebige DMRL-XML hoch (z. B. von einem Partner, aus einem Altprojekt oder einem anderen System), wählt die S1000D-Issue, und die Datei wird gegen das Schema (XSD) und das fachliche Regelwerk geprüft. Das Ergebnis ist eine Zusammenfassung der Datei mit Prüfbericht und eine **CSV im Check-out-Format**, die sich in Excel bearbeiten und über den normalen Check-in in eine DMRL im System übernehmen lässt.
@@ -68,7 +68,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - Als **Product Owner** möchte ich in der Demo zeigen, dass fehlerhafte XML-Dateien zuverlässig erkannt werden — auch außerhalb des SEND/REPLY-Workflows.
 
 ## Out of Scope
-- Prüfung gegen eine DMRL im System (Abgleich mit Einträgen, SEND-Bezug, MI des Systems) — **PROJ-21**
+- Prüfung gegen eine DMRL im System (Abgleich mit Einträgen, SEND-Bezug, MI des Systems) — **entfällt** (ehemals PROJ-21, verworfen 2026-11-16); der Abgleich mit einer DMRL erfolgt beim Check-in der konvertierten CSV (PROJ-10)
 - Automatische Übernahme in eine DMRL; die Übernahme läuft nur über Check-out → CSV ersetzen → Check-in (PROJ-9/10)
 - Automatische Erkennung der Issue (bewusst manuelle Auswahl)
 - Eintragsvorschau als Tabelle
@@ -150,7 +150,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 ### Product Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
-| Zwei Features: eigenständiges Werkzeug (PROJ-20) und Prüfung aus der DMRL-Ansicht mit Abgleich (PROJ-21) | Unterschiedlicher Einstieg und unterschiedliche Prüftiefe; getrennt umsetz- und testbar | 2026-11-14 |
+| Zwei Features: eigenständiges Werkzeug (PROJ-20) und Prüfung aus der DMRL-Ansicht mit Abgleich (PROJ-21) — *überholt, siehe 2026-11-16* | Unterschiedlicher Einstieg und unterschiedliche Prüftiefe; getrennt umsetz- und testbar | 2026-11-14 |
 | Priorität P1 | MVP (P0) ist vollständig freigegeben; Erweiterung für die nächste Ausbaustufe | 2026-11-14 |
 | CSV im Check-out-Format, Prüfung nach Check-in-Regeln | Die CSV soll per Check-in in eine DMRL übernommen werden können (z. B. Altbestand eines Partners) | 2026-11-14 |
 | Issue wird immer manuell gewählt | Wunsch Product Owner; eindeutig und nachvollziehbar, keine Fehlinterpretation | 2026-11-14 |
@@ -166,6 +166,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Ausgabedaten (`issno`/`type`/`issdate`) im Werkzeug optional, wie beim REPLY-Import; ein Sammelhinweis statt Fehler je Eintrag | In echten DMRL-XML fehlen sie oft (im Schema optional); 575 Pflichtfeld-Fehler bei 115 Einträgen verdecken echte Fehler (Fall TWLBORFLOS) | 2026-11-16 |
 | Check-in (PROJ-10) bleibt streng: Ausgabedaten dort Pflicht | Wunsch Product Owner; der Sammelhinweis kündigt die Abweisung beim Check-in an | 2026-11-16 |
 | „XSD nicht erreichbar“ nennt die Ursache (Server läuft nicht / Zugriff abgelehnt) mit Handlungsanweisung, plus „Erneut prüfen“ | Die bisherige Meldung „Prüffunktion ist nicht erreichbar“ ließ offen, was zu tun ist; die Ursachen sind behebbar. Gilt überall, wo die XSD-Prüfung genutzt wird (PROJ-11) | 2026-11-16 |
+| PROJ-21 (XML gegen DMRL prüfen) entfällt | Wunsch Product Owner: alles Nötige funktioniert mit PROJ-20 — Werkzeug prüft die Datei, der Check-in der CSV gleicht mit der DMRL ab. ID PROJ-21 wird nicht neu vergeben | 2026-11-16 |
 | Lange Codes in der Zusammenfassung nach Bindestrichen umbrechen, rein per CSS (kein eingefügtes Zeichen) — bereits umgesetzt | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar; Wunsch Product Owner: nur CSS | 2026-11-16 |
 
 ### Technical Decisions
@@ -301,7 +302,7 @@ Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod 
 - Die Pflichtfeldprüfung im Werkzeug nutzt die bestehende **REPLY-Variante** der Regel B (PROJ-8): Ausgabenummer, Ausgabetyp und Datum dürfen fehlen; ein angefangenes Datum muss vollständig sein („Ausgabedatum ist unvollständig“). Keine neue Regel, kein neuer Regeltext.
 - Neu im Prüfkern: **ein Sammelhinweis** (Art *Hinweis*, Gruppe Pflichtfelder, ohne Zeilenbezug): „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“ Gezählt werden Einträge, bei denen mindestens eines der fünf Felder leer ist. Kein Hinweis, wenn alle vollständig sind.
 - Da es ein Hinweis und kein Fehler ist: Gesamtergebnis „0 Fehler, 1 Hinweis“, CSV **ohne** Warnung.
-- Check-in (PROJ-10) und REPLY-Import (PROJ-13) bleiben unverändert. PROJ-21 erbt das Verhalten über den gemeinsamen Prüfkern.
+- Check-in (PROJ-10) und REPLY-Import (PROJ-13) bleiben unverändert.
 
 **2. Ursache, wenn die XSD-Prüfung nicht erreichbar ist (gemeinsamer Baustein PROJ-11, Browser-Seite)**
 
