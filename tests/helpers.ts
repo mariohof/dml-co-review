@@ -13,6 +13,8 @@ export async function loginAs(page: Page, name: string) {
   if (!page.url().includes("/anmelden")) await page.goto("/anmelden")
   await page.getByRole("list", { name: "Benutzer" }).getByRole("button", { name: new RegExp(`^${name}`) }).click()
   await expect(page.getByRole("button", { name: new RegExp(`Benutzer: ${name}`) })).toBeVisible()
+  // Weiterleitung nach der Anmeldung abwarten — sonst kann sie eine folgende Navigation überholen
+  await expect(page).not.toHaveURL(/\/anmelden/)
 }
 
 /** Frischer Demo-Bestand + Anmeldung */

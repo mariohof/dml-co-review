@@ -88,7 +88,10 @@ test("echt, ohne Abfangen: App über Netzwerkadresse geöffnet → Serverfunktio
   await page.reload()
   await page.getByRole("list", { name: "Benutzer" }).getByRole("button", { name: /^Ben Bearbeiter/ }).click()
   await expect(page.getByRole("button", { name: /Benutzer: Ben Bearbeiter/ })).toBeVisible()
+  // Weiterleitung zum Dashboard abwarten, bevor über das Menü navigiert wird
+  await expect(page).toHaveURL(`${base}/`)
   await page.getByRole("navigation", { name: "Hauptnavigation" }).getByRole("link", { name: "XML prüfen" }).click()
+  await expect(page).toHaveURL(`${base}/xml-pruefung`)
   await page.getByRole("combobox", { name: "S1000D-Issue" }).click()
   await page.getByRole("option", { name: "Issue 2.3" }).click()
   await page.getByLabel("XML-Datei zur Prüfung").setInputFiles(join(DEMO, REPLY))
