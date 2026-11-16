@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement 2: fehlende Ausgabedaten in der CSV mit Standardwerten ergänzen)
 
@@ -209,6 +209,10 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Ausgabedaten optional über die bestehende REPLY-Variante der Pflichtfeldregel; Sammelhinweis im Prüfkern | Keine neue Regel, gleiche Meldungen wie beim REPLY-Import; ein Hinweis statt 5 Fehler je Eintrag | 2026-11-16 |
 | Neuer Grund „Zugriff abgelehnt“; „nicht erreichbar“ nur für „Server läuft nicht“; sonstige Fehlerantworten als „unerwartet“ | Jede Meldung führt zu genau einer Handlung (neu starten / über localhost öffnen); Unterscheidung im Browser möglich, Serverfunktion bleibt unverändert | 2026-11-16 |
 | Port in der Meldung „Zugriff abgelehnt“ aus der aktuellen Seite | Funktioniert für Startskript (8877) und Entwicklungsserver (3000) gleichermaßen | 2026-11-16 |
+| Ergänzung als eigener Schritt nach der Regelprüfung, CSV aus ergänzter Kopie; Originaleinträge bleiben im Ergebnis | Bericht und Zusammenfassung zeigen den echten Zustand der Datei; nur die CSV erhält Standardwerte (Spec Refinement 2) | 2026-11-16 |
+| Prüfdatum einmal je Prüfung (lokales Datum), für Tests vorgebbar | Einheitliches Datum für alle Einträge, unabhängig vom Download-Zeitpunkt; Tests unabhängig vom Kalendertag | 2026-11-16 |
+| Zwei getrennte Hinweise (ergänzt / nicht ergänzt) statt eines gemeinsamen | Jeder Hinweis führt zu einer klaren Aussage: „erledigt“ bzw. „beim Check-in Pflicht“ | 2026-11-16 |
+| Keine Änderung an Check-in, Regeln, CSV-Schreiber und Seite | Ergänztes `n` passt zu Regel F (neue Einträge), `001`/`new` zu Regel A; Änderung bleibt auf den Prüfkern beschränkt | 2026-11-16 |
 | „Erneut prüfen“ behält das bisherige Ergebnis bis zum neuen | Kein leerer Bildschirm bei erneutem Ausfall; gleiche Logik gegen veraltete Ergebnisse wie „Prüfen“ | 2026-11-16 |
 
 ---
@@ -354,6 +358,68 @@ Hinweis „XSD-Prüfung nicht durchgeführt“
 **4. Umbruch der Codes** — bereits umgesetzt (2026-11-16, nur CSS).
 
 **Betroffene Tests (für /frontend und /qa):** Erwartungen „Pflichtfeld-Fehler bei Demo-Dateien ohne Ausgabedaten“ werden zu „Sammelhinweis, keine Fehler“ (Prüfkern-, QA-, Komponenten- und E2E-Tests von PROJ-20); XSD-Client-Test „Fehlerantwort 404 → nicht erreichbar“ wird „unerwartet“; neu: Zugriff abgelehnt (Antwort „nicht erlaubt“) und Server beendet (Anfrage scheitert) im Client sowie „Erneut prüfen“ im Werkzeug und im echten Browser (Server-Ausfall per abgefangener Anfrage nachgestellt).
+
+**Abhängigkeiten:** keine neuen Pakete.
+
+### K) Ergänzung Refinement 2 (2026-11-16): fehlende Ausgabedaten in der CSV ergänzen
+
+**Überblick:** Reine Erweiterung des Prüfkerns im Browser. Keine neue Seite, keine Serverfunktion, kein Speicher, keine neuen Pakete. Die Bedienoberfläche bleibt gleich. Neu sind nur der Hinweistext und der Inhalt der CSV.
+
+**Ablauf (Ergänzung zu C)**
+```
+… 5. Regelprüfung auf den ORIGINALDATEN (unverändert)
+   │
+   ├─ 5a. NEU: Ausgabedaten ergänzen — nur für die CSV
+   │       je Eintrag: fehlt issno ganz (Ausgabenummer UND Ausgabetyp leer)?
+   │         ja  → Kopie des Eintrags mit
+   │                 Ausgabenummer 001, Ausgabetyp new,
+   │                 Datum der Prüfung (nur wenn Tag/Monat/Jahr alle leer),
+   │                 Eintragstyp n (nur wenn leer)
+   │         nein → Eintrag unverändert (auch bei Teildaten)
+   │
+   └─ 6. Ergebnis: Zusammenfassung + Bericht aus den Originaldaten,
+          CSV aus den ergänzten Einträgen
+```
+
+**Datenmodell (Ergänzung zu D)**
+- Das Prüfergebnis enthält weiterhin die **Originaleinträge** (Grundlage für Bericht, Zusammenfassung und Antwortzählung).
+- Neu: **Anzahl ergänzter Einträge** und das verwendete **Prüfdatum** (TT, MM, JJJJ). Beides speist den Hinweistext.
+- Die CSV wird aus einer **ergänzten Kopie** der Einträge geschrieben. Die Originaleinträge bleiben unverändert.
+
+**Hinweise im Prüfbericht (ersetzt den Sammelhinweis aus J.1)**
+| Fall | Hinweis (Art *Hinweis*, Gruppe Pflichtfelder) |
+|---|---|
+| mind. ein Eintrag ergänzt | „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabenummer 001, Ausgabetyp new, Datum TT.MM.JJJJ, Eintragstyp n (nur wo leer).“ |
+| mind. ein Eintrag mit Lücken, die **nicht** ergänzt wurden (Teildaten, oder nur Datum fehlt) | bisheriger Sammelhinweis „Bei N Einträgen fehlen Ausgabedaten … beim Check-in sind sie Pflicht.“ — gezählt werden nur diese Einträge |
+| beides | beide Hinweise |
+| keine Lücken | kein Hinweis |
+
+Einzahl/Mehrzahl wie bisher. Beides sind Hinweise und keine Fehler, deshalb ändert sich das Gesamtergebnis nicht: Die CSV bleibt ohne Fehlerwarnung, sofern keine anderen Fehler vorliegen.
+
+**Prüfdatum**
+- Es gilt das lokale Datum des Rechners **zum Zeitpunkt der Prüfung**. Es wird einmal je Prüfung festgelegt, sodass alle Einträge dasselbe Datum bekommen. Ein späterer Download, auch nach Mitternacht, ändert es nicht. „Erneut prüfen“ nimmt das neue Tagesdatum.
+- Für Tests kann das Datum fest vorgegeben werden. So bleiben die Tests unabhängig vom Kalendertag.
+
+**Zusammenspiel mit dem Check-in (PROJ-10, unverändert)**
+- Ergänzte Einträge haben die Pflicht-Ausgabedaten. `001` und `new` erfüllen die Formatregel A.
+- Regel F verlangt für **neue** Einträge den Eintragstyp `n`. Das ergänzte `n` erfüllt diese Regel. Ein vorhandenes `c`/`d` bleibt stehen und wird vom Check-in wie bisher bewertet.
+- Gibt es den Eintrag in der Ziel-DMRL schon mit anderen Ausgabedaten, meldet der Check-in das wie jede andere Änderung. Das ist gewollt, denn der Bearbeiter sieht die Abweichung.
+
+**Bausteine**
+| Baustein | Neu / bestehend | Änderung |
+|---|---|---|
+| Prüfkern „XML prüfen“ | bestehend | neuer Schritt 5a; CSV aus ergänzter Kopie; Hinweise nach obiger Tabelle |
+| „Ausgabedaten ergänzen“ | **neu** (im Prüfkern) | reine Umwandlung Eintrag → Eintrag, ohne Bildschirmbezug |
+| CSV-Schreiber (PROJ-9) | bestehend, unverändert | — |
+| Pflichtfeldregel REPLY-Variante (PROJ-8) | bestehend, unverändert | — |
+| Seite „XML prüfen“ | bestehend, unverändert | zeigt die neuen Hinweise über den bestehenden Prüfbericht |
+| Check-in, REPLY-Import | unverändert | — |
+
+**Tests (für /frontend und /qa)**
+- Prüfkern: issno fehlt ganz → `001`/`new`/Prüfdatum/`n` in der CSV, Bericht unverändert auf Originaldaten. Vorhandenes Datum bleibt. Vorhandenes `c`/`d` bleibt. Teildaten oder nur fehlendes Datum → keine Ergänzung und alter Hinweis. Mischfall → beide Hinweise. Unvollständiges Datum ohne issno → issno/type ergänzt, Datum nicht, Fehler bleibt.
+- Rundlauf: Demo-REPLY ohne Ausgabedaten → CSV → Check-in-Regelprüfung ohne Pflichtfeld-Fehler zu den Ausgabedaten.
+- Angepasste Erwartungen: bestehende Tests mit dem Sammelhinweis für Demo-Dateien ohne Ausgabedaten (Prüfkern-, QA-, Komponenten- und E2E-Tests von PROJ-20).
+- E2E: CSV-Download einer Datei ohne Ausgabedaten enthält die Standardwerte und das Tagesdatum.
 
 **Abhängigkeiten:** keine neuen Pakete.
 
