@@ -25,9 +25,16 @@ import {
   xmlCsvFileName,
 } from "./xml-check"
 
-/** Demo-Dateien enthalten keine Ausgabedaten (issno/type/Datum) — für fehlerfreie Fälle ergänzt */
+/**
+ * Demo-Dateien enthalten keine Ausgabedaten (issno/type/Datum) — für fehlerfreie Fälle ergänzt;
+ * Ausgabetyp passend zum Eintragstyp (Typ-Regel beim Check-in, PROJ-10 Refinement 2026-11-16)
+ */
 const withIssueData = (xml: string) =>
-  xml.replace(/<\/dmtitle>/g, '</dmtitle><issno issno="001" type="new"></issno><issdate day="01" month="02" year="2027"></issdate>')
+  xml.replace(/<dmentry\b([^>]*)>([\s\S]*?)<\/dmentry>/g, (_all, attrs: string, body: string) => {
+    const entryType = attrs.match(/\btype="(\w)"/)?.[1] ?? ""
+    const issue = `</dmtitle><issno issno="001" type="${deriveIssueType(entryType)}"></issno><issdate day="01" month="02" year="2027"></issdate>`
+    return `<dmentry${attrs}>${body.replace(/<\/dmtitle>/, issue)}</dmentry>`
+  })
 const DEMO_SEND = DEMO_XML_FILES[DEMO_FILES.send2]
 /** REPLY mit einer Ablehnung samt Begründung */
 const REPLY = withIssueData(DEMO_XML_FILES[DEMO_FILES.reply1]).replace(
@@ -94,7 +101,7 @@ describe("checkXmlText — gültige Datei", () => {
 
   it("Ausgabedaten teilweise: kein Fehler für fehlende Ausgabenummer, aber unvollständiges Datum ist ein Fehler", () => {
     const xml = withIssueData(DEMO_SEND)
-      .replace('<issno issno="001" type="new"></issno>', "")
+      .replace(/<issno issno="001" type="\w+"><\/issno>/, "")
       .replace(/<issdate day="01" month="02" year="2027"><\/issdate>/, '<issdate day="" month="" year="2027"></issdate>')
     const result = checkXmlText("send.XML", "2.3", xml, VALID)
     const errors = result.report.findings.filter((f) => f.severity === "fehler")

@@ -1,3 +1,4 @@
+import { deriveIssueType } from "@/lib/dmrl/issue-type"
 import { DEMO_XML_FILES } from "./demo-xml.generated"
 import { parseDml23 } from "./dml-parser-2-3"
 import {
@@ -177,7 +178,7 @@ function buildPhungun(partnerLabel: string) {
     fields: {
       ...fields,
       issno: fields.issno || "001",
-      type: fields.type || "new",
+      type: fields.type || deriveIssueType(fields.dmentryType),
       day: fields.day || send2.header.issdate.day,
       month: fields.month || send2.header.issdate.month,
       year: fields.year || send2.header.issdate.year,

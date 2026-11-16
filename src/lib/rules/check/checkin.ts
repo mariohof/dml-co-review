@@ -1,5 +1,6 @@
 import { ENTRY_FIELD_NAMES, type EntryFields, type EntrySnapshot } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
+import { ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE, ISSUE_TYPES } from "@/lib/dmrl/issue-type"
 import { readCheckinCsv } from "./csv-reader"
 import { checkCommon } from "./entry-rules"
 import type { Candidate, Finding, Report } from "./types"
@@ -80,9 +81,35 @@ export function checkEntryTypes(comparison: Comparison): Finding[] {
       findings.push({ severity: "fehler", group: "F", line: c.line, dmc, field: "dmentryType", message: IN_PROGRESS_WITHOUT_TYPE })
     }
   }
+  findings.push(...checkIssueTypeMatchesEntryType(comparison))
   for (const entry of comparison.missing) {
     const dmc = formatDmc(entry.fields)
     findings.push({ severity: "fehler", group: "F", dmc, message: `Eintrag ${dmc} fehlt — Einträge können nicht entfernt werden (Löschung über Eintragstyp ‚d' bzw. DM-Ausgabetyp ‚deleted').` })
+  }
+  return findings
+}
+
+const quoteList = (values: readonly string[]) => {
+  const quoted = values.map((v) => `‚${v}‘`)
+  return quoted.length > 1 ? `${quoted.slice(0, -1).join(", ")} oder ${quoted[quoted.length - 1]}` : quoted[0]
+}
+
+/** Meldung der Typ-Regel, z. B. „Eintragstyp ‚d‘ verlangt DM-Ausgabetyp ‚deleted‘ — gefunden: ‚new‘" */
+export const issueTypeMismatch = (entryType: string, found: string) =>
+  `Eintragstyp ‚${entryType}‘ verlangt DM-Ausgabetyp ${quoteList(ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE[entryType])} — gefunden: ‚${found}‘`
+
+/**
+ * Gruppe F — Eintragstyp ↔ DM-Ausgabetyp (Refinement 2026-11-16, nur Check-in): n → new; c → changed/revised/status;
+ * d → deleted; ohne Eintragstyp keine Prüfung. Gilt für alle Einträge der Datei (auch unveränderten Altbestand).
+ * Ungültige Werte (Eintragstyp oder Ausgabetyp) meldet nur Regel A; leerer Ausgabetyp nur Regel B.
+ */
+export function checkIssueTypeMatchesEntryType(comparison: Comparison): Finding[] {
+  const findings: Finding[] = []
+  for (const { candidate: c } of comparison.entries) {
+    const { dmentryType, type } = c.fields
+    const allowed = ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE[dmentryType]
+    if (!allowed || !(ISSUE_TYPES as readonly string[]).includes(type) || allowed.includes(type)) continue
+    findings.push({ severity: "fehler", group: "F", line: c.line, dmc: formatDmc(c.fields), field: "type", message: issueTypeMismatch(dmentryType, type) })
   }
   return findings
 }

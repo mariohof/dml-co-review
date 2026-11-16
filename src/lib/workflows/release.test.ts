@@ -64,7 +64,7 @@ describe("Freigabe-Nachweis und Freigabestand", () => {
     const snapshotBefore = latestRelease(data, DEMO_IDS.dmrlPhungun)!
     const changed = checkOutIn(data, "2026-11-13T09:00:00.000Z", (rows) => {
       rows[0].fields.remarks = "Neue Bemerkung"
-      rows[0].fields.dmentryType = "c"
+      Object.assign(rows[0].fields, { dmentryType: "c", type: "changed" })
       return rows
     })
     expect(dmrl(changed).status).toBe("in_bearbeitung")
@@ -86,7 +86,7 @@ describe("Freigabe-Nachweis und Freigabestand", () => {
     let data = released()
     data = checkOutIn(data, "2026-11-13T09:00:00.000Z", (rows) => {
       rows[0].fields.remarks = "Zweiter Zyklus"
-      rows[0].fields.dmentryType = "c"
+      Object.assign(rows[0].fields, { dmentryType: "c", type: "changed" })
       return rows
     })
     const prepared = prepareSend(data, dmrl(data), "org-c1234", "", "2026-11-14T09:00:00.000Z")
@@ -116,7 +116,7 @@ describe("Freigabe-Nachweis und Freigabestand", () => {
   it("SEND zurückgezogen nach früherer Freigabe: letzter Freigabestand bleibt verfügbar", () => {
     let data = released()
     data = checkOutIn(data, "2026-11-13T09:00:00.000Z", (rows) => {
-      rows[1].fields.dmentryType = "c"
+      Object.assign(rows[1].fields, { dmentryType: "c", type: "changed" })
       return rows
     })
     data = ok(executeSend(data, DEMO_IDS.dmrlPhungun, user(data, DEMO_IDS.editorAnna), prepareSend(data, dmrl(data), "org-c1234", "", "2026-11-14T09:00:00.000Z")))
@@ -188,8 +188,8 @@ describe("Statusmodell — jede Zeile der Übergangstabellen (PROJ-14)", () => {
   it("Check-in: neu → in Bearbeitung; geändert (auch nur Eintragstyp) → in Bearbeitung; unverändert bleibt; DMRL freigegeben → in Bearbeitung", () => {
     const data = released()
     const after = checkOutIn(data, "2026-11-13T09:00:00.000Z", (rows) => {
-      rows[0].fields.dmentryType = "c" // nur Eintragstyp
-      return [...rows, { id: "neu", status: "in_bearbeitung", fields: { ...rows[0].fields, itemloc: "Z", dmentryType: "n", answer: "", answer_comment: "" } }]
+      Object.assign(rows[0].fields, { dmentryType: "c", type: "changed" }) // nur Eintragstyp
+      return [...rows, { id: "neu", status: "in_bearbeitung", fields: { ...rows[0].fields, itemloc: "Z", dmentryType: "n", type: "new", answer: "", answer_comment: "" } }]
     })
     const list = entriesOf(after)
     expect(list).toHaveLength(33)

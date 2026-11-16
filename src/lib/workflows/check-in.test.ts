@@ -87,7 +87,7 @@ describe("Übernahme", () => {
     const data = checkedOut(true)
     const csv = csvOf(data, (rows) => {
       rows[0].fields.remarks = "Geändert"
-      rows[0].fields.dmentryType = "c"
+      Object.assign(rows[0].fields, { dmentryType: "c", type: "changed" })
       return [...rows, { id: "neu", status: "in_bearbeitung", fields: { ...rows[9].fields, itemloc: "B", dmentryType: "n" } }]
     })
     const checked = check(data, csv)
@@ -154,7 +154,7 @@ describe("Übernahme", () => {
     it("mit Übernahme: Werte aus der Datei, betroffene Einträge in Bearbeitung (nie freigegeben), Freigabe entfällt, Verlaufszusatz", () => {
       const data = checkedOut(true)
       const csv = csvOf(data, (rows) => {
-        Object.assign(rows[0].fields, { dmentryType: "c", answer: "n", answer_comment: "Partner lehnt ab" })
+        Object.assign(rows[0].fields, { dmentryType: "c", type: "changed", answer: "n", answer_comment: "Partner lehnt ab" })
         return [...rows, newEntry(rows, "y")]
       })
       const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), check(data, csv), AT, true)

@@ -58,13 +58,15 @@ describe("Demo-Datenbestand", () => {
       expect(currentVersionIndex(demo, DEMO_IDS.dmrlPhungun)).toBe("00002-2026")
     })
 
-    it("hat 32 Einträge (11 d, 21 n), alle gesendet, ergänzt um issno 001, type new und Datum von SEND 00002", () => {
+    it("hat 32 Einträge (11 d, 21 n), alle gesendet, ergänzt um issno 001, Ausgabetyp passend zum Eintragstyp und Datum von SEND 00002", () => {
       expect(entries).toHaveLength(32)
       expect(entries.filter((e) => e.fields.dmentryType === "d")).toHaveLength(11)
       expect(entries.filter((e) => e.fields.dmentryType === "n")).toHaveLength(21)
       for (const entry of entries) {
         expect(entry.status).toBe("gesendet")
-        expect(entry.fields).toMatchObject({ issno: "001", type: "new", day: "29", month: "09", year: "2026" })
+        // Refinement 2026-11-16: d → deleted, n → new (Typ-Regel beim Check-in, PROJ-10)
+        const type = entry.fields.dmentryType === "d" ? "deleted" : "new"
+        expect(entry.fields).toMatchObject({ issno: "001", type, day: "29", month: "09", year: "2026" })
       }
     })
 

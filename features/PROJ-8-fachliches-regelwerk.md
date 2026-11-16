@@ -4,7 +4,7 @@
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-16
 
-> **Refinement 2026-11-16 (über `/refine PROJ-10`):** Regel A erlaubt zusätzlich den DM-Ausgabetyp `status`. Regel F prüft beim Check-in, ob DM-Ausgabetyp und Eintragstyp zusammenpassen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). Ersetzt die bisherige Zeile „unabhängig, erlaubt“. Umsetzung offen (zusammen mit PROJ-10).
+> **Refinement 2026-11-16 (über `/refine PROJ-10`):** Regel A erlaubt zusätzlich den DM-Ausgabetyp `status`. Regel F prüft beim Check-in, ob DM-Ausgabetyp und Eintragstyp zusammenpassen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). Ersetzt die bisherige Zeile „unabhängig, erlaubt“. Umgesetzt 2026-11-16 zusammen mit PROJ-10 (`checkin.ts`: `checkIssueTypeMatchesEntryType`; `src/lib/dmrl/issue-type.ts`).
 
 > **Refinement 2026-11-14 (über `/refine PROJ-10`, Anlass PROJ-20):** Regel K ist kein Fehler mehr — abweichende Antwortfelder werden beim Check-in zur optionalen Übernahme angeboten (Details PROJ-10). Umgesetzt 2026-11-14 zusammen mit PROJ-10 (`checkin.ts`: `answerDeviations`, `answerTakeoverBlockers`; Details in PROJ-10, Implementation Notes).
 

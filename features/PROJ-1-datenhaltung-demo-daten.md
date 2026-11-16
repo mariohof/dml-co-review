@@ -4,7 +4,7 @@
 **Created:** 2026-11-11
 **Last Updated:** 2026-11-16
 
-> **Refinement 2026-11-16 (über `/refine PROJ-10`):** Fehlt in den Beispieldateien der DM-Ausgabetyp, wird er bei den Demo-Einträgen aus dem Eintragstyp abgeleitet (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) statt immer `new`. Grund: neue Typ-Regel beim Check-in (PROJ-8 F / PROJ-10). PHUNGUN: 11 Einträge `d` erhalten `deleted`, 21 Einträge `n` erhalten `new`. Archivierte XML-Dateien bleiben byte-genau. Bereits im Browser gespeicherte Daten werden nicht umgestellt (Demo-Daten zurücksetzen). Umsetzung offen.
+> **Refinement 2026-11-16 (über `/refine PROJ-10`):** Fehlt in den Beispieldateien der DM-Ausgabetyp, wird er bei den Demo-Einträgen aus dem Eintragstyp abgeleitet (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) statt immer `new`. Grund: neue Typ-Regel beim Check-in (PROJ-8 F / PROJ-10). PHUNGUN: 11 Einträge `d` erhalten `deleted`, 21 Einträge `n` erhalten `new`. Archivierte XML-Dateien bleiben byte-genau. Bereits im Browser gespeicherte Daten werden nicht umgestellt (Demo-Daten zurücksetzen). Umgesetzt 2026-11-16 (`demo-data.ts` nutzt `deriveIssueType` aus `src/lib/dmrl/issue-type.ts`).
 
 ## Dependencies
 - None (Basis für alle weiteren Features)

@@ -1,5 +1,6 @@
 import type { EntryFields } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
+import { ISSUE_TYPES } from "@/lib/dmrl/issue-type"
 import { ISO_3166_1_ALPHA2, ISO_639_1 } from "../iso-codes"
 import type { Candidate, Finding } from "./types"
 
@@ -37,7 +38,7 @@ export const FORMAT_RULES: Partial<Record<FieldName, FormatRule>> = {
   country: { test: (v) => /^[A-Z]{2}$/.test(v) && ISO_3166_1_ALPHA2.has(v), description: "Ländercode nach ISO 3166 (2 Großbuchstaben)" },
   security: { test: (v) => /^(0[1-9]|1\d|20)$/.test(v), description: "2 Ziffern, 01–20" },
   issno: digits(3),
-  type: oneOf(["new", "changed", "revised", "deleted"], "new, changed, revised oder deleted"),
+  type: oneOf([...ISSUE_TYPES], "new, changed, revised, deleted oder status"),
   day: digits(2),
   month: digits(2),
   year: digits(4),

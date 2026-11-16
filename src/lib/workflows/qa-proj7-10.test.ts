@@ -93,7 +93,7 @@ describe("PROJ-10 — Check-in", () => {
     const result = checkCheckinFile(data, dmrl(data, DEMO_IDS.dmrlVehicle), csvFromLock(data, DEMO_IDS.dmrlVehicle, (rows) => {
       const row = rows.find((r) => r.id === first.id)!
       row.fields.remarks = "Neue Bemerkung"
-      row.fields.dmentryType = "c"
+      Object.assign(row.fields, { dmentryType: "c", type: "changed" })
       return rows
     }))
     expect(errorCount(result.report)).toBe(0)
@@ -129,7 +129,7 @@ describe("QA PROJ-10 Refinement 2026-11-14 — Partnerantworten aus der Datei", 
     const data: Dataset = {
       ...demo,
       entries: demo.entries.map((e) =>
-        e.id === first.id ? { ...e, status: "zu_ueberarbeiten", fields: { ...e.fields, dmentryType: "c", answer: "n", answer_comment: "bitte präzisieren" } } : e
+        e.id === first.id ? { ...e, status: "zu_ueberarbeiten", fields: { ...e.fields, dmentryType: "c", type: "changed", answer: "n", answer_comment: "bitte präzisieren" } } : e
       ),
     }
     return { data: checkedOut(data, DEMO_IDS.dmrlVehicle, DEMO_IDS.editorBen), firstId: first.id }

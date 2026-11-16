@@ -91,7 +91,7 @@ describe("Check-in in der DMRL-Ansicht", () => {
     renderAs(DEMO_IDS.editorBen)
     const csv = csvOf(data, (rows) => {
       rows[0].fields.remarks = "Neue Bemerkung"
-      rows[0].fields.dmentryType = "c"
+      Object.assign(rows[0].fields, { dmentryType: "c", type: "changed" })
       return rows
     })
     const dialog = await openAndUpload(csv)

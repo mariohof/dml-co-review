@@ -4,6 +4,7 @@ import { writeEntriesCsv } from "@/lib/files/csv-writer"
 import { checkFormats, checkInfocodeInfoname, checkMandatory, checkSnsTechname, checkUniqueDmc, OPTIONAL_IN_REPLY } from "@/lib/rules/check/entry-rules"
 import type { Candidate, Finding, Report } from "@/lib/rules/check/types"
 import { formatDmc } from "@/lib/dmrl/entries"
+import { deriveIssueType } from "@/lib/dmrl/issue-type"
 import { acceptXmlUpload, unavailableDetail, validateXml, xsdResultToReport } from "@/lib/xsd/client"
 import type { XsdResult } from "@/lib/xsd/types"
 import { readReplyFile } from "./reply"
@@ -27,12 +28,10 @@ export const issueDataMissing = (count: number) =>
 
 /** Standardwerte für fehlende Ausgabedaten (Refinement 2/3, 2026-11-16) */
 export const DEFAULT_ISSNO = "001"
-export const DEFAULT_ISSUE_TYPE = "new"
 export const DEFAULT_ENTRY_TYPE = "n"
 
-/** Ableitung Ausgabetyp aus dem Eintragstyp (Refinement 3); leerer oder unbekannter Eintragstyp → `new` */
-const ISSUE_TYPE_BY_ENTRY_TYPE: Record<string, string> = { n: "new", c: "changed", d: "deleted" }
-export const deriveIssueType = (entryType: string) => ISSUE_TYPE_BY_ENTRY_TYPE[entryType] ?? DEFAULT_ISSUE_TYPE
+/** Ableitung Ausgabetyp aus dem Eintragstyp (Refinement 3); leerer oder unbekannter Eintragstyp → `new` — gemeinsam mit PROJ-1/PROJ-10 */
+export { DEFAULT_ISSUE_TYPE, deriveIssueType } from "@/lib/dmrl/issue-type"
 
 export interface CheckDate {
   day: string

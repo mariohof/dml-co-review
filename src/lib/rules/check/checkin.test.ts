@@ -90,7 +90,7 @@ describe("Gruppe A — Feldformat und führende Nullen", () => {
     ["security", "00", "01–20"],
     ["security", "21", "01–20"],
     ["dmentryType", "x", "leer, n, c oder d"],
-    ["type", "change", "new, changed, revised oder deleted"],
+    ["type", "change", "new, changed, revised, deleted oder status"],
     ["language", "xx", "ISO 639-1"],
     ["language", "DE", "ISO 639-1"],
     ["country", "XX", "ISO 3166"],
@@ -226,13 +226,106 @@ describe("Gruppe F — Eintragstyp gegen den bisherigen Stand", () => {
 
   it("erlaubt unveränderte Einträge mit c/d sowie bestehende Einträge mit n", () => {
     const csv = vehicleCsv((rows) => {
-      rows[0].fields.dmentryType = "c"
-      rows[1].fields.dmentryType = "d"
+      Object.assign(rows[0].fields, { dmentryType: "c", type: "changed" })
+      Object.assign(rows[1].fields, { dmentryType: "d", type: "deleted" })
       return rows
     })
     const result = runCheckinCheck(csv, vehicleContext)
     expect(errorCount(result.report)).toBe(0)
     expect(result.summary.geaendert).toBe(2)
+  })
+})
+
+describe("Gruppe F — Eintragstyp ↔ DM-Ausgabetyp (Refinement 2026-11-16)", () => {
+  /** setzt Eintragstyp und Ausgabetyp beim ersten Fahrzeug-Eintrag und liefert die Meldungen */
+  const withTypes = (dmentryType: string, type: string) =>
+    messages(
+      vehicleCsv((rows) => {
+        Object.assign(rows[0].fields, { dmentryType, type })
+        return rows
+      }),
+    )
+
+  it.each([
+    ["n", "new"],
+    ["c", "changed"],
+    ["c", "revised"],
+    ["c", "status"],
+    ["d", "deleted"],
+  ])("erlaubt Eintragstyp %s mit Ausgabetyp %s", (entryType, issueType) => {
+    expect(withTypes(entryType, issueType)).toEqual([])
+  })
+
+  it.each([
+    ["n", "changed", "F: Eintragstyp ‚n‘ verlangt DM-Ausgabetyp ‚new‘ — gefunden: ‚changed‘"],
+    ["n", "deleted", "F: Eintragstyp ‚n‘ verlangt DM-Ausgabetyp ‚new‘ — gefunden: ‚deleted‘"],
+    ["c", "new", "F: Eintragstyp ‚c‘ verlangt DM-Ausgabetyp ‚changed‘, ‚revised‘ oder ‚status‘ — gefunden: ‚new‘"],
+    ["c", "deleted", "F: Eintragstyp ‚c‘ verlangt DM-Ausgabetyp ‚changed‘, ‚revised‘ oder ‚status‘ — gefunden: ‚deleted‘"],
+    ["d", "new", "F: Eintragstyp ‚d‘ verlangt DM-Ausgabetyp ‚deleted‘ — gefunden: ‚new‘"],
+    ["d", "status", "F: Eintragstyp ‚d‘ verlangt DM-Ausgabetyp ‚deleted‘ — gefunden: ‚status‘"],
+  ])("meldet Eintragstyp %s mit Ausgabetyp %s", (entryType, issueType, message) => {
+    expect(withTypes(entryType, issueType)).toEqual([message])
+  })
+
+  it("Meldung nennt Zeile, DMC und Feld", () => {
+    const csv = vehicleCsv((rows) => {
+      rows[0].fields.type = "changed"
+      return rows
+    })
+    const finding = runCheckinCheck(csv, vehicleContext).report.findings[0]
+    expect(finding).toMatchObject({ group: "F", line: 2, field: "type", dmc: formatDmc(vehicle[0].fields) })
+  })
+
+  it("prüft Einträge ohne Eintragstyp nicht (freigegeben, jeder gültige Ausgabetyp)", () => {
+    const snapshot = structuredClone(vehicle)
+    snapshot[0] = { ...snapshot[0], status: "freigegeben", fields: { ...snapshot[0].fields, dmentryType: "", type: "deleted" } }
+    expect(messages(writeEntriesCsv(snapshot), { ...vehicleContext, snapshot })).toEqual([])
+  })
+
+  it("meldet auch unveränderten Altbestand (d + new)", () => {
+    const snapshot = structuredClone(vehicle)
+    Object.assign(snapshot[0].fields, { dmentryType: "d", type: "new" })
+    expect(messages(writeEntriesCsv(snapshot), { ...vehicleContext, snapshot })).toEqual([
+      "F: Eintragstyp ‚d‘ verlangt DM-Ausgabetyp ‚deleted‘ — gefunden: ‚new‘",
+    ])
+  })
+
+  it("korrigierter Ausgabetyp ist eine Änderung (Eintrag wird „in Bearbeitung“)", () => {
+    const snapshot = structuredClone(vehicle)
+    Object.assign(snapshot[0].fields, { dmentryType: "d", type: "new" })
+    const fixed = structuredClone(snapshot)
+    fixed[0].fields.type = "deleted"
+    const result = runCheckinCheck(writeEntriesCsv(fixed), { ...vehicleContext, snapshot })
+    expect(errorCount(result.report)).toBe(0)
+    expect(result.comparison?.entries[0]).toMatchObject({ classification: "geaendert", changedFields: ["type"] })
+  })
+
+  it("prüft auch neue Einträge (n + changed)", () => {
+    const csv = vehicleCsv((rows) => [...rows, { ...rows[9], id: "neu", fields: { ...rows[9].fields, itemloc: "B", type: "changed" } }])
+    expect(messages(csv)).toEqual(["F: Eintragstyp ‚n‘ verlangt DM-Ausgabetyp ‚new‘ — gefunden: ‚changed‘"])
+  })
+
+  it.each([
+    ["change", "A: "],
+    ["Deleted", "A: "],
+    ["rinstate-changed", "A: "],
+  ])("ungültiger Ausgabetyp %s: nur Formatfehler (Regel A), keine Typ-Meldung", (issueType, prefix) => {
+    const found = withTypes("c", issueType)
+    expect(found).toHaveLength(1)
+    expect(found[0].startsWith(prefix)).toBe(true)
+    expect(found[0]).toContain("new, changed, revised, deleted oder status")
+  })
+
+  it("leerer Ausgabetyp: nur Pflichtfeldfehler (Regel B), keine Typ-Meldung", () => {
+    const found = withTypes("d", "")
+    expect(found).toHaveLength(1)
+    expect(found[0].startsWith("B: ")).toBe(true)
+  })
+
+  it("Demo PHUNGUN: Einträge mit d haben deleted, mit n haben new", () => {
+    const phungun = snapshotOf(DEMO_IDS.dmrlPhungun)
+    expect(phungun.filter((e) => e.fields.dmentryType === "d").every((e) => e.fields.type === "deleted")).toBe(true)
+    expect(phungun.filter((e) => e.fields.dmentryType === "n").every((e) => e.fields.type === "new")).toBe(true)
   })
 })
 
@@ -248,7 +341,7 @@ describe("Gruppe K — abweichende Partnerantworten (Refinement 2026-11-14)", ()
     const rows = structuredClone(base)
     rows[0].fields.answer = "y" // nur Antwort geändert, ohne Eintragstyp → sperrt die Übernahme
     rows[1].fields.answer_comment = "Begründung" // nur Antwort geändert, Eintragstyp n → keine Sperre
-    Object.assign(rows[2].fields, { remarks: "Geändert", dmentryType: "c", answer: "n" }) // fachlich geändert und Antwort
+    Object.assign(rows[2].fields, { remarks: "Geändert", dmentryType: "c", type: "changed", answer: "n" }) // fachlich geändert und Antwort
     rows.push({ id: "neu", status: "in_bearbeitung", fields: { ...rows[9].fields, itemloc: "B", dmentryType: "n", answer: "", answer_comment: "x" } })
     return writeEntriesCsv(rows)
   }
@@ -265,7 +358,7 @@ describe("Gruppe K — abweichende Partnerantworten (Refinement 2026-11-14)", ()
     const result = runCheckinCheck(withAnswers(), context)
     expect(byDmc(result, dmcOf(0))).toMatchObject({ classification: "unveraendert", answerChanged: true, changedFields: [] })
     expect(byDmc(result, dmcOf(1))).toMatchObject({ classification: "unveraendert", answerChanged: true })
-    expect(byDmc(result, dmcOf(2))).toMatchObject({ classification: "geaendert", answerChanged: true, changedFields: ["dmentryType", "remarks"] })
+    expect(byDmc(result, dmcOf(2))).toMatchObject({ classification: "geaendert", answerChanged: true, changedFields: ["dmentryType", "type", "remarks"] })
     expect(byDmc(result, NEW_DMC)).toMatchObject({ classification: "neu", answerChanged: true })
     expect(result.summary).toMatchObject({ geprueft: 11, neu: 1, geaendert: 1, unveraendert: 9 })
     expect(checkinSummary(result.candidates, result.comparison, true)).toMatchObject({ geprueft: 11, neu: 1, geaendert: 3, unveraendert: 7 })
