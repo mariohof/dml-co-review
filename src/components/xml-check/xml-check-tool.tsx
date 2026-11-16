@@ -164,7 +164,8 @@ function Item({ label, children, mono }: { label: string; children: React.ReactN
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className={mono ? "break-all font-mono text-sm" : "break-words text-sm"}>{children || "—"}</dd>
+      {/* Umbruch bevorzugt nach Bindestrichen (Browser-Standard), nur notfalls mitten im Wort */}
+      <dd className={mono ? "font-mono text-sm [overflow-wrap:anywhere]" : "break-words text-sm"}>{children || "—"}</dd>
     </div>
   )
 }

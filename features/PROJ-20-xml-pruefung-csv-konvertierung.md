@@ -50,7 +50,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - DML-Code, Ausgabestand (`issno`/`inwork`), Datum, Sicherheitseinstufung, Verweis auf die Bezugs-DMRL (`dmlref`), soweit vorhanden
 - MI (bzw. „uneinheitlich“), Anzahl Einträge, Anzahl Partnerantworten freigegeben / zu überarbeiten / ohne Antwort (immer angezeigt, auch bei SEND-Dateien ohne Antworten)
 - Gesamtergebnis: **„Keine Fehler“** oder **„N Fehler, M Hinweise“**
-- Lange Codes (Dateiname, DML-Code, Bezugs-DMRL) brechen **an den Bindestrichen bzw. Unterstrichen** um, nicht mitten in einer Codegruppe (z. B. `DML-TWLBORFLOS-DN463-C-` / `2026-00001`)
+- Lange Codes (Dateiname, DML-Code, Bezugs-DMRL) brechen **nach einem Bindestrich** um, nicht mitten in einer Codegruppe (z. B. Zeile 1 `DML-TWLBORFLOS-DN463-C-2026-`, Zeile 2 `00001`). Umsetzung rein per CSS, es werden keine Zeichen eingefügt; nur wenn eine Codegruppe allein nicht in die Zeile passt, wird sie getrennt
 
 **Prüfbericht:** gleiche Darstellung und gleicher Download wie beim Check-in (PROJ-10), gruppiert nach XSD und Regeln.
 
@@ -116,7 +116,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 
 ### Darstellung
 - [ ] Angenommen das Werkzeug wird bei 375, 768 und 1440 px Breite genutzt, wenn eine Prüfung mit Fehlern angezeigt wird, dann scrollt die Seite nicht waagerecht
-- [ ] Angenommen ein langer DML-Code oder Dateiname passt nicht in eine Zeile der Zusammenfassung, wenn sie angezeigt wird, dann bricht er an einem Bindestrich oder Unterstrich um, nicht mitten in einer Codegruppe
+- [ ] Angenommen ein langer DML-Code oder Dateiname passt nicht in eine Zeile der Zusammenfassung, wenn sie angezeigt wird, dann bricht er nach einem Bindestrich um, nicht mitten in einer Codegruppe; es werden keine Zeichen eingefügt
 
 ## Edge Cases
 - **XML einer anderen Issue gewählt** (z. B. 4.2-Datei, Issue 2.3 gewählt): XSD meldet Fehler; ist die Datei mit dem Leser der gewählten Issue nicht lesbar, Meldung „Datei passt nicht zur gewählten Issue — bitte Issue prüfen“ und keine CSV.
@@ -166,7 +166,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Ausgabedaten (`issno`/`type`/`issdate`) im Werkzeug optional, wie beim REPLY-Import; ein Sammelhinweis statt Fehler je Eintrag | In echten DMRL-XML fehlen sie oft (im Schema optional); 575 Pflichtfeld-Fehler bei 115 Einträgen verdecken echte Fehler (Fall TWLBORFLOS) | 2026-11-16 |
 | Check-in (PROJ-10) bleibt streng: Ausgabedaten dort Pflicht | Wunsch Product Owner; der Sammelhinweis kündigt die Abweisung beim Check-in an | 2026-11-16 |
 | „XSD nicht erreichbar“ nennt die Ursache (Server läuft nicht / Zugriff abgelehnt) mit Handlungsanweisung, plus „Erneut prüfen“ | Die bisherige Meldung „Prüffunktion ist nicht erreichbar“ ließ offen, was zu tun ist; die Ursachen sind behebbar. Gilt überall, wo die XSD-Prüfung genutzt wird (PROJ-11) | 2026-11-16 |
-| Lange Codes in der Zusammenfassung an Bindestrichen/Unterstrichen umbrechen | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar | 2026-11-16 |
+| Lange Codes in der Zusammenfassung nach Bindestrichen umbrechen, rein per CSS (kein eingefügtes Zeichen) — bereits umgesetzt | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar; Wunsch Product Owner: nur CSS | 2026-11-16 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
