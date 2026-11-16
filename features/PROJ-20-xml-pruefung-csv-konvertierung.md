@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement: Ausgabedaten optional, XSD nicht erreichbar, Umbruch Zusammenfassung)
 
@@ -142,7 +142,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 ## Open Questions
 - [x] Wie behandelt der Check-in eingehende `answer`/`answer_comment` aus einer konvertierten Partner-XML? → Optional übernehmen mit Abfrage, nur als Information (Status bleibt *in Bearbeitung*); Umsetzung per `/refine PROJ-10` (2026-11-14)
 - [x] Antwortzählung bei SEND-Dateien ausblenden? → Nein, immer anzeigen (2026-11-14)
-- [ ] Sollen die genaueren XSD-Meldungen (PROJ-11) auch im REPLY-Import und beim SEND-Export ein „Erneut prüfen“ bekommen, soweit dort noch nicht vorhanden? → bei `/architecture` prüfen
+- [x] Sollen die genaueren XSD-Meldungen (PROJ-11) auch im REPLY-Import und beim SEND-Export ein „Erneut prüfen“ bekommen? → Nicht nötig: beide haben bereits „Erneut versuchen“; die genaueren Meldungen wirken dort über den gemeinsamen Baustein (2026-11-16)
 - [x] `/refine PROJ-10` (und Regel K in PROJ-8) durchgeführt (2026-11-14): eine Abfrage für alle abweichenden Antworten, standardmäßig aus; übernommene Antwortänderung zählt als Änderung. Umsetzung von PROJ-10/PROJ-8 muss vor der Gesamtabnahme von PROJ-20 erfolgen
 
 ## Decision Log
@@ -180,6 +180,10 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Laufende Prüfung über eine fortlaufende Prüfnummer verwerfen | Verhindert veraltete Ergebnisse bei neuer Datei, Issue-Wechsel oder Verlassen der Seite | 2026-11-14 |
 | Eigene Adresse /xml-pruefung, nur Anmeldesperre, keine DMRL-Berechtigung | Werkzeug liest und ändert keine Systemdaten (Spec) | 2026-11-14 |
 | Keine neuen Pakete | Alle benötigten Bausteine sind vorhanden | 2026-11-14 |
+| Ausgabedaten optional über die bestehende REPLY-Variante der Pflichtfeldregel; Sammelhinweis im Prüfkern | Keine neue Regel, gleiche Meldungen wie beim REPLY-Import; ein Hinweis statt 5 Fehler je Eintrag | 2026-11-16 |
+| Neuer Grund „Zugriff abgelehnt“; „nicht erreichbar“ nur für „Server läuft nicht“; sonstige Fehlerantworten als „unerwartet“ | Jede Meldung führt zu genau einer Handlung (neu starten / über localhost öffnen); Unterscheidung im Browser möglich, Serverfunktion bleibt unverändert | 2026-11-16 |
+| Port in der Meldung „Zugriff abgelehnt“ aus der aktuellen Seite | Funktioniert für Startskript (8877) und Entwicklungsserver (3000) gleichermaßen | 2026-11-16 |
+| „Erneut prüfen“ behält das bisherige Ergebnis bis zum neuen | Kein leerer Bildschirm bei erneutem Ausfall; gleiche Logik gegen veraltete Ergebnisse wie „Prüfen“ | 2026-11-16 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -290,6 +294,42 @@ Der Dateiname der CSV ist der Name der XML-Datei mit Endung `.csv`; der Prüfber
 
 ### I) Abhängigkeiten (Pakete)
 Keine neuen Pakete. Genutzt werden die vorhandenen (papaparse für die CSV, zod für die Serverantwort, shadcn/ui-Komponenten).
+
+### J) Ergänzung Refinement 2026-11-16
+
+**1. Ausgabedaten optional (nur im Werkzeug)**
+- Die Pflichtfeldprüfung im Werkzeug nutzt die bestehende **REPLY-Variante** der Regel B (PROJ-8): Ausgabenummer, Ausgabetyp und Datum dürfen fehlen; ein angefangenes Datum muss vollständig sein („Ausgabedatum ist unvollständig“). Keine neue Regel, kein neuer Regeltext.
+- Neu im Prüfkern: **ein Sammelhinweis** (Art *Hinweis*, Gruppe Pflichtfelder, ohne Zeilenbezug): „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“ Gezählt werden Einträge, bei denen mindestens eines der fünf Felder leer ist. Kein Hinweis, wenn alle vollständig sind.
+- Da es ein Hinweis und kein Fehler ist: Gesamtergebnis „0 Fehler, 1 Hinweis“, CSV **ohne** Warnung.
+- Check-in (PROJ-10) und REPLY-Import (PROJ-13) bleiben unverändert. PROJ-21 erbt das Verhalten über den gemeinsamen Prüfkern.
+
+**2. Ursache, wenn die XSD-Prüfung nicht erreichbar ist (gemeinsamer Baustein PROJ-11, Browser-Seite)**
+
+| Situation | Erkennung im Browser | Meldung (Detail) |
+|---|---|---|
+| Server beendet, Tab noch offen | Anfrage kommt gar nicht an | „Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).“ |
+| App über fremde Adresse geöffnet | Serverfunktion lehnt ab (Schutz BUG-QA2-3) | „Zugriff abgelehnt — bitte die Anwendung über http://localhost:<Port> öffnen.“ (Port der aktuellen Seite) |
+| Server antwortet mit anderem Fehler | sonstige Fehlerantwort | „Die Prüffunktion hat unerwartet geantwortet.“ (bisher fälschlich „nicht erreichbar“) |
+| xmllint fehlt / Schema fehlt / Zeitlimit | wie bisher | wie bisher |
+
+- Neuer Grund **„Zugriff abgelehnt“** in der Liste der Gründe „nicht verfügbar“; „nicht erreichbar“ bedeutet künftig nur noch „Server läuft nicht“.
+- **Serverfunktion unverändert** (sie antwortet bei fremder Adresse schon heute mit „nicht erlaubt“); kein Backend-Schritt nötig.
+- Wirkung überall, wo die Meldung angezeigt wird: Werkzeug „XML prüfen“, REPLY-Import, SEND, DMRL-Export (Hinweisfenster). REPLY und SEND haben bereits „Erneut versuchen“.
+
+**3. „Erneut prüfen“ im Werkzeug**
+```
+Hinweis „XSD-Prüfung nicht durchgeführt“
++-- Ursache mit Handlungsanweisung (siehe 2.)
++-- Schaltfläche „Erneut prüfen“ (Ladeanzeige während der Prüfung)
+```
+- Wiederholt die Prüfung derselben Datei mit derselben Issue (gleicher Ablauf wie „Prüfen“, gleiche Prüfnummer-Logik gegen veraltete Ergebnisse).
+- Während der Wiederholung bleibt das bisherige Ergebnis sichtbar; erst das neue Ergebnis ersetzt es. Wechsel von Datei oder Issue verwirft die Wiederholung wie bisher.
+
+**4. Umbruch der Codes** — bereits umgesetzt (2026-11-16, nur CSS).
+
+**Betroffene Tests (für /frontend und /qa):** Erwartungen „Pflichtfeld-Fehler bei Demo-Dateien ohne Ausgabedaten“ werden zu „Sammelhinweis, keine Fehler“ (Prüfkern-, QA-, Komponenten- und E2E-Tests von PROJ-20); XSD-Client-Test „Fehlerantwort 404 → nicht erreichbar“ wird „unerwartet“; neu: Zugriff abgelehnt (Antwort „nicht erlaubt“) und Server beendet (Anfrage scheitert) im Client sowie „Erneut prüfen“ im Werkzeug und im echten Browser (Server-Ausfall per abgefangener Anfrage nachgestellt).
+
+**Abhängigkeiten:** keine neuen Pakete.
 
 ### Implementierungsnotizen (Frontend, 2026-11-14)
 - **Prüfkern** `src/lib/workflows/xml-check.ts` (ohne Bildschirmbezug, für PROJ-21 wiederverwendbar): Dateiannahme → XSD (bestehende Serverfunktion) → Lesen in deklarierter Kodierung → DML-Leser der gewählten Issue → Regeln A, B (Check-in), C, E, I + neue Prüfung „MI einheitlich“ (Gruppe „Model Ident Code“, häufigster MI gilt) → CSV mit dem bestehenden Check-out-Schreiber.
