@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-11
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-16
+
+> **Refinement 2026-11-16 (über `/refine PROJ-10`):** Fehlt in den Beispieldateien der DM-Ausgabetyp, wird er bei den Demo-Einträgen aus dem Eintragstyp abgeleitet (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) statt immer `new`. Grund: neue Typ-Regel beim Check-in (PROJ-8 F / PROJ-10). PHUNGUN: 11 Einträge `d` erhalten `deleted`, 21 Einträge `n` erhalten `new`. Archivierte XML-Dateien bleiben byte-genau. Bereits im Browser gespeicherte Daten werden nicht umgestellt (Demo-Daten zurücksetzen). Umsetzung offen.
 
 ## Dependencies
 - None (Basis für alle weiteren Features)
@@ -87,7 +89,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 | System 1 | „PHUNGUN" — MI `PHUNGUN`, Issue 2.3 |
 | System 2 | „Geschütztes Transportfahrzeug" — MI `GTFDEMO`, Issue 4.2 |
 | System 3 | „Transporthubschrauber" — MI `THSDEMO`, Issue 5.0 |
-| DMRL PHUNGUN | Originator D0815, DML-Typ `c`, Sicherheitseinstufung `01`. Austauschkette aus den 3 Beispieldateien im Archiv (SEND 00001-2026 → REPLY C1234 00001-2026 → SEND 00002-2026, Partner C1234); aktueller Stand = SEND 00002-2026: 32 Einträge (11 `d`, 21 `n`) im Status *gesendet*, ergänzt um `issno` `001`, DM-Ausgabetyp `new`, Ausgabedatum = Datum SEND 00002; DMRL-Status *gesendet*; Verlauf: SEND, REPLY übernommen, SEND (Benutzer Anna Bearbeitung, Zeitpunkte aus den Dateien); keine Freigabestände |
+| DMRL PHUNGUN | Originator D0815, DML-Typ `c`, Sicherheitseinstufung `01`. Austauschkette aus den 3 Beispieldateien im Archiv (SEND 00001-2026 → REPLY C1234 00001-2026 → SEND 00002-2026, Partner C1234); aktueller Stand = SEND 00002-2026: 32 Einträge (11 `d`, 21 `n`) im Status *gesendet*, ergänzt um `issno` `001`, DM-Ausgabetyp aus dem Eintragstyp (`d` → `deleted`, `n` → `new`; *Refinement 2026-11-16*, vorher immer `new`), Ausgabedatum = Datum SEND 00002; DMRL-Status *gesendet*; Verlauf: SEND, REPLY übernommen, SEND (Benutzer Anna Bearbeitung, Zeitpunkte aus den Dateien); keine Freigabestände |
 | DMRL Fahrzeug | Originator D0815, `c`, `01`; 10 Einträge mit Eintragstyp `n`, Status *in Bearbeitung*, MI `GTFDEMO`, regelkonform nach PROJ-8 (Pflichtfelder, SNS→Tech Name, Infocode→Info Name, `language` `de`, `country` `DE`); kein Archiv, kein Verlauf |
 | DMRL Fluggerät | wie Fahrzeug, MI `THSDEMO` |
 
@@ -134,7 +136,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Daten betrachtet werden, dann existieren genau 3 Systeme mit den S1000D-Issues 2.3, 4.2 und 5.0
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die Daten betrachtet werden, dann existieren die Organisationen D0815 und C1234, das Systemkonto „Administrator", die Bearbeiter „Anna Bearbeitung" und „Ben Bearbeiter" sowie deren Berechtigungen laut Tabelle
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRL des Systems PHUNGUN betrachtet wird, dann enthält ihr Archiv 3 Stände in der Reihenfolge SEND 00001-2026, REPLY C1234 00001-2026, SEND 00002-2026 mit unverändertem Original-XML-Inhalt
-- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRL des Systems PHUNGUN betrachtet wird, dann hat sie den Versionsindex 00002-2026, den Status *gesendet* und 32 Einträge (11 mit Eintragstyp `d`, 21 mit `n`) im Status *gesendet*, jeweils mit `issno` `001`, DM-Ausgabetyp `new` und Ausgabedatum
+- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRL des Systems PHUNGUN betrachtet wird, dann hat sie den Versionsindex 00002-2026, den Status *gesendet* und 32 Einträge (11 mit Eintragstyp `d`, 21 mit `n`) im Status *gesendet*, jeweils mit `issno` `001`, DM-Ausgabetyp passend zum Eintragstyp (`d` → `deleted`, `n` → `new`) und Ausgabedatum *(Refinement 2026-11-16)*
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn der Verlauf von PHUNGUN betrachtet wird, dann enthält er SEND, REPLY übernommen und SEND passend zu den Archivständen
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRLs des Fahrzeugs (4.2) und des Fluggeräts (5.0) betrachtet werden, dann haben sie je 10 Einträge mit Eintragstyp `n` im Status *in Bearbeitung*, kein Archiv und keinen Verlauf
 - [ ] Angenommen die Demo-DMRL Fahrzeug oder Fluggerät wird ausgecheckt und unverändert eingecheckt, wenn geprüft wird, dann ist die Datei fehlerfrei (PROJ-8)
@@ -203,6 +205,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 | Demo-Namen: Systeme PHUNGUN / Geschütztes Transportfahrzeug (GTFDEMO) / Transporthubschrauber (THSDEMO); Bearbeiter Anna Bearbeitung / Ben Bearbeiter | Vorgabe Product Owner (Wireframe PROJ-16) | 2026-11-12 |
 | Demo-REPLY auf SEND 00002 mit 2 Ablehnungen und fehlerhafte Testdateien in `public/demo-dateien/` | Vollständiger Demo-Zyklus und Vorführung der Prüfungen (PROJ-11/13) | 2026-11-12 |
 | Demo-Einträge PHUNGUN werden um `issno` (`001`), DM-Ausgabetyp (`new`) und Ausgabedatum (Datum des SEND) ergänzt; archivierte XML-Dateien bleiben byte-genau | Pflichtfelder laut PROJ-8; Beispieldateien enthalten diese Felder nicht | 2026-11-12 |
+| DM-Ausgabetyp der Demo-Einträge aus dem Eintragstyp ableiten (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) statt immer `new` | Typ-Regel beim Check-in (PROJ-8 F, PROJ-10); sonst scheitert jeder Check-in der PHUNGUN-Demo | 2026-11-16 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |

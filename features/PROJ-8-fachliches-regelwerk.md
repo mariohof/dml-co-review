@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-16
+
+> **Refinement 2026-11-16 (über `/refine PROJ-10`):** Regel A erlaubt zusätzlich den DM-Ausgabetyp `status`. Regel F prüft beim Check-in, ob DM-Ausgabetyp und Eintragstyp zusammenpassen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). Ersetzt die bisherige Zeile „unabhängig, erlaubt“. Umsetzung offen (zusammen mit PROJ-10).
 
 > **Refinement 2026-11-14 (über `/refine PROJ-10`, Anlass PROJ-20):** Regel K ist kein Fehler mehr — abweichende Antwortfelder werden beim Check-in zur optionalen Übernahme angeboten (Details PROJ-10). Umgesetzt 2026-11-14 zusammen mit PROJ-10 (`checkin.ts`: `answerDeviations`, `answerTakeoverBlockers`; Details in PROJ-10, Implementation Notes).
 
@@ -66,7 +68,7 @@ Alle Regelverstöße sind **Fehler**; es gibt keine Warnungen. Einzige Ausnahme 
 | security | 2 Ziffern, `01`–`20` (Wertebereich der Schemas 4.2/5.0; kein Vergleich mit der DMRL-Einstufung) |
 | rpc, rpcname | Text |
 | issno | 3 Ziffern, führende Nullen |
-| type (DM-Ausgabetyp) | `new`, `changed`, `revised`, `deleted` |
+| type (DM-Ausgabetyp) | `new`, `changed`, `revised`, `deleted`, `status` *(`status` ergänzt im Refinement 2026-11-16)* |
 | day / month / year | 2 / 2 / 4 Ziffern, führende Nullen; zusammen ein gültiges Datum (kein 31.02.) |
 | answer | leer, `y`, `n` |
 | answer_comment, remarks | Text |
@@ -101,9 +103,15 @@ Der Eintragstyp wird **vom Bearbeiter manuell** gesetzt. Das Regelwerk prüft nu
 | Bisheriger Eintrag fehlt in der Datei | Fehler (Einträge werden nicht entfernt, sondern mit `d` / `deleted` gekennzeichnet) |
 | Bestehender Eintrag mit `n` | erlaubt (erneutes Senden nach Absprache, NSG) |
 | Unveränderter Eintrag mit `c` oder `d` | erlaubt |
-| Eintragstyp `d` ohne DM-Ausgabetyp `deleted` oder umgekehrt | erlaubt (unabhängig, PROJ-7) |
+| Eintragstyp `n` und DM-Ausgabetyp ≠ `new` | Fehler „Eintragstyp ‚n‘ verlangt DM-Ausgabetyp ‚new‘ — gefunden: ‚[Wert]‘“ *(Refinement 2026-11-16)* |
+| Eintragstyp `c` und DM-Ausgabetyp nicht `changed`, `revised` oder `status` | Fehler „Eintragstyp ‚c‘ verlangt DM-Ausgabetyp ‚changed‘, ‚revised‘ oder ‚status‘ — gefunden: ‚[Wert]‘“ *(Refinement 2026-11-16)* |
+| Eintragstyp `d` und DM-Ausgabetyp ≠ `deleted` | Fehler „Eintragstyp ‚d‘ verlangt DM-Ausgabetyp ‚deleted‘ — gefunden: ‚[Wert]‘“ *(Refinement 2026-11-16)* |
+| Kein Eintragstyp | keine Prüfung des Zusammenpassens (DM-Ausgabetyp nur nach Regel A) *(Refinement 2026-11-16)* |
+| ~~Eintragstyp `d` ohne DM-Ausgabetyp `deleted` oder umgekehrt~~ | ~~erlaubt (unabhängig, PROJ-7)~~ — ersetzt 2026-11-16 durch die Typ-Regel oben |
 
 „Fachliche Felder" = alle Felder außer `dmentryType`, `answer`, `answer_comment`.
+
+**Typ-Regel *(Refinement 2026-11-16)*:** gilt für **jeden Eintrag der Datei mit Eintragstyp** — neu, geändert und unverändert (auch Altbestand). Ist der DM-Ausgabetyp bereits nach Regel A ungültig (z. B. `change`, `Deleted`), wird nur der Formatfehler gemeldet. Nur beim Check-in, nicht beim REPLY (dort sichert Regel G die Ausgabedaten) und nicht im Prüfwerkzeug PROJ-20.
 
 **Grundsatz *(Refinement 2026-11-14)*:** Nach einem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp — SEND nimmt nur Einträge mit `n`, `c` oder `d` mit, ein solcher Eintrag könnte nie freigegeben werden. Unveränderte Einträge ohne Eintragstyp, die *freigegeben* sind oder bleiben, sind erlaubt. Für die Übernahme von Partnerantworten gilt dasselbe als bedingte Sperre (PROJ-10).
 
@@ -184,7 +192,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 - [ ] Angenommen in einer Check-in-Datei ist `security` = `1`, `issno` = `1`, `month` = `9`, wenn geprüft wird, dann werden die Werte zu `01`, `001`, `09` aufgefüllt, als Hinweis gemeldet und kein Fehler erzeugt
 - [ ] Angenommen ein REPLY enthält `security` = `1`, wenn geprüft wird, dann wird ein Formatfehler gemeldet (kein Auffüllen beim REPLY)
 - [ ] Angenommen `dmentryType` ist `x`, wenn geprüft wird, dann wird ein Fehler gemeldet; leer, `n`, `c`, `d` sind gültig
-- [ ] Angenommen der DM-Ausgabetyp ist `change`, wenn geprüft wird, dann wird ein Fehler gemeldet; `new`, `changed`, `revised`, `deleted` sind gültig
+- [ ] Angenommen der DM-Ausgabetyp ist `change`, wenn geprüft wird, dann wird ein Fehler gemeldet; `new`, `changed`, `revised`, `deleted`, `status` sind gültig *(`status` ergänzt 2026-11-16)*
 - [ ] Angenommen das Datum ist 31.02.2026, wenn geprüft wird, dann wird ein Fehler „ungültiges Datum" gemeldet
 - [ ] Angenommen `language` ist `xx` oder `DE` bzw. `country` ist `XX` oder `de`, wenn geprüft wird, dann wird ein Fehler „kein gültiger Code nach ISO 639-1 / ISO 3166“ gemeldet; `de`/`DE` ist gültig
 - [ ] Angenommen `infoname` oder `rpc` ist leer, wenn eine Check-in-Datei geprüft wird, dann wird ein Pflichtfeldfehler gemeldet
@@ -210,6 +218,9 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 - [ ] Angenommen ein bestehender, unveränderter Eintrag hat Eintragstyp `n`, `c` oder `d`, wenn geprüft wird, dann wird kein Fehler gemeldet
 - [ ] Angenommen der Bearbeiter hat `answer` oder `answer_comment` verändert, wenn geprüft wird, dann ist das kein Fehler, und die betroffenen Einträge werden als „abweichende Partnerantworten" an den Check-in übergeben (PROJ-10) *(Refinement 2026-11-14; vorher: Fehler „[Feld] darf nur durch REPLY gesetzt werden")*
 - [ ] Angenommen ein neuer Eintrag hat einen Wert in `answer`, wenn geprüft wird, dann wird ein Fehler gemeldet
+- [ ] Angenommen ein Eintrag hat Eintragstyp `n`/`c`/`d` und einen DM-Ausgabetyp außerhalb von `new` / `changed`·`revised`·`status` / `deleted`, wenn eine Check-in-Datei geprüft wird, dann wird der Typ-Fehler mit gefundenem Wert gemeldet — auch bei unverändertem Eintrag *(Refinement 2026-11-16, Details PROJ-10)*
+- [ ] Angenommen ein Eintrag hat keinen Eintragstyp, wenn geprüft wird, dann wird das Zusammenpassen nicht geprüft *(Refinement 2026-11-16)*
+- [ ] Angenommen ein REPLY wird geprüft, wenn Eintragstyp und DM-Ausgabetyp nicht zusammenpassen, dann meldet die Typ-Regel nichts (nur Check-in) *(Refinement 2026-11-16)*
 
 ### REPLY gegen letzten SEND
 - [ ] Angenommen der REPLY hat `direction="send"`, wenn geprüft wird, dann wird er abgelehnt
@@ -268,6 +279,8 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 | ~~`answer`/`answer_comment` beim Check-in nicht veränderbar~~ — ersetzt 2026-11-14 | Keine vorgetäuschte Partner-Freigabe | 2026-11-12 |
 | Kein Eintrag *in Bearbeitung* ohne Eintragstyp nach dem Check-in (Regel F erweitert, auch für Altbestand) | Solche Einträge würden nie gesendet; die DMRL könnte nicht mehr freigegeben werden (BUG-QA4-1) | 2026-11-14 |
 | Abweichende `answer`/`answer_comment` beim Check-in kein Fehler, sondern optionale Übernahme nur als Information | Altbestände mit Partnerantworten übernehmbar (PROJ-20); vorgetäuschte Freigabe weiterhin ausgeschlossen, da übernommene Antworten den Status nie auf *freigegeben* setzen | 2026-11-14 |
+| Eintragstyp ↔ DM-Ausgabetyp beim Check-in: `n` → `new`, `c` → `changed`/`revised`/`status`, `d` → `deleted`, leer → keine Prüfung; für alle Einträge mit Eintragstyp; ersetzt „unabhängig, erlaubt“ | Vorgabe Product Owner (`/refine PROJ-10`) | 2026-11-16 |
+| DM-Ausgabetyp `status` gültig; `rinstate-*` weiterhin ungültig | In allen drei Schemas gültig; für `c` vorgesehen | 2026-11-16 |
 | Pflichtfelder inkl. `infoname`, `rpc`, `issno`, `type`, Datum | Vorgabe Product Owner | 2026-11-12 |
 | `issno`/`type`/Datum im REPLY-XML optional, in der Anwendung Pflicht | NSG und Beispieldateien enthalten sie nicht; Demo-Einträge werden ergänzt | 2026-11-12 |
 | REPLY: Partner, `dmlref` auf letzten SEND, gleiche DMCs, keine Feldänderungen | Nachvollziehbarer Zyklus (NSG 1.2.3, PROJ-6) | 2026-11-12 |

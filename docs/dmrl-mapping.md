@@ -26,7 +26,7 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 | rpc | /dml/dmentry/rpc (Elementinhalt) | alphanumerisch, Firmencode |
 | rpcname | /dml/dmentry/rpc/@rpcname | alphanumerisch, Firmenname (optional) |
 | issno | /dml/dmentry/addresdm/issno/@issno | 3 Stellen, führende Nullen |
-| type | /dml/dmentry/addresdm/issno/@type | **DM-Ausgabetyp:** new, changed, revised, deleted (deleted = DM gelöscht, manuell vom Bearbeiter gesetzt) |
+| type | /dml/dmentry/addresdm/issno/@type | **DM-Ausgabetyp:** new, changed, revised, deleted, status (deleted = DM gelöscht, manuell vom Bearbeiter gesetzt). Beim Check-in muss er zum Eintragstyp passen: n → new; c → changed/revised/status; d → deleted; leer → keine Prüfung (PROJ-8 F, PROJ-10) |
 | day | /dml/dmentry/addresdm/issdate/@day | 2 Stellen, führende Nullen |
 | month | /dml/dmentry/addresdm/issdate/@month | 2 Stellen, führende Nullen |
 | year | /dml/dmentry/addresdm/issdate/@year | 4 Stellen, führende Nullen |

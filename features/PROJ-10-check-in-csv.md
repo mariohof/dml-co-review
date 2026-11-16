@@ -1,8 +1,10 @@
 # PROJ-10: Check-in CSV
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-16
+
+> **Refinement 2026-11-16:** Eintragstyp und DM-Ausgabetyp müssen beim Check-in zueinander passen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). DM-Ausgabetyp `status` wird gültig. Betrifft PROJ-8 (Regel A und F) und PROJ-1 (Demo-Daten). Geänderte Stellen sind mit *(Refinement 2026-11-16)* markiert. Umsetzung offen.
 
 > **Refinement 2026-11-14:** Abweichende Partnerantworten (`answer`/`answer_comment`) in der CSV werden nicht mehr abgewiesen, sondern nach Abfrage optional übernommen (Anlass: PROJ-20). Betrifft auch PROJ-8 Regel K. Geänderte Stellen sind mit *(Refinement 2026-11-14)* markiert.
 
@@ -13,13 +15,14 @@
 - Requires: PROJ-17 (DMRL-Berechtigungen) — Berechtigung des Sperrinhabers
 - Wird genutzt von: PROJ-20 (XML-Prüfung & CSV-Konvertierung) — konvertierte CSV, auch mit Partnerantworten
 - Wirkt auf: PROJ-14 (Freigabestatus) — Aufhebung der Freigabe bei Änderung; PROJ-4/5/6 — „im Workflow verwendet"
+- Wirkt auf: PROJ-1 (Demo-Daten) — DM-Ausgabetyp der Demo-Einträge wird aus dem Eintragstyp abgeleitet, damit die Demo-DMRLs die Typ-Regel erfüllen *(Refinement 2026-11-16)*
 
 ## Beschreibung
 Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlichen Regelwerk (PROJ-8) gegen den Stand beim Check-out geprüft. Nur eine fehlerfreie Datei kann — nach Sichtung einer Zusammenfassung — übernommen werden; danach ist die Sperre aufgehoben. Eine fehlerhafte Datei wird vollständig abgelehnt, die Sperre bleibt bestehen.
 
 ## Ablauf
 1. Sperrinhaber wählt **„Check-in"** in der DMRL-Ansicht und wählt eine CSV-Datei.
-2. Prüfung nach PROJ-8 (Gruppen S, A, B, C, D, E, I, F) gegen den Stand beim Check-out. Abweichende Antwortfelder (Gruppe K) sind kein Fehler mehr, sondern werden zur Übernahme angeboten *(Refinement 2026-11-14)*.
+2. Prüfung nach PROJ-8 (Gruppen S, A, B, C, D, E, I, F) gegen den Stand beim Check-out. Abweichende Antwortfelder (Gruppe K) sind kein Fehler mehr, sondern werden zur Übernahme angeboten *(Refinement 2026-11-14)*. Zu jedem Eintrag mit Eintragstyp wird geprüft, ob der DM-Ausgabetyp passt (PROJ-8 Regel F, s. „Eintragstyp ↔ DM-Ausgabetyp“) *(Refinement 2026-11-16)*.
 3. **Fehler →** Prüfbericht (mit Download), nichts übernommen, Sperre bleibt. Erneuter Upload möglich.
 4. **Keine Fehler →** Zusammenfassung:
    - Zahlen: „32 Einträge geprüft · 3 neu · 2 geändert · 27 unverändert"
@@ -28,6 +31,23 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
    - **Abweichende Partnerantworten (N Einträge)** *(Refinement 2026-11-14)*: nur wenn `answer` oder `answer_comment` in der Datei vom Stand der DMRL abweichen (bei neuen Einträgen: nicht leer). Liste je Eintrag: DMC, Antwort alt → neu, Begründung alt → neu. Darunter das Kästchen **„Antworten aus der Datei übernehmen“**, standardmäßig **nicht** angekreuzt, mit dem Hinweis „Übernommene Antworten sind nur Information — freigegeben wird ein Eintrag weiterhin nur durch einen REPLY.“
 5. **„Übernehmen"** → Daten übernommen, Status gesetzt (s. u.), Sperre aufgehoben, Erfolgsmeldung.
    **„Abbrechen"** → nichts übernommen, Sperre bleibt.
+
+## Eintragstyp ↔ DM-Ausgabetyp *(Refinement 2026-11-16)*
+Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eintragstyp (`dmentry/@type`, CSV-Spalte `dmentryType`) passen. Geprüft wird **jeder Eintrag der Datei mit Eintragstyp** — neu, geändert und unverändert (auch Altbestand).
+
+| Eintragstyp | zulässiger DM-Ausgabetyp |
+|---|---|
+| `n` | `new` |
+| `c` | `changed`, `revised` oder `status` |
+| `d` | `deleted` |
+| leer | keine Prüfung (jeder gültige Ausgabetyp) |
+
+- Ein Verstoß ist ein **Fehler** im Prüfbericht (PROJ-8 Regel F); der Check-in wird abgelehnt, die Sperre bleibt.
+- Meldung: „Eintragstyp ‚[n|c|d]‘ verlangt DM-Ausgabetyp ‚[zulässige Werte]‘ — gefunden: ‚[Wert]‘“ (z. B. „Eintragstyp ‚c‘ verlangt DM-Ausgabetyp ‚changed‘, ‚revised‘ oder ‚status‘ — gefunden: ‚new‘“).
+- Ein ungültiger Ausgabetyp (z. B. `change`) bleibt ein Formatfehler nach Regel A; dann wird keine zusätzliche Typ-Meldung erzeugt.
+- Gültige DM-Ausgabetypen (Regel A) sind jetzt `new`, `changed`, `revised`, `deleted` und `status` (in allen drei Schemas gültig).
+- Gilt **nur beim CSV-Check-in** — nicht beim REPLY-Import (Regel G verbietet dort ohnehin Änderungen an den Ausgabedaten) und nicht im Prüfwerkzeug PROJ-20.
+- Korrigiert der Bearbeiter den Ausgabetyp in der CSV, ist das eine fachliche Änderung: der Eintrag wird *in Bearbeitung* (wie jede Feldänderung).
 
 ## Wer darf einchecken
 | Benutzer | Check-in |
@@ -90,6 +110,10 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 - Rückgängig machen eines Check-ins
 - Übernahme von Partnerantworten je Eintrag einzeln — nur alle oder keine *(Refinement 2026-11-14)*
 - Freigabe von Einträgen oder DMRLs durch übernommene Antworten — nur per REPLY (PROJ-13/14)
+- Prüfung Eintragstyp ↔ DM-Ausgabetyp beim REPLY-Import (PROJ-13) und im Prüfwerkzeug (PROJ-20) — nur beim Check-in *(Refinement 2026-11-16)*
+- DM-Ausgabetypen `rinstate-changed`, `rinstate-revised`, `rinstate-status` — bleiben ungültig (Regel A) *(Refinement 2026-11-16)*
+- Automatisches Korrigieren des Ausgabetyps beim Check-in — der Bearbeiter korrigiert die Datei *(Refinement 2026-11-16)*
+- Automatische Umstellung bereits gespeicherter Daten im Browser — gilt nur für neu erzeugte Demo-Daten (Zurücksetzen nötig) *(Refinement 2026-11-16)*
 
 ## Acceptance Criteria
 
@@ -112,6 +136,20 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 
 - [ ] Angenommen bei einem Eintrag wurde der Eintragstyp entfernt (mit oder ohne geänderte Antwort) und er wäre nach dem Check-in *in Bearbeitung*, wenn geprüft wird, dann meldet der Prüfbericht „Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden.“ und der Check-in ist nicht möglich *(Refinement 2026-11-14, BUG-QA4-1)*
 - [ ] Angenommen ein Eintrag ist bereits *in Bearbeitung* ohne Eintragstyp (Altbestand vor der Korrektur), wenn eine Datei eingecheckt wird, in der er unverändert ist, dann wird derselbe Fehler gemeldet, damit der Eintragstyp nachgetragen wird *(Refinement 2026-11-14)*
+
+### Eintragstyp ↔ DM-Ausgabetyp *(Refinement 2026-11-16)*
+- [ ] Angenommen ein Eintrag hat Eintragstyp `n` und DM-Ausgabetyp `changed`, wenn geprüft wird, dann meldet der Prüfbericht „Eintragstyp ‚n‘ verlangt DM-Ausgabetyp ‚new‘ — gefunden: ‚changed‘“ und der Check-in ist nicht möglich
+- [ ] Angenommen ein Eintrag hat Eintragstyp `n` und DM-Ausgabetyp `new`, wenn geprüft wird, dann wird dazu kein Fehler gemeldet
+- [ ] Angenommen ein Eintrag hat Eintragstyp `c` und DM-Ausgabetyp `changed`, `revised` oder `status`, wenn geprüft wird, dann wird dazu kein Fehler gemeldet
+- [ ] Angenommen ein Eintrag hat Eintragstyp `c` und DM-Ausgabetyp `new` oder `deleted`, wenn geprüft wird, dann meldet der Prüfbericht „Eintragstyp ‚c‘ verlangt DM-Ausgabetyp ‚changed‘, ‚revised‘ oder ‚status‘ — gefunden: ‚[Wert]‘“
+- [ ] Angenommen ein Eintrag hat Eintragstyp `d` und DM-Ausgabetyp `deleted`, wenn geprüft wird, dann wird dazu kein Fehler gemeldet
+- [ ] Angenommen ein Eintrag hat Eintragstyp `d` und DM-Ausgabetyp `new`, wenn geprüft wird, dann meldet der Prüfbericht „Eintragstyp ‚d‘ verlangt DM-Ausgabetyp ‚deleted‘ — gefunden: ‚new‘“
+- [ ] Angenommen ein Eintrag hat keinen Eintragstyp (z. B. *freigegeben*), wenn geprüft wird, dann wird der DM-Ausgabetyp nur auf Gültigkeit (Regel A) geprüft, nicht auf Zusammenpassen
+- [ ] Angenommen ein unveränderter Eintrag aus dem Altbestand hat Eintragstyp `d` und DM-Ausgabetyp `new`, wenn eine Datei eingecheckt wird, in der er unverändert ist, dann wird derselbe Fehler gemeldet, bis der Ausgabetyp korrigiert ist
+- [ ] Angenommen der DM-Ausgabetyp ist `status`, wenn geprüft wird, dann ist das kein Formatfehler (Regel A)
+- [ ] Angenommen der DM-Ausgabetyp ist `change` bei Eintragstyp `c`, wenn geprüft wird, dann wird nur der Formatfehler (Regel A) gemeldet, keine zusätzliche Typ-Meldung
+- [ ] Angenommen ein REPLY wird importiert, in dem Eintragstyp und DM-Ausgabetyp nicht zusammenpassen, wenn geprüft wird, dann meldet die Typ-Regel keinen Fehler (nur Check-in)
+- [ ] Angenommen der Demo-Datenbestand ist frisch geladen, wenn die PHUNGUN-DMRL ausgecheckt und die CSV unverändert eingecheckt wird, dann ist die Prüfung fehlerfrei (Einträge `d` haben `deleted`, Einträge `n` haben `new`)
 
 ### Übernehmen / Abbrechen
 - [ ] Angenommen die Zusammenfassung ist sichtbar, wenn „Abbrechen" gewählt wird, dann wird nichts übernommen und die Sperre bleibt bestehen
@@ -163,6 +201,10 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 - **Eintrag mit fachlicher Änderung und abweichender Antwort, Übernahme nicht gewählt:** fachliche Änderung wird übernommen (*in Bearbeitung*), die bisherige Antwort bleibt *(Refinement 2026-11-14)*.
 - **Eintragstyp entfernt** (z. B. `n` → leer): Fehler nach Regel F, wenn der Eintrag *in Bearbeitung* wäre — unabhängig von der Antwortübernahme *(Refinement 2026-11-14, BUG-QA4-1)*.
 - **Altbestand *in Bearbeitung* ohne Eintragstyp** (vor der Korrektur entstanden): beim nächsten Check-in Fehler, bis ein Eintragstyp gesetzt ist — repariert den Zustand *(Refinement 2026-11-14)*.
+- **Ausgabetyp passt nicht zum Eintragstyp** (z. B. `d` + `new`): Fehler, auch bei unverändertem Altbestand; der Bearbeiter korrigiert den Ausgabetyp (oder den Eintragstyp) in der CSV *(Refinement 2026-11-16)*.
+- **Eintragstyp entfernt:** dann keine Typ-Prüfung, aber ggf. Fehler nach Regel F („Eintrag in Bearbeitung braucht einen Eintragstyp“) *(Refinement 2026-11-16)*.
+- **Alte Demo-Daten im Browser** (vor der Anpassung gespeichert, PHUNGUN `d` + `new`): Check-in scheitert, bis die Demo-Daten zurückgesetzt oder die Ausgabetypen in der CSV korrigiert werden; korrigierte Einträge werden *in Bearbeitung* *(Refinement 2026-11-16)*.
+- **Ausgabetyp in Großbuchstaben** (z. B. `Deleted`): Formatfehler nach Regel A, keine zusätzliche Typ-Meldung *(Refinement 2026-11-16)*.
 - **Zwei Tabs:** Übernahme im zweiten Tab nach bereits erfolgtem Check-in schlägt fehl, da keine Sperre mehr besteht.
 
 ## Technical Requirements (optional)
@@ -193,6 +235,11 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
 | Nach dem Check-in kein Eintrag *in Bearbeitung* ohne Eintragstyp — Fehler nach Regel F, auch bei entferntem Eintragstyp und für Altbestand | QA-Befund BUG-QA4-1: solche Einträge würden nie gesendet, die DMRL nie wieder freigegeben | 2026-11-14 |
 | Kriterium „freigegebener Eintrag mit geänderter Antwort → in Bearbeitung“ ersetzt durch Eintrag *zu überarbeiten*; freigegebene Einträge ohne Typ sind bei Antwortübernahme immer gesperrt | QA-Befund BUG-QA4-2: Widerspruch zur Entscheidung „Eintragstyp verlangen“ | 2026-11-14 |
 | Antwortübernahme bei Einträgen ohne Eintragstyp verlangt einen Eintragstyp; sonst „Übernehmen“ gesperrt (nur bei angekreuzter Übernahme) | Sonst entstünde ein Eintrag *in Bearbeitung*, der nie gesendet und freigegeben werden kann; entspricht Regel F | 2026-11-14 |
+| Eintragstyp und DM-Ausgabetyp müssen beim Check-in zusammenpassen: `n` → `new`, `c` → `changed`/`revised`/`status`, `d` → `deleted`, leer → keine Prüfung; Verstoß = Fehler | Vorgabe Product Owner; ersetzt PROJ-8 „Eintragstyp `d` ohne `deleted` oder umgekehrt erlaubt (unabhängig)“ | 2026-11-16 |
+| DM-Ausgabetyp `status` wird gültig (Regel A); `rinstate-*` bleibt ungültig | `status` ist in allen drei Schemas gültig und für `c` vorgesehen | 2026-11-16 |
+| Typ-Regel gilt für alle Einträge mit Eintragstyp, auch unveränderten Altbestand | Was erneut gesendet wird, ist immer stimmig; entspricht dem Grundsatz aus BUG-QA4-1 | 2026-11-16 |
+| Typ-Regel nur beim Check-in, nicht beim REPLY und nicht in PROJ-20 | Regel G verhindert Änderungen im REPLY; PROJ-20 leitet leere Ausgabetypen bereits ab | 2026-11-16 |
+| Demo-Daten leiten den Ausgabetyp aus dem Eintragstyp ab (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) | Sonst scheitert jeder Check-in der PHUNGUN-Demo (11 Einträge `d` + `new`); gleiche Zuordnung wie PROJ-20 | 2026-11-16 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
