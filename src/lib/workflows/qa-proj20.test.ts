@@ -150,3 +150,68 @@ describe("PROJ-20 QA", () => {
     expect(outcome.result.report.findings.map((f) => f.severity)).toEqual(["hinweis", "hinweis"])
   })
 })
+
+/** PROJ-20 QA Refinement 2 (2026-11-16) — Ausgabedaten in der CSV ergänzen */
+describe("PROJ-20 QA Refinement 2: Ausgabedaten ergänzen", () => {
+  const SEND_RAW = DEMO_XML_FILES[DEMO_FILES.send2]
+  const NOW = new Date(2027, 2, 5, 9, 0)
+  const rows = (csv: string) => readCheckinCsv(csv).candidates.map((c) => c.fields)
+
+  it("Issue 5.0 (Beispiel S1000DBIKE) ohne Ausgabedaten: alle Einträge ergänzt", () => {
+    const stripped = BIKE_50.replace(/<issueInfo\b[^>]*\/>/g, "").replace(/<issueDate\b[^>]*\/>/g, "").replace(/\s+issueType="[^"]*"/g, "")
+    const result = checkXmlText("bike50.xml", "5.0", stripped, { state: "gueltig", issue: "5.0" }, NOW)
+    expect(result.filledEntries).toBe(result.candidates.length)
+    expect(rows(result.csv!).every((f) => f.issno === "001" && f.type === "new" && f.day === "05" && f.month === "03" && f.year === "2027")).toBe(true)
+  })
+
+  it("nur Ausgabetyp ohne Ausgabenummer: keine Ergänzung, Sammelhinweis", () => {
+    const xml = SEND_RAW.replace(/<\/dmtitle>/, '</dmtitle><issno issno="" type="changed"></issno>')
+    const result = checkXmlText("x.xml", "2.3", xml, VALID, NOW)
+    expect(result.filledEntries).toBe(result.candidates.length - 1)
+    expect(result.report.findings.map((f) => f.message)).toContain(issueDataMissing(1))
+    expect(rows(result.csv!).filter((f) => f.type === "changed")).toEqual([expect.objectContaining({ issno: "", day: "" })])
+  })
+
+  it("Ausgabenummer nur aus Leerzeichen gilt nicht als fehlend: keine Ergänzung, Formatfehler (Regel A)", () => {
+    const xml = SEND_RAW.replace(/<\/dmtitle>/, '</dmtitle><issno issno=" " type=""></issno>')
+    const result = checkXmlText("x.xml", "2.3", xml, VALID, NOW)
+    expect(result.filledEntries).toBe(result.candidates.length - 1)
+    expect(result.report.findings.some((f) => f.severity === "fehler" && f.group === "A" && f.field === "issno")).toBe(true)
+  })
+
+  it("Jahreswechsel: Prüfdatum 31.12. kurz vor Mitternacht bleibt für alle Einträge gleich", () => {
+    const result = checkXmlText("x.xml", "2.3", SEND_RAW, VALID, new Date(2026, 11, 31, 23, 59, 59))
+    expect(new Set(rows(result.csv!).map((f) => `${f.day}.${f.month}.${f.year}`))).toEqual(new Set(["31.12.2026"]))
+    expect(result.checkDate).toEqual({ day: "31", month: "12", year: "2026" })
+  })
+
+  it("Bericht und Zusammenfassung beruhen auf den Originaldaten (keine Ausgabedaten in result.candidates)", () => {
+    const result = checkXmlText("reply.xml", "2.3", DEMO_XML_FILES[DEMO_FILES.reply1], VALID, NOW)
+    expect(result.candidates.every((c) => c.fields.issno === "" && c.fields.type === "")).toBe(true)
+    const { entries, freigegeben, zuUeberarbeiten, ohneAntwort } = result.summary
+    expect(entries).toBe(result.candidates.length)
+    expect(freigegeben + zuUeberarbeiten + ohneAntwort).toBe(entries)
+    expect(errorCount(result.report)).toBe(0)
+  })
+
+  it("Ergänzung hält Formelschutz und Sortierung der CSV ein (Werte unverändert bis auf Ausgabedaten)", () => {
+    const xml = SEND_RAW.replace(/<techname>[^<]*<\/techname>/, "<techname>=SUMME(A1)</techname>")
+    const result = checkXmlText("x.xml", "2.3", xml, VALID, NOW)
+    expect(result.csv).toContain("'=SUMME(A1)")
+    const read = rows(result.csv!)
+    expect(read.some((f) => f.techname === "=SUMME(A1)")).toBe(true)
+    const dmcs = read.map((f) => [f.modelic, f.sdc, f.chapnum, f.section, f.subsect, f.subject, f.discode, f.discodev, f.incode, f.incodev, f.itemloc].join("-"))
+    expect(dmcs).toEqual([...dmcs].sort())
+  })
+
+  it("Rundlauf: konvertierte REPLY ohne Ausgabedaten → Check-in gegen bestehende Einträge (mit Ausgabedaten) ohne Fehler", () => {
+    const result = checkXmlText("reply.xml", "2.3", DEMO_XML_FILES[DEMO_FILES.reply1], VALID, NOW)
+    const snapshot = result.candidates.map((c, i) => ({
+      id: `e${i}`,
+      status: "gesendet" as const,
+      fields: { ...c.fields, issno: "002", type: "changed", day: "01", month: "01", year: "2026", answer: "", answer_comment: "" },
+    }))
+    const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot })
+    expect(checkin.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
+  })
+})

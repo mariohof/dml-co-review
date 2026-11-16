@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement 2: fehlende Ausgabedaten in der CSV mit Standardwerten ergänzen)
 
@@ -599,6 +599,42 @@ Einzahl/Mehrzahl wie bisher. Beides sind Hinweise und keine Fehler, deshalb änd
 
 **Bugs Found:** keine
 **Production Ready:** YES
+
+### QA Refinement 2 2026-11-16 (fehlende Ausgabedaten in der CSV ergänzen)
+**Tested:** 2026-11-16 · Chromium 1255 (Playwright 1.65.1), echte XSD-Serverfunktion mit xmllint · Firefox und WebKit (Safari, auch Projekt „Mobile Safari“) auf diesem Rechner nicht installiert — nicht getestet
+
+**Neue/geänderte Akzeptanzkriterien: 6/6 passed**
+- [x] DMRL-XML ohne Ausgabedaten → keine Pflichtfeld-Fehler, ein Hinweis „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt …“ mit Tagesdatum (Demo-REPLY 32 Einträge; GTFDEMO 4.2; S1000DBIKE 5.0)
+- [x] `issno` fehlt ganz → CSV mit `001`/`new` und Prüfdatum in `day`/`month`/`year` (alle drei Issues: 2.3, 4.2, 5.0)
+- [x] Eintragstyp leer → `n`; vorhandenes `c`/`d` (und `n`) bleibt
+- [x] Vorhandenes vollständiges Datum bleibt erhalten
+- [x] Teildaten (`@issno` ohne `@type`; 4.2: `issueInfo` ohne `issueType`; nur Ausgabetyp ohne Nummer) oder nur fehlendes Datum → keine Ergänzung, Sammelhinweis „… beim Check-in sind sie Pflicht“
+- [x] Rundlauf: CSV aus einer Datei ohne Ausgabedaten besteht die Check-in-Regelprüfung ohne Pflichtfeld-Fehler — neue DMRL (Unit) und **bestehende DMRL GTFDEMO im echten Browser** („Prüfung bestanden“, „Übernehmen“ aktiv)
+
+**Edge Cases (neu)**
+- [x] Mischfall ergänzt / Teildaten → beide Hinweise, Anzahlen korrekt
+- [x] Unvollständiges Datum ohne `issno` → `issno`/`type` ergänzt, Datum nicht, Fehler „Ausgabedatum ist unvollständig“ bleibt
+- [x] Ausgabenummer nur aus Leerzeichen gilt nicht als fehlend → keine Ergänzung, Formatfehler (Regel A)
+- [x] Prüfdatum 31.12. 23:59:59 → einheitlich `31.12.2026` für alle Einträge; „Erneut prüfen“ nimmt das aktuelle Datum
+- [x] Bericht, Zusammenfassung und Antwortzählung beruhen auf den Originaldaten; Originaleinträge werden nicht verändert
+- [x] Formelschutz und Sortierung nach DMC bleiben in der ergänzten CSV erhalten
+- [x] Nichts gespeichert: Datenbestand vor/nach Prüfung mit Ergänzung und CSV-Download identisch
+- [x] REPLY-Import und Check-in unverändert (keine Ergänzung dort; Regression grün)
+
+**Security**
+- [x] Keine neuen Eingaben: ergänzte Werte sind feste Konstanten bzw. das lokale Datum; Formelschutz greift weiterhin; keine Speicherung, keine Daten an Dritte
+
+**Regression**
+- [x] E2E vollständig Chromium: 110/110 grün (alle Features, inkl. 4 neue Tests `tests/PROJ-20-qa-refinement2.spec.ts`)
+- [x] `npm test`: 511/511 grün (neu: 7 QA-Tests in `qa-proj20.test.ts`)
+- Testablauf-Wettlauf nach der Anmeldung (Weiterleitung überholte Menü-Navigation) bereits in `f11199f` behoben — kein Fehler der App
+
+**Beobachtungen (Spec-konform, Entscheidung Product Owner)**
+- **B-1 — Eintragstyp `n` bei bestehenden Einträgen:** Enthält eine fremde/alte DMRL-XML Einträge **ohne** Eintragstyp und **ohne** Ausgabedaten (z. B. bereits freigegebene Einträge), erhalten sie in der CSV `n`. Beim Check-in in eine DMRL, in der sie schon existieren, gibt es keinen Fehler (Regel F prüft `n` nur für neue Einträge); sie werden „geändert, Typ n“ und gingen beim nächsten SEND als *neue* Einträge an den Partner. Nachgestellt im Unit-Test (11 freigegebene Einträge → 11 × „geändert:n“, 0 Fehler). Demo-REPLYs sind nicht betroffen (alle Einträge haben einen Typ). *Empfehlung:* `n` nur ergänzen, wenn zugleich der Eintrag beim Check-in neu ist — geht im Werkzeug nicht (kein DMRL-Bezug); alternativ Hinweis im Ergebnis „Eintragstyp n gesetzt — bei bestehenden Einträgen vor dem Check-in prüfen“ oder Check-in-Regel F: `n` bei bestehendem Eintrag als Hinweis/Fehler.
+- **B-2 — Ausgabedatum bestehender Einträge wird überschrieben:** Beim Rundlauf in eine bestehende DMRL (GTFDEMO: `001`/`new` vom 01.11.2026) ersetzt das Prüfdatum das vorhandene Datum; der Check-in meldet 10 geänderte Einträge (je 1 Feld). Laut Tech Design K gewollt und für den Bearbeiter sichtbar.
+
+**Bugs Found:** keine
+**Production Ready:** YES (B-1 zur Entscheidung durch den Product Owner)
 
 ## Deployment
 _To be added by /deploy_
