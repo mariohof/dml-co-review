@@ -1,8 +1,8 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-14
-**Last Updated:** 2026-11-16 (Refinement 2: fehlende Ausgabedaten in der CSV mit Standardwerten ergänzen)
+**Last Updated:** 2026-11-16 (Refinement 3: Ausgabetyp aus dem Eintragstyp ableiten, sobald `issno/@type` leer ist)
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung) — nur angemeldete Benutzer
@@ -35,17 +35,18 @@ Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine 
 | Regelwerk | Regeln wie beim **Check-in** (PROJ-8): Format (A), Pflichtfelder (B), eindeutiger DMC (C), SNS ↔ Benennung (E), Infocode ↔ Infoname (I). **Ausnahme Pflichtfelder:** Die Ausgabedaten des Datenmoduls (`addresdm/issno` mit `@issno`/`@type` und `addresdm/issdate` mit Tag/Monat/Jahr) sind wie beim REPLY-Import **optional** — in einer DMRL-XML fehlen sie oft. Ein angefangenes Datum muss vollständig sein. | Prüfbericht, CSV mit Warnung |
 | MI | statt Regel D: **alle Einträge haben denselben MI**; der MI wird in der Zusammenfassung angezeigt | Prüfbericht, CSV mit Warnung |
 
-**Fehlende Ausgabedaten in der CSV ergänzen** (Refinement 2, 2026-11-16): Fehlt bei einem Eintrag das Element `addresdm/issno` ganz (Ausgabenummer **und** Ausgabetyp leer), werden in der **CSV** Standardwerte gesetzt:
-| CSV-Feld | XPath | Standardwert | Bedingung |
+**Fehlende Ausgabedaten in der CSV ergänzen** (Refinement 2 und 3, 2026-11-16): **Auslöser** ist ein leerer Ausgabetyp `addresdm/issno/@type` — egal ob die Ausgabenummer `@issno` vorhanden ist oder `issno` ganz fehlt. Dann werden in der **CSV** gesetzt:
+| CSV-Feld | XPath (Issue 2.3; 4.2/5.0 entsprechend) | Wert | Bedingung |
 |---|---|---|---|
-| `issno` | `/dml/dmentry/addresdm/issno/@issno` | `001` | immer (Auslöser) |
-| `type` | `/dml/dmentry/addresdm/issno/@type` | `new` | immer (Auslöser) |
-| `day`/`month`/`year` | `/dml/dmentry/addresdm/issdate` | Datum der Prüfung | nur wenn `issdate` fehlt (alle drei leer); ein vorhandenes Datum bleibt |
+| `type` | `/dml/dmentry/addresdm/issno/@type` | aus dem Eintragstyp abgeleitet: `n` → `new`, `c` → `changed`, `d` → `deleted`; ist der Eintragstyp leer → `new` | immer (Auslöser) |
 | `dmentryType` | `/dml/dmentry/@type` | `n` | nur wenn leer; vorhandenes `c`/`d` bleibt |
+| `issno` | `/dml/dmentry/addresdm/issno/@issno` | `001` | nur wenn leer; eine vorhandene Ausgabenummer bleibt |
+| `day`/`month`/`year` | `/dml/dmentry/addresdm/issdate` | Datum der Prüfung | nur wenn `issdate` fehlt (alle drei leer); ein vorhandenes Datum bleibt |
 
+- Bei Issue 4.2/5.0 entsprechen die Felder `dmlEntry/issueInfo/@issueType` (Ausgabetyp) und `dmlEntry/@dmlEntryType` (Eintragstyp); die Ableitung gilt für alle drei Issues gleich. `new`, `changed` und `deleted` sind in allen drei Schemas und in Regel A gültig.
 - Die **Prüfung** (XSD, Regelwerk) läuft auf den **Originaldaten** der XML; die Ergänzung betrifft nur die heruntergeladene CSV. Die XML-Datei wird nicht verändert, gespeichert wird nichts.
-- Statt des bisherigen Sammelhinweises erscheint **ein Hinweis** (kein Fehler): „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabenummer 001, Ausgabetyp new, Datum TT.MM.JJJJ, Eintragstyp n (nur wo leer).“
-- **Nur ein Teil von `issno` vorhanden** (z. B. `@issno` ohne `@type`): keine Ergänzung; dafür bleibt der bisherige Sammelhinweis „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“ Ebenso, wenn `issno` vollständig ist, aber `issdate` fehlt.
+- Statt des Sammelhinweises erscheint **ein Hinweis** (kein Fehler): „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer 001 und Datum TT.MM.JJJJ (nur wo leer).“
+- **Ausgabetyp vorhanden, aber Ausgabenummer und/oder Datum fehlen:** keine Ergänzung (bei `changed`/`deleted` wäre `001` meist falsch — die Nummer klärt der Bearbeiter); es bleibt der Sammelhinweis „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“
 - Check-in (PROJ-10) und REPLY-Import (PROJ-13) bleiben unverändert — dort wird nichts ergänzt.
 
 Ist die XSD-Prüfung **nicht verfügbar**, wird trotzdem eingelesen und nach Regelwerk geprüft. Der Bericht weist deutlich auf „XSD-Prüfung nicht durchgeführt“ hin, die CSV ist mit Warnung herunterladbar. Die Meldung nennt die **Ursache mit Handlungsanweisung** (Refinement 2026-11-16):
@@ -109,10 +110,13 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - [ ] Angenommen die Einträge haben unterschiedliche MI, wenn geprüft wird, dann meldet der Bericht „MI uneinheitlich“ mit den betroffenen Einträgen, und die Zusammenfassung zeigt „uneinheitlich“
 - [ ] Angenommen die XSD-Prüfung ist nicht verfügbar, wenn geprüft wird, dann wird nach Regelwerk geprüft, der Bericht weist auf „XSD-Prüfung nicht durchgeführt“ hin, und die CSV ist mit Warnung herunterladbar
 - [ ] Angenommen eine DMRL-XML, deren Einträge keine Ausgabedaten (`issno`, `type`, `issdate`) enthalten, wenn geprüft wird, dann erscheinen dafür keine Pflichtfeld-Fehler, sondern ein einziger Hinweis „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt …“ *(geändert Refinement 2)*
-- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz, wenn die CSV heruntergeladen wird, dann stehen dort `issno` = `001`, `type` = `new` und — falls `issdate` fehlt — das Datum der Prüfung (TT/MM/JJJJ in `day`/`month`/`year`)
-- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz und `dmentry/@type` ist leer, wenn die CSV heruntergeladen wird, dann steht in `dmentryType` der Wert `n`; ein vorhandenes `c` oder `d` bleibt unverändert
-- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz, aber `issdate` ist vollständig vorhanden, wenn die CSV heruntergeladen wird, dann bleibt das vorhandene Datum erhalten
-- [ ] Angenommen bei einem Eintrag ist `issno` nur teilweise vorhanden (z. B. `@issno` ohne `@type`) oder `issno` ist vollständig und nur `issdate` fehlt, wenn geprüft wird, dann wird nichts ergänzt und der Hinweis „… fehlen Ausgabedaten … beim Check-in sind sie Pflicht“ zählt diesen Eintrag
+- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz und der Eintragstyp ist `n`, wenn die CSV heruntergeladen wird, dann stehen dort `issno` = `001`, `type` = `new` und — falls `issdate` fehlt — das Datum der Prüfung (TT/MM/JJJJ in `day`/`month`/`year`)
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist `c`, wenn die CSV heruntergeladen wird, dann steht in `type` der Wert `changed` und der Eintragstyp bleibt `c` *(neu Refinement 3)*
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist `d`, wenn die CSV heruntergeladen wird, dann steht in `type` der Wert `deleted` und der Eintragstyp bleibt `d` *(neu Refinement 3)*
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist leer, wenn die CSV heruntergeladen wird, dann stehen in `type` der Wert `new` und in `dmentryType` der Wert `n`
+- [ ] Angenommen bei einem Eintrag ist `@issno` vorhanden (z. B. `002`), aber `@type` und `issdate` fehlen, wenn die CSV heruntergeladen wird, dann bleibt `issno` = `002`, `type` wird aus dem Eintragstyp abgeleitet und das Datum der Prüfung wird ergänzt *(neu Refinement 3)*
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer, aber `issdate` ist vollständig vorhanden, wenn die CSV heruntergeladen wird, dann bleibt das vorhandene Datum erhalten
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` vorhanden, aber `@issno` oder `issdate` fehlt, wenn geprüft wird, dann wird nichts ergänzt und der Hinweis „… fehlen Ausgabedaten … beim Check-in sind sie Pflicht“ zählt diesen Eintrag *(geändert Refinement 3)*
 - [ ] Angenommen eine DMRL-XML ohne Ausgabedaten und sonst ohne Fehler wurde konvertiert, wenn die CSV unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann gibt es keine Pflichtfeld-Fehler zu den Ausgabedaten
 - [ ] Angenommen ein Eintrag hat ein unvollständiges Ausgabedatum (z. B. nur das Jahr), wenn geprüft wird, dann meldet der Bericht wie beim REPLY-Import einen Fehler „Ausgabedatum ist unvollständig“
 - [ ] Angenommen der Server der Anwendung läuft nicht mehr (Seite noch offen), wenn geprüft wird, dann nennt der Hinweis „XSD-Prüfung nicht durchgeführt“ die Ursache „Server läuft nicht“ mit der Anweisung, die Anwendung neu zu starten
@@ -138,9 +142,10 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 ## Edge Cases
 - **XML einer anderen Issue gewählt** (z. B. 4.2-Datei, Issue 2.3 gewählt): XSD meldet Fehler; ist die Datei mit dem Leser der gewählten Issue nicht lesbar, Meldung „Datei passt nicht zur gewählten Issue — bitte Issue prüfen“ und keine CSV.
 - **XML ohne Einträge:** schemagültig nicht möglich (mind. ein Eintrag); bei Schemafehler Bericht und CSV nur mit Kopfzeile plus Warnung.
-- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Partner-REPLY): keine Pflichtfeld-Fehler; in der CSV werden `001`/`new`/Datum der Prüfung (und `n` bei leerem Eintragstyp) ergänzt, ein Hinweis nennt die Anzahl. Die CSV wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen; beim Check-in sind die Ausgabedaten damit vorhanden (PROJ-10 unverändert streng). *(geändert 2026-11-16, Refinement 2; vorher nur Sammelhinweis, davor Pflichtfeld-Fehler)*
-- **Nur ein Teil der Ausgabedaten** (z. B. `issno` ohne Datum, `@issno` ohne `@type`): kein Fehler, da jedes Feld einzeln optional ist; nur ein angefangenes Datum muss vollständig sein. **Keine Ergänzung** — Sammelhinweis „beim Check-in sind sie Pflicht“.
-- **Eintrag mit Eintragstyp `c` oder `d`, aber ohne `issno`:** `001`/`new` werden ergänzt, der Eintragstyp bleibt `c`/`d` (Wunsch Product Owner: vorhandene Werte nie überschreiben).
+- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Partner-REPLY): keine Pflichtfeld-Fehler; in der CSV werden `001`, der aus dem Eintragstyp abgeleitete Ausgabetyp und das Datum der Prüfung (und `n` bei leerem Eintragstyp) ergänzt, ein Hinweis nennt die Anzahl. Die CSV wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen; beim Check-in sind die Ausgabedaten damit vorhanden (PROJ-10 unverändert streng). *(geändert Refinement 2 und 3; vorher nur Sammelhinweis, davor Pflichtfeld-Fehler)*
+- **Nur ein Teil der Ausgabedaten:** kein Fehler, da jedes Feld einzeln optional ist; nur ein angefangenes Datum muss vollständig sein. Ist der **Ausgabetyp leer** (z. B. `@issno` ohne `@type`), wird ergänzt (Ausgabetyp abgeleitet, Datum nur wenn leer, vorhandene Ausgabenummer bleibt). Ist der **Ausgabetyp vorhanden** und fehlen Ausgabenummer oder Datum: **keine Ergänzung** — Sammelhinweis „beim Check-in sind sie Pflicht“. *(geändert Refinement 3)*
+- **Eintrag mit Eintragstyp `c` oder `d`, aber ohne Ausgabetyp:** Ausgabetyp `changed` bzw. `deleted`; fehlt auch `@issno`, wird `001` ergänzt; der Eintragstyp bleibt `c`/`d` (vorhandene Werte nie überschreiben). *(geändert Refinement 3; vorher immer `new`)*
+- **Eintragstyp mit unbekanntem Wert** (nicht `n`/`c`/`d`, z. B. Tippfehler): Regel A meldet den Fehler wie bisher; ist der Ausgabetyp leer, wird `new` gesetzt und der Eintragstyp bleibt unverändert — die CSV hat ohnehin eine Fehlerwarnung.
 - **Prüfung kurz vor Mitternacht, Download danach:** Es gilt das Datum der Prüfung (Ergebnis wird beim Prüfen erzeugt).
 - **Unvollständiges Datum ohne `issno`** (z. B. nur Jahr): Fehler „Ausgabedatum ist unvollständig“ wie bisher; `issno`/`type` werden ergänzt, das Datum nicht (es ist nicht ganz leer) — die CSV hat ohnehin eine Fehlerwarnung.
 - **Keine DMRL-XML** (wohlgeformt, aber z. B. ein Datenmodul): Schemafehler am Wurzelelement; nicht lesbar → keine CSV.
@@ -163,7 +168,10 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - [x] Wie behandelt der Check-in eingehende `answer`/`answer_comment` aus einer konvertierten Partner-XML? → Optional übernehmen mit Abfrage, nur als Information (Status bleibt *in Bearbeitung*); Umsetzung per `/refine PROJ-10` (2026-11-14)
 - [x] Antwortzählung bei SEND-Dateien ausblenden? → Nein, immer anzeigen (2026-11-14)
 - [x] Sollen die genaueren XSD-Meldungen (PROJ-11) auch im REPLY-Import und beim SEND-Export ein „Erneut prüfen“ bekommen? → Nicht nötig: beide haben bereits „Erneut versuchen“; die genaueren Meldungen wirken dort über den gemeinsamen Baustein (2026-11-16)
-- [x] Fehlende Ausgabedaten ergänzen? → Ja, nur in der CSV des Werkzeugs, nur wenn `issno` ganz fehlt; Datum und Eintragstyp nur, wenn leer (2026-11-16)
+- [x] Fehlende Ausgabedaten ergänzen? → Ja, nur in der CSV des Werkzeugs, nur wenn `issno` ganz fehlt; Datum und Eintragstyp nur, wenn leer (2026-11-16) — Auslöser in Refinement 3 geändert: leerer Ausgabetyp
+- [x] Ausgabetyp immer `new` oder aus dem Eintragstyp ableiten? → Ableiten: n → new, c → changed, d → deleted; ohne Eintragstyp new + n (2026-11-16, Refinement 3)
+- [x] Ergänzung auch bei vorhandener Ausgabenummer und leerem Ausgabetyp? → Ja; Datum dann ebenfalls ergänzen, wenn leer; vorhandene Ausgabenummer bleibt (2026-11-16, Refinement 3)
+- [x] `001` ergänzen, wenn nur die Ausgabenummer fehlt (Ausgabetyp vorhanden)? → Nein, Sammelhinweis wie bisher (2026-11-16, Refinement 3)
 - [x] `/refine PROJ-10` (und Regel K in PROJ-8) durchgeführt (2026-11-14): eine Abfrage für alle abweichenden Antworten, standardmäßig aus; übernommene Antwortänderung zählt als Änderung. Umsetzung von PROJ-10/PROJ-8 muss vor der Gesamtabnahme von PROJ-20 erfolgen
 
 ## Decision Log
@@ -192,6 +200,9 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Ergänzung nur in der CSV, Prüfung auf den Originaldaten | Prüfbericht zeigt den echten Zustand der Datei; nichts wird gespeichert | 2026-11-16 |
 | Auslöser nur bei vollständig fehlendem `issno`; bei Teildaten keine Ergänzung | Teildaten deuten auf eine fehlerhafte Pflege hin, die der Bearbeiter bewusst klären soll | 2026-11-16 |
 | Keine Ergänzung im REPLY-Import und Check-in | Wunsch Product Owner; der Abstimmungs-Workflow bleibt unverändert | 2026-11-16 |
+| Ausgabetyp aus dem Eintragstyp ableiten (n → new, c → changed, d → deleted) statt immer `new`; ohne Eintragstyp `new` + `n` | Wunsch Product Owner: ein geänderter/gelöschter Eintrag mit Ausgabetyp `new` wäre fachlich widersprüchlich. Ersetzt den festen Wert `new` aus Refinement 2 | 2026-11-16 |
+| Auslöser der Ergänzung ist ein leerer Ausgabetyp (nicht mehr nur ein ganz fehlendes `issno`); Ausgabenummer `001` und Datum nur, wenn leer | Wunsch Product Owner; der Ausgabetyp ist aus dem Eintragstyp eindeutig ableitbar. Lockert die Regel „bei Teildaten keine Ergänzung“ aus Refinement 2 | 2026-11-16 |
+| Fehlt nur die Ausgabenummer (Ausgabetyp vorhanden), wird nichts ergänzt | Bei `changed`/`deleted` wäre `001` meist falsch; die Nummer klärt der Bearbeiter | 2026-11-16 |
 | Lange Codes in der Zusammenfassung nach Bindestrichen umbrechen, rein per CSS (kein eingefügtes Zeichen) — bereits umgesetzt | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar; Wunsch Product Owner: nur CSS | 2026-11-16 |
 
 ### Technical Decisions
