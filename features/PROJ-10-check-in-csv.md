@@ -2,7 +2,7 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-16
 
 > **Refinement 2026-11-14:** Abweichende Partnerantworten (`answer`/`answer_comment`) in der CSV werden nicht mehr abgewiesen, sondern nach Abfrage optional übernommen (Anlass: PROJ-20). Betrifft auch PROJ-8 Regel K. Geänderte Stellen sind mit *(Refinement 2026-11-14)* markiert.
 
@@ -370,6 +370,8 @@ _Stand 2026-11-14 — `/frontend proj-10` (Tech Design I)_
 
 **Bugfix BUG-QA4-1 (2026-11-14):** Regel F erweitert — siehe Bug-Status im QA-Lauf 4. Keine Änderung am Dialog nötig: Die Meldung erscheint im bestehenden Prüfbericht, „Übernehmen“ ist bei Fehlern ohnehin nicht verfügbar. Die bedingte Sperre der Antwortübernahme bleibt für reine Antwortabweichungen ohne Eintragstyp.
 
+**UI-Fix Dialogbreite (2026-11-16):** Der Prüfbericht (6 Spalten inkl. „Meldung“) war im Check-in-Dialog (`sm:max-w-3xl`) abgeschnitten, der ganze Dialog musste waagerecht gescrollt werden. Dialog jetzt `sm:max-w-6xl` (bis 1152 px, auf kleineren Fenstern volle Breite abzüglich Rand); `[&>*]:min-w-0` verhindert, dass breite Tabellen den Dialog aufweiten — bei sehr schmalen Fenstern scrollt nur noch die Tabelle selbst.
+
 ## QA Test Results
 
 **Tested:** 2026-11-13
@@ -480,6 +482,28 @@ Keine neuen Bugs in diesem Feature.
 **Regression:** Freigabe-, SEND-, REPLY-, Archiv- und Export-Abläufe (E2E) unverändert grün; Demo-Daten enthalten keinen Altbestand ohne Eintragstyp.
 
 - **BUG-QA4-1:** bestätigt behoben · **BUG-QA4-2:** bestätigt behoben (Spec)
+- **Offene Bugs:** keine
+- **Production Ready:** YES
+
+### QA-Lauf 6 — UI-Fix Dialogbreite Prüfbericht (2026-11-16)
+**Anlass:** Prüfbericht im Check-in-Dialog abgeschnitten (Spalte „Meldung“ außerhalb, ganzer Dialog musste waagerecht gescrollt werden). Fix auch für REPLY- (PROJ-13) und SEND-Dialog (PROJ-12).
+
+**Automatisiert:** Vitest 518/518 ✅ · Playwright 116/116 ✅ (Chrome; inkl. 6 neue Tests in `tests/PROJ-10-dialogbreite.spec.ts`) · ESLint 0 Fehler (1 bestehende Warnung in `use-toast.ts`, unabhängig)
+
+**Geprüft (E2E, echte Check-out-CSV mit ungültigem Eintragstyp in allen Zeilen → Prüfbericht mit Fehlerliste)**
+- [x] 1440 px: Dialog > 1000 px breit, Spalte „Meldung“ vollständig im Dialog, weder Dialog noch Tabelle scrollen waagerecht
+- [x] 768 px: Dialog passt ins Fenster, kein waagerechtes Scrollen von Dialog oder Seite (nur die Tabelle selbst darf scrollen)
+- [x] 375 px: wie 768 px
+- [x] REPLY 1440 px: XSD-Fehler (TEST-1) und Regelwerk-Fehler (TEST-4) — Tabelle vollständig sichtbar, kein waagerechtes Scrollen
+- [x] SEND 1440 px breit / 375 px passt ins Fenster, kein Seiten-Überlauf
+- [x] Bestehender Test „375 px: Abschnitt mit Häkchen ohne waagerechtes Scrollen“ weiterhin grün
+
+**Security:** reine Layout-Änderung (Tailwind-Klassen), keine neue Eingabe, Logik oder Datenfluss — kein neues Angriffsrisiko.
+
+**Regression:** alle Check-in-, SEND-, REPLY-, Freigabe-, Archiv-, Export- und Responsive-Tests grün.
+
+**Nicht geprüft:** Firefox/Safari (WebKit für Playwright auf diesem Rechner nicht installiert; wie in den bisherigen Läufen nur Chrome).
+
 - **Offene Bugs:** keine
 - **Production Ready:** YES
 
