@@ -121,7 +121,10 @@ test("Ausgabedaten fehlen (Demo-REPLY): keine Fehler, Hinweis „ergänzt“, CS
   const today = [String(now.getDate()).padStart(2, "0"), String(now.getMonth() + 1).padStart(2, "0"), String(now.getFullYear())].join(";")
   const rows = csv.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean).slice(1)
   expect(rows).toHaveLength(32)
-  for (const row of rows) expect(row).toContain(`;001;new;${today};`)
+  // Ausgabetyp aus dem Eintragstyp (erste Spalte) abgeleitet (Refinement 3)
+  const issueType: Record<string, string> = { n: "new", c: "changed", d: "deleted" }
+  for (const row of rows) expect(row).toContain(`;001;${issueType[row.split(";")[0]]};${today};`)
+  expect(rows.some((row) => row.startsWith("d;") && row.includes(";001;deleted;"))).toBe(true)
 })
 
 test("Server läuft nicht: Ursache mit Anweisung; „Erneut prüfen“ prüft vollständig, sobald der Server wieder antwortet", async ({ page }) => {

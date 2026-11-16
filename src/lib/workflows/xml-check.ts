@@ -12,7 +12,8 @@ import { readReplyFile } from "./reply"
  * Prüfkern „XML prüfen" (PROJ-20 Tech Design C/E): XSD (PROJ-11) → Lesen in deklarierter Kodierung →
  * DML-Leser der gewählten Issue → Regeln wie Check-in (A, B, C, E, I) + „MI einheitlich" statt Regel D;
  * Pflichtfelder wie REPLY (Ausgabedaten optional, Sammelhinweis).
- * Refinement 2 (2026-11-16): fehlt `addresdm/issno` ganz, erhält die CSV Standard-Ausgabedaten (Prüfung auf Originaldaten).
+ * Refinement 2/3 (2026-11-16): ist der Ausgabetyp `addresdm/issno/@type` leer, erhält die CSV ergänzte Ausgabedaten —
+ * Ausgabetyp aus dem Eintragstyp abgeleitet (Prüfung auf Originaldaten).
  * Ohne Bildschirmbezug und ohne Datenbestand. Speichert nichts.
  */
 
@@ -24,10 +25,14 @@ export const MI_NOT_UNIFORM = "uneinheitlich"
 export const issueDataMissing = (count: number) =>
   `Bei ${count} ${count === 1 ? "Eintrag fehlen" : "Einträgen fehlen"} Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.`
 
-/** Standardwerte für fehlende Ausgabedaten (Refinement 2, 2026-11-16) */
+/** Standardwerte für fehlende Ausgabedaten (Refinement 2/3, 2026-11-16) */
 export const DEFAULT_ISSNO = "001"
 export const DEFAULT_ISSUE_TYPE = "new"
 export const DEFAULT_ENTRY_TYPE = "n"
+
+/** Ableitung Ausgabetyp aus dem Eintragstyp (Refinement 3); leerer oder unbekannter Eintragstyp → `new` */
+const ISSUE_TYPE_BY_ENTRY_TYPE: Record<string, string> = { n: "new", c: "changed", d: "deleted" }
+export const deriveIssueType = (entryType: string) => ISSUE_TYPE_BY_ENTRY_TYPE[entryType] ?? DEFAULT_ISSUE_TYPE
 
 export interface CheckDate {
   day: string
@@ -42,7 +47,7 @@ export function toCheckDate(date: Date): CheckDate {
 }
 
 export const issueDataFilled = (count: number, date: CheckDate) =>
-  `Bei ${count} ${count === 1 ? "Eintrag fehlten" : "Einträgen fehlten"} Ausgabedaten — in der CSV ergänzt: Ausgabenummer ${DEFAULT_ISSNO}, Ausgabetyp ${DEFAULT_ISSUE_TYPE}, Datum ${date.day}.${date.month}.${date.year}, Eintragstyp ${DEFAULT_ENTRY_TYPE} (nur wo leer).`
+  `Bei ${count} ${count === 1 ? "Eintrag fehlten" : "Einträgen fehlten"} Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer ${DEFAULT_ISSNO} und Datum ${date.day}.${date.month}.${date.year} (nur wo leer).`
 
 export type XsdState = "bestanden" | "schemafehler" | "nicht_wohlgeformt" | "nicht_durchgefuehrt"
 
@@ -96,12 +101,13 @@ export function checkModelicUniform(candidates: Candidate[]): { modelic: string;
   return { modelic: MI_NOT_UNIFORM, findings }
 }
 
-/** Auslöser für die Ergänzung: Element `issno` fehlt ganz (Ausgabenummer und Ausgabetyp leer) */
-export const needsIssueData = (c: Candidate) => c.fields.issno === "" && c.fields.type === ""
+/** Auslöser für die Ergänzung (Refinement 3): Ausgabetyp leer — egal ob die Ausgabenummer vorhanden ist */
+export const needsIssueData = (c: Candidate) => c.fields.type === ""
 
 /**
- * Ergänzt fehlende Ausgabedaten für die CSV (Refinement 2): nur wenn `issno` ganz fehlt; Datum nur, wenn Tag/Monat/Jahr
- * alle leer; Eintragstyp nur, wenn leer. Vorhandene Werte werden nie überschrieben. Liefert Kopien, Originale bleiben.
+ * Ergänzt fehlende Ausgabedaten für die CSV (Refinement 2/3): nur bei leerem Ausgabetyp. Ausgabetyp aus dem Eintragstyp
+ * abgeleitet; Ausgabenummer nur, wenn leer; Datum nur, wenn Tag/Monat/Jahr alle leer; Eintragstyp nur, wenn leer.
+ * Vorhandene Werte werden nie überschrieben. Liefert Kopien, Originale bleiben.
  */
 export function fillIssueData(candidates: Candidate[], date: CheckDate): { candidates: Candidate[]; filled: number } {
   let filled = 0
@@ -114,8 +120,8 @@ export function fillIssueData(candidates: Candidate[], date: CheckDate): { candi
       ...c,
       fields: {
         ...f,
-        issno: DEFAULT_ISSNO,
-        type: DEFAULT_ISSUE_TYPE,
+        issno: f.issno === "" ? DEFAULT_ISSNO : f.issno,
+        type: deriveIssueType(f.dmentryType),
         ...(dateEmpty ? date : {}),
         dmentryType: f.dmentryType === "" ? DEFAULT_ENTRY_TYPE : f.dmentryType,
       },
@@ -125,8 +131,8 @@ export function fillIssueData(candidates: Candidate[], date: CheckDate): { candi
 }
 
 /**
- * Hinweise zu Ausgabedaten (in DMRL-XML optional): ein Hinweis für ergänzte Einträge, ein Sammelhinweis für Einträge
- * mit Lücken, die nicht ergänzt wurden (Teildaten) — keine Pflichtfeld-Fehler
+ * Hinweise zu Ausgabedaten (in DMRL-XML optional): ein Hinweis für ergänzte Einträge (Ausgabetyp leer), ein Sammelhinweis
+ * für Einträge mit Ausgabetyp, aber fehlender Ausgabenummer oder fehlendem Datum — keine Pflichtfeld-Fehler
  */
 export function checkIssueDataHint(candidates: Candidate[], date: CheckDate): Finding[] {
   const filled = candidates.filter(needsIssueData).length

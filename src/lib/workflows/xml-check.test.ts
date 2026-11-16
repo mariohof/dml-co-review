@@ -14,6 +14,7 @@ import {
   checkXmlText,
   formatDmlCode,
   ISSUE_MISMATCH,
+  deriveIssueType,
   fillIssueData,
   issueDataFilled,
   issueDataMissing,
@@ -107,7 +108,7 @@ describe("checkXmlText — gültige Datei", () => {
   it("Sammelhinweis: Einzahl", () => {
     expect(issueDataMissing(1)).toBe("Bei 1 Eintrag fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.")
     expect(issueDataFilled(1, { day: "05", month: "03", year: "2027" })).toBe(
-      "Bei 1 Eintrag fehlten Ausgabedaten — in der CSV ergänzt: Ausgabenummer 001, Ausgabetyp new, Datum 05.03.2027, Eintragstyp n (nur wo leer)."
+      "Bei 1 Eintrag fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer 001 und Datum 05.03.2027 (nur wo leer)."
     )
   })
 })
@@ -131,7 +132,7 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
     }
   })
 
-  it("vorhandenes Datum und vorhandener Eintragstyp c/d bleiben erhalten", () => {
+  it("vorhandenes Datum und vorhandener Eintragstyp c/d bleiben erhalten; Ausgabetyp abgeleitet (Refinement 3)", () => {
     let n = 0
     const xml = DEMO_SEND.replace(/<dmentry type="[nd]">/g, () => (++n === 1 ? '<dmentry type="c">' : n === 2 ? '<dmentry type="d">' : '<dmentry type="n">')).replace(
       /<\/dmtitle>/g,
@@ -139,25 +140,27 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
     )
     const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
     const rows = csvRows(result.csv!)
-    expect(rows.every((r) => r.fields.issno === "001" && r.fields.type === "new" && r.fields.year === "2025" && r.fields.day === "01")).toBe(true)
-    expect(rows.filter((r) => r.fields.dmentryType === "c")).toHaveLength(1)
-    expect(rows.filter((r) => r.fields.dmentryType === "d")).toHaveLength(1)
+    expect(rows.every((r) => r.fields.issno === "001" && r.fields.year === "2025" && r.fields.day === "01")).toBe(true)
+    expect(rows.filter((r) => r.fields.dmentryType === "c").map((r) => r.fields.type)).toEqual(["changed"])
+    expect(rows.filter((r) => r.fields.dmentryType === "d").map((r) => r.fields.type)).toEqual(["deleted"])
+    expect(rows.filter((r) => r.fields.dmentryType === "n").every((r) => r.fields.type === "new")).toBe(true)
   })
 
-  it("Teildaten (nur @issno) oder nur Datum fehlt: keine Ergänzung, alter Sammelhinweis; Mischfall → beide Hinweise", () => {
+  it("nur @issno ohne Ausgabetyp → ergänzt (Nummer bleibt); Ausgabetyp ohne Datum → Sammelhinweis; Mischfall → beide Hinweise", () => {
     let n = 0
     const xml = DEMO_SEND.replace(/<\/dmtitle>/g, (m) =>
       ++n === 1 ? `${m}<issno issno="002" type=""></issno>` : n === 2 ? `${m}<issno issno="003" type="changed"></issno>` : m
     )
     const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
     const total = result.candidates.length
-    expect(result.filledEntries).toBe(total - 2)
+    expect(result.filledEntries).toBe(total - 1)
     expect(result.report.findings).toEqual([
-      { severity: "hinweis", group: "B", message: issueDataFilled(total - 2, date) },
-      { severity: "hinweis", group: "B", message: issueDataMissing(2) },
+      { severity: "hinweis", group: "B", message: issueDataFilled(total - 1, date) },
+      { severity: "hinweis", group: "B", message: issueDataMissing(1) },
     ])
     const rows = csvRows(result.csv!)
-    expect(rows.find((r) => r.fields.issno === "002")!.fields).toMatchObject({ type: "", day: "", month: "", year: "" })
+    const kept = rows.find((r) => r.fields.issno === "002")!.fields
+    expect(kept).toMatchObject({ type: deriveIssueType(kept.dmentryType), day: date.day, month: date.month, year: date.year })
     expect(rows.find((r) => r.fields.issno === "003")!.fields).toMatchObject({ type: "changed", day: "" })
   })
 
@@ -166,7 +169,71 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
     const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
     expect(result.report.findings.filter((f) => f.severity === "fehler").map((f) => f.message)).toEqual([expect.stringContaining("Ausgabedatum ist unvollständig")])
     const row = csvRows(result.csv!).find((r) => r.fields.year === "2027" && r.fields.day === "")!
-    expect(row.fields).toMatchObject({ issno: "001", type: "new", month: "" })
+    expect(row.fields).toMatchObject({ issno: "001", type: deriveIssueType(row.fields.dmentryType), month: "" })
+  })
+
+  it("Ableitungstabelle: n → new, c → changed, d → deleted, leer/unbekannt → new (Refinement 3)", () => {
+    expect(["n", "c", "d", "", "x"].map(deriveIssueType)).toEqual(["new", "changed", "deleted", "new", "new"])
+  })
+
+  it("Eintragstyp je Fall: n/c/d bleiben, leer → n, unbekannt bleibt und Regel A meldet ihn (Refinement 3)", () => {
+    const types = ["n", "c", "d", "", "x"]
+    let i = 0
+    const xml = DEMO_SEND.replace(/<dmentry type="[nd]">/g, () => `<dmentry type="${types[i++ % types.length]}">`)
+    const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
+    const expected: Record<string, [string, string]> = { n: ["n", "new"], c: ["c", "changed"], d: ["d", "deleted"], "": ["n", "new"], x: ["x", "new"] }
+    const filled = fillIssueData(result.candidates, date).candidates
+    result.candidates.forEach((c, k) => {
+      const [entryType, issueType] = expected[c.fields.dmentryType]
+      expect(filled[k].fields).toMatchObject({ dmentryType: entryType, type: issueType, issno: "001", ...date })
+    })
+    expect(result.report.findings.some((f) => f.severity === "fehler" && f.group === "A" && f.field === "dmentryType")).toBe(true)
+  })
+
+  it("vorhandene Ausgabenummer 002 mit leerem Ausgabetyp: 002 bleibt, Typ abgeleitet, Prüfdatum ergänzt; vorhandenes Datum bleibt", () => {
+    const xml = DEMO_SEND.replace(/<dmentry type="[nd]">/, '<dmentry type="c">').replace(
+      /<\/dmtitle>/,
+      '</dmtitle><issno issno="002" type=""></issno>'
+    )
+    const rows = csvRows(checkXmlText("send.XML", "2.3", xml, VALID, NOW).csv!)
+    expect(rows.find((r) => r.fields.issno === "002")!.fields).toMatchObject({ dmentryType: "c", type: "changed", ...date })
+    const withDate = xml.replace('type=""></issno>', 'type=""></issno><issdate day="09" month="09" year="2024"></issdate>')
+    const row = csvRows(checkXmlText("send.XML", "2.3", withDate, VALID, NOW).csv!).find((r) => r.fields.issno === "002")!
+    expect(row.fields).toMatchObject({ type: "changed", day: "09", month: "09", year: "2024" })
+  })
+
+  it("Ausgabetyp vorhanden, Ausgabenummer oder Datum fehlen: keine Ergänzung, Sammelhinweis zählt den Eintrag", () => {
+    let n = 0
+    const xml = DEMO_SEND.replace(/<\/dmtitle>/g, (m) =>
+      ++n === 1 ? `${m}<issno issno="" type="deleted"></issno><issdate day="01" month="01" year="2026"></issdate>` : n === 2 ? `${m}<issno issno="004" type="changed"></issno>` : m
+    )
+    const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
+    expect(result.filledEntries).toBe(result.candidates.length - 2)
+    expect(result.report.findings.map((f) => f.message)).toContain(issueDataMissing(2))
+    const rows = csvRows(result.csv!)
+    expect(rows.find((r) => r.fields.type === "deleted" && r.fields.year === "2026")!.fields.issno).toBe("")
+    expect(rows.find((r) => r.fields.issno === "004")!.fields).toMatchObject({ type: "changed", day: "" })
+  })
+
+  it("Issue 4.2: Ausgabetyp leer → aus dmlEntryType abgeleitet", () => {
+    let n = 0
+    const stripped = BIKE_42.replace(/\s+issueType="[^"]*"/g, "").replace(/<dmlEntry>/g, () => `<dmlEntry dmlEntryType="${["c", "d", "n"][n++ % 3]}">`)
+    const result = checkXmlText("bike.XML", "4.2", stripped, { state: "gueltig", issue: "4.2" }, NOW)
+    expect(result.filledEntries).toBe(result.candidates.length)
+    const filled = fillIssueData(result.candidates, date).candidates
+    result.candidates.forEach((c, k) => expect(filled[k].fields.type).toBe(deriveIssueType(c.fields.dmentryType)))
+    expect(new Set(filled.map((c) => c.fields.type))).toEqual(new Set(["new", "changed", "deleted"]))
+  })
+
+  it("Rundlauf: CSV mit c/changed und d/deleted besteht die Check-in-Regelprüfung ohne Fehler zu Ausgabedaten", () => {
+    const result = checkXmlText("send.XML", "2.3", DEMO_SEND, VALID, NOW)
+    const rows = csvRows(result.csv!)
+    expect(rows.some((r) => r.fields.dmentryType === "d" && r.fields.type === "deleted")).toBe(true)
+    // bestehende DMRL mit allen Einträgen → c/d-Einträge sind vorhanden
+    const snapshot = result.candidates.map((c, i) => ({ id: `e${i}`, status: "gesendet" as const, fields: c.fields }))
+    const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot })
+    const issueFields = ["issno", "type", "day", "month", "year"]
+    expect(checkin.report.findings.filter((f) => f.severity === "fehler" && issueFields.includes(f.field ?? ""))).toEqual([])
   })
 
   it("fillIssueData verändert die Originaleinträge nicht", () => {

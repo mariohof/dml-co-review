@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement 3: Ausgabetyp aus dem Eintragstyp ableiten, sobald `issno/@type` leer ist)
 
@@ -524,6 +524,11 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 - **Tests:** `xml-check.test.ts` +7 (Prüfdatum, Ergänzung vollständig, vorhandenes Datum und `c`/`d` bleiben, Teildaten und Mischfall mit beiden Hinweisen, unvollständiges Datum, Originale unverändert, Rundlauf Check-in ohne Fehler); angepasst: Sammelhinweis-Erwartungen in `xml-check.test.ts`, `qa-proj20.test.ts` (Check-in-Strenge jetzt mit Teildaten belegt), Komponententest (Hinweis + Standardwerte in der CSV), E2E „Ausgabedaten fehlen“ (CSV enthält `001;new;<Tagesdatum>` in allen 32 Zeilen). `npm test` 504/504 grün, Lint ohne Fehler, Typprüfung grün.
 - **E2E (Chromium, Playwright 1.65.1):** gesamte Suite 106/106 grün. Dabei behoben: Testablauf-Wettlauf nach der Anmeldung — die verzögerte Weiterleitung zum Dashboard überholte eine folgende Menü-Navigation (trat mit der schnelleren Playwright-Version regelmäßig auf). `tests/helpers.ts` (`loginAs`) und der Test „echt, ohne Abfangen: App über Netzwerkadresse“ warten jetzt die Weiterleitung ab. Kein Fehler der App.
 - **Hinweis Umgebung:** Ein Homebrew-Update (simdjson 5.2.0) hatte Node 26.8.1 unbrauchbar gemacht; nach Neuinstallation läuft Node 26.13.1.
+
+### Implementierungsnotizen Refinement 3 (Frontend, 2026-11-16) — Ausgabetyp aus dem Eintragstyp ableiten
+- **Prüfkern** `src/lib/workflows/xml-check.ts`: `needsIssueData` löst jetzt bei leerem Ausgabetyp aus (unabhängig von `@issno`); neu `deriveIssueType` (feste Zuordnung `n`→`new`, `c`→`changed`, `d`→`deleted`, leer/unbekannt → `new`). `fillIssueData` setzt den abgeleiteten Ausgabetyp, `001` nur bei leerer Ausgabenummer, Prüfdatum nur bei ganz leerem Datum, `n` nur bei leerem Eintragstyp. Neuer Hinweistext `issueDataFilled` laut Spec; der Sammelhinweis zählt nur Einträge mit Ausgabetyp, aber fehlender Nummer/Datum.
+- Leser, CSV-Schreiber, Regelwerk, Seite, Check-in und REPLY-Import unverändert.
+- **Tests:** `xml-check.test.ts` +6 (Ableitungstabelle, je Eintragstyp inkl. unbekanntem Wert mit Regel-A-Fehler, vorhandene Nummer `002` mit/ohne Datum, Ausgabetyp vorhanden → Sammelhinweis, Issue 4.2, Rundlauf c/changed + d/deleted in den Check-in); `qa-proj20.test.ts` +1 (Issue 5.0). Angepasst: Hinweistext, `c`/`d`-Erwartungen, Teildaten-Fälle (`@issno` ohne Typ wird jetzt ergänzt), Komponententest (zusätzlich `d;…;001;deleted`), E2E „Ausgabedaten fehlen“ (Typ je Eintragstyp) und 4.2-Tests in `PROJ-20-qa-refinement2.spec.ts` (issueInfo ohne issueType wird jetzt ergänzt, Nummer und Datum bleiben). `npm test` 518/518 grün, Typprüfung und Lint ohne Fehler, E2E PROJ-20 31/31 grün.
 
 ### Bugfix BUG-QA1-1 (2026-11-15) — UTF-16-Dateien
 - `declaredEncoding` (`src/lib/workflows/reply.ts`) erkennt UTF-16 jetzt am BOM (`FF FE` / `FE FF`) oder — ohne BOM — am Bytemuster von „<?“ (Little/Big Endian); sonst wie bisher die XML-Deklaration (Standard UTF-8). Gemeinsamer Baustein für REPLY-Import (PROJ-13) und „XML prüfen“ (PROJ-20).

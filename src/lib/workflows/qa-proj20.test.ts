@@ -118,13 +118,14 @@ describe("PROJ-20 QA", () => {
   })
 
   it("Check-in bleibt streng: CSV mit Teil-Ausgabedaten (nicht ergänzt) wird beim Check-in mit Pflichtfeld-Fehlern abgewiesen", () => {
-    const xml = DEMO_XML_FILES[DEMO_FILES.send2].replace(/<\/dmtitle>/g, '</dmtitle><issno issno="001" type=""></issno>')
+    // Ausgabetyp vorhanden, Datum fehlt → keine Ergänzung (Refinement 3)
+    const xml = DEMO_XML_FILES[DEMO_FILES.send2].replace(/<\/dmtitle>/g, '</dmtitle><issno issno="001" type="new"></issno>')
     const result = checkXmlText("send.xml", "2.3", xml, VALID)
     expect(errorCount(result.report)).toBe(0)
     expect(result.filledEntries).toBe(0)
     const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot: [] })
     const fields = new Set(checkin.report.findings.filter((f) => f.group === "B").map((f) => f.field))
-    expect([...fields].sort()).toEqual(["day", "month", "type", "year"])
+    expect([...fields].sort()).toEqual(["day", "month", "year"])
   })
 
   it("XSD-Client: 403 → Zugriff abgelehnt, 500 / kaputte Antwort → unerwartet, Netzfehler → Server läuft nicht, 503 mit Grund → Grund", async () => {
@@ -164,6 +165,15 @@ describe("PROJ-20 QA Refinement 2: Ausgabedaten ergänzen", () => {
     expect(rows(result.csv!).every((f) => f.issno === "001" && f.type === "new" && f.day === "05" && f.month === "03" && f.year === "2027")).toBe(true)
   })
 
+  it("Issue 5.0: Ausgabetyp leer → aus dmlEntryType abgeleitet (c → changed, d → deleted, n → new) (Refinement 3)", () => {
+    let n = 0
+    const stripped = BIKE_50.replace(/\s+issueType="[^"]*"/g, "").replace(/<dmlEntry>/g, () => `<dmlEntry dmlEntryType="${["c", "d", "n"][n++ % 3]}">`)
+    const result = checkXmlText("bike50.xml", "5.0", stripped, { state: "gueltig", issue: "5.0" }, NOW)
+    expect(result.filledEntries).toBe(result.candidates.length)
+    const pairs = new Set(rows(result.csv!).map((f) => `${f.dmentryType}/${f.type}`))
+    expect(pairs).toEqual(new Set(["c/changed", "d/deleted", "n/new"]))
+  })
+
   it("nur Ausgabetyp ohne Ausgabenummer: keine Ergänzung, Sammelhinweis", () => {
     const xml = SEND_RAW.replace(/<\/dmtitle>/, '</dmtitle><issno issno="" type="changed"></issno>')
     const result = checkXmlText("x.xml", "2.3", xml, VALID, NOW)
@@ -172,10 +182,12 @@ describe("PROJ-20 QA Refinement 2: Ausgabedaten ergänzen", () => {
     expect(rows(result.csv!).filter((f) => f.type === "changed")).toEqual([expect.objectContaining({ issno: "", day: "" })])
   })
 
-  it("Ausgabenummer nur aus Leerzeichen gilt nicht als fehlend: keine Ergänzung, Formatfehler (Regel A)", () => {
+  it("Ausgabenummer nur aus Leerzeichen gilt nicht als fehlend: wird nicht ersetzt, Formatfehler (Regel A)", () => {
     const xml = SEND_RAW.replace(/<\/dmtitle>/, '</dmtitle><issno issno=" " type=""></issno>')
     const result = checkXmlText("x.xml", "2.3", xml, VALID, NOW)
-    expect(result.filledEntries).toBe(result.candidates.length - 1)
+    // Refinement 3: Auslöser ist der leere Ausgabetyp → Eintrag wird ergänzt, die Ausgabenummer bleibt
+    expect(result.filledEntries).toBe(result.candidates.length)
+    expect(rows(result.csv!).some((f) => f.issno === " " || f.issno === "")).toBe(true)
     expect(result.report.findings.some((f) => f.severity === "fehler" && f.group === "A" && f.field === "issno")).toBe(true)
   })
 

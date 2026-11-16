@@ -4,9 +4,12 @@ import { expect, test, type Page } from "@playwright/test"
 import { readDataset, startAs } from "./helpers"
 
 /**
- * PROJ-20 QA Refinement 2 (2026-11-16): fehlende Ausgabedaten werden in der CSV ergänzt
- * (issno 001, type new, Prüfdatum, Eintragstyp n) — im echten Browser mit echter XSD-Prüfung.
+ * PROJ-20 QA Refinement 2/3 (2026-11-16): fehlende Ausgabedaten werden in der CSV ergänzt
+ * (Ausgabetyp aus dem Eintragstyp, issno 001, Prüfdatum, Eintragstyp n — nur wo leer) — im echten Browser mit echter XSD-Prüfung.
  */
+
+const ISSUE_TYPE: Record<string, string> = { n: "new", c: "changed", d: "deleted" }
+const derivedIssueType = (entryType: string) => ISSUE_TYPE[entryType] ?? "new"
 
 const today = () => {
   const now = new Date()
@@ -54,7 +57,7 @@ const stripIssueData42 = (xml: string) =>
     .replace(/<issueDate\b[^>]*>\s*<\/issueDate>/g, "")
     .replace(/\s+issueType="[^"]*"/g, "")
 
-test("4.2 ohne Ausgabedaten: Hinweis „ergänzt“ mit Tagesdatum, CSV mit 001/new/Datum, Eintragstyp n nur wo leer", async ({ page }) => {
+test("4.2 ohne Ausgabedaten: Hinweis „ergänzt“ mit Tagesdatum, CSV mit 001/abgeleitetem Ausgabetyp/Datum, Eintragstyp n nur wo leer", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   const exported = await exportGtfdemoXml(page)
   // entfernt auch die issueInfo/issueDate im Kopf (dort optional); betroffen sind für die CSV nur die Einträge
@@ -66,26 +69,32 @@ test("4.2 ohne Ausgabedaten: Hinweis „ergänzt“ mit Tagesdatum, CSV mit 001/
 
   await checkContent(page, exported.name, xml, "4.2")
   const d = today()
-  await expect(page.getByText(new RegExp(`Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabenummer 001, Ausgabetyp new, Datum ${d.day}\\.${d.month}\\.${d.year}`)).first()).toBeVisible()
+  await expect(page.getByText(new RegExp(`Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp .* Ausgabenummer 001 und Datum ${d.day}\\.${d.month}\\.${d.year}`)).first()).toBeVisible()
   await expect(page.getByText(/beim Check-in sind sie Pflicht/)).toHaveCount(0)
   const filled = csvRecords((await downloadCsv(page)).csv)
   expect(filled).toHaveLength(original.length)
   for (const [i, row] of filled.entries()) {
-    expect(row).toMatchObject({ issno: "001", type: "new", day: d.day, month: d.month, year: d.year })
+    expect(row).toMatchObject({ issno: "001", type: derivedIssueType(original[i].dmentryType), day: d.day, month: d.month, year: d.year })
     // Eintragstyp: vorhandener Wert bleibt, leerer wird n
     expect(row.dmentryType).toBe(original[i].dmentryType === "" ? "n" : original[i].dmentryType)
   }
 })
 
-test("4.2 mit issueInfo, aber ohne issueType (Teildaten): keine Ergänzung, Sammelhinweis „beim Check-in Pflicht“", async ({ page }) => {
+test("4.2 mit issueInfo, aber ohne issueType: ergänzt — Ausgabenummer und Datum bleiben, Ausgabetyp abgeleitet (Refinement 3)", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   const exported = await exportGtfdemoXml(page)
+  await checkContent(page, exported.name, exported.xml, "4.2")
+  const original = csvRecords((await downloadCsv(page)).csv)
   const xml = exported.xml.replace(/\s+issueType="[^"]*"/g, "")
   await checkContent(page, exported.name, xml, "4.2")
-  await expect(page.getByText(/Einträgen fehlen Ausgabedaten .* beim Check-in sind sie Pflicht/).first()).toBeVisible()
-  await expect(page.getByText(/in der CSV ergänzt/)).toHaveCount(0)
+  await expect(page.getByText(/in der CSV ergänzt/).first()).toBeVisible()
+  await expect(page.getByText(/beim Check-in sind sie Pflicht/)).toHaveCount(0)
   const rows = csvRecords((await downloadCsv(page)).csv)
-  expect(rows.every((r) => r.type === "" && r.issno !== "")).toBe(true)
+  expect(rows).toHaveLength(original.length)
+  for (const [i, row] of rows.entries()) {
+    expect(row).toMatchObject({ issno: original[i].issno, day: original[i].day, month: original[i].month, year: original[i].year })
+    expect(row.type).toBe(derivedIssueType(original[i].dmentryType))
+  }
 })
 
 test("Rundlauf in bestehende DMRL: 4.2-Export ohne Ausgabedaten → CSV → Check-in in GTFDEMO besteht; Datum der Einträge als Änderung gemeldet", async ({ page }) => {
