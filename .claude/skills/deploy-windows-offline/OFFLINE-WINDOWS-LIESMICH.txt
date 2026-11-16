@@ -1,0 +1,18 @@
+DMRL Management System – Offline-Paket für Windows 11 (x64)
+===========================================================
+
+Dieses Paket enthält alle Node.js-Pakete (für Windows x64) und die fertig gebaute Anwendung.
+Beim Start wird nichts installiert und keine Internetverbindung benötigt.
+Auch ein Neubau (Option --neu-bauen) funktioniert ohne Internet.
+
+Voraussetzungen auf dem Rechner: Node.js (20 oder neuer), Python 3, xmllint.
+
+1. ZIP in einen kurzen Pfad entpacken, z. B. C:\DMRL (lange Pfade können Probleme machen).
+   Bitte in einen NEUEN, leeren Ordner entpacken – nicht über eine ältere Version.
+2. Im Ordner DMRL-Management-System doppelt auf Start.bat klicken.
+3. Der Browser öffnet http://localhost:8877.
+
+Wird xmllint nicht gefunden: Umgebungsvariable XMLLINT_PATH auf den Pfad zu xmllint.exe setzen.
+Details bei Problemen stehen in start.log im Ordner DMRL-Management-System.
+
+Weitere Hinweise: START-HIER.md
