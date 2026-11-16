@@ -57,7 +57,7 @@ describe("XML prüfen (PROJ-20)", () => {
     expect(screen.getByRole("button", { name: "Prüfen" })).toBeDisabled()
   })
 
-  it("Demo-SEND: Zusammenfassung, Sammelhinweis Ausgabedaten, CSV ohne Warnung mit Namen der XML-Datei; nichts gespeichert", async () => {
+  it("Demo-SEND: Zusammenfassung, Hinweis „Ausgabedaten ergänzt“, CSV ohne Warnung mit Namen der XML-Datei; nichts gespeichert", async () => {
     render(<XmlCheckTool />)
     chooseIssue("2.3")
     await chooseFile(SEND, SEND_NAME)
@@ -67,12 +67,13 @@ describe("XML prüfen (PROJ-20)", () => {
     expect(within(summary).getByText("PHUNGUN")).toBeInTheDocument()
     expect(within(summary).getByText("SEND")).toBeInTheDocument()
     expect(screen.getByText("0 Fehler, 1 Hinweis")).toBeInTheDocument()
-    expect(screen.getAllByText(/Einträgen fehlen Ausgabedaten .* beim Check-in sind sie Pflicht/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabenummer 001, Ausgabetyp new/).length).toBeGreaterThan(0)
     expect(screen.queryByText(/ein Check-in wird abgewiesen, bis sie behoben sind/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "CSV herunterladen" }))
     const [fileName, csv] = download.mock.calls[0]
     expect(fileName).toBe("DML-PHUNGUN-D0815-C-2026-00002_001-00.csv")
     expect(csv).toMatch(/^﻿dmentryType;modelic/)
+    expect(csv).toMatch(/;001;new;\d{2};\d{2};\d{4};/)
     fireEvent.click(screen.getByRole("button", { name: "Prüfbericht herunterladen" }))
     expect(download.mock.calls[1][0]).toMatch(/^Pruefbericht-XML-DML-PHUNGUN-D0815-C-2026-00002_001-00-\d{4}-\d{2}-\d{2}\.csv$/)
     expect(window.localStorage.length).toBe(0)

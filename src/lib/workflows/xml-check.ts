@@ -12,6 +12,7 @@ import { readReplyFile } from "./reply"
  * Prüfkern „XML prüfen" (PROJ-20 Tech Design C/E): XSD (PROJ-11) → Lesen in deklarierter Kodierung →
  * DML-Leser der gewählten Issue → Regeln wie Check-in (A, B, C, E, I) + „MI einheitlich" statt Regel D;
  * Pflichtfelder wie REPLY (Ausgabedaten optional, Sammelhinweis).
+ * Refinement 2 (2026-11-16): fehlt `addresdm/issno` ganz, erhält die CSV Standard-Ausgabedaten (Prüfung auf Originaldaten).
  * Ohne Bildschirmbezug und ohne Datenbestand. Speichert nichts.
  */
 
@@ -22,6 +23,26 @@ export const CSV_WITHOUT_XSD = "Die XSD-Prüfung wurde nicht durchgeführt — d
 export const MI_NOT_UNIFORM = "uneinheitlich"
 export const issueDataMissing = (count: number) =>
   `Bei ${count} ${count === 1 ? "Eintrag fehlen" : "Einträgen fehlen"} Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.`
+
+/** Standardwerte für fehlende Ausgabedaten (Refinement 2, 2026-11-16) */
+export const DEFAULT_ISSNO = "001"
+export const DEFAULT_ISSUE_TYPE = "new"
+export const DEFAULT_ENTRY_TYPE = "n"
+
+export interface CheckDate {
+  day: string
+  month: string
+  year: string
+}
+
+/** Lokales Datum als TT/MM/JJJJ (führende Nullen) */
+export function toCheckDate(date: Date): CheckDate {
+  const pad = (n: number, width: number) => String(n).padStart(width, "0")
+  return { day: pad(date.getDate(), 2), month: pad(date.getMonth() + 1, 2), year: pad(date.getFullYear(), 4) }
+}
+
+export const issueDataFilled = (count: number, date: CheckDate) =>
+  `Bei ${count} ${count === 1 ? "Eintrag fehlten" : "Einträgen fehlten"} Ausgabedaten — in der CSV ergänzt: Ausgabenummer ${DEFAULT_ISSNO}, Ausgabetyp ${DEFAULT_ISSUE_TYPE}, Datum ${date.day}.${date.month}.${date.year}, Eintragstyp ${DEFAULT_ENTRY_TYPE} (nur wo leer).`
 
 export type XsdState = "bestanden" | "schemafehler" | "nicht_wohlgeformt" | "nicht_durchgefuehrt"
 
@@ -45,8 +66,12 @@ export interface XmlCheckResult {
   candidates: Candidate[]
   report: Report
   summary: XmlCheckSummary
-  /** CSV im Check-out-Format — null, wenn die Datei nicht lesbar ist */
+  /** CSV im Check-out-Format (mit ergänzten Ausgabedaten) — null, wenn die Datei nicht lesbar ist */
   csv: string | null
+  /** Anzahl Einträge, deren Ausgabedaten in der CSV ergänzt wurden */
+  filledEntries: number
+  /** Datum der Prüfung (für ergänzte Ausgabedaten) */
+  checkDate: CheckDate
 }
 
 export type XmlCheckOutcome = { ok: true; result: XmlCheckResult } | { ok: false; message: string }
@@ -71,13 +96,45 @@ export function checkModelicUniform(candidates: Candidate[]): { modelic: string;
   return { modelic: MI_NOT_UNIFORM, findings }
 }
 
+/** Auslöser für die Ergänzung: Element `issno` fehlt ganz (Ausgabenummer und Ausgabetyp leer) */
+export const needsIssueData = (c: Candidate) => c.fields.issno === "" && c.fields.type === ""
+
 /**
- * Ausgabedaten (issno, type, issdate) sind in DMRL-XML optional (Refinement 2026-11-16): statt Pflichtfeld-Fehlern
- * ein Sammelhinweis über alle Einträge, bei denen mindestens eines der Felder fehlt
+ * Ergänzt fehlende Ausgabedaten für die CSV (Refinement 2): nur wenn `issno` ganz fehlt; Datum nur, wenn Tag/Monat/Jahr
+ * alle leer; Eintragstyp nur, wenn leer. Vorhandene Werte werden nie überschrieben. Liefert Kopien, Originale bleiben.
  */
-export function checkIssueDataHint(candidates: Candidate[]): Finding[] {
-  const count = candidates.filter((c) => OPTIONAL_IN_REPLY.some((field) => c.fields[field] === "")).length
-  return count === 0 ? [] : [{ severity: "hinweis", group: "B", message: issueDataMissing(count) }]
+export function fillIssueData(candidates: Candidate[], date: CheckDate): { candidates: Candidate[]; filled: number } {
+  let filled = 0
+  const result = candidates.map((c) => {
+    if (!needsIssueData(c)) return c
+    filled++
+    const f = c.fields
+    const dateEmpty = f.day === "" && f.month === "" && f.year === ""
+    return {
+      ...c,
+      fields: {
+        ...f,
+        issno: DEFAULT_ISSNO,
+        type: DEFAULT_ISSUE_TYPE,
+        ...(dateEmpty ? date : {}),
+        dmentryType: f.dmentryType === "" ? DEFAULT_ENTRY_TYPE : f.dmentryType,
+      },
+    }
+  })
+  return { candidates: result, filled }
+}
+
+/**
+ * Hinweise zu Ausgabedaten (in DMRL-XML optional): ein Hinweis für ergänzte Einträge, ein Sammelhinweis für Einträge
+ * mit Lücken, die nicht ergänzt wurden (Teildaten) — keine Pflichtfeld-Fehler
+ */
+export function checkIssueDataHint(candidates: Candidate[], date: CheckDate): Finding[] {
+  const filled = candidates.filter(needsIssueData).length
+  const missing = candidates.filter((c) => !needsIssueData(c) && OPTIONAL_IN_REPLY.some((field) => c.fields[field] === "")).length
+  const hints: Finding[] = []
+  if (filled > 0) hints.push({ severity: "hinweis", group: "B", message: issueDataFilled(filled, date) })
+  if (missing > 0) hints.push({ severity: "hinweis", group: "B", message: issueDataMissing(missing) })
+  return hints
 }
 
 export function xmlCheckSummary(candidates: Candidate[], modelic: string): XmlCheckSummary {
@@ -96,14 +153,21 @@ const XSD_STATE: Record<XsdResult["state"], XsdState> = {
 }
 
 /** Prüfung des Dateitextes nach vorliegendem XSD-Ergebnis (rein, ohne Netz) */
-export function checkXmlText(fileName: string, issue: S1000dIssue, text: string, xsdResult: XsdResult): XmlCheckResult {
+export function checkXmlText(
+  fileName: string,
+  issue: S1000dIssue,
+  text: string,
+  xsdResult: XsdResult,
+  now: Date = new Date()
+): XmlCheckResult {
+  const checkDate = toCheckDate(now)
   const xsd = XSD_STATE[xsdResult.state]
   const xsdFindings = xsdResultToReport(xsdResult).findings
   const xsdUnavailableDetail = xsdResult.state === "nicht_verfuegbar" ? unavailableDetail(xsdResult.reason) : undefined
   if (xsdUnavailableDetail) {
     xsdFindings.push({ severity: "hinweis", group: "XSD", message: `${XSD_NOT_PERFORMED} — ${xsdUnavailableDetail}` })
   }
-  const base = { fileName, issue, xsd, xsdUnavailableDetail }
+  const base = { fileName, issue, xsd, xsdUnavailableDetail, checkDate }
   const unreadable = (findings: Finding[]): XmlCheckResult => ({
     ...base,
     parsed: null,
@@ -111,6 +175,7 @@ export function checkXmlText(fileName: string, issue: S1000dIssue, text: string,
     report: { lineLabel: "Zeile / Eintrag", findings },
     summary: EMPTY_SUMMARY,
     csv: null,
+    filledEntries: 0,
   })
 
   if (xsd === "nicht_wohlgeformt") return unreadable(xsdFindings)
@@ -134,19 +199,22 @@ export function checkXmlText(fileName: string, issue: S1000dIssue, text: string,
     ...checkFormats(candidates),
     // Pflichtfelder wie beim REPLY-Import: Ausgabedaten optional, angefangenes Datum vollständig
     ...checkMandatory(candidates, "reply"),
-    ...checkIssueDataHint(candidates),
+    ...checkIssueDataHint(candidates, checkDate),
     ...checkUniqueDmc(candidates),
     ...mi.findings,
     ...checkSnsTechname(candidates),
     ...checkInfocodeInfoname(candidates),
   ]
+  // Ergänzung nur für die CSV; Bericht und Zusammenfassung beruhen auf den Originaldaten
+  const filled = fillIssueData(candidates, checkDate)
   return {
     ...base,
     parsed,
     candidates,
     report: { lineLabel: "Zeile / Eintrag", findings },
     summary: xmlCheckSummary(candidates, mi.modelic),
-    csv: writeEntriesCsv(candidates),
+    csv: writeEntriesCsv(filled.candidates),
+    filledEntries: filled.filled,
   }
 }
 

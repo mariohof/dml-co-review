@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement 2: fehlende Ausgabedaten in der CSV mit Standardwerten ergänzen)
 
@@ -441,6 +441,14 @@ Einzahl/Mehrzahl wie bisher. Beides sind Hinweise und keine Fehler, deshalb änd
 - **Umbruch:** `[overflow-wrap:anywhere]` statt `break-all` (bereits 213ad74).
 - **Tests:** `npm test` 488/488 grün (neu: Teil-Ausgabedaten, Einzahl, Zugriff abgelehnt, 2 Komponententests „Erneut prüfen“; angepasst: 4 Tests mit alten Erwartungen). E2E: `PROJ-20-xml-pruefung.spec.ts` +3 (Sammelhinweis, Server läuft nicht + Erneut prüfen, Zugriff abgelehnt) — PROJ-20 gesamt 22/22, verwandte Features (PROJ-12/13/14/18, BUG-QA1-1) 11/11 grün.
 - **Hinweis Umgebung:** Während der Tests hing der Entwicklungsserver beim Kompilieren (0 % CPU); Ursache war ein festgefahrener Turbopack-Zwischenspeicher `.next/dev`. Beiseitegelegt, danach lief alles normal — kein Fehler der App.
+
+### Implementierungsnotizen Refinement 2 (Frontend, 2026-11-16) — Ausgabedaten ergänzen
+- **Prüfkern** `src/lib/workflows/xml-check.ts`: neu `needsIssueData` (Auslöser: Ausgabenummer und Ausgabetyp leer), `fillIssueData` (Kopien mit `001`/`new`, Prüfdatum nur bei ganz leerem Datum, `n` nur bei leerem Eintragstyp; Originale unverändert), `toCheckDate` (lokales Datum TT/MM/JJJJ) und Hinweistext `issueDataFilled(n, datum)`. `checkIssueDataHint` liefert jetzt bis zu zwei Hinweise: „ergänzt“ und — nur für nicht ergänzte Einträge mit Lücken — den bisherigen Sammelhinweis.
+- `checkXmlText` hat einen optionalen Parameter für das Prüfdatum (Standard: jetzt) und liefert zusätzlich `filledEntries` und `checkDate`. Die CSV wird aus den ergänzten Kopien geschrieben, Bericht und Zusammenfassung aus den Originaldaten. „Erneut prüfen“ nimmt das aktuelle Datum.
+- Seite, CSV-Schreiber, Regeln, Check-in und REPLY-Import sind unverändert.
+- **Tests:** `xml-check.test.ts` +7 (Prüfdatum, Ergänzung vollständig, vorhandenes Datum und `c`/`d` bleiben, Teildaten und Mischfall mit beiden Hinweisen, unvollständiges Datum, Originale unverändert, Rundlauf Check-in ohne Fehler); angepasst: Sammelhinweis-Erwartungen in `xml-check.test.ts`, `qa-proj20.test.ts` (Check-in-Strenge jetzt mit Teildaten belegt), Komponententest (Hinweis + Standardwerte in der CSV), E2E „Ausgabedaten fehlen“ (CSV enthält `001;new;<Tagesdatum>` in allen 32 Zeilen). `npm test` 504/504 grün, Lint ohne Fehler, Typprüfung grün.
+- **E2E (Chromium, Playwright 1.65.1):** gesamte Suite 106/106 grün. Dabei behoben: Testablauf-Wettlauf nach der Anmeldung — die verzögerte Weiterleitung zum Dashboard überholte eine folgende Menü-Navigation (trat mit der schnelleren Playwright-Version regelmäßig auf). `tests/helpers.ts` (`loginAs`) und der Test „echt, ohne Abfangen: App über Netzwerkadresse“ warten jetzt die Weiterleitung ab. Kein Fehler der App.
+- **Hinweis Umgebung:** Ein Homebrew-Update (simdjson 5.2.0) hatte Node 26.8.1 unbrauchbar gemacht; nach Neuinstallation läuft Node 26.13.1.
 
 ### Bugfix BUG-QA1-1 (2026-11-15) — UTF-16-Dateien
 - `declaredEncoding` (`src/lib/workflows/reply.ts`) erkennt UTF-16 jetzt am BOM (`FF FE` / `FE FF`) oder — ohne BOM — am Bytemuster von „<?“ (Little/Big Endian); sonst wie bisher die XML-Deklaration (Standard UTF-8). Gemeinsamer Baustein für REPLY-Import (PROJ-13) und „XML prüfen“ (PROJ-20).

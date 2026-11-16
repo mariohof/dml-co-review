@@ -9,7 +9,7 @@ import { answerDeviations, runCheckinCheck } from "@/lib/rules/check/checkin"
 import { readCheckinCsv } from "@/lib/rules/check/csv-reader"
 import { errorCount } from "@/lib/rules/check/types"
 import type { XsdResult } from "@/lib/xsd/types"
-import { checkXmlText, issueDataMissing, runXmlCheck } from "./xml-check"
+import { checkXmlText, issueDataFilled, issueDataMissing, runXmlCheck, toCheckDate } from "./xml-check"
 import { unavailableDetail, validateXml } from "@/lib/xsd/client"
 
 /** PROJ-20 QA — Grenzfälle des Prüfkerns */
@@ -88,14 +88,16 @@ describe("PROJ-20 QA", () => {
 
   // ------------------------------------------------------------ Refinement 2026-11-16
 
-  it("Ausgabedaten: Hinweis zählt nur Einträge mit Lücken; vollständige Einträge zählen nicht", () => {
+  it("Ausgabedaten: Hinweis zählt nur ergänzte Einträge; vollständige Einträge zählen nicht (Refinement 2)", () => {
     let n = 0
     // nur bei den ersten 3 Einträgen Ausgabedaten ergänzen
     const xml = DEMO_XML_FILES[DEMO_FILES.send2].replace(/<\/dmtitle>/g, (m) =>
       ++n <= 3 ? `${m}<issno issno="001" type="new"></issno><issdate day="01" month="02" year="2027"></issdate>` : m
     )
-    const result = checkXmlText("x.xml", "2.3", xml, VALID)
-    expect(result.report.findings).toEqual([{ severity: "hinweis", group: "B", message: issueDataMissing(result.candidates.length - 3) }])
+    const now = new Date(2027, 2, 5)
+    const result = checkXmlText("x.xml", "2.3", xml, VALID, now)
+    expect(result.report.findings).toEqual([{ severity: "hinweis", group: "B", message: issueDataFilled(result.candidates.length - 3, toCheckDate(now)) }])
+    expect(issueDataMissing(1)).toContain("beim Check-in sind sie Pflicht")
   })
 
   it("Ausgabedaten: Formatfehler bleiben Fehler (z. B. Ausgabenummer ‚1‘, Ausgabetyp ungültig, ungültiges Datum)", () => {
@@ -115,12 +117,14 @@ describe("PROJ-20 QA", () => {
     expect(findings[0].message).toContain("Ausgabedatum ist unvollständig")
   })
 
-  it("Check-in bleibt streng: CSV aus einer Datei ohne Ausgabedaten wird beim Check-in mit Pflichtfeld-Fehlern abgewiesen", () => {
-    const result = checkXmlText("send.xml", "2.3", DEMO_XML_FILES[DEMO_FILES.send2], VALID)
+  it("Check-in bleibt streng: CSV mit Teil-Ausgabedaten (nicht ergänzt) wird beim Check-in mit Pflichtfeld-Fehlern abgewiesen", () => {
+    const xml = DEMO_XML_FILES[DEMO_FILES.send2].replace(/<\/dmtitle>/g, '</dmtitle><issno issno="001" type=""></issno>')
+    const result = checkXmlText("send.xml", "2.3", xml, VALID)
     expect(errorCount(result.report)).toBe(0)
+    expect(result.filledEntries).toBe(0)
     const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot: [] })
     const fields = new Set(checkin.report.findings.filter((f) => f.group === "B").map((f) => f.field))
-    expect([...fields].sort()).toEqual(["day", "issno", "month", "type", "year"])
+    expect([...fields].sort()).toEqual(["day", "month", "type", "year"])
   })
 
   it("XSD-Client: 403 → Zugriff abgelehnt, 500 / kaputte Antwort → unerwartet, Netzfehler → Server läuft nicht, 503 mit Grund → Grund", async () => {

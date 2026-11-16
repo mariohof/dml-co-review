@@ -14,7 +14,10 @@ import {
   checkXmlText,
   formatDmlCode,
   ISSUE_MISMATCH,
+  fillIssueData,
+  issueDataFilled,
   issueDataMissing,
+  toCheckDate,
   MI_NOT_UNIFORM,
   runXmlCheck,
   XSD_NOT_PERFORMED,
@@ -33,6 +36,7 @@ const REPLY = withIssueData(DEMO_XML_FILES[DEMO_FILES.reply1]).replace(
 const SEND = withIssueData(DEMO_SEND)
 const BIKE_42 = readFileSync(join(process.cwd(), "docs/beispiele/issue-4.2/DML-S1000DBIKE-B6865-S-2016-00002_001-00.XML"), "utf8")
 const VALID: XsdResult = { state: "gueltig", issue: "2.3" }
+const NOW = new Date(2027, 2, 5, 10, 0)
 const xmlFile = (content: BlobPart, name = "partner.xml") => new File([content], name, { type: "application/xml" })
 
 describe("checkXmlText — gültige Datei", () => {
@@ -79,10 +83,11 @@ describe("checkXmlText — gültige Datei", () => {
     expect(result.report.findings.filter((f) => f.group === "D").every((f) => f.message.includes("S1000DBIKE"))).toBe(true)
   })
 
-  it("SEND ohne Ausgabedaten: keine Pflichtfeld-Fehler, ein Sammelhinweis, CSV mit allen Einträgen (Refinement 2026-11-16)", () => {
-    const result = checkXmlText("send.XML", "2.3", DEMO_SEND, VALID)
+  it("SEND ohne Ausgabedaten: keine Pflichtfeld-Fehler, ein Hinweis „ergänzt“, CSV mit allen Einträgen (Refinement 2)", () => {
+    const result = checkXmlText("send.XML", "2.3", DEMO_SEND, VALID, NOW)
     expect(errorCount(result.report)).toBe(0)
-    expect(result.report.findings).toEqual([{ severity: "hinweis", group: "B", message: issueDataMissing(result.candidates.length) }])
+    expect(result.report.findings).toEqual([{ severity: "hinweis", group: "B", message: issueDataFilled(result.candidates.length, toCheckDate(NOW)) }])
+    expect(result.filledEntries).toBe(result.candidates.length)
     expect(result.csv!.split("\r\n").filter(Boolean)).toHaveLength(result.candidates.length + 1)
   })
 
@@ -95,11 +100,88 @@ describe("checkXmlText — gültige Datei", () => {
     expect(errors).toHaveLength(1)
     expect(errors[0]).toMatchObject({ group: "B", field: "day", message: expect.stringContaining("Ausgabedatum ist unvollständig") })
     expect(hintCount(result.report)).toBe(1)
+    expect(result.filledEntries).toBe(1)
     expect(checkXmlText("send.XML", "2.3", withIssueData(DEMO_SEND), VALID).report.findings).toEqual([])
   })
 
   it("Sammelhinweis: Einzahl", () => {
     expect(issueDataMissing(1)).toBe("Bei 1 Eintrag fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.")
+    expect(issueDataFilled(1, { day: "05", month: "03", year: "2027" })).toBe(
+      "Bei 1 Eintrag fehlten Ausgabedaten — in der CSV ergänzt: Ausgabenummer 001, Ausgabetyp new, Datum 05.03.2027, Eintragstyp n (nur wo leer)."
+    )
+  })
+})
+
+describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
+  const csvRows = (csv: string) => readCheckinCsv(csv).candidates
+  const date = toCheckDate(NOW)
+
+  it("Prüfdatum: lokales Datum mit führenden Nullen", () => {
+    expect(toCheckDate(new Date(2027, 0, 5, 23, 59))).toEqual({ day: "05", month: "01", year: "2027" })
+  })
+
+  it("issno fehlt ganz: CSV erhält 001/new/Prüfdatum/n; Bericht und Einträge bleiben auf den Originaldaten", () => {
+    const xml = DEMO_SEND.replace(/<dmentry type="[nd]">/g, '<dmentry type="">')
+    const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
+    expect(result.candidates.every((c) => c.fields.issno === "" && c.fields.dmentryType === "")).toBe(true)
+    const rows = csvRows(result.csv!)
+    expect(rows).toHaveLength(result.candidates.length)
+    for (const row of rows) {
+      expect(row.fields).toMatchObject({ issno: "001", type: "new", day: date.day, month: date.month, year: date.year, dmentryType: "n" })
+    }
+  })
+
+  it("vorhandenes Datum und vorhandener Eintragstyp c/d bleiben erhalten", () => {
+    let n = 0
+    const xml = DEMO_SEND.replace(/<dmentry type="[nd]">/g, () => (++n === 1 ? '<dmentry type="c">' : n === 2 ? '<dmentry type="d">' : '<dmentry type="n">')).replace(
+      /<\/dmtitle>/g,
+      '</dmtitle><issdate day="01" month="02" year="2025"></issdate>'
+    )
+    const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
+    const rows = csvRows(result.csv!)
+    expect(rows.every((r) => r.fields.issno === "001" && r.fields.type === "new" && r.fields.year === "2025" && r.fields.day === "01")).toBe(true)
+    expect(rows.filter((r) => r.fields.dmentryType === "c")).toHaveLength(1)
+    expect(rows.filter((r) => r.fields.dmentryType === "d")).toHaveLength(1)
+  })
+
+  it("Teildaten (nur @issno) oder nur Datum fehlt: keine Ergänzung, alter Sammelhinweis; Mischfall → beide Hinweise", () => {
+    let n = 0
+    const xml = DEMO_SEND.replace(/<\/dmtitle>/g, (m) =>
+      ++n === 1 ? `${m}<issno issno="002" type=""></issno>` : n === 2 ? `${m}<issno issno="003" type="changed"></issno>` : m
+    )
+    const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
+    const total = result.candidates.length
+    expect(result.filledEntries).toBe(total - 2)
+    expect(result.report.findings).toEqual([
+      { severity: "hinweis", group: "B", message: issueDataFilled(total - 2, date) },
+      { severity: "hinweis", group: "B", message: issueDataMissing(2) },
+    ])
+    const rows = csvRows(result.csv!)
+    expect(rows.find((r) => r.fields.issno === "002")!.fields).toMatchObject({ type: "", day: "", month: "", year: "" })
+    expect(rows.find((r) => r.fields.issno === "003")!.fields).toMatchObject({ type: "changed", day: "" })
+  })
+
+  it("unvollständiges Datum ohne issno: issno/type ergänzt, Datum nicht, Fehler bleibt", () => {
+    const xml = DEMO_SEND.replace(/<\/dmtitle>/, '</dmtitle><issdate day="" month="" year="2027"></issdate>')
+    const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
+    expect(result.report.findings.filter((f) => f.severity === "fehler").map((f) => f.message)).toEqual([expect.stringContaining("Ausgabedatum ist unvollständig")])
+    const row = csvRows(result.csv!).find((r) => r.fields.year === "2027" && r.fields.day === "")!
+    expect(row.fields).toMatchObject({ issno: "001", type: "new", month: "" })
+  })
+
+  it("fillIssueData verändert die Originaleinträge nicht", () => {
+    const original = checkXmlText("send.XML", "2.3", DEMO_SEND, VALID, NOW).candidates
+    const copy = structuredClone(original)
+    fillIssueData(original, date)
+    expect(original).toEqual(copy)
+  })
+
+  it("Rundlauf: CSV aus einer Datei ohne Ausgabedaten besteht die Check-in-Regelprüfung ohne Pflichtfeld-Fehler", () => {
+    // neue DMRL: alle Einträge neu, Eintragstyp leer → ergänztes ‚n' erfüllt Regel F
+    const xml = DEMO_SEND.replace(/<dmentry type="[nd]">/g, '<dmentry type="">')
+    const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
+    const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot: [] })
+    expect(checkin.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
   })
 })
 

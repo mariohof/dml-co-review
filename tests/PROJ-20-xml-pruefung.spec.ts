@@ -107,14 +107,21 @@ test("Neuladen: Ergebnis ist weg", async ({ page }) => {
 
 // ---------------------------------------------------------------- Refinement 2026-11-16
 
-test("Ausgabedaten fehlen (Demo-REPLY): keine Fehler, ein Sammelhinweis, CSV ohne Warnung", async ({ page }) => {
+test("Ausgabedaten fehlen (Demo-REPLY): keine Fehler, Hinweis „ergänzt“, CSV mit Standardwerten und Tagesdatum", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   await openTool(page)
   await checkFile(page, REPLY)
   await expect(page.getByText("0 Fehler, 1 Hinweis")).toBeVisible()
-  await expect(page.getByText(/Bei 32 Einträgen fehlen Ausgabedaten .* beim Check-in sind sie Pflicht/).first()).toBeVisible()
+  await expect(page.getByText(/Bei 32 Einträgen fehlten Ausgabedaten — in der CSV ergänzt/).first()).toBeVisible()
   await expect(page.getByText(/ein Check-in wird abgewiesen/)).toHaveCount(0)
-  await expect(page.getByRole("button", { name: "CSV herunterladen" })).toBeVisible()
+  const downloadPromise = page.waitForEvent("download")
+  await page.getByRole("button", { name: "CSV herunterladen" }).click()
+  const csv = readFileSync((await (await downloadPromise).path())!, "utf8")
+  const now = new Date()
+  const today = [String(now.getDate()).padStart(2, "0"), String(now.getMonth() + 1).padStart(2, "0"), String(now.getFullYear())].join(";")
+  const rows = csv.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean).slice(1)
+  expect(rows).toHaveLength(32)
+  for (const row of rows) expect(row).toContain(`;001;new;${today};`)
 })
 
 test("Server läuft nicht: Ursache mit Anweisung; „Erneut prüfen“ prüft vollständig, sobald der Server wieder antwortet", async ({ page }) => {
