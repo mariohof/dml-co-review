@@ -34,6 +34,6 @@
 | PROJ-17 | DMRL-Berechtigungen — Admin berechtigt Bearbeiter je DMRL/System · P0 · Deps: PROJ-3, PROJ-6 | Approved | [PROJ-17](PROJ-17-dmrl-berechtigungen.md) | 2026-11-12 |
 | PROJ-18 | DMRL-Export (CSV/XML) — jederzeit exportieren, ohne Sperre und ohne Workflow · P0 · Deps: PROJ-7, PROJ-9, PROJ-11, PROJ-12 | Approved | [PROJ-18](PROJ-18-dmrl-export.md) | 2026-11-12 |
 | PROJ-19 | Lokaler Start (Python-Startskript) — Voraussetzungen prüfen, App bauen, lokal starten, Browser öffnen · P0 · Deps: PROJ-11 | Approved | [PROJ-19](PROJ-19-lokaler-start.md) | 2026-11-12 |
-| PROJ-20 | XML-Prüfung & CSV-Konvertierung — beliebige DMRL-XML prüfen (XSD + Regelwerk) und als CSV herunterladen, ohne Speichern · P1 · Deps: PROJ-8, PROJ-10, PROJ-11 | Planned | [PROJ-20](PROJ-20-xml-pruefung-csv-konvertierung.md) | 2026-11-14 |
+| PROJ-20 | XML-Prüfung & CSV-Konvertierung — beliebige DMRL-XML prüfen (XSD + Regelwerk) und als CSV herunterladen, ohne Speichern · P1 · Deps: PROJ-8, PROJ-10, PROJ-11 | Architected | [PROJ-20](PROJ-20-xml-pruefung-csv-konvertierung.md) | 2026-11-14 |
 
 ## Next Available ID: PROJ-22

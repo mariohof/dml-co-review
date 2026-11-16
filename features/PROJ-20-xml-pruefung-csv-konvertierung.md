@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement 3: Ausgabetyp aus dem Eintragstyp ableiten, sobald `issno/@type` leer ist)
 
@@ -43,7 +43,7 @@ Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine 
 | `issno` | `/dml/dmentry/addresdm/issno/@issno` | `001` | nur wenn leer; eine vorhandene Ausgabenummer bleibt |
 | `day`/`month`/`year` | `/dml/dmentry/addresdm/issdate` | Datum der Prüfung | nur wenn `issdate` fehlt (alle drei leer); ein vorhandenes Datum bleibt |
 
-- Bei Issue 4.2/5.0 entsprechen die Felder `dmlEntry/issueInfo/@issueType` (Ausgabetyp) und `dmlEntry/@dmlEntryType` (Eintragstyp); die Ableitung gilt für alle drei Issues gleich. `new`, `changed` und `deleted` sind in allen drei Schemas und in Regel A gültig.
+- Bei Issue 4.2/5.0 entsprechen die Felder `dmlEntry/@issueType` (Ausgabetyp) und `dmlEntry/@dmlEntryType` (Eintragstyp); die Ableitung gilt für alle drei Issues gleich. `new`, `changed` und `deleted` sind in allen drei Schemas und in Regel A gültig.
 - Die **Prüfung** (XSD, Regelwerk) läuft auf den **Originaldaten** der XML; die Ergänzung betrifft nur die heruntergeladene CSV. Die XML-Datei wird nicht verändert, gespeichert wird nichts.
 - Statt des Sammelhinweises erscheint **ein Hinweis** (kein Fehler): „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer 001 und Datum TT.MM.JJJJ (nur wo leer).“
 - **Ausgabetyp vorhanden, aber Ausgabenummer und/oder Datum fehlen:** keine Ergänzung (bei `changed`/`deleted` wäre `001` meist falsch — die Nummer klärt der Bearbeiter); es bleibt der Sammelhinweis „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“
@@ -225,6 +225,9 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Zwei getrennte Hinweise (ergänzt / nicht ergänzt) statt eines gemeinsamen | Jeder Hinweis führt zu einer klaren Aussage: „erledigt“ bzw. „beim Check-in Pflicht“ | 2026-11-16 |
 | Keine Änderung an Check-in, Regeln, CSV-Schreiber und Seite | Ergänztes `n` passt zu Regel F (neue Einträge), `001`/`new` zu Regel A; Änderung bleibt auf den Prüfkern beschränkt | 2026-11-16 |
 | „Erneut prüfen“ behält das bisherige Ergebnis bis zum neuen | Kein leerer Bildschirm bei erneutem Ausfall; gleiche Logik gegen veraltete Ergebnisse wie „Prüfen“ | 2026-11-16 |
+| Ableitung als eine feste Zuordnungstabelle im Schritt „Ausgabedaten ergänzen“, nicht in Lesern oder Regelwerk | Eine Stelle für alle drei Issues (Leser liefern schon einheitliche Felder); Check-in und REPLY bleiben unberührt (Spec Refinement 3) | 2026-11-16 |
+| Unbekannter Eintragstyp → Ausgabetyp `new`, Eintragstyp unverändert | Vorhandene Werte nie überschreiben; der Tippfehler wird über Regel A ohnehin als Fehler gemeldet | 2026-11-16 |
+| Kennzeichen „DM gelöscht“ bei abgeleitetem `deleted` nach dem Check-in bleibt unverändert | Fachlich konsistent (Eintragstyp `d`); kein Sonderfall in der DMRL-Ansicht nötig | 2026-11-16 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -431,6 +434,67 @@ Einzahl/Mehrzahl wie bisher. Beides sind Hinweise und keine Fehler, deshalb änd
 - Rundlauf: Demo-REPLY ohne Ausgabedaten → CSV → Check-in-Regelprüfung ohne Pflichtfeld-Fehler zu den Ausgabedaten.
 - Angepasste Erwartungen: bestehende Tests mit dem Sammelhinweis für Demo-Dateien ohne Ausgabedaten (Prüfkern-, QA-, Komponenten- und E2E-Tests von PROJ-20).
 - E2E: CSV-Download einer Datei ohne Ausgabedaten enthält die Standardwerte und das Tagesdatum.
+
+**Abhängigkeiten:** keine neuen Pakete.
+
+### L) Ergänzung Refinement 3 (2026-11-16): Ausgabetyp aus dem Eintragstyp ableiten
+
+**Überblick:** Kleine Änderung an genau einem Baustein, dem Schritt „Ausgabedaten ergänzen“ (5a aus K) im Prüfkern. Es gibt keine neue Seite, keine Serverfunktion, keinen Speicher und keine neuen Pakete. Bedienoberfläche, Prüfbericht-Darstellung und CSV-Aufbau bleiben gleich. Neu sind nur der **Auslöser**, der **Wert des Ausgabetyps** und der **Hinweistext**.
+
+**Ablauf (ersetzt 5a aus K)**
+```
+5a. Ausgabedaten ergänzen — nur für die CSV, je Eintrag:
+    Ausgabetyp (issno/@type) leer?
+      nein → Eintrag unverändert
+             (fehlen Ausgabenummer oder Datum → zählt zum Sammelhinweis „beim Check-in Pflicht“)
+      ja   → Kopie des Eintrags mit
+               Ausgabetyp  = abgeleitet aus dem Eintragstyp (Tabelle unten)
+               Eintragstyp = n            (nur wenn leer)
+               Ausgabenummer = 001        (nur wenn leer)
+               Datum = Prüfdatum          (nur wenn Tag/Monat/Jahr alle leer)
+```
+
+**Ableitungstabelle (eine feste Zuordnung im Prüfkern)**
+| Eintragstyp | Ausgabetyp in der CSV |
+|---|---|
+| `n` | `new` |
+| `c` | `changed` |
+| `d` | `deleted` |
+| leer | `new` (Eintragstyp wird `n`) |
+| anderer Wert (Tippfehler) | `new`; Eintragstyp bleibt, Regel A meldet den Fehler wie bisher |
+
+Issue 4.2/5.0: Der Leser legt `dmlEntry/@issueType` und `dmlEntry/@dmlEntryType` schon heute in dieselben Felder (Ausgabetyp, Eintragstyp) ab. Deshalb gilt die Tabelle ohne Zusatzaufwand für alle drei Issues.
+
+**Datenmodell:** unverändert gegenüber K. Das Prüfergebnis enthält die Originaleinträge, die Anzahl ergänzter Einträge und das Prüfdatum. Die CSV kommt aus der ergänzten Kopie. Gezählt wird künftig jeder Eintrag mit leerem Ausgabetyp.
+
+**Hinweise im Prüfbericht (ersetzt die Tabelle aus K)**
+| Fall | Hinweis (Art *Hinweis*, Gruppe Pflichtfelder) |
+|---|---|
+| mind. ein Eintrag mit leerem Ausgabetyp | „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer 001 und Datum TT.MM.JJJJ (nur wo leer).“ |
+| mind. ein Eintrag mit vorhandenem Ausgabetyp, aber fehlender Ausgabenummer oder fehlendem Datum | Sammelhinweis wie bisher „Bei N Einträgen fehlen Ausgabedaten … beim Check-in sind sie Pflicht.“ — nur diese Einträge |
+| beides / keine Lücken | beide Hinweise / kein Hinweis (wie K) |
+
+Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die CSV-Warnung ändern sich nicht.
+
+**Zusammenspiel mit dem Check-in (PROJ-10, unverändert)**
+- `changed` und `deleted` erfüllen Formatregel A. Eine Regel, die Eintragstyp und Ausgabetyp gegeneinander prüft, gibt es nicht, also entsteht kein neuer Fehler.
+- Regel F verlangt `n` nur für neue Einträge. Ein abgeleitetes `changed`/`deleted` gehört immer zu einem vorhandenen `c`/`d`, das unverändert bleibt.
+- **Sichtbare Folge:** Ein Eintrag mit Ausgabetyp `deleted` erhält nach dem Check-in in der DMRL-Ansicht das bestehende Kennzeichen „DM gelöscht“ (PROJ-7). Das ist fachlich gewollt (Eintragstyp `d` → Datenmodul gelöscht) und braucht keine Änderung.
+
+**Bausteine**
+| Baustein | Neu / bestehend | Änderung |
+|---|---|---|
+| „Ausgabedaten ergänzen“ (Prüfkern) | bestehend | Auslöser = leerer Ausgabetyp; Ausgabetyp per Ableitungstabelle; Ausgabenummer nur wenn leer |
+| Hinweise zu Ausgabedaten (Prüfkern) | bestehend | neuer Hinweistext; Zählung nach neuem Auslöser |
+| Leser 2.3/4.2/5.0, CSV-Schreiber, Regelwerk, Seite „XML prüfen“, Check-in, REPLY-Import | bestehend | keine |
+
+**Tests (für /frontend und /qa)**
+- Prüfkern, je Fall ein Test: `n` → `new`; `c` → `changed` (Eintragstyp bleibt `c`); `d` → `deleted` (bleibt `d`); leer → `new` + `n`; unbekannter Eintragstyp → `new`, Regel-A-Fehler bleibt.
+- Vorhandene Ausgabenummer (z. B. `002`) mit leerem Ausgabetyp → `002` bleibt, Ausgabetyp abgeleitet, Prüfdatum ergänzt. Ein vorhandenes Datum bleibt.
+- Ausgabetyp vorhanden, Ausgabenummer oder Datum fehlen → keine Ergänzung, Sammelhinweis zählt den Eintrag.
+- Je ein Fall für Issue 4.2 und 5.0 (gleiche Ableitung über die jeweiligen Leser).
+- Angepasste Erwartungen: Tests, die bisher `new` für `c`/`d`-Einträge erwarten, sowie Tests auf den alten Hinweistext (Prüfkern-, QA-, Komponenten- und E2E-Tests von PROJ-20).
+- Rundlauf: konvertierte CSV mit `c`/`changed` und `d`/`deleted` → Check-in-Regelprüfung ohne Fehler zu den Ausgabedaten.
 
 **Abhängigkeiten:** keine neuen Pakete.
 
