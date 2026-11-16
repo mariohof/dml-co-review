@@ -32,3 +32,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 - Use `window.location.href` for post-login redirect (not `router.push`)
 - Always verify `data.session` exists before redirecting
 - Always reset loading state in all code paths (success, error, finally)
+
+## Design System
+Use our company design tokens:
+- Primary Color: #007ec1, #00406e, #000824
+- Font: Noto Sans

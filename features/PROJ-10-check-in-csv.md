@@ -1,10 +1,10 @@
 # PROJ-10: Check-in CSV
 
-## Status: Planned
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-16
 
-> **Refinement 2026-11-16:** Eintragstyp und DM-Ausgabetyp müssen beim Check-in zueinander passen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). DM-Ausgabetyp `status` wird gültig. Betrifft PROJ-8 (Regel A und F) und PROJ-1 (Demo-Daten). Geänderte Stellen sind mit *(Refinement 2026-11-16)* markiert. Umsetzung offen.
+> **Refinement 2026-11-16:** Eintragstyp und DM-Ausgabetyp müssen beim Check-in zueinander passen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). DM-Ausgabetyp `status` wird gültig. Betrifft PROJ-8 (Regel A und F) und PROJ-1 (Demo-Daten). Geänderte Stellen sind mit *(Refinement 2026-11-16)* markiert. Umgesetzt 2026-11-16 (`/frontend proj-10`).
 
 > **Refinement 2026-11-14:** Abweichende Partnerantworten (`answer`/`answer_comment`) in der CSV werden nicht mehr abgewiesen, sondern nach Abfrage optional übernommen (Anlass: PROJ-20). Betrifft auch PROJ-8 Regel K. Geänderte Stellen sind mit *(Refinement 2026-11-14)* markiert.
 
@@ -419,6 +419,45 @@ _Stand 2026-11-14 — `/frontend proj-10` (Tech Design I)_
 
 **UI-Fix Dialogbreite (2026-11-16):** Der Prüfbericht (6 Spalten inkl. „Meldung“) war im Check-in-Dialog (`sm:max-w-3xl`) abgeschnitten, der ganze Dialog musste waagerecht gescrollt werden. Dialog jetzt `sm:max-w-6xl` (bis 1152 px, auf kleineren Fenstern volle Breite abzüglich Rand); `[&>*]:min-w-0` verhindert, dass breite Tabellen den Dialog aufweiten — bei sehr schmalen Fenstern scrollt nur noch die Tabelle selbst.
 
+### Refinement 2026-11-16 — Eintragstyp ↔ DM-Ausgabetyp
+_Stand 2026-11-16 — `/frontend proj-10`; ohne eigenes Tech Design (kleine Regeländerung, kein neuer Bildschirm)_
+
+**Umgesetzt**
+- `src/lib/dmrl/issue-type.ts` (neu) — eine Stelle für die Ausgabetypen:
+  - `ISSUE_TYPES` (gültige Werte für Regel A inkl. `status`)
+  - `ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE` (n → new; c → changed/revised/status; d → deleted)
+  - `deriveIssueType` (bisher in `xml-check.ts`; dort jetzt weiterexportiert, Verhalten von PROJ-20 unverändert)
+- `src/lib/rules/check/entry-rules.ts` — Regel A: Ausgabetyp `status` gültig; Meldung „new, changed, revised, deleted oder status“.
+- `src/lib/rules/check/checkin.ts`:
+  - neue Prüfung `checkIssueTypeMatchesEntryType` (Gruppe F, Feld `type`), Aufruf in `checkEntryTypes` — läuft also nur beim Check-in, nicht beim REPLY und nicht in PROJ-20
+  - geprüft werden alle Einträge der Datei mit Eintragstyp, auch unveränderter Altbestand
+  - übersprungen werden ein leerer Eintragstyp, ein ungültiger Ausgabetyp (nur Regel A meldet) und ein leerer Ausgabetyp (nur Regel B meldet)
+  - Meldung: „Eintragstyp ‚d‘ verlangt DM-Ausgabetyp ‚deleted‘ — gefunden: ‚new‘“
+- `src/lib/data/demo-data.ts` — PHUNGUN-Einträge erhalten den Ausgabetyp per `deriveIssueType` (11 × `deleted`, 21 × `new`).
+- **Keine Änderung am Dialog:** Die Meldung erscheint im bestehenden Prüfbericht. Bei Fehlern ist „Übernehmen“ ohnehin nicht verfügbar.
+
+**Tests**
+- Neu in `checkin.test.ts`, Block „Gruppe F — Eintragstyp ↔ DM-Ausgabetyp“ (21 Fälle):
+  - alle erlaubten Kombinationen und alle Verstöße mit genauem Meldungstext
+  - Zeile, DMC und Feld in der Meldung
+  - Einträge ohne Eintragstyp werden nicht geprüft
+  - unveränderter Altbestand `d` + `new` wird gemeldet; die Korrektur gilt als Änderung
+  - neue Einträge
+  - `change`, `Deleted` und `rinstate-changed` ergeben nur einen Formatfehler A, ein leerer Ausgabetyp nur einen Pflichtfeldfehler B
+  - Demo PHUNGUN
+- Angepasst wurden Testdaten, die `c`/`d` mit Ausgabetyp `new` bzw. `deleted` kombiniert hatten:
+  - `check-in.test.ts`, `qa-proj7-10.test.ts`, `release.test.ts`, `check-in-dialog.test.tsx`
+  - `demo-data.test.ts`
+  - `xml-check.test.ts`: Der Helfer `withIssueData` leitet den Ausgabetyp jetzt aus dem Eintragstyp ab.
+- Ergebnis:
+  - Vitest 539/539 ✅
+  - Playwright Chrome 117/117 ✅ (Mobile Safari nicht lauffähig, WebKit nicht installiert, wie bisher)
+  - `tsc` ohne Fehler; ESLint 0 Fehler (1 bestehende Warnung in `use-toast.ts`)
+
+**Hinweise**
+- Bereits im Browser gespeicherte Demo-Daten (PHUNGUN `d` + `new`) werden nicht umgestellt. Ohne Zurücksetzen meldet der Check-in dort Typ-Fehler, wie in der Spec vorgesehen.
+- Ein Eintrag mit `n` und Ausgabetyp `deleted` ist jetzt ein Fehler. Vorher war diese Kombination ausdrücklich erlaubt.
+
 ## QA Test Results
 
 **Tested:** 2026-11-13
@@ -553,6 +592,84 @@ Keine neuen Bugs in diesem Feature.
 
 - **Offene Bugs:** keine
 - **Production Ready:** YES
+
+### QA-Lauf 7 — Refinement 2026-11-16 (Eintragstyp ↔ DM-Ausgabetyp)
+
+**Tested:** 2026-11-16 · **Tester:** QA Engineer (AI) · **Browser:** Chrome (Playwright, `PW_CHANNEL=chrome`); Firefox/Safari nicht geprüft (WebKit nicht installiert, wie bisher)
+
+**Automatisiert**
+- Vitest: 558 bestanden, 5 übersprungen (BUG-QA7-1)
+  - neu: `src/lib/workflows/qa-proj10-ausgabetyp.test.ts` (19 aktive Tests + 5 übersprungene)
+- Playwright Chrome: 119 bestanden, 1 übersprungen (BUG-QA7-1)
+  - neu: `tests/PROJ-10-ausgabetyp.spec.ts` (3 aktive Tests + 1 `fixme`)
+- Echte XSD-Prüfung: SEND mit `c` + `status` ist gegen 2.3, 4.2 und 5.0 schemagültig (xmllint)
+
+#### Acceptance Criteria Status (Abschnitt „Eintragstyp ↔ DM-Ausgabetyp“)
+- [x] `n` + `changed` → Meldung „Eintragstyp ‚n‘ verlangt DM-Ausgabetyp ‚new‘ — gefunden: ‚changed‘“, kein Check-in (Unit)
+- [x] `n` + `new` → kein Fehler (Unit)
+- [x] `c` + `changed`/`revised`/`status` → kein Fehler (Unit; E2E mit `status` inkl. Übernahme)
+- [x] `c` + `new`/`deleted` → Meldung mit „‚changed‘, ‚revised‘ oder ‚status‘“ (Unit; E2E 1440 px)
+- [x] `d` + `deleted` → kein Fehler (Unit)
+- [x] `d` + `new` → Meldung, Check-in abgelehnt, Sperre bleibt, Verlauf „Check-in abgelehnt — 1 Fehler“ (Unit, E2E)
+- [x] Ohne Eintragstyp → nur Regel A, kein Typ-Vergleich (Unit)
+- [x] Unveränderter Altbestand `d` + `new` → Fehler; nach Korrektur in der CSV gilt der Eintrag als *geändert* (Unit)
+- [x] `status` ist kein Formatfehler (Unit, E2E)
+- [x] `change` bei `c` → nur Formatfehler A (Unit)
+- [x] REPLY mit unpassendem Ausgabetyp → keine Typ-Meldung, nur Regel G (QA-Test neu)
+- [ ] **Nicht erreichbar wie formuliert (BUG-QA7-2):** „Demo frisch geladen → PHUNGUN auschecken → unverändert einchecken“ — PHUNGUN wartet im Demo-Zustand auf den REPLY und lässt sich nicht auschecken. Nach dem Demo-REPLY ist der unveränderte Check-in fehlerfrei (QA-Test neu).
+- [x] Regression: alle bisherigen Kriterien von PROJ-10, PROJ-8, PROJ-20 (Ableitung jetzt aus `issue-type.ts`) sowie Freigabe, SEND, REPLY, Archiv und Export (Unit + E2E)
+
+#### Edge Cases Status
+- [x] Ausgabetyp passt nicht zum Eintragstyp, auch bei unverändertem Altbestand → Fehler (Unit)
+- [x] Eintragstyp entfernt → keine Typ-Prüfung, aber Regel F „braucht einen Eintragstyp“ (bestehende Tests)
+- [x] Großschreibung (`N`, `DELETED`, `Status`) → nur ein Formatfehler A (QA-Test neu)
+- [x] Leerzeichen um die Werte (` d ` / ` deleted `) werden entfernt → gültig (QA-Test neu)
+- [x] Viele Verstöße → jeder Eintrag einzeln mit Zeile gemeldet (QA-Test neu)
+- [ ] **Edge Case „Alte Demo-Daten im Browser“ trifft so nicht zu (BUG-QA7-2):** Nach dem REPLY haben alle genehmigten PHUNGUN-Einträge (auch die 11 mit `d`) keinen Eintragstyp mehr, Regel 4 greift. Ein Check-in mit alten Demo-Daten scheitert deshalb nicht (QA-Test neu).
+
+#### Security Audit Results (Red Team)
+- [ ] **Prototyp-Schlüssel als Eintragstyp** (`constructor`, `__proto__`, `toString`, `hasOwnProperty`, `valueOf`) → Prüfung stürzt ab (BUG-QA7-1)
+- [x] Ableitung des Ausgabetyps (PROJ-1/PROJ-20) liefert für dieselben Werte korrekt `new` (bisheriger PROJ-20-Code hätte hier eine Funktion in die CSV geschrieben, jetzt behoben)
+- [x] Keine Freigabe durch die Regel: Sie meldet nur Fehler und setzt keinen Status
+- [x] XSS: Die Meldung zeigt den gefundenen Wert als Text (bestehende Prüfbericht-Anzeige, keine HTML-Ausgabe)
+- [x] Responsive: Meldung bei 1440 px vollständig im Dialog, kein waagerechtes Scrollen (E2E); 375/768 px durch die Tests aus QA-Lauf 6 abgedeckt
+
+#### Bugs Found
+
+##### BUG-QA7-1: Eintragstyp mit dem Namen einer JavaScript-Objekteigenschaft lässt die Check-in-Prüfung abstürzen
+- **Severity:** Medium
+- **Steps to Reproduce:**
+  1. Fahrzeug-DMRL als Ben auschecken
+  2. In der CSV bei einem Eintrag `dmentryType` auf `constructor` setzen (ebenso `__proto__`, `toString`, `hasOwnProperty`, `valueOf`)
+  3. Check-in mit dieser Datei
+  4. Expected: Prüfbericht mit Formatfehler A „Format: leer, n, c oder d …“, kein Check-in
+  5. Actual: Der Dialog bleibt dauerhaft bei „Prüfe ‚…csv‘ …“ stehen (Screenshot geprüft). In der Browserkonsole steht `TypeError: allowed.includes is not a function`. Es gibt keine Meldung und keinen Verlaufseintrag. Der Dialog lässt sich über das X schließen; die Sperre bleibt, Daten gehen nicht verloren.
+- **Ursache:** `checkIssueTypeMatchesEntryType` liest `ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE[dmentryType]` aus einem einfachen Objekt. Für die genannten Werte liefert der Zugriff eine geerbte Eigenschaft (z. B. die Funktion `Object`), die nicht `undefined` ist. Neu durch das Refinement 2026-11-16.
+- **Vorschlag:**
+  - Nur eigene Schlüssel verwenden (`Object.hasOwn` oder eine `Map`).
+  - Zusätzlich im Dialog Ausnahmen der Prüfung abfangen und eine Fehlermeldung zeigen, statt hängen zu bleiben.
+- **Tests:**
+  - `qa-proj10-ausgabetyp.test.ts` „BUG-QA7-1 …“ (5 Fälle, `it.skip`)
+  - `tests/PROJ-10-ausgabetyp.spec.ts` „BUG-QA7-1 …“ (`test.fixme`)
+  - Beide nach der Behebung aktivieren.
+- **Priority:** Fix before Weitergabe
+
+##### BUG-QA7-2: Ein Akzeptanzkriterium und ein Edge Case zur PHUNGUN-Demo sind so nicht erreichbar (Spec)
+- **Severity:** Low (Dokumentation)
+- **Beschreibung:**
+  - **Kriterium „Demo frisch geladen → PHUNGUN auschecken → unverändert einchecken → fehlerfrei“:** PHUNGUN steht im Demo-Zustand auf *gesendet* und wartet auf den REPLY, ein Check-out ist erst danach möglich.
+  - **Edge Case „Alte Demo-Daten … Check-in scheitert“:** trifft nicht zu. Nach dem REPLY haben alle genehmigten Einträge (auch die mit `d`) keinen Eintragstyp mehr, Regel 4 greift. Nur die 2 abgelehnten Einträge (`n` + `new`) behalten ihren Eintragstyp, und die passen.
+  - Die Anpassung der Demo-Daten wirkt sich praktisch erst aus, wenn ein Bearbeiter einem genehmigten `d`-Eintrag erneut einen Eintragstyp gibt.
+- **Vorschlag:** Per `/refine PROJ-10` umformulieren:
+  - Kriterium: „… nach Import der Demo-REPLY-Datei ausgecheckt und unverändert eingecheckt …“
+  - Edge Case: entsprechend korrigieren.
+- **Priority:** Nice to have
+
+#### Summary
+- **Acceptance Criteria (Refinement):** 11/12 passed, 1 nicht erreichbar wie formuliert (BUG-QA7-2, Spec)
+- **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
+- **Security:** 1 Befund (BUG-QA7-1, Absturz durch präparierte Eingabe; kein Datenverlust, keine Rechteausweitung)
+- **Production Ready:** YES (keine Critical/High-Bugs). BUG-QA7-1 sollte vor einer Weitergabe behoben werden.
 
 ## Deployment
 _To be added by /deploy_
