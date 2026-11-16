@@ -164,6 +164,20 @@ class WindowsRobustnessTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_found_xmllint_is_passed_to_app_as_full_path(self):
+        with mock.patch.dict(start.os.environ, {}, clear=False), mock.patch.object(
+            start.shutil, "which", return_value="C:/tools/xmllint/bin/xmllint.exe"
+        ), mock.patch.object(start, "run_quiet", return_value=(0, "xmllint using libxml version 20903")):
+            start.os.environ.pop("XMLLINT_PATH", None)
+            found = start.find_xmllint()
+        self.assertTrue(Path(found).is_absolute())
+        self.assertTrue(found.endswith("xmllint.exe"))
+        with mock.patch.object(start.subprocess, "Popen") as popen, mock.patch.object(Path, "is_file", return_value=True), mock.patch(
+            "builtins.open", mock.mock_open()
+        ):
+            start.start_server("node", 8877, found)
+        self.assertEqual(popen.call_args.kwargs["env"]["XMLLINT_PATH"], found)
+
     def test_build_uses_found_node_directly(self):
         with mock.patch.object(start, "run_logged") as run_logged:
             start.build("C:\\tools\\node\\node.EXE")

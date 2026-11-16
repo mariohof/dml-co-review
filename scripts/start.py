@@ -146,7 +146,9 @@ def find_xmllint() -> str:
     if code != 0:
         where = f" unter „{configured}“ (XMLLINT_PATH)" if configured else ""
         raise StartError(f"xmllint{where} lässt sich nicht ausführen.\n{hint}")
-    return program
+    # Vollständiger Pfad: wird der App als XMLLINT_PATH übergeben, damit sie genau dieses Programm verwendet
+    # (Node.js sucht unter Windows anders im Systempfad als Python)
+    return str(Path(shutil.which(program) or program).resolve())
 
 
 # ---------------------------------------------------------------- Port
@@ -287,13 +289,16 @@ def stop_server() -> None:
             pass
 
 
-def start_server(node: str, port: int) -> subprocess.Popen:
+def start_server(node: str, port: int, xmllint: Optional[str] = None) -> subprocess.Popen:
     next_bin = next_cli()
     if not next_bin.is_file():
         raise StartError("Next.js wurde nicht gefunden. Bitte mit „--neu-bauen“ erneut starten.")
     # nur an localhost gebunden (127.0.0.1) — aus dem Netzwerk nicht erreichbar
     command = [node, str(next_bin), "start", "-H", "127.0.0.1", "-p", str(port)]
-    kwargs: dict = {"cwd": ROOT, "env": app_env()}
+    env = app_env()
+    if xmllint:
+        env["XMLLINT_PATH"] = xmllint  # dasselbe Programm, das die Voraussetzungsprüfung gefunden hat
+    kwargs: dict = {"cwd": ROOT, "env": env}
     if os_name() != "windows":
         kwargs["start_new_session"] = True  # eigene Prozessgruppe → sauber mitstoppen
     with open(LOG_FILE, "a", encoding="utf-8") as log:
@@ -360,7 +365,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     step("Prüfe Voraussetzungen")
     node, npm = find_node()
-    find_xmllint()
+    xmllint = find_xmllint()
     ok()
 
     step(f"Prüfe Port {args.port}")
@@ -396,7 +401,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     global _server
     install_signal_handlers()
     atexit.register(stop_server)
-    _server = start_server(node, args.port)
+    _server = start_server(node, args.port, xmllint)
     if not wait_until_ready(args.port, _server):
         stop_server()
         raise StartError(f"Die Anwendung ist nicht gestartet. Details in {LOG_FILE}.\nTipp: Mit „--neu-bauen“ erneut versuchen.")

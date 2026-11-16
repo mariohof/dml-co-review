@@ -80,9 +80,11 @@ function runXmllint(program: string, args: string[], input: Uint8Array, timeoutM
       child.kill("SIGKILL")
     }, timeoutMs)
 
-    child.on("error", (error: NodeJS.ErrnoException) =>
+    child.on("error", (error: NodeJS.ErrnoException) => {
+      // Nur Programmpfad und Fehlercode (kein Dateiinhalt) — landet bei Start per Startskript in start.log
+      console.error(`[xsd-pruefung] xmllint konnte nicht gestartet werden (${error.code ?? "unbekannt"}): ${program}`)
       finish({ code: null, stderr, timedOut, notFound: error.code === "ENOENT" || error.code === "EACCES" })
-    )
+    })
     child.stderr.setEncoding("utf8")
     child.stderr.on("data", (chunk: string) => {
       size += chunk.length
@@ -97,7 +99,8 @@ function runXmllint(program: string, args: string[], input: Uint8Array, timeoutM
 
 /** Prüft die XML-Datei gegen dml.xsd des Issues und liefert das strukturierte Ergebnis (Vertrag: ../types.ts) */
 export async function validateWithXmllint(input: Uint8Array, issue: S1000dIssue, options: XmllintOptions = {}): Promise<XsdResult> {
-  const program = options.xmllintPath ?? process.env.XMLLINT_PATH ?? "xmllint"
+  // leeres XMLLINT_PATH gilt wie im Startskript als nicht gesetzt
+  const program = options.xmllintPath || process.env.XMLLINT_PATH?.trim() || "xmllint"
   const schemaPath = schemaPathFor(issue, options.schemaRoot)
   try {
     await access(schemaPath)
