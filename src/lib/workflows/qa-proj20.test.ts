@@ -9,7 +9,8 @@ import { answerDeviations, runCheckinCheck } from "@/lib/rules/check/checkin"
 import { readCheckinCsv } from "@/lib/rules/check/csv-reader"
 import { errorCount } from "@/lib/rules/check/types"
 import type { XsdResult } from "@/lib/xsd/types"
-import { checkXmlText, runXmlCheck } from "./xml-check"
+import { checkXmlText, issueDataMissing, runXmlCheck } from "./xml-check"
+import { unavailableDetail, validateXml } from "@/lib/xsd/client"
 
 /** PROJ-20 QA — Grenzfälle des Prüfkerns */
 
@@ -83,5 +84,65 @@ describe("PROJ-20 QA", () => {
     expect(errorCount(result.report)).toBe(0)
     expect(result.report.findings.map((f) => f.severity)).toEqual(["hinweis"])
     expect(emptyEntryFields().issno).toBe("")
+  })
+
+  // ------------------------------------------------------------ Refinement 2026-11-16
+
+  it("Ausgabedaten: Hinweis zählt nur Einträge mit Lücken; vollständige Einträge zählen nicht", () => {
+    let n = 0
+    // nur bei den ersten 3 Einträgen Ausgabedaten ergänzen
+    const xml = DEMO_XML_FILES[DEMO_FILES.send2].replace(/<\/dmtitle>/g, (m) =>
+      ++n <= 3 ? `${m}<issno issno="001" type="new"></issno><issdate day="01" month="02" year="2027"></issdate>` : m
+    )
+    const result = checkXmlText("x.xml", "2.3", xml, VALID)
+    expect(result.report.findings).toEqual([{ severity: "hinweis", group: "B", message: issueDataMissing(result.candidates.length - 3) }])
+  })
+
+  it("Ausgabedaten: Formatfehler bleiben Fehler (z. B. Ausgabenummer ‚1‘, Ausgabetyp ungültig, ungültiges Datum)", () => {
+    const xml = DEMO_XML_FILES[DEMO_FILES.send2].replace(/<\/dmtitle>/, '</dmtitle><issno issno="1" type="neu"></issno><issdate day="31" month="02" year="2027"></issdate>')
+    const result = checkXmlText("x.xml", "2.3", xml, VALID)
+    const errors = result.report.findings.filter((f) => f.severity === "fehler")
+    expect(errors.map((f) => f.field).sort()).toEqual(["day", "issno", "type"])
+    expect(errors.every((f) => f.group === "A")).toBe(true)
+  })
+
+  it("Ausgabedaten: nur Ausgabenummer ohne Datum ist kein Fehler; nur Tag ohne Monat/Jahr ist ein Fehler", () => {
+    const onlyIssno = DEMO_XML_FILES[DEMO_FILES.send2].replace(/<\/dmtitle>/, '</dmtitle><issno issno="002" type="changed"></issno>')
+    expect(errorCount(checkXmlText("x.xml", "2.3", onlyIssno, VALID).report)).toBe(0)
+    const onlyDay = DEMO_XML_FILES[DEMO_FILES.send2].replace(/<\/dmtitle>/, '</dmtitle><issdate day="05" month="" year=""></issdate>')
+    const findings = checkXmlText("x.xml", "2.3", onlyDay, VALID).report.findings.filter((f) => f.severity === "fehler")
+    expect(findings).toHaveLength(1)
+    expect(findings[0].message).toContain("Ausgabedatum ist unvollständig")
+  })
+
+  it("Check-in bleibt streng: CSV aus einer Datei ohne Ausgabedaten wird beim Check-in mit Pflichtfeld-Fehlern abgewiesen", () => {
+    const result = checkXmlText("send.xml", "2.3", DEMO_XML_FILES[DEMO_FILES.send2], VALID)
+    expect(errorCount(result.report)).toBe(0)
+    const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot: [] })
+    const fields = new Set(checkin.report.findings.filter((f) => f.group === "B").map((f) => f.field))
+    expect([...fields].sort()).toEqual(["day", "issno", "month", "type", "year"])
+  })
+
+  it("XSD-Client: 403 → Zugriff abgelehnt, 500 / kaputte Antwort → unerwartet, Netzfehler → Server läuft nicht, 503 mit Grund → Grund", async () => {
+    const respond = (body: string, status: number) => vi.fn<typeof fetch>().mockResolvedValue(new Response(body, { status }))
+    expect(await validateXml("<dml/>", "2.3", { fetchImpl: respond('{"error":"Anfrage nicht erlaubt."}', 403) })).toMatchObject({ reason: "zugriff_abgelehnt" })
+    expect(await validateXml("<dml/>", "2.3", { fetchImpl: respond("<html>Internal Server Error</html>", 500) })).toMatchObject({ reason: "unerwartet" })
+    expect(await validateXml("<dml/>", "2.3", { fetchImpl: respond("kein json", 200) })).toMatchObject({ reason: "unerwartet" })
+    expect(await validateXml("<dml/>", "2.3", { fetchImpl: vi.fn<typeof fetch>().mockRejectedValue(new TypeError("Failed to fetch")) })).toMatchObject({ reason: "nicht_erreichbar" })
+    expect(await validateXml("<dml/>", "2.3", { fetchImpl: respond('{"state":"nicht_verfuegbar","reason":"schema_fehlt"}', 503) })).toMatchObject({ reason: "schema_fehlt" })
+    // jede Meldung endet mit einem Punkt und enthält keinen Platzhalter mehr
+    for (const reason of ["programm_fehlt", "schema_fehlt", "zeitlimit", "unerwartet", "nicht_erreichbar", "zugriff_abgelehnt"] as const) {
+      expect(unavailableDetail(reason)).toMatch(/\.$/)
+      expect(unavailableDetail(reason)).not.toContain("{")
+    }
+  })
+
+  it("XSD nicht erreichbar: Ergebnis mit Hinweis, CSV vorhanden, Ausgabedaten-Hinweis zusätzlich", async () => {
+    const outcome = await runXmlCheck(new File([DEMO_XML_FILES[DEMO_FILES.send2]], "s.xml"), "2.3", vi.fn().mockResolvedValue({ state: "nicht_verfuegbar", reason: "nicht_erreichbar" }))
+    expect(outcome.ok).toBe(true)
+    if (!outcome.ok) return
+    expect(outcome.result.xsd).toBe("nicht_durchgefuehrt")
+    expect(outcome.result.csv).not.toBeNull()
+    expect(outcome.result.report.findings.map((f) => f.severity)).toEqual(["hinweis", "hinweis"])
   })
 })

@@ -163,4 +163,45 @@ describe("XML prüfen (PROJ-20)", () => {
     await check()
     expect(await screen.findByLabelText("Zusammenfassung")).toHaveTextContent("andere.xml")
   })
+
+  it("QA: Erneut prüfen scheitert wieder → Hinweis bleibt, Schaltfläche wieder nutzbar, Ursache aktualisiert", async () => {
+    validate.mockResolvedValue({ state: "nicht_verfuegbar", reason: "nicht_erreichbar" })
+    render(<XmlCheckTool />)
+    chooseIssue("2.3")
+    await chooseFile(SEND, SEND_NAME)
+    await check()
+    validate.mockResolvedValue({ state: "nicht_verfuegbar", reason: "zugriff_abgelehnt" })
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Erneut prüfen" }))
+    })
+    expect((await screen.findAllByText(/Zugriff abgelehnt/)).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/Der Server der Anwendung läuft nicht/)).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Erneut prüfen" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Prüfen" })).toBeEnabled()
+  })
+
+  it("QA: Erneut prüfen liefert Schemafehler → Ergebnis wird durch den Bericht mit XSD-Fehlern ersetzt", async () => {
+    validate.mockResolvedValue({ state: "nicht_verfuegbar", reason: "nicht_erreichbar" })
+    render(<XmlCheckTool />)
+    chooseIssue("2.3")
+    await chooseFile(SEND, SEND_NAME)
+    await check()
+    validate.mockResolvedValue({ state: "schemafehler", issue: "2.3", findings: [{ line: 7, message: "Element 'x': This element is not expected." }] })
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Erneut prüfen" }))
+    })
+    expect(await screen.findByText("1 Fehler, 1 Hinweis")).toBeInTheDocument()
+    expect(screen.queryByText(/XSD-Prüfung nicht durchgeführt/)).not.toBeInTheDocument()
+    expect(screen.getByText(/ein Check-in wird abgewiesen, bis sie behoben sind/)).toBeInTheDocument()
+  })
+
+  it("QA: kein „Erneut prüfen“, wenn die XSD-Prüfung durchgeführt wurde", async () => {
+    render(<XmlCheckTool />)
+    chooseIssue("2.3")
+    await chooseFile(SEND, SEND_NAME)
+    await check()
+    await screen.findByLabelText("Zusammenfassung")
+    expect(screen.queryByRole("button", { name: "Erneut prüfen" })).not.toBeInTheDocument()
+  })
 })
+

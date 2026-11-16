@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-16 (Refinement: Ausgabedaten optional, XSD nicht erreichbar, Umbruch Zusammenfassung)
 
@@ -403,7 +403,7 @@ Hinweis „XSD-Prüfung nicht durchgeführt“
 ### Edge Cases Status
 - [x] Falsche Issue gewählt → nicht lesbar, keine CSV
 - [x] XML ohne Einträge (Schemafehler) → CSV nur mit Kopfzeile, Warnung
-- [x] Partner-REPLY ohne Ausgabedaten → Pflichtfeld-Fehler genau für `issno`, `type`, `day`, `month`, `year` (Demo-Dateien)
+- [x] Partner-REPLY ohne Ausgabedaten → Pflichtfeld-Fehler genau für `issno`, `type`, `day`, `month`, `year` (Demo-Dateien) — *ab 2026-11-16 geändert: Sammelhinweis statt Fehler, siehe QA Refinement*
 - [x] Keine DMRL-XML (anderes Wurzelelement) → „passt nicht zur gewählten Issue“, keine CSV
 - [x] ISO-8859-1 laut Deklaration korrekt gelesen
 - [x] **BUG-QA1-1:** UTF-16 laut Deklaration wird nicht gelesen → behoben und bestätigt (2026-11-15)
@@ -458,6 +458,48 @@ Hinweis „XSD-Prüfung nicht durchgeführt“
 - Während des Tests: zwei Fehler in den Testdaten korrigiert (Gedankenstrich „–“ nicht in ISO-8859-1 darstellbar; geänderter techname verletzt korrekt die Regel REPLY ↔ SEND) — kein Fehler der App.
 - **Neue Bugs:** keine
 - **Production Ready:** YES
+
+### QA Refinement 2026-11-16 (Ausgabedaten optional, Ursache „XSD nicht erreichbar“, „Erneut prüfen“, Umbruch)
+**Tested:** 2026-11-16 · Chrome (Chromium); Firefox/Safari nicht installiert, nicht getestet
+
+**Neue Akzeptanzkriterien: 7/7 passed**
+- [x] DMRL-XML ohne Ausgabedaten → keine Pflichtfeld-Fehler, ein Sammelhinweis (Demo-REPLY: „Bei 32 Einträgen …“; Datei TWLBORFLOS: 575 Fehler → 0 Fehler)
+- [x] Unvollständiges Ausgabedatum (z. B. nur Tag oder nur Jahr) → Fehler „Ausgabedatum ist unvollständig“
+- [x] Server läuft nicht → Ursache „Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).“
+- [x] Fremde Adresse → „Zugriff abgelehnt — bitte die Anwendung über http://localhost:<Port> öffnen.“ — **echt geprüft ohne Abfangen**: App über die Netzwerkadresse des Rechners geöffnet, die Serverfunktion lehnt ab, Meldung erscheint
+- [x] „Erneut prüfen“ → dieselbe Datei/Issue vollständig geprüft, Ergebnis ersetzt; während der Wiederholung bleibt das Ergebnis sichtbar
+- [x] Lange Codes brechen nach Bindestrichen um (nur CSS, keine eingefügten Zeichen)
+- [x] Bestehendes Kriterium „375/768/1440 px ohne waagerechtes Scrollen“ auch mit Hinweis und „Erneut prüfen“
+
+**Edge Cases (neu/geändert)**
+- [x] Hinweis zählt nur Einträge mit Lücken; vollständige Einträge zählen nicht
+- [x] Nur Ausgabenummer ohne Datum → kein Fehler; Formatfehler in Ausgabedaten (Ausgabenummer ‚1‘, Typ ungültig, 31.02.) bleiben Fehler (Regel A)
+- [x] Check-in bleibt streng: CSV aus Datei ohne Ausgabedaten wird beim Check-in mit Pflichtfeld-Fehlern abgewiesen
+- [x] „Erneut prüfen“ scheitert wieder → Hinweis bleibt (Ursache aktualisiert), Schaltfläche wieder nutzbar, genau eine weitere Anfrage
+- [x] „Erneut prüfen“ liefert Schemafehler → Bericht mit XSD-Fehler und CSV-Warnung ersetzt das Ergebnis
+- [x] Datei-/Issue-Wechsel während „Erneut prüfen“ → Wiederholung verworfen
+- [x] Keine Schaltfläche „Erneut prüfen“, wenn die XSD-Prüfung durchgeführt wurde
+- [x] Sonstige Fehlerantworten (500, kein JSON) → „Die Prüffunktion hat unerwartet geantwortet.“; 503 mit Grund → Grund der Serverfunktion
+
+**Regression (gemeinsamer Baustein PROJ-11)**
+- [x] REPLY-Import (PROJ-13): neue Meldung „Server läuft nicht“, „Erneut versuchen“ prüft danach regulär
+- [x] DMRL-Export XML (PROJ-18): „Zugriff abgelehnt“ mit localhost-Adresse im Hinweis
+- [x] SEND, Freigabe, Archiv unverändert (vollständiger E2E-Lauf)
+
+**Security**
+- [x] Host-/Origin-Schutz der Serverfunktion unverändert und echt bestätigt (Aufruf über Netzwerkadresse wird abgelehnt)
+- [x] Adresse in der Meldung stammt nur aus dem Port der eigenen Seite, keine Benutzereingabe; keine neuen Daten an Dritte, nichts gespeichert
+
+**Automatische Tests**
+- `npm test`: 497/497 grün (neu: 6 QA-Tests in `qa-proj20.test.ts`, 3 Komponententests)
+- E2E vollständig: 101/101 grün (16,5 min); neu `tests/PROJ-20-qa-refinement.spec.ts` (5 Tests), 3-fach parallel wiederholt: 15/15 grün
+
+**Beobachtungen (kein Bug der App)**
+- Der Entwicklungsserver (`npm run dev`, Turbopack) blieb während der QA zweimal hängen (Kompilieren ohne CPU-Last bzw. verwaister Server nach abgebrochenem Testlauf). Abhilfe: Server beenden und `.next/dev` löschen bzw. beiseitelegen. Betrifft nur die Entwicklungsumgebung, nicht den Start über das Startskript (Produktions-Build).
+- Hinweis von Next.js beim Aufruf über die Netzwerkadresse („allowedDevOrigins“) — nur Entwicklungsserver, ohne Wirkung.
+
+**Bugs Found:** keine
+**Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

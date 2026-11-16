@@ -31,7 +31,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Freigabestatus & Archiv | Approved (PROJ-14, PROJ-15) |
 | P0 (MVP) | Lokaler Start (Python-Startskript) | Approved (PROJ-19) |
 | P1 | Dashboard / Übersicht | Approved (PROJ-16) |
-| P1 | XML-Prüfung & CSV-Konvertierung (eigenständiges Werkzeug) | In Review (PROJ-20, Refinement) |
+| P1 | XML-Prüfung & CSV-Konvertierung (eigenständiges Werkzeug) | Approved (PROJ-20) |
 
 Details und Abhängigkeiten: siehe `features/INDEX.md`.
 
