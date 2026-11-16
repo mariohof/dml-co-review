@@ -248,9 +248,15 @@ def install(npm: str) -> None:
         raise
 
 
-def build(npm: str) -> None:
+def next_cli() -> Path:
+    return ROOT / "node_modules" / "next" / "dist" / "bin" / "next"
+
+
+def build(node: str) -> None:
+    # Direkt mit dem gefundenen Node bauen statt „npm run build“: die npm-Hilfsdateien (.cmd) suchen „node“ erneut
+    # im Systempfad, was z. B. bei einer portablen Node-Installation unter Windows scheitert.
     try:
-        run_logged([npm, "run", "build"], "Bauen der Anwendung")
+        run_logged([node, str(next_cli()), "build"], "Bauen der Anwendung")
     except StartError as error:
         raise StartError(f"{error}\n\nTipp: Mit „--neu-bauen“ wird der Build vollständig neu erstellt.") from None
 
@@ -282,7 +288,7 @@ def stop_server() -> None:
 
 
 def start_server(node: str, port: int) -> subprocess.Popen:
-    next_bin = ROOT / "node_modules" / "next" / "dist" / "bin" / "next"
+    next_bin = next_cli()
     if not next_bin.is_file():
         raise StartError("Next.js wurde nicht gefunden. Bitte mit „--neu-bauen“ erneut starten.")
     # nur an localhost gebunden (127.0.0.1) — aus dem Netzwerk nicht erreichbar
@@ -296,6 +302,11 @@ def start_server(node: str, port: int) -> subprocess.Popen:
     return subprocess.Popen(command, stdout=log_handle, stderr=subprocess.STDOUT, **kwargs)
 
 
+# Ohne Proxy: Python übernimmt sonst Proxy-Einstellungen (HTTP_PROXY, unter Windows auch die Registry) und würde
+# die Anfrage an localhost über einen Firmen-Proxy leiten — die laufende Anwendung gälte dann als „nicht gestartet“.
+LOCAL_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+
+
 def wait_until_ready(port: int, process: subprocess.Popen, timeout: float = READY_TIMEOUT_S) -> bool:
     deadline = time.monotonic() + timeout
     url = f"http://127.0.0.1:{port}/anmelden"
@@ -303,7 +314,7 @@ def wait_until_ready(port: int, process: subprocess.Popen, timeout: float = READ
         if process.poll() is not None:
             return False
         try:
-            with urllib.request.urlopen(url, timeout=2) as response:  # noqa: S310 (nur localhost)
+            with LOCAL_OPENER.open(url, timeout=2) as response:  # noqa: S310 (nur localhost)
                 if response.status < 500:
                     return True
         except OSError:
@@ -374,7 +385,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         step("Baue Anwendung (kann einige Minuten dauern)")
         if args.neu_bauen:
             shutil.rmtree(ROOT / ".next", ignore_errors=True)
-        build(npm)
+        build(node)
         state["build"] = fingerprint
         write_state(state)
         ok()

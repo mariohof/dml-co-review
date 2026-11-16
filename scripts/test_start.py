@@ -137,5 +137,40 @@ class MainTests(unittest.TestCase):
             server.assert_not_called()
 
 
+class WindowsRobustnessTests(unittest.TestCase):
+    """Fehler vom Windows-11-Rechner (Firmen-Proxy, portable Node-Installation)."""
+
+    def test_ready_check_ignores_proxy_settings(self):
+        import http.server
+        import threading
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.end_headers()
+
+            def log_message(self, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        process = mock.Mock()
+        process.poll.return_value = None
+        try:
+            # Proxy zeigt ins Leere — die Prüfung auf localhost darf ihn nicht verwenden
+            with mock.patch.dict(start.os.environ, {"HTTP_PROXY": "http://127.0.0.1:9", "http_proxy": "http://127.0.0.1:9"}):
+                self.assertTrue(start.wait_until_ready(server.server_address[1], process, timeout=5))
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_build_uses_found_node_directly(self):
+        with mock.patch.object(start, "run_logged") as run_logged:
+            start.build("C:\\tools\\node\\node.EXE")
+        command = run_logged.call_args[0][0]
+        self.assertEqual(command[0], "C:\\tools\\node\\node.EXE")
+        self.assertEqual(command[1:], [str(start.next_cli()), "build"])
+
+
 if __name__ == "__main__":
     unittest.main()

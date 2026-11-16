@@ -366,5 +366,13 @@ Keine Bugs gefunden. (Während der Umsetzung behoben: geerbtes „SIGINT ignorie
 - **Security:** Pass
 - **Production Ready:** YES (keine Critical/High-Bugs)
 
+### Bugfixes 2026-11-16 (Windows-11-Rechner des Product Owners, Offline-Paket)
+Gemeldet über `start.log` vom Windows-11-Rechner (Firmenrechner, portable Node.js unter `c:\tools\node`, keine Paketinstallation möglich):
+- **BUG-WIN-1 (High) — Firmen-Proxy:** Die Bereitschaftsprüfung (`wait_until_ready`) nutzte `urllib.urlopen`. Python übernimmt die System-Proxy-Einstellungen (unter Windows aus der Registry), sodass die Anfrage an `127.0.0.1` über den Proxy lief. Die App war bereit („Ready in 3.4s“), galt aber als „nicht gestartet“ und wurde beendet. **Fix:** eigener Opener ohne Proxy (`LOCAL_OPENER`).
+- **BUG-WIN-2 (Medium) — Neubau findet „node“ nicht:** `npm run build` startet `next` über die `.cmd`-Hilfsdatei, die `node` erneut im Systempfad sucht. Das scheiterte mit der portablen Node-Installation. **Fix:** Der Build läuft direkt mit dem gefundenen Node (`node node_modules/next/dist/bin/next build`).
+- **BUG-WIN-3 (Medium) — Build braucht Internet:** `next/font/google` lädt Noto Sans beim Bauen aus dem Internet. **Fix:** Die Schrift liegt jetzt lokal in `src/app/fonts/` (SIL OFL 1.1, Fontsource 5.3.0, Subset latin) und wird über `next/font/local` eingebunden.
+- **Tests:** 2 neue Unit-Tests in `scripts/test_start.py` (14/14 grün; ohne Fix schlagen beide fehl). Den ganzen Ablauf (`--neu-bauen`, Proxy auf ein nicht erreichbares Ziel gesetzt, also ohne Internet) habe ich auf macOS geprüft: Build ok, Start ok, Seiten 200, XSD-Prüfung ok.
+- **Offline-Paket für Windows x64:** Projekt plus `node_modules` mit Windows-x64-Binärdateien (`npm ci --os=win32 --cpu=x64`, `.bin` als `.cmd`-Shims), vorgebautes `.next` und `.start-stand.json` (keine Installation, kein Build beim Start).
+
 ## Deployment
 _To be added by /deploy_
