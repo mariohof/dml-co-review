@@ -1,8 +1,8 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-14
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-16 (Refinement: Ausgabedaten optional, XSD nicht erreichbar, Umbruch Zusammenfassung)
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung) — nur angemeldete Benutzer
@@ -10,6 +10,7 @@
 - Requires: PROJ-11 (XSD-Validierung) — Schema-Prüfung je Issue
 - Nutzt: PROJ-9 (Check-out CSV) — CSV-Aufbau; PROJ-10 (Check-in CSV) — Prüfbericht und Zielverwendung der CSV
 - **Erfordert Anpassung von PROJ-10 und PROJ-8 (per `/refine PROJ-10`):** Weichen `answer`/`answer_comment` in der eingecheckten CSV vom Stand der DMRL ab, wird das nicht mehr als Fehler abgewiesen (heute Regel K). Stattdessen fragt der Check-in, ob die Antworten übernommen werden. Übernommene Antworten sind **nur Information**: Der Eintragsstatus bleibt *in Bearbeitung*, freigegeben wird weiterhin nur durch einen REPLY; die Übernahme steht im Verlauf.
+- Betrifft PROJ-11 (XSD-Validierung, Refinement 2026-11-16): genauere Meldung, warum die XSD-Prüfung nicht erreichbar ist (Server beendet / fremde Adresse) — gilt überall, wo die XSD-Prüfung genutzt wird
 - Wird genutzt von: PROJ-21 (XML gegen DMRL prüfen) — gleicher Prüf- und Konvertierungskern mit Bezug zu einer DMRL
 
 ## Beschreibung
@@ -31,10 +32,17 @@ Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine 
 | Wohlgeformtheit | gültiges XML | Prüfbericht, **keine CSV** |
 | XSD | `dml.xsd` der gewählten Issue (PROJ-11) | Prüfbericht, CSV mit Warnung |
 | Einlesen | Kopf und Einträge mit dem Leser der gewählten Issue | nicht lesbar (z. B. falsche Issue gewählt): Meldung, **keine CSV** |
-| Regelwerk | Regeln wie beim **Check-in** (PROJ-8): Format (A), Pflichtfelder Check-in (B), eindeutiger DMC (C), SNS ↔ Benennung (E), Infocode ↔ Infoname (I) | Prüfbericht, CSV mit Warnung |
+| Regelwerk | Regeln wie beim **Check-in** (PROJ-8): Format (A), Pflichtfelder (B), eindeutiger DMC (C), SNS ↔ Benennung (E), Infocode ↔ Infoname (I). **Ausnahme Pflichtfelder:** Die Ausgabedaten des Datenmoduls (`addresdm/issno` mit `@issno`/`@type` und `addresdm/issdate` mit Tag/Monat/Jahr) sind wie beim REPLY-Import **optional** — in einer DMRL-XML fehlen sie oft. Ein angefangenes Datum muss vollständig sein. | Prüfbericht, CSV mit Warnung |
 | MI | statt Regel D: **alle Einträge haben denselben MI**; der MI wird in der Zusammenfassung angezeigt | Prüfbericht, CSV mit Warnung |
 
-Ist die XSD-Prüfung **nicht verfügbar** (xmllint fehlt), wird trotzdem eingelesen und nach Regelwerk geprüft. Der Bericht weist deutlich auf „XSD-Prüfung nicht durchgeführt“ hin, die CSV ist mit Warnung herunterladbar.
+Fehlen bei Einträgen die Ausgabedaten, erscheint **ein Sammelhinweis** (kein Fehler): „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“
+
+Ist die XSD-Prüfung **nicht verfügbar**, wird trotzdem eingelesen und nach Regelwerk geprüft. Der Bericht weist deutlich auf „XSD-Prüfung nicht durchgeführt“ hin, die CSV ist mit Warnung herunterladbar. Die Meldung nennt die **Ursache mit Handlungsanweisung** (Refinement 2026-11-16):
+- **Server läuft nicht** (Anfrage kommt nicht an): „Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).“
+- **Zugriff abgelehnt** (App über eine andere Adresse als `localhost`/`127.0.0.1` geöffnet): „Zugriff abgelehnt — bitte die Anwendung über http://localhost:<Port> öffnen.“
+- xmllint fehlt, Schema fehlt, Zeitlimit: Meldungen wie bisher (PROJ-11).
+
+Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Erneut versuchen“ beim REPLY-Import): Sie wiederholt die Prüfung derselben Datei mit derselben Issue. Das bisherige Ergebnis nach Regelwerk bleibt bis dahin sichtbar.
 
 ## Ergebnis
 **Zusammenfassung (Kopfdaten der Datei)**
@@ -42,6 +50,7 @@ Ist die XSD-Prüfung **nicht verfügbar** (xmllint fehlt), wird trotzdem eingele
 - DML-Code, Ausgabestand (`issno`/`inwork`), Datum, Sicherheitseinstufung, Verweis auf die Bezugs-DMRL (`dmlref`), soweit vorhanden
 - MI (bzw. „uneinheitlich“), Anzahl Einträge, Anzahl Partnerantworten freigegeben / zu überarbeiten / ohne Antwort (immer angezeigt, auch bei SEND-Dateien ohne Antworten)
 - Gesamtergebnis: **„Keine Fehler“** oder **„N Fehler, M Hinweise“**
+- Lange Codes (Dateiname, DML-Code, Bezugs-DMRL) brechen **an den Bindestrichen bzw. Unterstrichen** um, nicht mitten in einer Codegruppe (z. B. `DML-TWLBORFLOS-DN463-C-` / `2026-00001`)
 
 **Prüfbericht:** gleiche Darstellung und gleicher Download wie beim Check-in (PROJ-10), gruppiert nach XSD und Regeln.
 
@@ -87,6 +96,11 @@ Ist die XSD-Prüfung **nicht verfügbar** (xmllint fehlt), wird trotzdem eingele
 - [ ] Angenommen eine XML mit Regelverstößen (z. B. doppelter DMC, fehlendes Pflichtfeld, unterschiedliche Benennung zum selben SNS), wenn geprüft wird, dann listet der Bericht die Verstöße je Eintrag wie beim Check-in, und die CSV ist mit Warnung herunterladbar
 - [ ] Angenommen die Einträge haben unterschiedliche MI, wenn geprüft wird, dann meldet der Bericht „MI uneinheitlich“ mit den betroffenen Einträgen, und die Zusammenfassung zeigt „uneinheitlich“
 - [ ] Angenommen die XSD-Prüfung ist nicht verfügbar, wenn geprüft wird, dann wird nach Regelwerk geprüft, der Bericht weist auf „XSD-Prüfung nicht durchgeführt“ hin, und die CSV ist mit Warnung herunterladbar
+- [ ] Angenommen eine DMRL-XML, deren Einträge keine Ausgabedaten (`issno`, `type`, `issdate`) enthalten, wenn geprüft wird, dann erscheinen dafür keine Pflichtfeld-Fehler, sondern ein einziger Hinweis „Bei N Einträgen fehlen Ausgabedaten … beim Check-in sind sie Pflicht“
+- [ ] Angenommen ein Eintrag hat ein unvollständiges Ausgabedatum (z. B. nur das Jahr), wenn geprüft wird, dann meldet der Bericht wie beim REPLY-Import einen Fehler „Ausgabedatum ist unvollständig“
+- [ ] Angenommen der Server der Anwendung läuft nicht mehr (Seite noch offen), wenn geprüft wird, dann nennt der Hinweis „XSD-Prüfung nicht durchgeführt“ die Ursache „Server läuft nicht“ mit der Anweisung, die Anwendung neu zu starten
+- [ ] Angenommen die Anwendung wurde über eine andere Adresse als `localhost`/`127.0.0.1` geöffnet, wenn geprüft wird, dann nennt der Hinweis die Ursache „Zugriff abgelehnt“ mit der Anweisung, die Anwendung über http://localhost:<Port> zu öffnen
+- [ ] Angenommen die XSD-Prüfung war nicht verfügbar, wenn „Erneut prüfen“ gewählt wird und die Prüffunktion wieder erreichbar ist, dann wird dieselbe Datei mit derselben Issue vollständig geprüft und das Ergebnis ersetzt
 
 ### Ergebnis und CSV
 - [ ] Angenommen eine Prüfung ist abgeschlossen, wenn die Zusammenfassung angezeigt wird, dann enthält sie Dateiname, Issue, DML-Code, Ausgabestand, Datum, Sicherheitseinstufung, MI, Anzahl Einträge und Anzahl Antworten je Art
@@ -102,17 +116,21 @@ Ist die XSD-Prüfung **nicht verfügbar** (xmllint fehlt), wird trotzdem eingele
 
 ### Darstellung
 - [ ] Angenommen das Werkzeug wird bei 375, 768 und 1440 px Breite genutzt, wenn eine Prüfung mit Fehlern angezeigt wird, dann scrollt die Seite nicht waagerecht
+- [ ] Angenommen ein langer DML-Code oder Dateiname passt nicht in eine Zeile der Zusammenfassung, wenn sie angezeigt wird, dann bricht er an einem Bindestrich oder Unterstrich um, nicht mitten in einer Codegruppe
 
 ## Edge Cases
 - **XML einer anderen Issue gewählt** (z. B. 4.2-Datei, Issue 2.3 gewählt): XSD meldet Fehler; ist die Datei mit dem Leser der gewählten Issue nicht lesbar, Meldung „Datei passt nicht zur gewählten Issue — bitte Issue prüfen“ und keine CSV.
 - **XML ohne Einträge:** schemagültig nicht möglich (mind. ein Eintrag); bei Schemafehler Bericht und CSV nur mit Kopfzeile plus Warnung.
-- **Partner-REPLY ohne Ausgabedaten** (`issno`, `type`, Datum fehlen, im REPLY erlaubt): Da nach Check-in-Regeln geprüft wird, erscheinen Pflichtfeld-Fehler — bewusst, weil die CSV für den Check-in gedacht ist. Der Bericht nennt die Ursache verständlich.
+- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Partner-REPLY): keine Pflichtfeld-Fehler, ein Sammelhinweis; die CSV wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen. Beim Check-in sind die Ausgabedaten weiterhin Pflicht (PROJ-10 unverändert). *(geändert 2026-11-16; vorher bewusst Pflichtfeld-Fehler)*
+- **Nur ein Teil der Ausgabedaten** (z. B. `issno` ohne Datum): kein Fehler, da jedes Feld einzeln optional ist; nur ein angefangenes Datum muss vollständig sein.
 - **Keine DMRL-XML** (wohlgeformt, aber z. B. ein Datenmodul): Schemafehler am Wurzelelement; nicht lesbar → keine CSV.
 - **Kodierung:** XML in UTF-8, UTF-16 oder ISO-8859-1 laut Deklaration wird korrekt gelesen (wie REPLY, PROJ-13); die CSV ist immer UTF-8.
 - **Externe Verweise / Entities** in der XML werden nicht nachgeladen (wie PROJ-11).
 - **Sehr viele Einträge** (bis 5 MB): Prüfung und Konvertierung funktionieren; da nichts gespeichert wird, ist der Browser-Speicher (BUG-QA2-2) nicht betroffen.
 - **Prüfung läuft, Benutzer wählt neue Datei oder verlässt die Seite:** laufende Prüfung wird verworfen, kein veraltetes Ergebnis.
 - **Benutzerwechsel in der Kopfzeile** während ein Ergebnis angezeigt wird: Werkzeug bleibt nutzbar (keine Berechtigung nötig).
+- **XSD-Prüfung nicht erreichbar, weil der Server beendet wurde** (Browser-Tab noch offen): Regelprüfung läuft im Browser weiter; Hinweis „Server läuft nicht“ mit „Erneut prüfen“. *(Ursache des Falls TWLBORFLOS vom 2026-11-16; xmllint selbst prüft die Datei fehlerfrei.)*
+- **App über Rechnername oder Netzwerkadresse geöffnet:** Serverfunktion lehnt ab (Schutz aus BUG-QA2-3); Hinweis „Zugriff abgelehnt — bitte über http://localhost:<Port> öffnen“.
 - **Doppelte DMC:** Bericht meldet Regel C; die CSV enthält beide Einträge (Check-in würde sie abweisen).
 
 ## Technical Requirements (optional)
@@ -124,6 +142,7 @@ Ist die XSD-Prüfung **nicht verfügbar** (xmllint fehlt), wird trotzdem eingele
 ## Open Questions
 - [x] Wie behandelt der Check-in eingehende `answer`/`answer_comment` aus einer konvertierten Partner-XML? → Optional übernehmen mit Abfrage, nur als Information (Status bleibt *in Bearbeitung*); Umsetzung per `/refine PROJ-10` (2026-11-14)
 - [x] Antwortzählung bei SEND-Dateien ausblenden? → Nein, immer anzeigen (2026-11-14)
+- [ ] Sollen die genaueren XSD-Meldungen (PROJ-11) auch im REPLY-Import und beim SEND-Export ein „Erneut prüfen“ bekommen, soweit dort noch nicht vorhanden? → bei `/architecture` prüfen
 - [x] `/refine PROJ-10` (und Regel K in PROJ-8) durchgeführt (2026-11-14): eine Abfrage für alle abweichenden Antworten, standardmäßig aus; übernommene Antwortänderung zählt als Änderung. Umsetzung von PROJ-10/PROJ-8 muss vor der Gesamtabnahme von PROJ-20 erfolgen
 
 ## Decision Log
@@ -144,6 +163,10 @@ Ist die XSD-Prüfung **nicht verfügbar** (xmllint fehlt), wird trotzdem eingele
 | Partnerantworten aus der CSV werden beim Check-in optional (mit Abfrage) übernommen, nur als Information — Status bleibt *in Bearbeitung* | Altbestand mit Antworten soll übernehmbar sein; Freigabe bleibt laut PRD an einen REPLY gebunden | 2026-11-14 |
 | Änderung am Check-in wird per `/refine PROJ-10` (und PROJ-8 Regel K) spezifiziert, nicht in PROJ-20 | Single Responsibility; PROJ-10/PROJ-8 sind freigegeben und werden danach erneut umgesetzt und getestet | 2026-11-14 |
 | Antwortzählung in der Zusammenfassung immer anzeigen, auch bei SEND-Dateien | Wunsch Product Owner; einheitliche Darstellung | 2026-11-14 |
+| Ausgabedaten (`issno`/`type`/`issdate`) im Werkzeug optional, wie beim REPLY-Import; ein Sammelhinweis statt Fehler je Eintrag | In echten DMRL-XML fehlen sie oft (im Schema optional); 575 Pflichtfeld-Fehler bei 115 Einträgen verdecken echte Fehler (Fall TWLBORFLOS) | 2026-11-16 |
+| Check-in (PROJ-10) bleibt streng: Ausgabedaten dort Pflicht | Wunsch Product Owner; der Sammelhinweis kündigt die Abweisung beim Check-in an | 2026-11-16 |
+| „XSD nicht erreichbar“ nennt die Ursache (Server läuft nicht / Zugriff abgelehnt) mit Handlungsanweisung, plus „Erneut prüfen“ | Die bisherige Meldung „Prüffunktion ist nicht erreichbar“ ließ offen, was zu tun ist; die Ursachen sind behebbar. Gilt überall, wo die XSD-Prüfung genutzt wird (PROJ-11) | 2026-11-16 |
+| Lange Codes in der Zusammenfassung an Bindestrichen/Unterstrichen umbrechen | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar | 2026-11-16 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
