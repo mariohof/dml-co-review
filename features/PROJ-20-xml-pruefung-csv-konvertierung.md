@@ -1,8 +1,8 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-14
-**Last Updated:** 2026-11-16 (Refinement: Ausgabedaten optional, XSD nicht erreichbar, Umbruch Zusammenfassung)
+**Last Updated:** 2026-11-16 (Refinement 2: fehlende Ausgabedaten in der CSV mit Standardwerten ergänzen)
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung) — nur angemeldete Benutzer
@@ -35,7 +35,18 @@ Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine 
 | Regelwerk | Regeln wie beim **Check-in** (PROJ-8): Format (A), Pflichtfelder (B), eindeutiger DMC (C), SNS ↔ Benennung (E), Infocode ↔ Infoname (I). **Ausnahme Pflichtfelder:** Die Ausgabedaten des Datenmoduls (`addresdm/issno` mit `@issno`/`@type` und `addresdm/issdate` mit Tag/Monat/Jahr) sind wie beim REPLY-Import **optional** — in einer DMRL-XML fehlen sie oft. Ein angefangenes Datum muss vollständig sein. | Prüfbericht, CSV mit Warnung |
 | MI | statt Regel D: **alle Einträge haben denselben MI**; der MI wird in der Zusammenfassung angezeigt | Prüfbericht, CSV mit Warnung |
 
-Fehlen bei Einträgen die Ausgabedaten, erscheint **ein Sammelhinweis** (kein Fehler): „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“
+**Fehlende Ausgabedaten in der CSV ergänzen** (Refinement 2, 2026-11-16): Fehlt bei einem Eintrag das Element `addresdm/issno` ganz (Ausgabenummer **und** Ausgabetyp leer), werden in der **CSV** Standardwerte gesetzt:
+| CSV-Feld | XPath | Standardwert | Bedingung |
+|---|---|---|---|
+| `issno` | `/dml/dmentry/addresdm/issno/@issno` | `001` | immer (Auslöser) |
+| `type` | `/dml/dmentry/addresdm/issno/@type` | `new` | immer (Auslöser) |
+| `day`/`month`/`year` | `/dml/dmentry/addresdm/issdate` | Datum der Prüfung | nur wenn `issdate` fehlt (alle drei leer); ein vorhandenes Datum bleibt |
+| `dmentryType` | `/dml/dmentry/@type` | `n` | nur wenn leer; vorhandenes `c`/`d` bleibt |
+
+- Die **Prüfung** (XSD, Regelwerk) läuft auf den **Originaldaten** der XML; die Ergänzung betrifft nur die heruntergeladene CSV. Die XML-Datei wird nicht verändert, gespeichert wird nichts.
+- Statt des bisherigen Sammelhinweises erscheint **ein Hinweis** (kein Fehler): „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabenummer 001, Ausgabetyp new, Datum TT.MM.JJJJ, Eintragstyp n (nur wo leer).“
+- **Nur ein Teil von `issno` vorhanden** (z. B. `@issno` ohne `@type`): keine Ergänzung; dafür bleibt der bisherige Sammelhinweis „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“ Ebenso, wenn `issno` vollständig ist, aber `issdate` fehlt.
+- Check-in (PROJ-10) und REPLY-Import (PROJ-13) bleiben unverändert — dort wird nichts ergänzt.
 
 Ist die XSD-Prüfung **nicht verfügbar**, wird trotzdem eingelesen und nach Regelwerk geprüft. Der Bericht weist deutlich auf „XSD-Prüfung nicht durchgeführt“ hin, die CSV ist mit Warnung herunterladbar. Die Meldung nennt die **Ursache mit Handlungsanweisung** (Refinement 2026-11-16):
 - **Server läuft nicht** (Anfrage kommt nicht an): „Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).“
@@ -57,6 +68,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 **CSV**
 - Aufbau wie Check-out (PROJ-9): 27 Spalten, Semikolon, UTF-8 mit BOM, nach DMC sortiert, inkl. `answer`/`answer_comment`, Formelschutz (BUG-QA2-1)
 - Dateiname: Name der XML-Datei mit Endung `.csv`, z. B. `DML-PHUNGUN-C1234-C-2026-00002_001-00.csv`
+- Fehlende Ausgabedaten mit Standardwerten ergänzt (siehe „Prüfung“); alle übrigen Werte unverändert aus der XML
 - Bei Fehlern: Hinweis direkt an der Schaltfläche: „Die CSV enthält Fehler aus der Prüfung — ein Check-in wird abgewiesen, bis sie behoben sind.“
 
 ## User Stories
@@ -96,7 +108,12 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - [ ] Angenommen eine XML mit Regelverstößen (z. B. doppelter DMC, fehlendes Pflichtfeld, unterschiedliche Benennung zum selben SNS), wenn geprüft wird, dann listet der Bericht die Verstöße je Eintrag wie beim Check-in, und die CSV ist mit Warnung herunterladbar
 - [ ] Angenommen die Einträge haben unterschiedliche MI, wenn geprüft wird, dann meldet der Bericht „MI uneinheitlich“ mit den betroffenen Einträgen, und die Zusammenfassung zeigt „uneinheitlich“
 - [ ] Angenommen die XSD-Prüfung ist nicht verfügbar, wenn geprüft wird, dann wird nach Regelwerk geprüft, der Bericht weist auf „XSD-Prüfung nicht durchgeführt“ hin, und die CSV ist mit Warnung herunterladbar
-- [ ] Angenommen eine DMRL-XML, deren Einträge keine Ausgabedaten (`issno`, `type`, `issdate`) enthalten, wenn geprüft wird, dann erscheinen dafür keine Pflichtfeld-Fehler, sondern ein einziger Hinweis „Bei N Einträgen fehlen Ausgabedaten … beim Check-in sind sie Pflicht“
+- [ ] Angenommen eine DMRL-XML, deren Einträge keine Ausgabedaten (`issno`, `type`, `issdate`) enthalten, wenn geprüft wird, dann erscheinen dafür keine Pflichtfeld-Fehler, sondern ein einziger Hinweis „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt …“ *(geändert Refinement 2)*
+- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz, wenn die CSV heruntergeladen wird, dann stehen dort `issno` = `001`, `type` = `new` und — falls `issdate` fehlt — das Datum der Prüfung (TT/MM/JJJJ in `day`/`month`/`year`)
+- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz und `dmentry/@type` ist leer, wenn die CSV heruntergeladen wird, dann steht in `dmentryType` der Wert `n`; ein vorhandenes `c` oder `d` bleibt unverändert
+- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz, aber `issdate` ist vollständig vorhanden, wenn die CSV heruntergeladen wird, dann bleibt das vorhandene Datum erhalten
+- [ ] Angenommen bei einem Eintrag ist `issno` nur teilweise vorhanden (z. B. `@issno` ohne `@type`) oder `issno` ist vollständig und nur `issdate` fehlt, wenn geprüft wird, dann wird nichts ergänzt und der Hinweis „… fehlen Ausgabedaten … beim Check-in sind sie Pflicht“ zählt diesen Eintrag
+- [ ] Angenommen eine DMRL-XML ohne Ausgabedaten und sonst ohne Fehler wurde konvertiert, wenn die CSV unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann gibt es keine Pflichtfeld-Fehler zu den Ausgabedaten
 - [ ] Angenommen ein Eintrag hat ein unvollständiges Ausgabedatum (z. B. nur das Jahr), wenn geprüft wird, dann meldet der Bericht wie beim REPLY-Import einen Fehler „Ausgabedatum ist unvollständig“
 - [ ] Angenommen der Server der Anwendung läuft nicht mehr (Seite noch offen), wenn geprüft wird, dann nennt der Hinweis „XSD-Prüfung nicht durchgeführt“ die Ursache „Server läuft nicht“ mit der Anweisung, die Anwendung neu zu starten
 - [ ] Angenommen die Anwendung wurde über eine andere Adresse als `localhost`/`127.0.0.1` geöffnet, wenn geprüft wird, dann nennt der Hinweis die Ursache „Zugriff abgelehnt“ mit der Anweisung, die Anwendung über http://localhost:<Port> zu öffnen
@@ -121,8 +138,11 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 ## Edge Cases
 - **XML einer anderen Issue gewählt** (z. B. 4.2-Datei, Issue 2.3 gewählt): XSD meldet Fehler; ist die Datei mit dem Leser der gewählten Issue nicht lesbar, Meldung „Datei passt nicht zur gewählten Issue — bitte Issue prüfen“ und keine CSV.
 - **XML ohne Einträge:** schemagültig nicht möglich (mind. ein Eintrag); bei Schemafehler Bericht und CSV nur mit Kopfzeile plus Warnung.
-- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Partner-REPLY): keine Pflichtfeld-Fehler, ein Sammelhinweis; die CSV wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen. Beim Check-in sind die Ausgabedaten weiterhin Pflicht (PROJ-10 unverändert). *(geändert 2026-11-16; vorher bewusst Pflichtfeld-Fehler)*
-- **Nur ein Teil der Ausgabedaten** (z. B. `issno` ohne Datum): kein Fehler, da jedes Feld einzeln optional ist; nur ein angefangenes Datum muss vollständig sein.
+- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Partner-REPLY): keine Pflichtfeld-Fehler; in der CSV werden `001`/`new`/Datum der Prüfung (und `n` bei leerem Eintragstyp) ergänzt, ein Hinweis nennt die Anzahl. Die CSV wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen; beim Check-in sind die Ausgabedaten damit vorhanden (PROJ-10 unverändert streng). *(geändert 2026-11-16, Refinement 2; vorher nur Sammelhinweis, davor Pflichtfeld-Fehler)*
+- **Nur ein Teil der Ausgabedaten** (z. B. `issno` ohne Datum, `@issno` ohne `@type`): kein Fehler, da jedes Feld einzeln optional ist; nur ein angefangenes Datum muss vollständig sein. **Keine Ergänzung** — Sammelhinweis „beim Check-in sind sie Pflicht“.
+- **Eintrag mit Eintragstyp `c` oder `d`, aber ohne `issno`:** `001`/`new` werden ergänzt, der Eintragstyp bleibt `c`/`d` (Wunsch Product Owner: vorhandene Werte nie überschreiben).
+- **Prüfung kurz vor Mitternacht, Download danach:** Es gilt das Datum der Prüfung (Ergebnis wird beim Prüfen erzeugt).
+- **Unvollständiges Datum ohne `issno`** (z. B. nur Jahr): Fehler „Ausgabedatum ist unvollständig“ wie bisher; `issno`/`type` werden ergänzt, das Datum nicht (es ist nicht ganz leer) — die CSV hat ohnehin eine Fehlerwarnung.
 - **Keine DMRL-XML** (wohlgeformt, aber z. B. ein Datenmodul): Schemafehler am Wurzelelement; nicht lesbar → keine CSV.
 - **Kodierung:** XML in UTF-8, UTF-16 oder ISO-8859-1 laut Deklaration wird korrekt gelesen (wie REPLY, PROJ-13); die CSV ist immer UTF-8.
 - **Externe Verweise / Entities** in der XML werden nicht nachgeladen (wie PROJ-11).
@@ -143,6 +163,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - [x] Wie behandelt der Check-in eingehende `answer`/`answer_comment` aus einer konvertierten Partner-XML? → Optional übernehmen mit Abfrage, nur als Information (Status bleibt *in Bearbeitung*); Umsetzung per `/refine PROJ-10` (2026-11-14)
 - [x] Antwortzählung bei SEND-Dateien ausblenden? → Nein, immer anzeigen (2026-11-14)
 - [x] Sollen die genaueren XSD-Meldungen (PROJ-11) auch im REPLY-Import und beim SEND-Export ein „Erneut prüfen“ bekommen? → Nicht nötig: beide haben bereits „Erneut versuchen“; die genaueren Meldungen wirken dort über den gemeinsamen Baustein (2026-11-16)
+- [x] Fehlende Ausgabedaten ergänzen? → Ja, nur in der CSV des Werkzeugs, nur wenn `issno` ganz fehlt; Datum und Eintragstyp nur, wenn leer (2026-11-16)
 - [x] `/refine PROJ-10` (und Regel K in PROJ-8) durchgeführt (2026-11-14): eine Abfrage für alle abweichenden Antworten, standardmäßig aus; übernommene Antwortänderung zählt als Änderung. Umsetzung von PROJ-10/PROJ-8 muss vor der Gesamtabnahme von PROJ-20 erfolgen
 
 ## Decision Log
@@ -167,6 +188,10 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Check-in (PROJ-10) bleibt streng: Ausgabedaten dort Pflicht | Wunsch Product Owner; der Sammelhinweis kündigt die Abweisung beim Check-in an | 2026-11-16 |
 | „XSD nicht erreichbar“ nennt die Ursache (Server läuft nicht / Zugriff abgelehnt) mit Handlungsanweisung, plus „Erneut prüfen“ | Die bisherige Meldung „Prüffunktion ist nicht erreichbar“ ließ offen, was zu tun ist; die Ursachen sind behebbar. Gilt überall, wo die XSD-Prüfung genutzt wird (PROJ-11) | 2026-11-16 |
 | PROJ-21 (XML gegen DMRL prüfen) entfällt | Wunsch Product Owner: alles Nötige funktioniert mit PROJ-20 — Werkzeug prüft die Datei, der Check-in der CSV gleicht mit der DMRL ab. ID PROJ-21 wird nicht neu vergeben | 2026-11-16 |
+| Fehlt `addresdm/issno` ganz, ergänzt das Werkzeug in der CSV `issno=001`, `type=new`, `issdate`=Datum der Prüfung (nur wenn leer) und `dmentry/@type=n` (nur wenn leer) | Wunsch Product Owner: konvertierte CSV soll ohne Nacharbeit den Check-in bestehen; Werte entsprechen einem neuen Datenmodul. Vorhandene Werte werden nie überschrieben | 2026-11-16 |
+| Ergänzung nur in der CSV, Prüfung auf den Originaldaten | Prüfbericht zeigt den echten Zustand der Datei; nichts wird gespeichert | 2026-11-16 |
+| Auslöser nur bei vollständig fehlendem `issno`; bei Teildaten keine Ergänzung | Teildaten deuten auf eine fehlerhafte Pflege hin, die der Bearbeiter bewusst klären soll | 2026-11-16 |
+| Keine Ergänzung im REPLY-Import und Check-in | Wunsch Product Owner; der Abstimmungs-Workflow bleibt unverändert | 2026-11-16 |
 | Lange Codes in der Zusammenfassung nach Bindestrichen umbrechen, rein per CSS (kein eingefügtes Zeichen) — bereits umgesetzt | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar; Wunsch Product Owner: nur CSS | 2026-11-16 |
 
 ### Technical Decisions
