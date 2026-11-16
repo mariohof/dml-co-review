@@ -278,6 +278,8 @@ _Stand 2026-11-13 — `/frontend PROJ-12`_
 - „XSD-Prüfung nicht verfügbar" wird nicht im Verlauf protokolliert (es ist kein fachlicher Fehlschlag); nur echte Schemafehler erzeugen „SEND fehlgeschlagen".
 - Freigabestand-Export (PROJ-14) und Export (PROJ-18) können den Schreiber direkt nutzen (`answers: true`).
 
+**UI-Fix Dialogbreite (2026-11-16):** Der XSD-Prüfbericht (6 Spalten inkl. „Meldung“) war im SEND-Dialog (`sm:max-w-2xl`) abgeschnitten. Dialog jetzt `sm:max-w-6xl` (bis 1152 px, auf kleineren Fenstern volle Breite abzüglich Rand) mit `[&>*]:min-w-0` — wie Check-in (PROJ-10) und REPLY (PROJ-13). Bei sehr schmalen Fenstern scrollt nur noch die Tabelle selbst. Der kleine Bestätigungsdialog (Zurückziehen) bleibt unverändert.
+
 ## QA Test Results
 
 **Tested:** 2026-11-13

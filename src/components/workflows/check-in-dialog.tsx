@@ -53,7 +53,8 @@ interface CheckInDialogProps {
 export function CheckInDialog({ dmrl, open, onClose }: CheckInDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+      {/* Breit genug für die komplette Prüfbericht-Tabelle (6 Spalten) ohne horizontales Scrollen; min-w-0 verhindert, dass breite Tabellen das Grid aufweiten */}
+      <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-6xl [&>*]:min-w-0">
         {open && <CheckInFlow dmrl={dmrl} onClose={onClose} />}
       </DialogContent>
     </Dialog>

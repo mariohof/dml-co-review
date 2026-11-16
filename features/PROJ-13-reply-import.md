@@ -242,6 +242,9 @@ _Stand 2026-11-13 — `/frontend PROJ-13`_
 - Archiv-Download (`archiveFileBytes`, PROJ-15): UTF-16-Stände werden wieder als UTF-16 LE mit BOM ausgegeben (byte-genau für die übliche LE-Datei mit BOM; bei BE oder fehlendem BOM als LE mit BOM).
 - Tests: `reply.test.ts` (LE/BE, mit/ohne BOM), `archive.test.ts` (Rundlauf Download ↔ Lesen), `qa-proj20.test.ts` (UTF-16-Test aktiviert), E2E `PROJ-20-qa.spec.ts` „UTF-16-Datei“ mit echter xmllint-Prüfung; 483 Unit-Tests grün.
 
+### UI-Fix Dialogbreite (2026-11-16)
+- Der Prüfbericht (6 Spalten inkl. „Meldung“) war im REPLY-Dialog (`sm:max-w-3xl`) abgeschnitten, der ganze Dialog musste waagerecht gescrollt werden. Dialog jetzt `sm:max-w-6xl` (bis 1152 px, auf kleineren Fenstern volle Breite abzüglich Rand) mit `[&>*]:min-w-0` — wie der Check-in-Dialog (PROJ-10). Bei sehr schmalen Fenstern scrollt nur noch die Tabelle selbst.
+
 ## QA Test Results
 
 **Tested:** 2026-11-13
