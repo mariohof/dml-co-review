@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-18
 
@@ -695,7 +695,7 @@ Keine neuen Bugs in diesem Feature.
   - `tests/PROJ-10-ausgabetyp.spec.ts` „BUG-QA7-1 …“ (`test.fixme`)
   - Beide nach der Behebung aktivieren.
 - **Priority:** Fix before Weitergabe
-- **Status:** Behoben 2026-11-18 (`/frontend proj-10`), Bestätigung durch `/qa` ausstehend
+- **Status:** Behoben 2026-11-18 (`/frontend proj-10`), bestätigt durch `/qa` (QA-Lauf 9)
   - `src/lib/dmrl/issue-type.ts`: neue Funktion `allowedIssueTypes` liest nur eigene Schlüssel (`Object.hasOwn`); `deriveIssueType` und die Typ-Regel in `checkin.ts` nutzen sie. Werte wie `constructor` oder `__proto__` ergeben jetzt nur den Formatfehler A.
   - `check-in-dialog.tsx`: Ausnahmen der Prüfung werden abgefangen. Statt dauerhaft „Prüfe …“ erscheint die Meldung „Die Datei konnte nicht geprüft werden. Bitte die Datei kontrollieren und erneut versuchen.“
   - Tests aktiviert: `qa-proj10-ausgabetyp.test.ts` (5 Fälle), `tests/PROJ-10-ausgabetyp.spec.ts` („BUG-QA7-1 …“)
@@ -783,6 +783,37 @@ Keine neuen Bugs in diesem Feature.
 - **Bugs Found:** 1 total (0 critical, 0 high, 0 medium, 1 low). Weiterhin offen aus QA-Lauf 7: BUG-QA7-1 (Medium) und BUG-QA7-2 (Low).
 - **Security:** keine neuen Befunde; Freigabe ohne REPLY ist gewollt und nachvollziehbar
 - **Production Ready:** YES (keine Critical/High-Bugs)
+
+### QA-Lauf 9 — Bestätigung BUG-QA7-1 (2026-11-18)
+
+**Tested:** 2026-11-18 · **Tester:** QA Engineer (AI) · **Browser:** Chrome (Playwright); Firefox/Safari nicht geprüft (WebKit nicht installiert, wie bisher)
+
+**Automatisiert**
+- **Vitest:** 604 bestanden, 1 übersprungen (BUG-QA8-1)
+  - neu in `qa-proj10-ausgabetyp.test.ts`: Block „QA-Lauf 9“ (21 Tests)
+- **Playwright Chrome:** Gesamtlauf 122 bestanden, 3 Zeitüberschreitungen in PROJ-20 (`page.goto`/Sichtbarkeit nach 5–30 s)
+  - Die Rechnerlast lag während des Laufs bei 15 auf 4 Kernen (Dev-Server, Kompilierung, 2 Browser-Worker).
+  - Mit 1 Worker wiederholt: `PROJ-20-qa.spec.ts` und `PROJ-20-qa-refinement2.spec.ts` 13/13 grün. Keine Regression.
+  - Der Test „BUG-QA7-1 …“ in `tests/PROJ-10-ausgabetyp.spec.ts` ist aktiv und grün.
+
+#### Bestätigung BUG-QA7-1
+- [x] Gegenprobe: Mit dem Stand vor dem Fix (`issue-type.ts`, `checkin.ts` aus `70fe7ab`) schlagen die 5 Bug-Tests fehl, mit dem Fix bestehen alle 24 Tests der Datei.
+- [x] `constructor`, `__proto__`, `toString`, `hasOwnProperty`, `valueOf` als Eintragstyp → je ein Formatfehler A, keine Typ-Meldung (Unit)
+- [x] E2E: Eintragstyp `constructor` → Prüfbericht mit Fehler in `dmentryType` statt hängender Prüfung
+- [x] Workflow: Check-in mit `constructor` abgelehnt, Übernahme nicht möglich (Unit)
+- [x] Ableitung des Ausgabetyps (PROJ-1/PROJ-20) liefert für diese Werte `new` (bestehender Test)
+
+#### Security Audit Results (Red Team)
+- [x] 7 Objekt-Eigenschaftsnamen (`constructor`, `__proto__`, `toString`, `hasOwnProperty`, `valueOf`, `isPrototypeOf`, `__defineGetter__`) in 12 Feldern (`dmentryType`, `type`, `answer`, `language`, `country`, `security`, `issno`, `sdc`, `techname`, `infoname`, `rpc`, `answer_comment`) → nie eine Ausnahme, immer ein Prüfbericht (Unit)
+- [x] Alle Zeilen mit präpariertem Eintragstyp → je Zeile genau ein Formatfehler (Unit)
+- [x] REPLY-Prüfung mit Eintragstyp `__proto__` im Partner-XML → kein Absturz, Prüffehler gemeldet (Unit)
+- [x] Sicherheitsnetz im Dialog: Fängt Ausnahmen der Prüfung ab und zeigt eine Meldung (Code-Review; nach dem Fix nicht mehr auslösbar)
+
+#### Summary
+- **BUG-QA7-1:** bestätigt behoben
+- **Offene Bugs:** BUG-QA8-1 (Low), BUG-QA7-2 (Low, Spec)
+- **Neue Bugs:** keine
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

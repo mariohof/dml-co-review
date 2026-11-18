@@ -198,3 +198,49 @@ describe.skipIf(!hasXmllint)("Schema — Ausgabetyp status im SEND", () => {
     expect(result).toMatchObject({ state: "gueltig" })
   })
 })
+
+describe("QA-Lauf 9 — Bestätigung BUG-QA7-1: Objekt-Eigenschaftsnamen in allen Feldern (Red Team)", () => {
+  const PROTO_KEYS = ["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf", "isPrototypeOf", "__defineGetter__"]
+  const FIELDS = ["dmentryType", "type", "answer", "language", "country", "security", "issno", "sdc", "techname", "infoname", "rpc", "answer_comment"] as const
+
+  it.each(FIELDS)("Feld %s: jeder Objekt-Eigenschaftsname ergibt einen Bericht statt einer Ausnahme", (field) => {
+    const { snapshot, context } = vehicle()
+    for (const key of PROTO_KEYS) {
+      const rows = structuredClone(snapshot)
+      rows[0].fields[field] = key
+      const run = () => runCheckinCheck(writeEntriesCsv(rows), context)
+      expect(run, `${field} = ${key}`).not.toThrow()
+    }
+  })
+
+  it.each(PROTO_KEYS)("Eintragstyp ‚%s‘ in allen Zeilen: je Zeile ein Formatfehler A, keine Typ-Meldung", (key) => {
+    const { snapshot, context } = vehicle()
+    const rows = structuredClone(snapshot).map((r) => ({ ...r, fields: { ...r.fields, dmentryType: key } }))
+    const findings = runCheckinCheck(writeEntriesCsv(rows), context).report.findings
+    expect(findings.filter((f) => f.group === "A" && f.field === "dmentryType")).toHaveLength(rows.length)
+    expect(findings.some((f) => f.field === "type")).toBe(false)
+  })
+
+  it("Eintragstyp ‚constructor‘ im Workflow: Check-in abgelehnt, Sperre bleibt, Verlauf „Check-in abgelehnt“", () => {
+    const data = checkedOut(buildDemoDataset(), DEMO_IDS.dmrlVehicle, DEMO_IDS.editorBen)
+    const csv = csvFromLock(data, DEMO_IDS.dmrlVehicle, (rows) => {
+      rows[0].fields.dmentryType = "constructor"
+      return rows
+    })
+    const checked = checkCheckinFile(data, dmrl(data, DEMO_IDS.dmrlVehicle), csv)
+    expect(errorCount(checked.report)).toBe(1)
+    expect(executeCheckIn(data, DEMO_IDS.dmrlVehicle, user(data, DEMO_IDS.editorBen), checked, AT)).toEqual({
+      ok: false,
+      message: "Die Datei enthält Fehler und kann nicht übernommen werden.",
+    })
+  })
+
+  it("REPLY-Prüfung mit Eintragstyp ‚__proto__‘ stürzt nicht ab", () => {
+    const demo = buildDemoDataset()
+    const phungun = dmrl(demo, DEMO_IDS.dmrlPhungun)
+    const manipulated = demoReply.replace(/(<dmentry[^>]*\btype=")[ncd]"/, '$1__proto__"')
+    expect(manipulated).not.toBe(demoReply)
+    expect(() => checkReplyFile(demo, phungun, manipulated)).not.toThrow()
+    expect(errorCount(checkReplyFile(demo, phungun, manipulated).report)).toBeGreaterThan(0)
+  })
+})
