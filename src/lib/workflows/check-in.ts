@@ -1,4 +1,4 @@
-import type { Dataset, Dmrl, DmrlEntry, HistoryEntry, User } from "@/lib/data/schema"
+import type { Dataset, Dmrl, DmrlEntry, DmrlStatus, HistoryEntry, User } from "@/lib/data/schema"
 import { newId } from "@/lib/ids"
 import {
   ANSWER_TAKEOVER_BLOCKED,
@@ -6,6 +6,7 @@ import {
   answerTakeoverBlockers,
   checkinSummary,
   effectiveClassification,
+  isReleasedOnTakeover,
   runCheckinCheck,
   type CheckinResult,
 } from "@/lib/rules/check/checkin"
@@ -93,25 +94,55 @@ export function executeCheckIn(
       : { ...candidate.fields, answer: previous?.fields.answer ?? "", answer_comment: previous?.fields.answer_comment ?? "" }
     const classification = effectiveClassification(compared, takeAnswers)
     if (classification === "neu" || !previous) {
-      return { id: newId("entry"), dmrlId, status: "in_bearbeitung", fields }
+      // Bestand übernehmen (Refinement 2026-11-18): neu ohne Eintragstyp → freigegeben
+      return { id: newId("entry"), dmrlId, status: isReleasedOnTakeover(compared) ? "freigegeben" : "in_bearbeitung", fields }
     }
     const status = classification === "geaendert" ? "in_bearbeitung" : (currentStatus.get(previous.id) ?? previous.status)
     return { id: previous.id, dmrlId, status, fields }
   })
 
-  const { neu, geaendert, unveraendert } = checkinSummary(result.candidates, result.comparison, takeAnswers)
+  const { neu, geaendert, unveraendert, alsFreigegeben } = checkinSummary(result.candidates, result.comparison, takeAnswers)
   const changed = neu + geaendert > 0
+  // Grundregel PROJ-14: DMRL freigegeben ⇔ alle Einträge freigegeben. Durch einen Check-in entsteht eine Freigabe nur,
+  // wenn dabei Einträge als freigegeben übernommen wurden (Refinement 2026-11-18).
+  const released = alsFreigegeben > 0 && entries.length > 0 && entries.every((e) => e.status === "freigegeben")
+  const status: DmrlStatus = released ? "freigegeben" : changed ? "in_bearbeitung" : dmrl.status
   const takenAnswers = takeAnswers ? answerDeviations(result.comparison).length : 0
   const answersNote = takenAnswers > 0 ? `; ${takenAnswers} Antworten aus der Datei übernommen` : ""
+  const releasedNote = alsFreigegeben > 0 ? ` (davon ${alsFreigegeben} als freigegeben übernommen)` : ""
+  const dmrlReleasedNote = released ? " — DMRL freigegeben (Übernahme Bestand)" : ""
   return {
     ok: true,
     data: {
       ...data,
       entries: [...data.entries.filter((e) => e.dmrlId !== dmrlId), ...entries],
-      dmrls: data.dmrls.map((d) => (d.id === dmrlId ? { ...d, lock: null, status: changed ? "in_bearbeitung" : d.status } : d)),
+      dmrls: data.dmrls.map((d) =>
+        d.id === dmrlId
+          ? { ...d, lock: null, status, release: released ? { at, replyArchiveId: null, userId: user.id } : d.release }
+          : d
+      ),
+      releases: released
+        ? [
+            ...data.releases,
+            {
+              id: newId("release"),
+              dmrlId,
+              createdAt: at,
+              replyArchiveId: null,
+              userId: user.id,
+              entries: entries.map(({ id, status, fields }) => ({ id, status, fields })),
+            },
+          ]
+        : data.releases,
       history: [
         ...data.history,
-        historyEntry(dmrlId, user.id, at, "check_in", `Check-in — ${neu} neu, ${geaendert} geändert, ${unveraendert} unverändert${answersNote}`),
+        historyEntry(
+          dmrlId,
+          user.id,
+          at,
+          "check_in",
+          `Check-in — ${neu} neu${releasedNote}, ${geaendert} geändert, ${unveraendert} unverändert${answersNote}${dmrlReleasedNote}`
+        ),
       ],
     },
   }

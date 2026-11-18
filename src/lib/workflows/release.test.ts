@@ -237,3 +237,24 @@ describe("Statusmodell — jede Zeile der Übergangstabellen (PROJ-14)", () => {
     expect(datasetSchema.safeParse(contradiction).success).toBe(false)
   })
 })
+
+describe("Freigabe durch Übernahme Bestand per Check-in (PROJ-10, Refinement 2026-11-18)", () => {
+  it("Freigabestand ohne REPLY: Beschriftung, Info, CSV- und XML-Export", () => {
+    const demo = buildDemoDataset()
+    const vehicle = dmrl(demo, DEMO_IDS.dmrlVehicle)
+    const entries = entriesOf(demo, DEMO_IDS.dmrlVehicle).map(({ id, fields }) => ({
+      id,
+      status: "freigegeben" as const,
+      fields: { ...fields, dmentryType: "", type: "new" },
+    }))
+    const snapshot = { id: "release-x", dmrlId: vehicle.id, createdAt: "2026-11-18T10:00:00.000Z", replyArchiveId: null, userId: DEMO_IDS.editorBen, entries }
+    const data: Dataset = { ...demo, releases: [snapshot] }
+    const info = releaseInfo(data, snapshot)
+    expect(info.reply).toBeNull()
+    expect(info.partner).toBeNull()
+    expect(releaseLabel(info)).toBe("18.11.2026, Übernahme per Check-in")
+    expect(releaseCsv(data, vehicle, snapshot).fileName).toMatch(/-Freigabe-2026-11-18\.csv$/)
+    const xml = releaseXml(data, vehicle, snapshot, "2026-11-18T11:00:00.000Z")
+    expect(xml.content).toContain("Freigabestand vom 18.11.2026")
+  })
+})

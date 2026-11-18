@@ -1,7 +1,7 @@
 "use client"
 
 import { useId, useRef, useState } from "react"
-import { FileUp, Info, Loader2, Upload } from "lucide-react"
+import { BadgeCheck, FileUp, Info, Loader2, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { CheckReportView } from "@/components/check/check-report-view"
@@ -91,10 +91,14 @@ function CheckInFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
       return
     }
     if (!update(() => outcome.data)) return
-    const { neu, geaendert, unveraendert } = checkinSummary(result.candidates, result.comparison, takeAnswers)
+    const { neu, geaendert, unveraendert, alsFreigegeben } = checkinSummary(result.candidates, result.comparison, takeAnswers)
     const answers = takeAnswers && result.comparison ? answerDeviations(result.comparison).length : 0
     const answersNote = answers > 0 ? `, ${answers} Antworten übernommen` : ""
-    toast.success(`Check-in übernommen — ${neu} neu, ${geaendert} geändert, ${unveraendert} unverändert${answersNote}. Die Sperre ist aufgehoben.`)
+    const releasedNote = alsFreigegeben > 0 ? ` (davon ${alsFreigegeben} als freigegeben übernommen)` : ""
+    const dmrlReleased = outcome.data.dmrls.find((d) => d.id === dmrl.id)?.status === "freigegeben" && alsFreigegeben > 0
+    toast.success(
+      `Check-in übernommen — ${neu} neu${releasedNote}, ${geaendert} geändert, ${unveraendert} unverändert${answersNote}.${dmrlReleased ? " Die DMRL ist freigegeben." : ""} Die Sperre ist aufgehoben.`
+    )
     onClose()
   }
 
@@ -210,7 +214,7 @@ function CheckInSummary({
   const deviations = result.comparison ? answerDeviations(result.comparison) : []
   const blockers = takeAnswers && result.comparison ? answerTakeoverBlockers(result.comparison) : []
   // Zahlen passen sich dem Häkchen sofort an (gleicher Abgleich, keine erneute Prüfung)
-  const { geprueft, neu, geaendert, unveraendert } = checkinSummary(result.candidates, result.comparison, takeAnswers)
+  const { geprueft, neu, geaendert, unveraendert, alsFreigegeben } = checkinSummary(result.candidates, result.comparison, takeAnswers)
   const tiles = [
     { label: "geprüft", value: geprueft },
     { label: "neu", value: neu },
@@ -233,7 +237,20 @@ function CheckInSummary({
 
       {newEntries.length > 0 && (
         <section className="space-y-2">
-          <h3 className="text-sm font-semibold">Neue Einträge ({newEntries.length})</h3>
+          <h3 className="text-sm font-semibold">
+            Neue Einträge ({newEntries.length}
+            {alsFreigegeben > 0 && `, davon ${alsFreigegeben} als freigegeben übernommen`})
+          </h3>
+          {alsFreigegeben > 0 && (
+            <Alert className="border-green-300 bg-green-50 text-green-950 [&>svg]:text-green-700">
+              <BadgeCheck className="h-4 w-4" aria-hidden />
+              <AlertTitle>Bestand übernehmen: davon {alsFreigegeben} als freigegeben übernommen</AlertTitle>
+              <AlertDescription>
+                Neue Einträge ohne Eintragstyp gelten als mit dem Partner bereits abgestimmt und werden <em>freigegeben</em>. Fehlt
+                der Eintragstyp versehentlich, bitte abbrechen und in der Datei <code>n</code>, <code>c</code> oder <code>d</code> setzen.
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="max-h-56 overflow-auto rounded-md border">
             <Table>
               <TableHeader>
@@ -241,6 +258,7 @@ function CheckInSummary({
                   <TableHead>DMC</TableHead>
                   <TableHead>Tech Name</TableHead>
                   <TableHead>Eintragstyp</TableHead>
+                  <TableHead>Status danach</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -250,6 +268,9 @@ function CheckInSummary({
                     <TableCell>{candidate.fields.techname}</TableCell>
                     <TableCell>
                       <EntryTypeLabel type={candidate.fields.dmentryType} />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {candidate.fields.dmentryType === "" ? "freigegeben" : "in Bearbeitung"}
                     </TableCell>
                   </TableRow>
                 ))}

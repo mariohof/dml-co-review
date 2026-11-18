@@ -4,7 +4,7 @@
 **Created:** 2026-11-11
 **Last Updated:** 2026-11-18
 
-> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Freigabe-Nachweis und Freigabestand können statt aus einem REPLY auch aus einem Check-in stammen (Bestand übernehmen): Herkunft REPLY oder Check-in; der Verweis auf den REPLY-Archivstand ist dann leer. Gültigkeitsprüfung beim Laden entsprechend anpassen. Umsetzung zusammen mit PROJ-10 ausstehend.
+> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Freigabe-Nachweis und Freigabestand können statt aus einem REPLY auch aus einem Check-in stammen (Bestand übernehmen): Herkunft REPLY oder Check-in; der Verweis auf den REPLY-Archivstand ist dann leer. Gültigkeitsprüfung beim Laden entsprechend anpassen. Umgesetzt 2026-11-18 (`schema.ts`: `replyArchiveId` nullable, keine neue Formatversion).
 
 > **Refinement 2026-11-16 (über `/refine PROJ-10`):** Fehlt in den Beispieldateien der DM-Ausgabetyp, wird er bei den Demo-Einträgen aus dem Eintragstyp abgeleitet (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) statt immer `new`. Grund: neue Typ-Regel beim Check-in (PROJ-8 F / PROJ-10). PHUNGUN: 11 Einträge `d` erhalten `deleted`, 21 Einträge `n` erhalten `new`. Archivierte XML-Dateien bleiben byte-genau. Bereits im Browser gespeicherte Daten werden nicht umgestellt (Demo-Daten zurücksetzen). Umgesetzt 2026-11-16 (`demo-data.ts` nutzt `deriveIssueType` aus `src/lib/dmrl/issue-type.ts`).
 

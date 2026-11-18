@@ -30,7 +30,7 @@ import {
   type HistoryFilter,
 } from "@/lib/dmrl/archive"
 import { downloadBytes } from "@/lib/files/download"
-import { releaseInfo, releaseSnapshots } from "@/lib/workflows/release"
+import { CHECKIN_RELEASE_LABEL, isCheckinRelease, releaseInfo, releaseSnapshots } from "@/lib/workflows/release"
 
 const TABS = ["austausch", "freigaben", "verlauf"] as const
 type Tab = (typeof TABS)[number]
@@ -217,7 +217,7 @@ function ReleasesTab({ dmrl }: { dmrl: Dmrl }) {
         <TableHeader>
           <TableRow>
             <TableHead>Freigegeben am</TableHead>
-            <TableHead>REPLY</TableHead>
+            <TableHead>Herkunft</TableHead>
             <TableHead>Bearbeiter</TableHead>
             <TableHead>Einträge</TableHead>
             <TableHead className="text-right">Aktionen</TableHead>
@@ -230,7 +230,13 @@ function ReleasesTab({ dmrl }: { dmrl: Dmrl }) {
               <TableRow key={snapshot.id}>
                 <TableCell className="whitespace-nowrap">{formatDateTime(snapshot.createdAt)}</TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {info.partner?.code} <span className="font-mono">{info.versionIndex}</span>
+                  {isCheckinRelease(snapshot) ? (
+                    CHECKIN_RELEASE_LABEL
+                  ) : (
+                    <>
+                      REPLY {info.partner?.code} <span className="font-mono">{info.versionIndex}</span>
+                    </>
+                  )}
                 </TableCell>
                 <TableCell>
                   <UserName userId={snapshot.userId} />

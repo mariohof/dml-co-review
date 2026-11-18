@@ -4,7 +4,7 @@
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-18
 
-> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Regel F — die Zeile „DMC neu und Eintragstyp ≠ `n` → Fehler“ entfällt. Neue Einträge dürfen `n`, `c`, `d` oder keinen Eintragstyp haben (Bestand aus laufendem Projekt übernehmen); neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* (Details PROJ-10). Umsetzung zusammen mit PROJ-10 ausstehend.
+> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Regel F — die Zeile „DMC neu und Eintragstyp ≠ `n` → Fehler“ entfällt. Neue Einträge dürfen `n`, `c`, `d` oder keinen Eintragstyp haben (Bestand aus laufendem Projekt übernehmen); neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* (Details PROJ-10). Umgesetzt 2026-11-18 zusammen mit PROJ-10 (`checkin.ts`: F1 entfernt, `isReleasedOnTakeover`).
 
 > **Refinement 2026-11-16 (über `/refine PROJ-10`):** Regel A erlaubt zusätzlich den DM-Ausgabetyp `status`. Regel F prüft beim Check-in, ob DM-Ausgabetyp und Eintragstyp zusammenpassen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). Ersetzt die bisherige Zeile „unabhängig, erlaubt“. Umgesetzt 2026-11-16 zusammen mit PROJ-10 (`checkin.ts`: `checkIssueTypeMatchesEntryType`; `src/lib/dmrl/issue-type.ts`).
 

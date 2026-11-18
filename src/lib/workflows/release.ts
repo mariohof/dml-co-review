@@ -33,8 +33,13 @@ export interface ReleaseInfo {
   versionIndex: string
 }
 
+/** Freigabe durch Übernahme Bestand per Check-in statt durch REPLY (PROJ-10, Refinement 2026-11-18) */
+export const isCheckinRelease = (snapshot: Pick<ReleaseSnapshot, "replyArchiveId">): boolean => snapshot.replyArchiveId === null
+
+export const CHECKIN_RELEASE_LABEL = "Übernahme per Check-in"
+
 export function releaseInfo(data: Dataset, snapshot: ReleaseSnapshot): ReleaseInfo {
-  const reply = data.archive.find((a) => a.id === snapshot.replyArchiveId) ?? null
+  const reply = snapshot.replyArchiveId ? (data.archive.find((a) => a.id === snapshot.replyArchiveId) ?? null) : null
   return {
     snapshot,
     reply,
@@ -46,8 +51,15 @@ export function releaseInfo(data: Dataset, snapshot: ReleaseSnapshot): ReleaseIn
   }
 }
 
-/** „12.11.2026, REPLY C1234 00002-2026" */
+/** Herkunft der Freigabe: „REPLY C1234 00002-2026" bzw. „Übernahme per Check-in" */
+export function releaseSourceLabel(info: ReleaseInfo): string {
+  if (isCheckinRelease(info.snapshot)) return CHECKIN_RELEASE_LABEL
+  return ["REPLY", info.partner?.code, info.versionIndex].filter(Boolean).join(" ")
+}
+
+/** „12.11.2026, REPLY C1234 00002-2026" bzw. „18.11.2026, Übernahme per Check-in" */
 export function releaseLabel(info: ReleaseInfo): string {
+  if (isCheckinRelease(info.snapshot)) return `${formatDate(info.snapshot.createdAt)}, ${CHECKIN_RELEASE_LABEL}`
   return `${formatDate(info.snapshot.createdAt)}, ${["REPLY", info.partner?.code, info.versionIndex].filter(Boolean).join(" ")}`
 }
 

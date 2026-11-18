@@ -60,6 +60,8 @@ export const IN_PROGRESS_WITHOUT_TYPE = "Eintrag in Bearbeitung braucht einen Ei
 
 /**
  * Gruppe F — Eintragstyp plausibel (manuell gesetzt).
+ * Neue Einträge dürfen jeden Eintragstyp haben (Refinement 2026-11-18, „Bestand übernehmen"): mit n/c/d → *in Bearbeitung*,
+ * ohne Eintragstyp → *freigegeben* (siehe `releasedOnTakeover`).
  * Grundsatz (Refinement 2026-11-14, BUG-QA4-1): Nach dem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp —
  * SEND nimmt nur Einträge mit n/c/d mit. Betrifft geänderte Einträge (auch nur Eintragstyp entfernt) und unveränderten
  * Altbestand, der bereits *in Bearbeitung* ohne Eintragstyp ist. Unveränderte freigegebene Einträge ohne Typ bleiben erlaubt.
@@ -69,9 +71,6 @@ export function checkEntryTypes(comparison: Comparison): Finding[] {
   for (const { candidate: c, classification, changedFields, previous } of comparison.entries) {
     const dmc = formatDmc(c.fields)
     const withoutType = c.fields.dmentryType === ""
-    if (classification === "neu" && c.fields.dmentryType !== "n") {
-      findings.push({ severity: "fehler", group: "F", line: c.line, dmc, field: "dmentryType", message: "Neuer Eintrag muss Eintragstyp ‚n' haben." })
-    }
     if (classification === "geaendert" && withoutType) {
       const businessChange = changedFields.some((f) => !NON_BUSINESS.includes(f))
       const message = businessChange ? "Geänderter Eintrag ohne Eintragstyp (n, c oder d setzen)." : IN_PROGRESS_WITHOUT_TYPE
@@ -127,6 +126,15 @@ export const answerTakeoverBlockers = (comparison: Comparison): ComparedEntry[] 
 export const ANSWER_TAKEOVER_BLOCKED =
   "Eintragstyp setzen (n, c oder d), damit der Eintrag erneut gesendet werden kann — Datei korrigieren oder Antworten nicht übernehmen."
 
+/**
+ * Bestand übernehmen (Refinement 2026-11-18): neue Einträge ohne Eintragstyp gelten als mit dem Partner abgestimmt
+ * und werden beim Check-in *freigegeben*. Maßgeblich ist allein der fehlende Eintragstyp, nicht `answer`.
+ */
+export const isReleasedOnTakeover = (entry: ComparedEntry): boolean =>
+  entry.classification === "neu" && entry.candidate.fields.dmentryType === ""
+
+export const releasedOnTakeover = (comparison: Comparison): ComparedEntry[] => comparison.entries.filter(isReleasedOnTakeover)
+
 /** Wirksame Einordnung: mit Antwortübernahme zählt eine reine Antwortabweichung als Änderung */
 export const effectiveClassification = (entry: ComparedEntry, takeAnswers: boolean): Classification =>
   takeAnswers && entry.answerChanged && entry.classification === "unveraendert" ? "geaendert" : entry.classification
@@ -137,6 +145,8 @@ export interface CheckinSummary {
   geaendert: number
   unveraendert: number
   loeschungen: number
+  /** davon neue Einträge ohne Eintragstyp, die als *freigegeben* übernommen werden (Refinement 2026-11-18) */
+  alsFreigegeben: number
 }
 
 /** Zahlen der Zusammenfassung — ohne bzw. mit Übernahme der Partnerantworten (aus demselben Abgleich) */
@@ -149,6 +159,7 @@ export function checkinSummary(candidates: Candidate[], comparison: Comparison |
     geaendert: count("geaendert"),
     unveraendert: count("unveraendert"),
     loeschungen: candidates.filter((c) => c.fields.dmentryType === "d").length,
+    alsFreigegeben: entries.filter(isReleasedOnTakeover).length,
   }
 }
 

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatDateTime } from "@/lib/data/queries"
 import type { Dmrl } from "@/lib/data/schema"
-import { latestRelease, releaseInfo } from "@/lib/workflows/release"
+import { isCheckinRelease, latestRelease, releaseInfo, releaseSourceLabel } from "@/lib/workflows/release"
 import { EntryTable } from "./entry-table"
 import { useReleaseExport } from "./release-export"
 
@@ -46,7 +46,7 @@ export function ReleaseSnapshotView({ dmrl, snapshotId }: { dmrl: Dmrl; snapshot
       <Alert className="border-primary/40 bg-primary/5">
         <History className="h-4 w-4" aria-hidden />
         <AlertTitle>
-          Freigabestand vom {formatDateTime(snapshot.createdAt)} (REPLY {info.partner?.code} {info.versionIndex})
+          Freigabestand vom {formatDateTime(snapshot.createdAt)} ({releaseSourceLabel(info)})
         </AlertTitle>
         <AlertDescription>
           Stand der Einträge zum Zeitpunkt der Freigabe — nicht der aktuelle Stand der DMRL. Nur lesend.
@@ -59,7 +59,8 @@ export function ReleaseSnapshotView({ dmrl, snapshotId }: { dmrl: Dmrl; snapshot
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Freigabestand</p>
           <h1 className="text-2xl font-semibold">{system?.name ?? "DMRL"}</h1>
           <p className="text-sm text-muted-foreground">
-            {snapshot.entries.length} Einträge · Partner {info.partner ? `${info.partner.code} ${info.partner.name}` : "—"} · übernommen von{" "}
+            {snapshot.entries.length} Einträge ·{" "}
+            {isCheckinRelease(snapshot) ? "Übernahme Bestand per Check-in" : `Partner ${info.partner ? `${info.partner.code} ${info.partner.name}` : "—"}`} · übernommen von{" "}
             {info.user?.name ?? "unbekannt"}
           </p>
         </div>

@@ -164,16 +164,41 @@ describe("Gruppen C, D, E, I", () => {
 })
 
 describe("Gruppe F — Eintragstyp gegen den bisherigen Stand", () => {
+  const ISSUE_TYPE_FOR: Record<string, string> = { n: "new", c: "changed", d: "deleted", "": "new" }
   const newEntry = (rows: EntrySnapshot[], type: string) => [
     ...rows,
-    { id: "neu", status: "in_bearbeitung" as const, fields: { ...rows[9].fields, itemloc: "B", dmentryType: type } },
+    {
+      id: "neu",
+      status: "in_bearbeitung" as const,
+      fields: { ...rows[9].fields, itemloc: "B", dmentryType: type, type: ISSUE_TYPE_FOR[type] },
+    },
   ]
 
-  it("verlangt bei neuen Einträgen Eintragstyp n", () => {
-    expect(messages(vehicleCsv((rows) => newEntry(rows, "c")))).toContain("F: Neuer Eintrag muss Eintragstyp ‚n' haben.")
-    const ok = runCheckinCheck(vehicleCsv((rows) => newEntry(rows, "n")), vehicleContext)
-    expect(errorCount(ok.report)).toBe(0)
-    expect(ok.summary).toMatchObject({ neu: 1, unveraendert: 10 })
+  it("erlaubt bei neuen Einträgen jeden Eintragstyp — auch keinen (Refinement 2026-11-18, Bestand übernehmen)", () => {
+    for (const type of ["n", "c", "d", ""]) {
+      const result = runCheckinCheck(vehicleCsv((rows) => newEntry(rows, type)), vehicleContext)
+      expect(result.report.findings.filter((f) => f.severity === "fehler"), `Eintragstyp ‚${type}'`).toEqual([])
+      expect(result.summary).toMatchObject({ neu: 1, unveraendert: 10, alsFreigegeben: type === "" ? 1 : 0 })
+    }
+    expect(messages(vehicleCsv((rows) => newEntry(rows, "c")))).not.toContain("F: Neuer Eintrag muss Eintragstyp ‚n' haben.")
+  })
+
+  it("prüft bei neuen Einträgen mit Eintragstyp weiterhin den DM-Ausgabetyp", () => {
+    const csv = vehicleCsv((rows) => {
+      const added = newEntry(rows, "c")
+      added[added.length - 1].fields.type = "new"
+      return added
+    })
+    expect(messages(csv)).toContain("F: Eintragstyp ‚c‘ verlangt DM-Ausgabetyp ‚changed‘, ‚revised‘ oder ‚status‘ — gefunden: ‚new‘")
+  })
+
+  it("prüft bei neuen Einträgen ohne Eintragstyp den DM-Ausgabetyp nicht", () => {
+    const csv = vehicleCsv((rows) => {
+      const added = newEntry(rows, "")
+      added[added.length - 1].fields.type = "deleted"
+      return added
+    })
+    expect(errorCount(runCheckinCheck(csv, vehicleContext).report)).toBe(0)
   })
 
   it("verlangt bei geänderten fachlichen Feldern einen Eintragstyp", () => {

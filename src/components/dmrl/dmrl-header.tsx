@@ -28,12 +28,17 @@ export function DmrlHeader({ dmrl }: { dmrl: Dmrl }) {
   const send = latestSendInfo(data, dmrl.id)
   const lockUser = dmrl.lock ? data.users.find((u) => u.id === dmrl.lock?.userId) : null
   const release = dmrl.release
-  const releaseReply = release ? data.archive.find((a) => a.id === release.replyArchiveId) : null
+  const releaseReply = release?.replyArchiveId ? data.archive.find((a) => a.id === release.replyArchiveId) : null
   const releasePartner = releaseReply ? data.organisations.find((o) => o.id === releaseReply.partnerOrganisationId) : null
   const releaseUser = release ? data.users.find((u) => u.id === release.userId) : null
-  const releaseText = release && releaseReply
-    ? `${formatDate(release.at)} durch REPLY ${releasePartner?.code ?? ""} ${versionIndexOf(releaseReply.dmlc)}`
-    : null
+  // Freigabe durch REPLY oder durch Übernahme Bestand per Check-in (PROJ-10, Refinement 2026-11-18)
+  const releaseText = !release
+    ? null
+    : release.replyArchiveId === null
+      ? `${formatDate(release.at)} durch Übernahme Bestand per Check-in`
+      : releaseReply
+        ? `${formatDate(release.at)} durch REPLY ${releasePartner?.code ?? ""} ${versionIndexOf(releaseReply.dmlc)}`
+        : null
   const latestSnapshot = latestRelease(data, dmrl.id)
   const lastRelease = latestSnapshot ? releaseInfo(data, latestSnapshot) : null
   const snapshotHref = (snapshotId: string) => `/dmrl/${encodeURIComponent(dmrl.id)}/freigabestand/${encodeURIComponent(snapshotId)}`

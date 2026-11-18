@@ -4,7 +4,7 @@
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-18
 
-> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Neben dem REPLY kann auch ein Check-in Einträge *freigeben*: Neue Einträge ohne Eintragstyp werden als abgestimmter Bestand *freigegeben*. Sind danach alle Einträge *freigegeben*, wird die DMRL *freigegeben* mit Freigabe-Nachweis „Übernahme Bestand per Check-in“ (ohne REPLY) und Freigabestand. Umsetzung zusammen mit PROJ-10 ausstehend.
+> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Neben dem REPLY kann auch ein Check-in Einträge *freigeben*: Neue Einträge ohne Eintragstyp werden als abgestimmter Bestand *freigegeben*. Sind danach alle Einträge *freigegeben*, wird die DMRL *freigegeben* mit Freigabe-Nachweis „Übernahme Bestand per Check-in“ (ohne REPLY) und Freigabestand. Umgesetzt 2026-11-18 zusammen mit PROJ-10 (`check-in.ts`, `release.ts`, Kopfbereich, Freigabestand-Seite, Archiv).
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Kopfbereich, Banner, Tabelle

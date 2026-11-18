@@ -107,6 +107,86 @@ describe("Übernahme", () => {
     expect(datasetSchema.safeParse(result.data).success).toBe(true)
   })
 
+  describe("Bestand übernehmen (Refinement 2026-11-18)", () => {
+    const ben = (data: Dataset) => user(data, DEMO_IDS.editorBen)
+    const added = (rows: EntrySnapshot[], itemloc: string, dmentryType: string, type = "new"): EntrySnapshot => ({
+      id: `neu-${itemloc}`,
+      status: "in_bearbeitung",
+      fields: { ...rows[9].fields, itemloc, dmentryType, type, answer: "", answer_comment: "" },
+    })
+
+    it("neue Einträge mit n/c/d → in Bearbeitung, ohne Eintragstyp → freigegeben; DMRL in Bearbeitung", () => {
+      const data = checkedOut()
+      const csv = csvOf(data, (rows) => [
+        ...rows,
+        added(rows, "B", "c", "changed"),
+        added(rows, "C", "d", "deleted"),
+        added(rows, "D", ""),
+      ])
+      const checked = check(data, csv)
+      expect(checked.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
+      expect(checked.summary).toMatchObject({ neu: 3, alsFreigegeben: 1 })
+      const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), checked, AT)
+      if (!result.ok) throw new Error(result.message)
+      const byItemloc = (loc: string) => vehicleEntries(result.data).find((e) => e.fields.itemloc === loc && !vehicleEntries(data).some((x) => x.id === e.id))
+      expect(byItemloc("B")?.status).toBe("in_bearbeitung")
+      expect(byItemloc("C")?.status).toBe("in_bearbeitung")
+      expect(byItemloc("D")?.status).toBe("freigegeben")
+      const after = dmrl(result.data, DEMO_IDS.dmrlVehicle)
+      expect(after.status).toBe("in_bearbeitung")
+      expect(after.release).toBeNull()
+      expect(result.data.releases).toHaveLength(data.releases.length)
+      expect(result.data.history.at(-1)?.details).toBe("Check-in — 3 neu (davon 1 als freigegeben übernommen), 0 geändert, 10 unverändert")
+      expect(datasetSchema.safeParse(result.data).success).toBe(true)
+    })
+
+    it("alle Einträge danach freigegeben → DMRL freigegeben mit Nachweis „Übernahme per Check-in“ und Freigabestand", () => {
+      const data = checkedOut(true)
+      const checked = check(data, csvOf(data, (rows) => [...rows, added(rows, "B", "")]))
+      expect(checked.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
+      const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), checked, AT)
+      if (!result.ok) throw new Error(result.message)
+      const after = dmrl(result.data, DEMO_IDS.dmrlVehicle)
+      expect(after.status).toBe("freigegeben")
+      expect(after.lock).toBeNull()
+      expect(after.release).toEqual({ at: AT, replyArchiveId: null, userId: DEMO_IDS.editorBen })
+      const snapshot = result.data.releases.at(-1)!
+      expect(snapshot).toMatchObject({ dmrlId: DEMO_IDS.dmrlVehicle, createdAt: AT, replyArchiveId: null, userId: DEMO_IDS.editorBen })
+      expect(snapshot.entries).toHaveLength(11)
+      expect(snapshot.entries.every((e) => e.status === "freigegeben")).toBe(true)
+      expect(result.data.history.at(-1)?.details).toBe(
+        "Check-in — 1 neu (davon 1 als freigegeben übernommen), 0 geändert, 10 unverändert — DMRL freigegeben (Übernahme Bestand)"
+      )
+      // Grundregel PROJ-14 und Ladeprüfung (Freigabe ohne REPLY ist gültig)
+      expect(datasetSchema.safeParse(result.data).success).toBe(true)
+    })
+
+    it("Erstübernahme: DMRL ohne Einträge, Datei nur mit Einträgen ohne Eintragstyp → DMRL freigegeben", () => {
+      const demo = buildDemoDataset()
+      const template = vehicleEntries(demo)
+      const empty: Dataset = { ...demo, entries: demo.entries.filter((e) => e.dmrlId !== DEMO_IDS.dmrlVehicle) }
+      const out = executeCheckOut(empty, DEMO_IDS.dmrlVehicle, user(empty, DEMO_IDS.editorBen), AT)
+      if (!out.ok) throw new Error(out.message)
+      const csv = writeEntriesCsv(template.map(({ id, fields }) => ({ id, status: "freigegeben" as const, fields: { ...fields, dmentryType: "", type: "new", answer: "", answer_comment: "" } })))
+      const checked = check(out.data, csv)
+      expect(checked.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
+      const result = executeCheckIn(out.data, DEMO_IDS.dmrlVehicle, ben(out.data), checked, AT)
+      if (!result.ok) throw new Error(result.message)
+      expect(vehicleEntries(result.data).every((e) => e.status === "freigegeben")).toBe(true)
+      expect(dmrl(result.data, DEMO_IDS.dmrlVehicle).status).toBe("freigegeben")
+      expect(datasetSchema.safeParse(result.data).success).toBe(true)
+    })
+
+    it("Check-in ohne Änderung bei freigegebener DMRL erzeugt keinen neuen Nachweis und keinen Freigabestand", () => {
+      const data = checkedOut(true)
+      const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), check(data, csvOf(data)), AT)
+      if (!result.ok) throw new Error(result.message)
+      expect(dmrl(result.data, DEMO_IDS.dmrlVehicle).status).toBe("freigegeben")
+      expect(dmrl(result.data, DEMO_IDS.dmrlVehicle).release).toEqual(dmrl(data, DEMO_IDS.dmrlVehicle).release)
+      expect(result.data.releases).toHaveLength(data.releases.length)
+    })
+  })
+
   it("entfernte Einträge verschwinden nach der Übernahme nicht ohne Fehler (Gruppe F)", () => {
     const data = checkedOut()
     const checked = check(data, csvOf(data, (rows) => rows.slice(1)))

@@ -162,7 +162,8 @@ export type DmrlLock = z.infer<typeof dmrlLockSchema>
 
 export const releaseProofSchema = z.object({
   at: timestamp,
-  replyArchiveId: id,
+  /** REPLY, durch den freigegeben wurde; null = Übernahme Bestand per Check-in (PROJ-10, Refinement 2026-11-18) */
+  replyArchiveId: id.nullable(),
   userId: id,
 })
 export type ReleaseProof = z.infer<typeof releaseProofSchema>
@@ -213,7 +214,8 @@ export const releaseSnapshotSchema = z.object({
   id,
   dmrlId: id,
   createdAt: timestamp,
-  replyArchiveId: id,
+  /** null = Freigabe durch Übernahme Bestand per Check-in (PROJ-10, Refinement 2026-11-18) */
+  replyArchiveId: id.nullable(),
   userId: id,
   entries: z.array(entrySnapshotSchema),
 })
@@ -303,7 +305,7 @@ export const datasetSchema = z
       if (dmrl.lock && !userIds.has(dmrl.lock.userId)) issue(`DMRL ${dmrl.id}: Sperrinhaber fehlt`)
       if (dmrl.release) {
         if (!userIds.has(dmrl.release.userId)) issue(`DMRL ${dmrl.id}: Freigabe-Benutzer fehlt`)
-        if (!archiveIds.has(dmrl.release.replyArchiveId)) issue(`DMRL ${dmrl.id}: Freigabe-REPLY fehlt`)
+        if (dmrl.release.replyArchiveId && !archiveIds.has(dmrl.release.replyArchiveId)) issue(`DMRL ${dmrl.id}: Freigabe-REPLY fehlt`)
       }
 
       // Grundregel PROJ-14: freigegeben ⇔ mindestens ein Eintrag und alle Einträge freigegeben
@@ -338,7 +340,7 @@ export const datasetSchema = z
     for (const release of data.releases) {
       if (!dmrlIds.has(release.dmrlId)) issue(`Freigabestand ${release.id}: DMRL fehlt`)
       if (!userIds.has(release.userId)) issue(`Freigabestand ${release.id}: Benutzer fehlt`)
-      if (!archiveIds.has(release.replyArchiveId)) issue(`Freigabestand ${release.id}: REPLY fehlt`)
+      if (release.replyArchiveId && !archiveIds.has(release.replyArchiveId)) issue(`Freigabestand ${release.id}: REPLY fehlt`)
     }
 
     for (const entry of data.history) {

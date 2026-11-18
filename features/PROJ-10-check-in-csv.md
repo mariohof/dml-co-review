@@ -1,10 +1,10 @@
 # PROJ-10: Check-in CSV
 
-## Status: Planned
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-18
 
-> **Refinement 2026-11-18 — Bestand übernehmen:** Neue Einträge brauchen nicht mehr den Eintragstyp `n` (PROJ-8 Regel F, Zeile „DMC neu und Eintragstyp ≠ n“ entfällt). Anlass: Eine DMRL aus einem laufenden Projekt hat bereits einen Bearbeitungsstand erreicht, der übernommen werden soll. Neue Einträge mit `n`, `c` oder `d` werden *in Bearbeitung*; neue Einträge **ohne** Eintragstyp gelten als bereits abgestimmter Bestand und werden *freigegeben*. Sind danach alle Einträge *freigegeben*, wird die DMRL *freigegeben* — mit Freigabe-Nachweis „Übernahme Bestand per Check-in“ und Freigabestand. Betrifft PROJ-8 (Regel F), PROJ-14 (Statusmodell, Nachweis, Freigabestand), PROJ-1 (Datenmodell) und PRD (Kernablauf Freigabe). Geänderte Stellen sind mit *(Refinement 2026-11-18)* markiert.
+> **Refinement 2026-11-18 — Bestand übernehmen:** Neue Einträge brauchen nicht mehr den Eintragstyp `n` (PROJ-8 Regel F, Zeile „DMC neu und Eintragstyp ≠ n“ entfällt). Anlass: Eine DMRL aus einem laufenden Projekt hat bereits einen Bearbeitungsstand erreicht, der übernommen werden soll. Neue Einträge mit `n`, `c` oder `d` werden *in Bearbeitung*; neue Einträge **ohne** Eintragstyp gelten als bereits abgestimmter Bestand und werden *freigegeben*. Sind danach alle Einträge *freigegeben*, wird die DMRL *freigegeben* — mit Freigabe-Nachweis „Übernahme Bestand per Check-in“ und Freigabestand. Betrifft PROJ-8 (Regel F), PROJ-14 (Statusmodell, Nachweis, Freigabestand), PROJ-1 (Datenmodell) und PRD (Kernablauf Freigabe). Geänderte Stellen sind mit *(Refinement 2026-11-18)* markiert. Umgesetzt 2026-11-18 (`/frontend proj-10`).
 
 > **Refinement 2026-11-16:** Eintragstyp und DM-Ausgabetyp müssen beim Check-in zueinander passen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). DM-Ausgabetyp `status` wird gültig. Betrifft PROJ-8 (Regel A und F) und PROJ-1 (Demo-Daten). Geänderte Stellen sind mit *(Refinement 2026-11-16)* markiert. Umgesetzt 2026-11-16 (`/frontend proj-10`).
 
@@ -478,6 +478,27 @@ _Stand 2026-11-16 — `/frontend proj-10`; ohne eigenes Tech Design (kleine Rege
 **Hinweise**
 - Bereits im Browser gespeicherte Demo-Daten (PHUNGUN `d` + `new`) werden nicht umgestellt. Ohne Zurücksetzen meldet der Check-in dort Typ-Fehler, wie in der Spec vorgesehen.
 - Ein Eintrag mit `n` und Ausgabetyp `deleted` ist jetzt ein Fehler. Vorher war diese Kombination ausdrücklich erlaubt.
+
+### Refinement 2026-11-18 — Bestand übernehmen (Regel F1 entfällt)
+**Umgesetzt 2026-11-18 (`/frontend proj-10`)**
+
+- **Regelwerk** (`src/lib/rules/check/checkin.ts`)
+  - Prüfung „Neuer Eintrag muss Eintragstyp ‚n' haben.“ entfernt; neue Einträge dürfen `n`, `c`, `d` oder keinen Eintragstyp haben. Die Typ-Regel (Eintragstyp ↔ DM-Ausgabetyp) gilt weiter für neue Einträge mit Eintragstyp.
+  - neu: `isReleasedOnTakeover` / `releasedOnTakeover` (neu **und** ohne Eintragstyp); `CheckinSummary.alsFreigegeben` zählt diese Einträge.
+- **Übernahme** (`src/lib/workflows/check-in.ts`, `executeCheckIn`)
+  - neue Einträge ohne Eintragstyp → *freigegeben*, alle anderen neuen → *in Bearbeitung*.
+  - DMRL-Status: *freigegeben*, wenn mindestens ein Eintrag als *freigegeben* übernommen wurde **und** danach alle Einträge *freigegeben* sind. Dann werden Freigabe-Nachweis (`release`, `replyArchiveId: null`) und ein Freigabestand (`replyArchiveId: null`) gespeichert. Sonst gilt die bisherige Regel (Änderung → *in Bearbeitung*, keine Änderung → unverändert). Ein Check-in ohne Änderung erzeugt keinen neuen Nachweis.
+  - Verlaufstext: „Check-in — N neu (davon M als freigegeben übernommen), …“, bei Freigabe zusätzlich „— DMRL freigegeben (Übernahme Bestand)“ (kein neuer Verlaufstyp).
+- **Datenmodell** (`src/lib/data/schema.ts`): `replyArchiveId` in Freigabe-Nachweis und Freigabestand ist jetzt `null`-fähig (null = Übernahme per Check-in). Die Ladeprüfung prüft den REPLY-Verweis nur, wenn er gesetzt ist. Die Formatversion bleibt gleich: Gespeicherte Daten bleiben gültig, eine Migration ist nicht nötig.
+- **Anzeige**
+  - Check-in-Dialog: Überschrift „Neue Einträge (N, davon M als freigegeben übernommen)“, grüner Hinweis „Bestand übernehmen“ mit der Aufforderung, bei vergessenem Eintragstyp abzubrechen, sowie die Spalte „Status danach“. Die Erfolgsmeldung nennt die Zahl und gegebenenfalls „Die DMRL ist freigegeben.“
+  - Kopfbereich (`dmrl-header.tsx`): „Freigegeben am [Datum] durch Übernahme Bestand per Check-in — übernommen von [Name]“. Die Angabe „Letzte Freigabe: [Datum], Übernahme per Check-in“ kommt aus `releaseLabel` (`release.ts`, neu: `isCheckinRelease`, `releaseSourceLabel`).
+  - Freigabestand-Seite: Titel „Freigabestand vom … (Übernahme per Check-in)“, statt Partner steht „Übernahme Bestand per Check-in“. Archiv-Tab „Freigabestände“: Spalte „REPLY“ heißt jetzt „Herkunft“.
+  - XML-Export eines Check-in-Freigabestands: Ohne REPLY fällt `dmlc`/`dmlref` auf den eigenen DML-Code zurück, über denselben Weg wie bisher für fehlende SEND-Angaben.
+- **Tests**
+  - `checkin.test.ts`: F1-Test ersetzt (n/c/d/leer fehlerfrei, `alsFreigegeben`); Typ-Regel bei neuem `c`; keine Typ-Prüfung ohne Eintragstyp.
+  - `check-in.test.ts`, Block „Bestand übernehmen“ (4 Fälle): Mischfall, alle freigegeben (Nachweis und Freigabestand), Erstübernahme in eine leere DMRL, kein neuer Nachweis ohne Änderung. Die Ladeprüfung ist jeweils gültig.
+  - `release.test.ts`: Beschriftung, CSV und XML eines Freigabestands ohne REPLY.
 
 ## QA Test Results
 
