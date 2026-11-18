@@ -15,5 +15,12 @@ export const ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE: Readonly<Record<string, readonly
 
 export const DEFAULT_ISSUE_TYPE = "new"
 
+/**
+ * Zulässige DM-Ausgabetypen für einen Eintragstyp; undefined für leere oder ungültige Werte.
+ * Nur eigene Schlüssel — sonst liefern Werte wie `constructor` oder `__proto__` geerbte Objekteigenschaften (BUG-QA7-1).
+ */
+export const allowedIssueTypes = (entryType: string): readonly string[] | undefined =>
+  Object.hasOwn(ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE, entryType) ? ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE[entryType] : undefined
+
 /** Abgeleiteter Ausgabetyp für fehlende Werte: n → new, c → changed, d → deleted, sonst new (PROJ-1, PROJ-20) */
-export const deriveIssueType = (entryType: string): string => ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE[entryType]?.[0] ?? DEFAULT_ISSUE_TYPE
+export const deriveIssueType = (entryType: string): string => allowedIssueTypes(entryType)?.[0] ?? DEFAULT_ISSUE_TYPE

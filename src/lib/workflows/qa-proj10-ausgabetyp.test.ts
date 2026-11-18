@@ -39,8 +39,8 @@ const vehicle = () => {
 }
 
 describe("Red Team — Eingaben, die die Typ-Regel umgehen oder stören könnten", () => {
-  // BUG-QA7-1: schlägt mit dem aktuellen Code fehl (TypeError: allowed.includes is not a function) — nach der Behebung aktivieren
-  it.skip.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])(
+  // BUG-QA7-1 (behoben 2026-11-18): vorher TypeError „allowed.includes is not a function“
+  it.each(["constructor", "__proto__", "toString", "hasOwnProperty", "valueOf"])(
     "BUG-QA7-1: Eintragstyp ‚%s‘ führt nicht zum Absturz, sondern zu einem Formatfehler A",
     (entryType) => {
       const { snapshot, context } = vehicle()

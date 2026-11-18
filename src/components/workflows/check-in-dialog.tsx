@@ -77,7 +77,15 @@ function CheckInFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
       setStep({ kind: "auswahl", message: read.message })
       return
     }
-    const result = checkCheckinFile(data, dmrl, read.text)
+    let result: CheckinResult
+    try {
+      result = checkCheckinFile(data, dmrl, read.text)
+    } catch (error) {
+      // Unerwarteter Fehler in der Prüfung: Meldung statt dauerhaft „Prüfe …“ (BUG-QA7-1)
+      console.error(error)
+      setStep({ kind: "auswahl", message: "Die Datei konnte nicht geprüft werden. Bitte die Datei kontrollieren und erneut versuchen." })
+      return
+    }
     if (errorCount(result.report) > 0 && currentUser) {
       update((current) => recordRejectedCheckIn(current, dmrl.id, currentUser, result))
     }

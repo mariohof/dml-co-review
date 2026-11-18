@@ -1,6 +1,6 @@
 import { ENTRY_FIELD_NAMES, type EntryFields, type EntrySnapshot } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
-import { ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE, ISSUE_TYPES } from "@/lib/dmrl/issue-type"
+import { allowedIssueTypes, ISSUE_TYPES } from "@/lib/dmrl/issue-type"
 import { readCheckinCsv } from "./csv-reader"
 import { checkCommon } from "./entry-rules"
 import type { Candidate, Finding, Report } from "./types"
@@ -95,7 +95,7 @@ const quoteList = (values: readonly string[]) => {
 
 /** Meldung der Typ-Regel, z. B. „Eintragstyp ‚d‘ verlangt DM-Ausgabetyp ‚deleted‘ — gefunden: ‚new‘" */
 export const issueTypeMismatch = (entryType: string, found: string) =>
-  `Eintragstyp ‚${entryType}‘ verlangt DM-Ausgabetyp ${quoteList(ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE[entryType])} — gefunden: ‚${found}‘`
+  `Eintragstyp ‚${entryType}‘ verlangt DM-Ausgabetyp ${quoteList(allowedIssueTypes(entryType) ?? [])} — gefunden: ‚${found}‘`
 
 /**
  * Gruppe F — Eintragstyp ↔ DM-Ausgabetyp (Refinement 2026-11-16, nur Check-in): n → new; c → changed/revised/status;
@@ -106,7 +106,7 @@ export function checkIssueTypeMatchesEntryType(comparison: Comparison): Finding[
   const findings: Finding[] = []
   for (const { candidate: c } of comparison.entries) {
     const { dmentryType, type } = c.fields
-    const allowed = ALLOWED_ISSUE_TYPES_BY_ENTRY_TYPE[dmentryType]
+    const allowed = allowedIssueTypes(dmentryType)
     if (!allowed || !(ISSUE_TYPES as readonly string[]).includes(type) || allowed.includes(type)) continue
     findings.push({ severity: "fehler", group: "F", line: c.line, dmc: formatDmc(c.fields), field: "type", message: issueTypeMismatch(dmentryType, type) })
   }

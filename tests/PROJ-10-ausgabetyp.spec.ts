@@ -74,8 +74,8 @@ test("1440 px: Typ-Meldung im Prüfbericht vollständig sichtbar, kein waagerech
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
 })
 
-// BUG-QA7-1: Die Prüfung stürzt bei diesen Eintragstypen ab; der Dialog bleibt bei „Prüfung läuft“ stehen. Nach der Behebung aktivieren.
-test.fixme("BUG-QA7-1: Eintragstyp ‚constructor‘ → Formatfehler im Prüfbericht statt hängender Prüfung", async ({ page }) => {
+// BUG-QA7-1 (behoben 2026-11-18): vorher blieb der Dialog bei „Prüfung läuft“ stehen.
+test("BUG-QA7-1: Eintragstyp ‚constructor‘ → Formatfehler im Prüfbericht statt hängender Prüfung", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   const file = await checkOut(page)
   const dialog = await upload(page, { ...file, csv: withFirstRow(file.csv, { dmentryType: "constructor" }) })

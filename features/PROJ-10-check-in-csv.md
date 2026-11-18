@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-18
 
@@ -695,6 +695,10 @@ Keine neuen Bugs in diesem Feature.
   - `tests/PROJ-10-ausgabetyp.spec.ts` „BUG-QA7-1 …“ (`test.fixme`)
   - Beide nach der Behebung aktivieren.
 - **Priority:** Fix before Weitergabe
+- **Status:** Behoben 2026-11-18 (`/frontend proj-10`), Bestätigung durch `/qa` ausstehend
+  - `src/lib/dmrl/issue-type.ts`: neue Funktion `allowedIssueTypes` liest nur eigene Schlüssel (`Object.hasOwn`); `deriveIssueType` und die Typ-Regel in `checkin.ts` nutzen sie. Werte wie `constructor` oder `__proto__` ergeben jetzt nur den Formatfehler A.
+  - `check-in-dialog.tsx`: Ausnahmen der Prüfung werden abgefangen. Statt dauerhaft „Prüfe …“ erscheint die Meldung „Die Datei konnte nicht geprüft werden. Bitte die Datei kontrollieren und erneut versuchen.“
+  - Tests aktiviert: `qa-proj10-ausgabetyp.test.ts` (5 Fälle), `tests/PROJ-10-ausgabetyp.spec.ts` („BUG-QA7-1 …“)
 
 ##### BUG-QA7-2: Ein Akzeptanzkriterium und ein Edge Case zur PHUNGUN-Demo sind so nicht erreichbar (Spec)
 - **Severity:** Low (Dokumentation)
