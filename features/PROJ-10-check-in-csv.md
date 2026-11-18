@@ -1,8 +1,10 @@
 # PROJ-10: Check-in CSV
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-16
+**Last Updated:** 2026-11-18
+
+> **Refinement 2026-11-18 — Bestand übernehmen:** Neue Einträge brauchen nicht mehr den Eintragstyp `n` (PROJ-8 Regel F, Zeile „DMC neu und Eintragstyp ≠ n“ entfällt). Anlass: Eine DMRL aus einem laufenden Projekt hat bereits einen Bearbeitungsstand erreicht, der übernommen werden soll. Neue Einträge mit `n`, `c` oder `d` werden *in Bearbeitung*; neue Einträge **ohne** Eintragstyp gelten als bereits abgestimmter Bestand und werden *freigegeben*. Sind danach alle Einträge *freigegeben*, wird die DMRL *freigegeben* — mit Freigabe-Nachweis „Übernahme Bestand per Check-in“ und Freigabestand. Betrifft PROJ-8 (Regel F), PROJ-14 (Statusmodell, Nachweis, Freigabestand), PROJ-1 (Datenmodell) und PRD (Kernablauf Freigabe). Geänderte Stellen sind mit *(Refinement 2026-11-18)* markiert.
 
 > **Refinement 2026-11-16:** Eintragstyp und DM-Ausgabetyp müssen beim Check-in zueinander passen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). DM-Ausgabetyp `status` wird gültig. Betrifft PROJ-8 (Regel A und F) und PROJ-1 (Demo-Daten). Geänderte Stellen sind mit *(Refinement 2026-11-16)* markiert. Umgesetzt 2026-11-16 (`/frontend proj-10`).
 
@@ -62,7 +64,8 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 **Eintragsstatus**
 | Eintrag in der CSV | Eintragsstatus danach |
 |---|---|
-| neu (DMC vorher nicht vorhanden) | *in Bearbeitung* |
+| neu (DMC vorher nicht vorhanden) mit Eintragstyp `n`, `c` oder `d` | *in Bearbeitung* *(Refinement 2026-11-18)* — vorher nur `n` erlaubt |
+| neu (DMC vorher nicht vorhanden) **ohne** Eintragstyp — Übernahme eines abgestimmten Bestands *(Refinement 2026-11-18)* | *freigegeben* |
 | geändert (irgendein Feld weicht ab, auch der Eintragstyp) | *in Bearbeitung* |
 | unverändert | bleibt (z. B. *freigegeben*, *zu überarbeiten*, *in Bearbeitung*) |
 | nur Antwortfelder abweichend, Übernahme **gewählt** *(Refinement 2026-11-14)* | *in Bearbeitung* — zählt als Änderung |
@@ -74,18 +77,22 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 
 **Grundsatz Eintragstyp** *(Refinement 2026-11-14, BUG-QA4-1)*: Nach dem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp (`n`, `c` oder `d`) — SEND nimmt nur solche Einträge mit. Ein entfernter Eintragstyp bei einem Eintrag, der *in Bearbeitung* wäre, ist ein Fehler (PROJ-8 Regel F); das gilt auch für Altbestand, der bereits *in Bearbeitung* ohne Eintragstyp ist.
 
+**Bestand übernehmen** *(Refinement 2026-11-18)*: Eine DMRL aus einem laufenden Projekt hat bereits einen Bearbeitungsstand erreicht, der übernommen werden soll. Neue Einträge dürfen deshalb jeden Eintragstyp haben (`n`, `c`, `d` oder keinen). Ein neuer Eintrag **ohne** Eintragstyp gilt als mit dem Partner bereits abgestimmt und wird *freigegeben* — neben dem REPLY die einzige Stelle, an der *freigegeben* entsteht. Maßgeblich ist allein der fehlende Eintragstyp, nicht der Wert in `answer`. Der Grundsatz Eintragstyp bleibt gewahrt: Es entsteht kein Eintrag *in Bearbeitung* ohne Eintragstyp. Die Zusammenfassung weist diese Einträge gesondert aus („davon N als *freigegeben* übernommen“), damit ein vergessener Eintragstyp vor der Übernahme auffällt.
+
 **Übernommene Partnerantworten** *(Refinement 2026-11-14)* setzen den Eintrag nie auf *freigegeben* oder *zu überarbeiten* — diese Status entstehen nur durch einen REPLY (PRD). Eine übernommene Antwortänderung zählt als Änderung (Eintrag *in Bearbeitung*, eine Freigabe der DMRL wird aufgehoben), damit *freigegeben* immer durch eine echte Partnerantwort belegt ist.
 
 **DMRL-Status**
 | Ergebnis | DMRL-Status danach |
 |---|---|
-| mindestens ein Eintrag neu oder geändert | *in Bearbeitung* — eine Freigabe wird aufgehoben (PRD, PROJ-14) |
+| mindestens ein Eintrag neu oder geändert und danach **nicht alle** Einträge *freigegeben* | *in Bearbeitung* — eine Freigabe wird aufgehoben (PRD, PROJ-14) |
+| mindestens ein Eintrag als *freigegeben* übernommen (neu ohne Eintragstyp) und danach **alle** Einträge *freigegeben* *(Refinement 2026-11-18)* | *freigegeben* — neuer Freigabe-Nachweis „Übernahme Bestand per Check-in“ (Datum, Bearbeiter, kein REPLY) und neuer Freigabestand (PROJ-14) |
 | keine Änderung | unverändert (z. B. bleibt *freigegeben*) |
 
 **Weiteres**
 - Antworten des Partners (`answer`, `answer_comment`) bleiben bei geänderten Einträgen erhalten, bis der nächste REPLY sie ersetzt; sie werden nicht mitgesendet (PROJ-12). Ist „Antworten aus der Datei übernehmen“ angekreuzt, gelten stattdessen die Werte aus der Datei *(Refinement 2026-11-14)*.
 - Sperre wird aufgehoben.
 - Workflow-Verlauf: „Check-in" mit Datum, Benutzer und Anzahl neu/geändert/unverändert (Anzeige → PROJ-15); bei Übernahme zusätzlich „N Antworten aus der Datei übernommen" *(Refinement 2026-11-14)*.
+- Zusammenfassung und Workflow-Verlauf nennen bei neuen Einträgen ohne Eintragstyp zusätzlich „davon N als freigegeben übernommen“; wird die DMRL dadurch *freigegeben*, enthält der Verlauf außerdem „DMRL freigegeben (Übernahme Bestand)“ *(Refinement 2026-11-18)*.
 - Ab dem ersten abgeschlossenen Check-in gelten DMRL, System und Originator-Organisation als **im Workflow verwendet** (PROJ-4/5/6) — auch wenn nichts geändert wurde.
 - Die CSV-Datei wird nicht archiviert.
 
@@ -97,6 +104,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - Als **Bearbeiter** möchte ich eine DMRL eines Partners oder Altprojekts samt Partnerantworten übernehmen (z. B. über PROJ-20 konvertiert), damit die bisherige Abstimmung als Information erhalten bleibt *(Refinement 2026-11-14)*.
 - Als **Bearbeiter** möchte ich bewusst entscheiden, ob abweichende Antworten aus der Datei übernommen werden, damit versehentlich geänderte Antworten nicht unbemerkt übernommen werden *(Refinement 2026-11-14)*.
 - Als **Product Owner** möchte ich zeigen, dass eine freigegebene DMRL durch einen Check-in mit Änderungen ihre Freigabe verliert, ein Check-in ohne Änderungen aber nicht.
+- Als **Bearbeiter** möchte ich eine DMRL aus einem laufenden Projekt mit ihrem erreichten Bearbeitungsstand übernehmen (neue Einträge mit `c`/`d` oder ohne Eintragstyp), damit bereits abgestimmte Einträge nicht erneut mit `n` gesendet werden müssen *(Refinement 2026-11-18)*.
 
 ## Out of Scope
 - Prüfregeln selbst → PROJ-8
@@ -154,7 +162,10 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 ### Übernehmen / Abbrechen
 - [ ] Angenommen die Zusammenfassung ist sichtbar, wenn „Abbrechen" gewählt wird, dann wird nichts übernommen und die Sperre bleibt bestehen
 - [ ] Angenommen die Zusammenfassung ist sichtbar, wenn „Übernehmen" gewählt wird, dann werden alle Einträge übernommen, die Sperre ist aufgehoben und eine Erfolgsmeldung erscheint
-- [ ] Angenommen ein Eintrag ist neu, wenn übernommen wird, dann hat er den Status *in Bearbeitung*
+- [ ] Angenommen ein Eintrag ist neu und hat Eintragstyp `n`, `c` oder `d`, wenn übernommen wird, dann hat er den Status *in Bearbeitung* *(Refinement 2026-11-18)*
+- [ ] Angenommen ein Eintrag ist neu und hat **keinen** Eintragstyp, wenn übernommen wird, dann hat er den Status *freigegeben* *(Refinement 2026-11-18)*
+- [ ] Angenommen ein neuer Eintrag hat Eintragstyp `c` oder `d` (mit passendem DM-Ausgabetyp) oder keinen Eintragstyp, wenn geprüft wird, dann meldet der Prüfbericht dafür keinen Fehler (bisher „Neuer Eintrag muss Eintragstyp ‚n' haben.“) *(Refinement 2026-11-18)*
+- [ ] Angenommen die Datei enthält neue Einträge ohne Eintragstyp, wenn die Zusammenfassung erscheint, dann zeigt sie „davon N als freigegeben übernommen“ und listet diese Einträge *(Refinement 2026-11-18)*
 - [ ] Angenommen ein Eintrag mit Status *freigegeben* wurde geändert, wenn übernommen wird, dann hat er den Status *in Bearbeitung*
 - [ ] Angenommen ein Eintrag mit Status *zu überarbeiten* wurde geändert, wenn übernommen wird, dann hat er den Status *in Bearbeitung* und `answer`/`answer_comment` bleiben erhalten
 - [ ] Angenommen ein Eintrag ist unverändert, wenn übernommen wird, dann behält er seinen Status
@@ -167,7 +178,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - [ ] Angenommen „Antworten aus der Datei übernehmen" ist angekreuzt, wenn übernommen wird, dann stehen bei allen betroffenen Einträgen die Werte aus der Datei, und diese Einträge haben den Status *in Bearbeitung*
 - [ ] Angenommen ein Eintrag *zu überarbeiten* (mit Eintragstyp) hat in der Datei nur eine geänderte Antwort und die Übernahme ist angekreuzt, wenn übernommen wird, dann ist er *in Bearbeitung* mit den Werten aus der Datei *(korrigiert 2026-11-14, BUG-QA4-2; vorher: „freigegebener Eintrag …“ — nicht erreichbar, da freigegebene Einträge keinen Eintragstyp haben und die Übernahme dann gesperrt ist)*
 - [ ] Angenommen die DMRL ist *freigegeben*, wenn eine Datei mit nur geänderten Antworten bei freigegebenen Einträgen geprüft und das Häkchen gesetzt wird, dann ist „Übernehmen“ gesperrt — eine Freigabe lässt sich durch übernommene Antworten allein nie aufheben oder herbeiführen *(2026-11-14)*
-- [ ] Angenommen ein neuer Eintrag hat in der Datei die Antwort `y` und die Übernahme ist angekreuzt, wenn übernommen wird, dann ist er *in Bearbeitung* (nicht *freigegeben*) mit `answer` = `y`
+- [ ] Angenommen ein neuer Eintrag **mit Eintragstyp** hat in der Datei die Antwort `y` und die Übernahme ist angekreuzt, wenn übernommen wird, dann ist er *in Bearbeitung* (nicht *freigegeben*) mit `answer` = `y` *(Refinement 2026-11-18)*: „mit Eintragstyp“ ergänzt
 - [ ] Angenommen die Datei enthält in `answer` einen ungültigen Wert (nicht leer, `y` oder `n`), wenn geprüft wird, dann ist das weiterhin ein Formatfehler (PROJ-8 A) und der Check-in wird abgelehnt
 - [ ] Angenommen Antworten wurden übernommen, wenn der Workflow-Verlauf betrachtet wird, dann enthält der Check-in-Eintrag „N Antworten aus der Datei übernommen"
 - [ ] Angenommen keine Antwort weicht ab, wenn die Zusammenfassung erscheint, dann gibt es weder den Abschnitt noch das Kästchen
@@ -179,6 +190,9 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - [ ] Angenommen die DMRL ist *freigegeben* und mindestens ein Eintrag wurde geändert, wenn übernommen wird, dann ist die DMRL *in Bearbeitung* und das Banner „Nicht freigegeben" erscheint
 - [ ] Angenommen die DMRL ist *freigegeben* und nichts wurde geändert, wenn übernommen wird, dann bleibt sie *freigegeben* und die Sperre ist aufgehoben
 - [ ] Angenommen die DMRL ist *in Bearbeitung*, wenn ein Check-in mit Änderungen übernommen wird, dann bleibt sie *in Bearbeitung*
+- [ ] Angenommen eine DMRL ohne Einträge wird ausgecheckt und eine Datei mit ausschließlich Einträgen ohne Eintragstyp eingecheckt, wenn übernommen wird, dann sind alle Einträge und die DMRL *freigegeben*, der Kopfbereich zeigt „Freigegeben am [Datum] durch Übernahme Bestand per Check-in — übernommen von [Name]“ und ein Freigabestand existiert *(Refinement 2026-11-18)*
+- [ ] Angenommen eine Datei enthält neue Einträge ohne Eintragstyp und mindestens einen Eintrag mit `n`, `c` oder `d`, wenn übernommen wird, dann ist die DMRL *in Bearbeitung* und es entsteht weder Freigabe-Nachweis noch Freigabestand *(Refinement 2026-11-18)*
+- [ ] Angenommen die DMRL ist *freigegeben* und die Datei ergänzt nur neue Einträge ohne Eintragstyp, wenn übernommen wird, dann bleibt die DMRL *freigegeben*, mit neuem Freigabe-Nachweis „Übernahme Bestand per Check-in“ und neuem Freigabestand *(Refinement 2026-11-18)*
 
 ### Nachvollziehbarkeit
 - [ ] Angenommen ein Check-in wurde übernommen, wenn der Workflow-Verlauf betrachtet wird, dann enthält er „Check-in" mit Datum, Benutzer und Anzahl neu/geändert/unverändert
@@ -205,6 +219,10 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - **Eintragstyp entfernt:** dann keine Typ-Prüfung, aber ggf. Fehler nach Regel F („Eintrag in Bearbeitung braucht einen Eintragstyp“) *(Refinement 2026-11-16)*.
 - **Alte Demo-Daten im Browser** (vor der Anpassung gespeichert, PHUNGUN `d` + `new`): Check-in scheitert, bis die Demo-Daten zurückgesetzt oder die Ausgabetypen in der CSV korrigiert werden; korrigierte Einträge werden *in Bearbeitung* *(Refinement 2026-11-16)*.
 - **Ausgabetyp in Großbuchstaben** (z. B. `Deleted`): Formatfehler nach Regel A, keine zusätzliche Typ-Meldung *(Refinement 2026-11-16)*.
+- **Neuer Eintrag ohne Eintragstyp mit Antwort `n` in der Datei:** wird trotzdem *freigegeben* — maßgeblich ist der fehlende Eintragstyp; die Antwort wird nur bei angekreuzter Übernahme gespeichert *(Refinement 2026-11-18)*.
+- **Eintragstyp bei neuem Eintrag vergessen:** der Eintrag würde *freigegeben*; die Zusammenfassung weist „davon N als freigegeben übernommen“ aus, der Bearbeiter kann abbrechen und die Datei korrigieren *(Refinement 2026-11-18)*.
+- **Neuer Eintrag ohne Eintragstyp mit beliebigem DM-Ausgabetyp** (z. B. `deleted`): keine Typ-Prüfung (Regel F nur mit Eintragstyp); Format nach Regel A gilt weiter *(Refinement 2026-11-18)*.
+- **DMC eines bestehenden Eintrags ohne Eintragstyp geändert:** erscheint als neuer (*freigegebener*) Eintrag plus fehlender bisheriger Eintrag → Fehler „Eintrag … fehlt“ wie bisher *(Refinement 2026-11-18)*.
 - **Zwei Tabs:** Übernahme im zweiten Tab nach bereits erfolgtem Check-in schlägt fehl, da keine Sperre mehr besteht.
 
 ## Technical Requirements (optional)
@@ -239,6 +257,9 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 | DM-Ausgabetyp `status` wird gültig (Regel A); `rinstate-*` bleibt ungültig | `status` ist in allen drei Schemas gültig und für `c` vorgesehen | 2026-11-16 |
 | Typ-Regel gilt für alle Einträge mit Eintragstyp, auch unveränderten Altbestand | Was erneut gesendet wird, ist immer stimmig; entspricht dem Grundsatz aus BUG-QA4-1 | 2026-11-16 |
 | Typ-Regel nur beim Check-in, nicht beim REPLY und nicht in PROJ-20 | Regel G verhindert Änderungen im REPLY; PROJ-20 leitet leere Ausgabetypen bereits ab | 2026-11-16 |
+| Regel „Neuer Eintrag muss Eintragstyp ‚n' haben“ entfällt; neue Einträge dürfen `n`, `c`, `d` oder keinen Eintragstyp haben | Vorgabe Product Owner: Eine DMRL aus einem laufenden Projekt hat einen Bearbeitungsstand erreicht, der übernommen werden soll | 2026-11-18 |
+| Neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* (abgestimmter Bestand) | Vorgabe Product Owner; Alternative „*in Bearbeitung*“ verworfen, da solche Einträge nie gesendet würden (Grundsatz BUG-QA4-1) | 2026-11-18 |
+| Sind nach dem Check-in alle Einträge *freigegeben*, wird die DMRL *freigegeben* mit Nachweis „Übernahme Bestand per Check-in“ und Freigabestand | Grundregel PROJ-14 (DMRL *freigegeben* ⇔ alle Einträge *freigegeben*); „DMRL bleibt *in Bearbeitung*“ verworfen — Daten wären beim Laden ungültig und ein SEND nie möglich | 2026-11-18 |
 | Demo-Daten leiten den Ausgabetyp aus dem Eintragstyp ab (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) | Sonst scheitert jeder Check-in der PHUNGUN-Demo (11 Einträge `d` + `new`); gleiche Zuordnung wie PROJ-20 | 2026-11-16 |
 
 ### Technical Decisions

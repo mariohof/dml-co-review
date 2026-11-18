@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-16
+**Last Updated:** 2026-11-18
+
+> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Regel F — die Zeile „DMC neu und Eintragstyp ≠ `n` → Fehler“ entfällt. Neue Einträge dürfen `n`, `c`, `d` oder keinen Eintragstyp haben (Bestand aus laufendem Projekt übernehmen); neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* (Details PROJ-10). Umsetzung zusammen mit PROJ-10 ausstehend.
 
 > **Refinement 2026-11-16 (über `/refine PROJ-10`):** Regel A erlaubt zusätzlich den DM-Ausgabetyp `status`. Regel F prüft beim Check-in, ob DM-Ausgabetyp und Eintragstyp zusammenpassen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). Ersetzt die bisherige Zeile „unabhängig, erlaubt“. Umgesetzt 2026-11-16 zusammen mit PROJ-10 (`checkin.ts`: `checkIssueTypeMatchesEntryType`; `src/lib/dmrl/issue-type.ts`).
 
@@ -97,7 +99,9 @@ Der Eintragstyp wird **vom Bearbeiter manuell** gesetzt. Das Regelwerk prüft nu
 
 | Situation | Ergebnis |
 |---|---|
-| DMC neu (vorher nicht in der DMRL) und Eintragstyp ≠ `n` | Fehler |
+| ~~DMC neu (vorher nicht in der DMRL) und Eintragstyp ≠ `n`~~ | ~~Fehler~~ — entfällt *(Refinement 2026-11-18)* |
+| DMC neu mit Eintragstyp `n`, `c` oder `d` | erlaubt; Typ-Regel (unten) gilt *(Refinement 2026-11-18)* |
+| DMC neu **ohne** Eintragstyp | erlaubt — Eintrag wird beim Check-in *freigegeben* (Bestand übernehmen, PROJ-10) *(Refinement 2026-11-18)* |
 | Bestehender Eintrag mit geänderten fachlichen Feldern, aber **ohne** Eintragstyp | Fehler |
 | Eintrag wäre nach dem Check-in *in Bearbeitung*, hat aber **keinen** Eintragstyp — z. B. Eintragstyp entfernt, oder Altbestand bereits *in Bearbeitung* ohne Eintragstyp *(Refinement 2026-11-14, BUG-QA4-1)* | Fehler „Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden.“ |
 | Bisheriger Eintrag fehlt in der Datei | Fehler (Einträge werden nicht entfernt, sondern mit `d` / `deleted` gekennzeichnet) |
@@ -209,7 +213,8 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 - [ ] Angenommen mehrere Einträge haben denselben Infocode und denselben Info Name, wenn geprüft wird, dann wird kein Fehler gemeldet
 
 ### Eintragstyp & Antwortfelder (Check-in)
-- [ ] Angenommen ein neuer DMC hat nicht den Eintragstyp `n`, wenn geprüft wird, dann wird „Neuer Eintrag muss Eintragstyp ‚n' haben" gemeldet
+- [ ] ~~Angenommen ein neuer DMC hat nicht den Eintragstyp `n`, wenn geprüft wird, dann wird „Neuer Eintrag muss Eintragstyp ‚n' haben" gemeldet~~ — entfällt *(Refinement 2026-11-18)*
+- [ ] Angenommen ein neuer DMC hat Eintragstyp `c` oder `d` (mit passendem DM-Ausgabetyp) oder keinen Eintragstyp, wenn eine Check-in-Datei geprüft wird, dann meldet Regel F dafür keinen Fehler *(Refinement 2026-11-18)*
 - [ ] Angenommen bei einem bestehenden Eintrag wurde der Tech Name geändert und kein Eintragstyp gesetzt, wenn geprüft wird, dann wird „Geänderter Eintrag ohne Eintragstyp" gemeldet
 - [ ] Angenommen bei einem Eintrag *in Bearbeitung* wurde nur der Eintragstyp entfernt, wenn geprüft wird, dann wird „Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d)“ gemeldet *(Refinement 2026-11-14)*
 - [ ] Angenommen ein Eintrag ist bereits *in Bearbeitung* ohne Eintragstyp (Altbestand) und in der Datei unverändert, wenn geprüft wird, dann wird derselbe Fehler gemeldet *(Refinement 2026-11-14)*
@@ -277,6 +282,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 | Einträge können nicht entfernt werden (Fehlen = Fehler) | Löschung nur über `d` / `deleted` (Anforderung 02, NSG) | 2026-11-12 |
 | `answer` nur an Einträgen mit Eintragstyp n/c/d; Begründung bei `n` Pflicht | Vorgabe Product Owner, NSG 1.2.1 | 2026-11-12 |
 | ~~`answer`/`answer_comment` beim Check-in nicht veränderbar~~ — ersetzt 2026-11-14 | Keine vorgetäuschte Partner-Freigabe | 2026-11-12 |
+| Regel „DMC neu ⇒ Eintragstyp `n`“ entfällt; neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* | Vorgabe Product Owner (`/refine PROJ-10`): Bestand aus laufendem Projekt mit erreichtem Bearbeitungsstand übernehmen | 2026-11-18 |
 | Kein Eintrag *in Bearbeitung* ohne Eintragstyp nach dem Check-in (Regel F erweitert, auch für Altbestand) | Solche Einträge würden nie gesendet; die DMRL könnte nicht mehr freigegeben werden (BUG-QA4-1) | 2026-11-14 |
 | Abweichende `answer`/`answer_comment` beim Check-in kein Fehler, sondern optionale Übernahme nur als Information | Altbestände mit Partnerantworten übernehmbar (PROJ-20); vorgetäuschte Freigabe weiterhin ausgeschlossen, da übernommene Antworten den Status nie auf *freigegeben* setzen | 2026-11-14 |
 | Eintragstyp ↔ DM-Ausgabetyp beim Check-in: `n` → `new`, `c` → `changed`/`revised`/`status`, `d` → `deleted`, leer → keine Prüfung; für alle Einträge mit Eintragstyp; ersetzt „unabhängig, erlaubt“ | Vorgabe Product Owner (`/refine PROJ-10`) | 2026-11-16 |

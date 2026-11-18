@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-11
-**Last Updated:** 2026-11-16
+**Last Updated:** 2026-11-18
+
+> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Freigabe-Nachweis und Freigabestand können statt aus einem REPLY auch aus einem Check-in stammen (Bestand übernehmen): Herkunft REPLY oder Check-in; der Verweis auf den REPLY-Archivstand ist dann leer. Gültigkeitsprüfung beim Laden entsprechend anpassen. Umsetzung zusammen mit PROJ-10 ausstehend.
 
 > **Refinement 2026-11-16 (über `/refine PROJ-10`):** Fehlt in den Beispieldateien der DM-Ausgabetyp, wird er bei den Demo-Einträgen aus dem Eintragstyp abgeleitet (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) statt immer `new`. Grund: neue Typ-Regel beim Check-in (PROJ-8 F / PROJ-10). PHUNGUN: 11 Einträge `d` erhalten `deleted`, 21 Einträge `n` erhalten `new`. Archivierte XML-Dateien bleiben byte-genau. Bereits im Browser gespeicherte Daten werden nicht umgestellt (Demo-Daten zurücksetzen). Umgesetzt 2026-11-16 (`demo-data.ts` nutzt `deriveIssueType` aus `src/lib/dmrl/issue-type.ts`).
 
@@ -48,7 +50,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 - DMRL-Status: *in Bearbeitung* / *gesendet* / *freigegeben*
 - Sperre: ausgecheckt ja/nein, von wem, seit wann, **Stand der Einträge beim Check-out** (Vergleichsbasis für Check-in und erneuten Download, PROJ-9/10)
 - Bemerkung des Partners aus dem letzten REPLY (`dml/remarks`, PROJ-13)
-- Freigabe-Nachweis der letzten Freigabe: Zeitpunkt, REPLY (Partner, Versionsindex), übernehmender Benutzer (PROJ-14)
+- Freigabe-Nachweis der letzten Freigabe: Zeitpunkt, Herkunft (REPLY mit Partner und Versionsindex **oder** Check-in ohne REPLY *(Refinement 2026-11-18)*), übernehmender Benutzer (PROJ-14)
 - „Im Workflow verwendet" (PROJ-4/5/6) wird **nicht gespeichert**, sondern aus Verlauf und Archiv abgeleitet
 
 ### DMRL-Eintrag
@@ -67,7 +69,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 - Bei SEND: Kennzeichen „zurückgezogen" mit Zeitpunkt, Administrator und Begründung (PROJ-12)
 
 ### Freigabestand (PROJ-14)
-- Zugehörige DMRL, Zeitpunkt, REPLY (Partner, Versionsindex), übernehmender Benutzer
+- Zugehörige DMRL, Zeitpunkt, Herkunft (REPLY mit Partner und Versionsindex **oder** Check-in ohne REPLY *(Refinement 2026-11-18)*), übernehmender Benutzer
 - Unveränderliche Momentaufnahme aller Einträge (alle Felder) zum Zeitpunkt der Freigabe
 - Wird nie gelöscht
 
@@ -188,6 +190,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 ### Product Decisions
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Freigabe-Nachweis und Freigabestand mit Herkunft REPLY oder Check-in (REPLY-Verweis dann leer) | Freigabe durch Übernahme eines abgestimmten Bestands per Check-in (PROJ-10) | 2026-11-18 |
 | CSV-Felder aus `docs/dmrl-mapping.md` sind das einheitliche interne Datenmodell für alle S1000D-Versionen | Check-out/Check-in-CSV bleibt für alle Versionen gleich; Versionsunterschiede nur beim XML-Export/-Import | 2026-11-11 |
 | `rpcname` und `remarks` als zusätzliche Eintragsfelder | In den Beispieldateien vorhanden (`rpc/@rpcname`, `dmentry/remarks`), getrennt von `answer/remarks` | 2026-11-11 |
 | Versionsindex = `seqnum-diyear` aus `dmlc`; Zähler je Absender (eigene Seite und Partner zählen getrennt) | Entspricht dem S1000D-DML-Code und den Beispieldateien | 2026-11-11 |

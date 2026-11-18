@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-18
+
+> **Refinement 2026-11-18 (über `/refine PROJ-10`):** Neben dem REPLY kann auch ein Check-in Einträge *freigeben*: Neue Einträge ohne Eintragstyp werden als abgestimmter Bestand *freigegeben*. Sind danach alle Einträge *freigegeben*, wird die DMRL *freigegeben* mit Freigabe-Nachweis „Übernahme Bestand per Check-in“ (ohne REPLY) und Freigabestand. Umsetzung zusammen mit PROJ-10 ausstehend.
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Kopfbereich, Banner, Tabelle
@@ -21,12 +23,13 @@ PROJ-14 ist die zentrale Referenz für den Status von DMRL und Einträgen (Statu
 |---|---|
 | *in Bearbeitung* | neu oder geändert, noch nicht gesendet |
 | *gesendet* | mit Eintragstyp `n`/`c`/`d` an den Partner gesendet, Antwort ausstehend |
-| *freigegeben* | vom Partner genehmigt (Eintragstyp leer) |
+| *freigegeben* | vom Partner genehmigt (Eintragstyp leer) — oder als abgestimmter Bestand per Check-in übernommen *(Refinement 2026-11-18)* |
 | *zu überarbeiten* | vom Partner abgelehnt (Eintragstyp bleibt) |
 
 | Auslöser | Von | Nach | Spec |
 |---|---|---|---|
-| Check-in: Eintrag neu | — | *in Bearbeitung* | PROJ-10 |
+| Check-in: Eintrag neu mit `n`/`c`/`d` | — | *in Bearbeitung* | PROJ-10 |
+| Check-in: Eintrag neu ohne Eintragstyp *(Refinement 2026-11-18)* | — | *freigegeben* | PROJ-10 |
 | Check-in: Eintrag geändert (auch nur Eintragstyp) | jeder | *in Bearbeitung* | PROJ-10 |
 | Check-in: Eintrag unverändert | jeder | unverändert | PROJ-10 |
 | SEND: Eintrag mit `n`/`c`/`d` | *in Bearbeitung* | *gesendet* | PROJ-12 |
@@ -47,7 +50,8 @@ Demo-Ausgangsstände: PHUNGUN-Einträge *gesendet*, Fahrzeug/Fluggerät *in Bear
 | Auslöser | Von | Nach | Spec |
 |---|---|---|---|
 | DMRL angelegt | — | *in Bearbeitung* | PROJ-6 |
-| Check-in mit Änderung | jeder außer *gesendet* | *in Bearbeitung* (Freigabe aufgehoben) | PROJ-10 |
+| Check-in mit Änderung, danach nicht alle Einträge *freigegeben* | jeder außer *gesendet* | *in Bearbeitung* (Freigabe aufgehoben) | PROJ-10 |
+| Check-in, mindestens ein Eintrag als *freigegeben* übernommen und danach alle Einträge *freigegeben* *(Refinement 2026-11-18)* | jeder außer *gesendet* | *freigegeben* (neuer Nachweis + Freigabestand) | PROJ-10 |
 | Check-in ohne Änderung | jeder außer *gesendet* | unverändert | PROJ-10 |
 | SEND | *in Bearbeitung* | *gesendet* | PROJ-12 |
 | REPLY, danach alle Einträge *freigegeben* | *gesendet* | *freigegeben* | PROJ-13 |
@@ -60,6 +64,8 @@ Demo-Ausgangsstände: PHUNGUN-Einträge *gesendet*, Fahrzeug/Fluggerät *in Bear
 
 ## Freigabe-Nachweis
 Bei jeder Freigabe (REPLY-Übernahme mit Ergebnis *freigegeben*) wird gespeichert: Datum/Uhrzeit, REPLY-Versionsindex und Partner, übernehmender Bearbeiter.
+
+Bei einer Freigabe durch **Check-in** (Bestand übernehmen, PROJ-10) *(Refinement 2026-11-18)*: Datum/Uhrzeit, Herkunft „Übernahme Bestand per Check-in“ (kein REPLY, kein Partner), übernehmender Bearbeiter. Anzeige: „Freigegeben am 18.11.2026 durch Übernahme Bestand per Check-in — übernommen von Bea Bearbeiter“; „Letzte Freigabe: 18.11.2026, Übernahme per Check-in“; Freigabestand „Freigabestand vom [Datum] (Übernahme per Check-in)“.
 
 Kopfbereich der Ansicht (Ergänzung PROJ-7):
 - **freigegeben:** „Freigegeben am 12.11.2026 durch REPLY C1234 00002-2026 — übernommen von Bea Bearbeiter"
@@ -81,7 +87,7 @@ Kopfbereich der Ansicht (Ergänzung PROJ-7):
 
 ## Out of Scope
 - Manueller „Freigeben"-Schritt, Status *freigabebereit* (PROJ-13)
-- Freigabe ohne REPLY / „Fehler ignorieren" (Anforderung 02)
+- Freigabe ohne REPLY / „Fehler ignorieren" (Anforderung 02) — Ausnahme: Übernahme eines abgestimmten Bestands per Check-in (PROJ-10) *(Refinement 2026-11-18)*
 - Echte Verwendungssperre in TP-Projekten (Non-Goal; nur als Status sichtbar)
 - Vergleich (Diff) zweier Freigabestände
 - Löschen von Freigabeständen
@@ -99,6 +105,7 @@ Kopfbereich der Ansicht (Ergänzung PROJ-7):
 ### Freigabe-Nachweis
 - [ ] Angenommen ein REPLY wird übernommen und danach sind alle Einträge *freigegeben*, wenn der Kopfbereich betrachtet wird, dann zeigt er „Freigegeben am [Datum] durch REPLY [Partner] [Versionsindex] — übernommen von [Name]"
 - [ ] Angenommen eine DMRL wurde nie freigegeben, wenn der Kopfbereich betrachtet wird, dann erscheint nur das Banner „Nicht freigegeben" ohne Hinweis auf eine letzte Freigabe
+- [ ] Angenommen ein Check-in wird übernommen und danach sind alle Einträge *freigegeben* (mindestens einer als *freigegeben* übernommen), wenn der Kopfbereich betrachtet wird, dann zeigt er „Freigegeben am [Datum] durch Übernahme Bestand per Check-in — übernommen von [Name]“ und ein neuer Freigabestand „(Übernahme per Check-in)“ ist anzeigbar und exportierbar *(Refinement 2026-11-18)*
 
 ### Freigabestand
 - [ ] Angenommen eine DMRL wird freigegeben, wenn danach die Freigabestände betrachtet werden, dann existiert ein neuer Freigabestand mit allen Einträgen, Datum, REPLY und Bearbeiter
@@ -137,6 +144,7 @@ Kopfbereich der Ansicht (Ergänzung PROJ-7):
 | Freigabestand nur lesend, CSV-Export ohne Sperre | TP-Projekt kann auf freigegebenem Stand weiterarbeiten | 2026-11-12 |
 | Freigabestand jederzeit als CSV und XML exportierbar | Vorgabe Product Owner | 2026-11-12 |
 | DMRL ohne Einträge ist nie freigegeben | Freigabe setzt geprüfte Einträge voraus | 2026-11-12 |
+| Freigabe auch durch Check-in (Bestand übernehmen) mit eigenem Nachweis „Übernahme Bestand per Check-in“ und Freigabestand | Vorgabe Product Owner (`/refine PROJ-10`); Grundregel „freigegeben ⇔ alle Einträge freigegeben“ bleibt; Nachweis macht die Herkunft der Freigabe sichtbar | 2026-11-18 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
