@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-18
 
@@ -712,6 +712,73 @@ Keine neuen Bugs in diesem Feature.
 - **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
 - **Security:** 1 Befund (BUG-QA7-1, Absturz durch präparierte Eingabe; kein Datenverlust, keine Rechteausweitung)
 - **Production Ready:** YES (keine Critical/High-Bugs). BUG-QA7-1 sollte vor einer Weitergabe behoben werden.
+
+### QA-Lauf 8 — Refinement 2026-11-18 (Bestand übernehmen, Regel F1 entfällt)
+
+**Tested:** 2026-11-18 · **Tester:** QA Engineer (AI) · **Browser:** Chrome (Playwright); Firefox/Safari nicht geprüft (WebKit nicht installiert, wie bisher)
+
+**Automatisiert**
+- **Vitest:** 576 bestanden, 6 übersprungen (5 × BUG-QA7-1, 1 × BUG-QA8-1)
+  - neu: `src/lib/workflows/qa-proj10-bestand.test.ts` (13 aktive Tests + 1 übersprungener)
+  - Im Gesamtlauf überschritten 2–4 Komponententests (Check-out-, REPLY-Dialog) das 5-s-Zeitlimit. Einzeln laufen sie grün; die betroffenen Tests wechseln von Lauf zu Lauf, also Last und keine Regression.
+- **Playwright Chrome:** 128 bestanden, 1 übersprungen (BUG-QA7-1)
+  - neu: `tests/PROJ-10-bestand.spec.ts` (5 Tests)
+  - Im Gesamtlauf schlug `PROJ-15-archiv.spec.ts` beim ersten Aufruf der REPLY-Seite fehl, vermutlich weil der Dev-Server die Route erst kompilierte. Einzeln wiederholt: grün.
+- **Echte XSD-Prüfung (xmllint):** Der XML-Export eines Freigabestands „Übernahme per Check-in“ ist gegen 2.3, 4.2 und 5.0 schemagültig.
+
+#### Acceptance Criteria Status (Refinement 2026-11-18)
+- [x] Neuer Eintrag mit `n`, `c` oder `d` → *in Bearbeitung* (Unit; E2E mit `c`)
+- [x] Neuer Eintrag ohne Eintragstyp → *freigegeben* (Unit, E2E)
+- [x] Neuer Eintrag mit `c`/`d` (passender Ausgabetyp) oder ohne Eintragstyp → keine F1-Meldung mehr (Unit, E2E)
+- [x] Zusammenfassung zeigt „davon N als freigegeben übernommen“, listet die Einträge, Spalte „Status danach“ (E2E)
+- [x] Neuer Eintrag **mit** Eintragstyp und Antwort `y`, Übernahme angekreuzt → *in Bearbeitung* (bestehende Tests QA-Lauf 4)
+- [x] Erstübernahme (leere DMRL, nur Einträge ohne Typ) → alle Einträge und DMRL *freigegeben*, Nachweis „Übernahme Bestand per Check-in“, Freigabestand. Geprüft in 2.3, 4.2 und 5.0 (Unit).
+- [x] Mischfall (ohne Typ + mit `n`/`c`/`d`) → DMRL *in Bearbeitung*, kein Nachweis, kein Freigabestand (Unit)
+- [x] Freigegebene DMRL + nur neue Einträge ohne Typ → bleibt *freigegeben*, neuer Nachweis und Freigabestand (Unit, E2E inkl. Kopfbereich, Freigabestand-Seite, Archiv „Herkunft“)
+- [x] Verlauf „Check-in — 1 neu (davon 1 als freigegeben übernommen), … — DMRL freigegeben (Übernahme Bestand)“ (Unit, E2E)
+- [x] Ladeprüfung nach Freigabe ohne REPLY gültig, keine Meldung „beschädigt“ nach Neuladen (Unit, E2E)
+- [x] PROJ-14: „Letzte Freigabe: [Datum], Übernahme per Check-in“ nach erneuter Änderung (E2E)
+- [x] Regression: alle bisherigen Kriterien von PROJ-10, PROJ-8, PROJ-14 (REPLY-Freigabe unverändert), PROJ-12, PROJ-13, PROJ-15, PROJ-16 (Unit + E2E)
+
+#### Edge Cases Status
+- [x] Neuer Eintrag ohne Typ mit Antwort `n` + Antwortübernahme → *freigegeben*, `answer` = `n` gespeichert (Unit)
+- [x] Ohne Antwortübernahme → freigegebener neuer Eintrag mit leeren Antwortfeldern (Unit)
+- [x] Neuer Eintrag ohne Typ mit beliebigem Ausgabetyp (`deleted`) → keine Typ-Prüfung (Unit)
+- [x] DMC eines bestehenden Eintrags ohne Typ geändert → „Eintrag … fehlt“ (Unit)
+- [x] Vergessener Eintragstyp: grüner Hinweis „Bestand übernehmen“ mit Aufforderung zum Abbrechen sichtbar (E2E)
+- [x] Nach Freigabe per Check-in ist SEND gesperrt („Es gibt keine Änderungen …“), nach neuem `n`-Eintrag wieder möglich (Unit)
+- [x] 375 px: Hinweis im Dialog ohne waagerechtes Scrollen (E2E)
+
+#### Security Audit Results (Red Team)
+- [x] Ein bestehender Eintrag *in Bearbeitung* lässt sich nicht durch Entfernen des Eintragstyps *freigeben*: Fehler nach Regel F (Unit)
+- [x] Ein bestehender Eintrag lässt sich nicht über einen geänderten DMC „umbenennen“ und so *freigeben*: Fehler „fehlt“ (Unit)
+- [x] Ein abgelehnter Eintrag (*zu überarbeiten*) lässt sich nicht durch eine Kopie ohne Typ ersetzen: Fehler „fehlt“ (Unit)
+- [x] XSS: Die neuen Texte zeigen nur Zahlen und feste Texte; DMC und Tech Name werden wie bisher als Text ausgegeben
+- [ ] **Hinweis (gewollt, kein Bug):** Wer die DMRL ausgecheckt hat, kann neue Einträge ohne Partner-REPLY als *freigegeben* übernehmen. Das ist die Produktentscheidung vom 2026-11-18 und wird in Zusammenfassung, Verlauf, Freigabe-Nachweis und Archiv („Herkunft: Übernahme per Check-in“) sichtbar gemacht. Es gibt keine Rechteausweitung: Den Check-in kann wie bisher nur der Sperrinhaber ausführen.
+
+#### Bugs Found
+
+##### BUG-QA8-1: XML-Export eines Freigabestands „Übernahme per Check-in“ trägt immer DML-Code …-00001 und verweist auf sich selbst
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. PHUNGUN mit dem Demo-REPLY (nur `y`) freigeben. Letzter SEND ist jetzt `00002-2026`.
+  2. Auschecken, einen neuen Eintrag ohne Eintragstyp ergänzen und einchecken. Die DMRL bleibt *freigegeben* und erhält einen neuen Freigabestand „Übernahme per Check-in“.
+  3. Diesen Freigabestand als XML exportieren.
+  4. Expected: DML-Code wie beim Export des aktuellen Stands (PROJ-18), also der letzte SEND `00002-2026`; `dmlref` nicht auf sich selbst
+  5. Actual: `dmlc` und `dmlref` = `…-2026-00001` (gleicher Code wie der erste, echte SEND). Die Datei ist schemagültig, aber der Kopf ist irreführend.
+- **Ursache:**
+  - `releaseXml` nimmt `dmlc` vom SEND des Freigabe-REPLY und fällt ohne REPLY auf `00001` des Freigabejahres zurück.
+  - `dmlref` fällt ohne REPLY auf denselben Code zurück.
+- **Vorschlag:** Ohne REPLY `dmlc` und `dmlref` wie beim Export des aktuellen Stands bilden (letzter nicht zurückgezogener SEND, sonst `00001`). Der Fall ist in der Spec PROJ-14 noch nicht beschrieben; gegebenenfalls kurz per `/refine PROJ-14` festlegen.
+- **Test:** `qa-proj10-bestand.test.ts` „BUG-QA8-1 …“ (`it.skip`) plus Gegenprobe (zeigt das aktuelle Verhalten `00001`); nach der Behebung tauschen.
+- **Priority:** Nice to have
+
+#### Summary
+- **Acceptance Criteria (Refinement 2026-11-18):** 12/12 passed
+- **Edge Cases:** 7/7 passed
+- **Bugs Found:** 1 total (0 critical, 0 high, 0 medium, 1 low). Weiterhin offen aus QA-Lauf 7: BUG-QA7-1 (Medium) und BUG-QA7-2 (Low).
+- **Security:** keine neuen Befunde; Freigabe ohne REPLY ist gewollt und nachvollziehbar
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_
