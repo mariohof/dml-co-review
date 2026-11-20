@@ -24,7 +24,7 @@ Maßgeblich ist **immer das Issue des Systems** der DMRL. Eine Datei eines ander
 ## Einsatz
 | Einsatz | Geprüft wird | Bei Fehler |
 |---|---|---|
-| REPLY-Import (PROJ-13) | hochgeladene Partner-XML, **vor** PROJ-8 | Datei abgelehnt, Regelwerk läuft nicht, XSD-Prüfbericht |
+| REPLY-Import (PROJ-13) | hochgeladene Empfänger-XML, **vor** PROJ-8 | Datei abgelehnt, Regelwerk läuft nicht, XSD-Prüfbericht |
 | SEND (PROJ-12) | erzeugte XML, **vor** Download und Archivierung | SEND abgebrochen: kein Download, kein Versionsindex, kein Archiv; Meldung als Anwendungsfehler |
 | XML-Export (PROJ-18) | erzeugte XML | Export abgebrochen |
 
@@ -49,9 +49,9 @@ Für die Vorführung werden fehlerhafte REPLY-Dateien bereitgestellt (auf Basis 
 4. **XSD-gültig, aber fachlich falsch** (z. B. falscher Absender) → besteht PROJ-11, scheitert an PROJ-8
 
 ## User Stories
-- Als **Bearbeiter** möchte ich, dass eine REPLY-Datei des Partners gegen das Schema geprüft wird, bevor sie fachlich geprüft wird, damit nur strukturell korrekte Dateien verarbeitet werden.
-- Als **Bearbeiter** möchte ich sicher sein, dass jede SEND-Datei schemakonform ist, damit der Partner sie verarbeiten kann.
-- Als **Bearbeiter** möchte ich den XSD-Prüfbericht herunterladen und dem Partner schicken, damit er seine Datei korrigieren kann.
+- Als **Bearbeiter** möchte ich, dass eine REPLY-Datei des Empfängers gegen das Schema geprüft wird, bevor sie fachlich geprüft wird, damit nur strukturell korrekte Dateien verarbeitet werden.
+- Als **Bearbeiter** möchte ich sicher sein, dass jede SEND-Datei schemakonform ist, damit der Empfänger sie verarbeiten kann.
+- Als **Bearbeiter** möchte ich den XSD-Prüfbericht herunterladen und dem Empfänger schicken, damit er seine Datei korrigieren kann.
 - Als **Product Owner** möchte ich mit vorbereiteten fehlerhaften Dateien zeigen, dass Schemafehler zuverlässig erkannt werden.
 - Als **Administrator** möchte ich eine klare Meldung erhalten, wenn die Prüfung technisch nicht verfügbar ist, damit ich das Problem beheben kann.
 
@@ -122,8 +122,8 @@ Für die Vorführung werden fehlerhafte REPLY-Dateien bereitgestellt (auf Basis 
 | XSD-Prüfung bei REPLY (vor PROJ-8), SEND (vor Download/Archiv) und XML-Export | Jede XML, die die Anwendung verlässt oder betritt, ist schemakonform | 2026-11-12 |
 | Schema immer nach Issue des Systems | Eindeutig; falsches Issue fällt automatisch auf | 2026-11-12 |
 | Prüfung nicht verfügbar → Vorgang blockiert | PRD: Validierung ist Pflicht | 2026-11-12 |
-| xmllint-Meldungen im Original, deutsche Überschrift | Eindeutig für Partner und Fachleute | 2026-11-12 |
-| Bericht herunterladbar | Weitergabe an den Partner | 2026-11-12 |
+| xmllint-Meldungen im Original, deutsche Überschrift | Eindeutig für Empfänger und Fachleute | 2026-11-12 |
+| Bericht herunterladbar | Weitergabe an den Empfänger | 2026-11-12 |
 | Keine eigenständige „XML prüfen"-Funktion im MVP | Prüfung läuft in allen Workflows; REPLY-Abbruch ist folgenlos | 2026-11-12 |
 | Demo-Testdateien mit typischen Fehlern | PRD-Erfolgskriterium: fehlerhafte Dateien zuverlässig erkannt | 2026-11-12 |
 | Lokale `xml.xsd` für Issue 5.0 | Offline-Validierung mit `xmllint --nonet` | 2026-11-12 |
@@ -206,7 +206,7 @@ Nichts wird gespeichert. **Ergebnis einer Prüfung:** Zustand (gültig / Schemaf
 ### G) Technische Entscheidungen (für PM erklärt)
 | Entscheidung | Warum |
 |---|---|
-| Installiertes xmllint statt WebAssembly-Variante | Vorgabe Product Owner; identisch mit dem Werkzeug, das Partner und Fachleute nutzen. |
+| Installiertes xmllint statt WebAssembly-Variante | Vorgabe Product Owner; identisch mit dem Werkzeug, das Empfänger und Fachleute nutzen. |
 | Eine Serverfunktion in der Next.js-App | xmllint läuft nicht im Browser; kein separater Dienst nötig. |
 | Schema immer aus dem Issue des Systems | Eindeutig, sicher (kein Pfad aus Benutzereingabe). |
 | Strukturiertes Ergebnis statt Rohtext | Gemeinsame Prüfbericht-Anzeige (PROJ-8) kann es darstellen. |
@@ -275,7 +275,7 @@ _Stand 2026-11-13 — `/backend` (PROJ-11)_
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 - [x] Pfad-Manipulation über `issue` abgewiesen (400), > 5 MB auch ohne Längenangabe abgewiesen (413), fremde Herkunft (Origin) → 403, keine Shell, keine Entity-Ersetzung
 - [x] **BUG-QA2-3 (Low) — behoben 2026-11-14:** Host-Kopf wird nicht geprüft — bei DNS-Rebinding (Host = Origin = fremde Domain, die auf 127.0.0.1 zeigt) wird die Anfrage angenommen

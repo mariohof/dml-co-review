@@ -1,18 +1,18 @@
 # Product Requirements Document — DMRL Management System (Prototyp)
 
 ## Vision
-Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) für mehrere Systeme (Fahrzeuge, Fluggeräte, Schiffe, Geräte). Er bildet den Abstimmungsprozess mit externen Partnern nach S1000D (SEND/REPLY) inklusive Prüfungen und Freigabe vollständig ab — und ersetzt damit die heutige Excel-/E-Mail-Abstimmung, bei der unklar ist, welche Version gilt, Änderungen schwer nachvollziehbar sind und der Freigabestatus einzelner Datenmodule intransparent ist.
+Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) für mehrere Systeme (Fahrzeuge, Fluggeräte, Schiffe, Geräte). Er bildet den Abstimmungsprozess mit externen Empfängern nach S1000D (SEND/REPLY) inklusive Prüfungen und Freigabe vollständig ab — und ersetzt damit die heutige Excel-/E-Mail-Abstimmung, bei der unklar ist, welche Version gilt, Änderungen schwer nachvollziehbar sind und der Freigabestatus einzelner Datenmodule intransparent ist.
 
 ## Target Users
 - **Administrator** — legt Systeme (mit S1000D-Issue 2.3, 4.2 oder 5.0), Organisationen, DMRLs, Benutzer und Berechtigungen an und verwaltet sie.
-- **Bearbeiter (DMRL-Verantwortlicher)** — pflegt die DMRL, checkt sie als CSV aus und wieder ein, sendet sie als S1000D-XML (SEND), importiert die Partner-Antwort (REPLY), verfolgt und erteilt die Freigabe. Braucht Nachvollziehbarkeit aller Austauschstände.
-- **Externer Partner** (kein Systembenutzer) — erhält die DMRL als S1000D-XML, bearbeitet sie und sendet sie als REPLY zurück.
+- **Bearbeiter (DMRL-Verantwortlicher)** — pflegt die DMRL, checkt sie als CSV aus und wieder ein, sendet sie als S1000D-XML (SEND), importiert die Empfänger-Antwort (REPLY), verfolgt und erteilt die Freigabe. Braucht Nachvollziehbarkeit aller Austauschstände.
+- **Externer Empfänger** (kein Systembenutzer) — erhält die DMRL als S1000D-XML, bearbeitet sie und sendet sie als REPLY zurück.
 
 ## Kernabläufe
 1. **Check-out/Check-in (CSV, Bearbeitung z. B. in Excel):** Auschecken sperrt die DMRL; beim Einchecken werden die Einträge nach fachlichen Regeln geprüft, erst danach übernommen und die Sperre aufgehoben.
 2. **SEND:** Export als S1000D-DMRL-XML in der Issue-Version des Systems, mit XSD-Validierung (`dml.xsd`). Jeder SEND erzeugt einen neuen Versionsindex `NNNNN-JJJJ` (5-stellig, führende Nullen, z. B. `00001-2026`); im neuen Jahr beginnt der Zähler wieder bei `00001`.
-3. **REPLY:** Import der Partner-XML mit XSD-Validierung und fachlicher Prüfung; jeder Eintrag erhält den Status *freigegeben* oder *zu überarbeiten*.
-4. **Freigabe:** Eine DMRL ist nur freigegeben, wenn alle Einträge vom Partner freigegeben sind. Ausnahme: Beim Check-in kann ein bereits abgestimmter Bestand (z. B. aus einem laufenden Projekt) übernommen werden — neue Einträge ohne Eintragstyp gelten dann als freigegeben (PROJ-10). Nicht freigegebene DMRLs dürfen nicht in einem Technische-Publikation-Projekt verwendet werden. Eine freigegebene DMRL ist nicht eingefroren — sie behält ihren Status, bis eine Änderung über Check-out/Check-in erfolgt.
+3. **REPLY:** Import der Empfänger-XML mit XSD-Validierung und fachlicher Prüfung; jeder Eintrag erhält den Status *freigegeben* oder *zu überarbeiten*.
+4. **Freigabe:** Eine DMRL ist nur freigegeben, wenn alle Einträge vom Empfänger freigegeben sind. Ausnahme: Beim Check-in kann ein bereits abgestimmter Bestand (z. B. aus einem laufenden Projekt) übernommen werden — neue Einträge ohne Eintragstyp gelten dann als freigegeben (PROJ-10). Nicht freigegebene DMRLs dürfen nicht in einem Technische-Publikation-Projekt verwendet werden. Eine freigegebene DMRL ist nicht eingefroren — sie behält ihren Status, bis eine Änderung über Check-out/Check-in erfolgt.
 5. **Archiv:** Alle SEND- und REPLY-Stände werden dauerhaft archiviert; der Bearbeiter kann den Austausch nachvollziehen und jederzeit auf jede im Workflow verwendete DMRL-Version zugreifen.
 
 ## Core Features (Roadmap)
@@ -50,6 +50,6 @@ Details und Abhängigkeiten: siehe `features/INDEX.md`.
 
 ## Non-Goals
 - Kein echtes Backend, keine Datenbank, keine echte Anmeldung.
-- Kein automatischer Versand an Partner (E-Mail/Schnittstellen) — Dateien werden manuell heruntergeladen/hochgeladen.
+- Kein automatischer Versand an Empfänger (E-Mail/Schnittstellen) — Dateien werden manuell heruntergeladen/hochgeladen.
 - Keine Erstellung von Datenmodul-Inhalten, keine Anbindung an CSDB oder TP-Projekte (Verwendungssperre nur als Status sichtbar).
 - Keine Mehrsprachigkeit.

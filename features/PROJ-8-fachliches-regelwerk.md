@@ -117,7 +117,7 @@ Der Eintragstyp wird **vom Bearbeiter manuell** gesetzt. Das Regelwerk prüft nu
 
 **Typ-Regel *(Refinement 2026-11-16)*:** gilt für **jeden Eintrag der Datei mit Eintragstyp** — neu, geändert und unverändert (auch Altbestand). Ist der DM-Ausgabetyp bereits nach Regel A ungültig (z. B. `change`, `Deleted`), wird nur der Formatfehler gemeldet. Nur beim Check-in, nicht beim REPLY (dort sichert Regel G die Ausgabedaten) und nicht im Prüfwerkzeug PROJ-20.
 
-**Grundsatz *(Refinement 2026-11-14)*:** Nach einem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp — SEND nimmt nur Einträge mit `n`, `c` oder `d` mit, ein solcher Eintrag könnte nie freigegeben werden. Unveränderte Einträge ohne Eintragstyp, die *freigegeben* sind oder bleiben, sind erlaubt. Für die Übernahme von Partnerantworten gilt dasselbe als bedingte Sperre (PROJ-10).
+**Grundsatz *(Refinement 2026-11-14)*:** Nach einem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp — SEND nimmt nur Einträge mit `n`, `c` oder `d` mit, ein solcher Eintrag könnte nie freigegeben werden. Unveränderte Einträge ohne Eintragstyp, die *freigegeben* sind oder bleiben, sind erlaubt. Für die Übernahme von Empfängerantworten gilt dasselbe als bedingte Sperre (PROJ-10).
 
 ### K — Antwortfelder (nur Check-in) *(Refinement 2026-11-14)*
 ~~`answer` und `answer_comment` dürfen vom Bearbeiter nicht verändert werden.~~ (bis 2026-11-14)
@@ -130,7 +130,7 @@ Weichen `answer` oder `answer_comment` vom Stand der Anwendung ab (bei neuen Ein
 |---|---|
 | Richtung | `dml/@direction` ≠ `reply` |
 | MI | `dmlc/modelic` ≠ MI des Systems |
-| Absender | `dmlc/sendid` ≠ CAGE-Code des beim letzten SEND gewählten Partners |
+| Absender | `dmlc/sendid` ≠ CAGE-Code des beim letzten SEND gewählten Empfängers |
 | Bezug | `dmlref` verweist nicht auf den **letzten** SEND dieser DMRL |
 | DML-Typ | `dmltype` ≠ DML-Typ der DMRL |
 | Zustand | DMRL wartet nicht auf eine Antwort (Status ≠ „gesendet") |
@@ -142,7 +142,7 @@ Weichen `answer` oder `answer_comment` vom Stand der Anwendung ab (bei neuen Ein
 | Vollständigkeit | DMC aus dem SEND fehlt im REPLY oder REPLY enthält DMC, der nicht im SEND war |
 | Unverändert | außer `answer` und `answer/remarks` wurde ein Feld gegenüber dem SEND geändert (`issno`, `type`, Datum dürfen fehlen, s. B) |
 
-Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
+Die Gesamtbemerkung `dml/remarks` des Empfängers ist erlaubt.
 
 ### H — Antworten vollständig (nur REPLY)
 - Jeder Eintrag mit Eintragstyp `n`, `c` oder `d` hat `answer` = `y` oder `n`.
@@ -160,8 +160,8 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 ## User Stories
 - Als **Bearbeiter** möchte ich, dass eine eingecheckte Excel/CSV-Datei vor der Übernahme geprüft wird, damit keine fehlerhaften Einträge in die DMRL gelangen.
 - Als **Bearbeiter** möchte ich alle Fehler auf einmal mit Zeile, DMC und Feld sehen, damit ich die Datei in einem Durchgang korrigieren kann.
-- Als **Bearbeiter** möchte ich, dass ein REPLY nur angenommen wird, wenn er vom richtigen Partner kommt, sich auf meinen letzten SEND bezieht und keine Einträge verändert, damit die Abstimmung nachvollziehbar bleibt.
-- Als **Bearbeiter** möchte ich auf widersprüchliche Eintragstypen (z. B. neuer DMC ohne `n`) hingewiesen werden, damit der Partner alle Änderungen zur Prüfung erhält.
+- Als **Bearbeiter** möchte ich, dass ein REPLY nur angenommen wird, wenn er vom richtigen Empfänger kommt, sich auf meinen letzten SEND bezieht und keine Einträge verändert, damit die Abstimmung nachvollziehbar bleibt.
+- Als **Bearbeiter** möchte ich auf widersprüchliche Eintragstypen (z. B. neuer DMC ohne `n`) hingewiesen werden, damit der Empfänger alle Änderungen zur Prüfung erhält.
 - Als **Bearbeiter** möchte ich den Prüfbericht herunterladen, damit ich ihn weitergeben oder die Korrektur abarbeiten kann.
 - Als **Product Owner** möchte ich demonstrieren, dass fehlerhafte Dateien zuverlässig erkannt und nicht übernommen werden.
 
@@ -221,7 +221,7 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 - [ ] Angenommen ein *freigegebener* Eintrag ohne Eintragstyp ist in der Datei unverändert, wenn geprüft wird, dann ist das kein Fehler *(Refinement 2026-11-14)*
 - [ ] Angenommen ein bisheriger Eintrag fehlt in der Datei, wenn geprüft wird, dann wird „Eintrag [DMC] fehlt — Einträge können nicht entfernt werden" gemeldet
 - [ ] Angenommen ein bestehender, unveränderter Eintrag hat Eintragstyp `n`, `c` oder `d`, wenn geprüft wird, dann wird kein Fehler gemeldet
-- [ ] Angenommen der Bearbeiter hat `answer` oder `answer_comment` verändert, wenn geprüft wird, dann ist das kein Fehler, und die betroffenen Einträge werden als „abweichende Partnerantworten" an den Check-in übergeben (PROJ-10) *(Refinement 2026-11-14; vorher: Fehler „[Feld] darf nur durch REPLY gesetzt werden")*
+- [ ] Angenommen der Bearbeiter hat `answer` oder `answer_comment` verändert, wenn geprüft wird, dann ist das kein Fehler, und die betroffenen Einträge werden als „abweichende Empfängerantworten" an den Check-in übergeben (PROJ-10) *(Refinement 2026-11-14; vorher: Fehler „[Feld] darf nur durch REPLY gesetzt werden")*
 - [ ] Angenommen ein neuer Eintrag hat einen Wert in `answer`, wenn geprüft wird, dann wird ein Fehler gemeldet
 - [ ] Angenommen ein Eintrag hat Eintragstyp `n`/`c`/`d` und einen DM-Ausgabetyp außerhalb von `new` / `changed`·`revised`·`status` / `deleted`, wenn eine Check-in-Datei geprüft wird, dann wird der Typ-Fehler mit gefundenem Wert gemeldet — auch bei unverändertem Eintrag *(Refinement 2026-11-16, Details PROJ-10)*
 - [ ] Angenommen ein Eintrag hat keinen Eintragstyp, wenn geprüft wird, dann wird das Zusammenpassen nicht geprüft *(Refinement 2026-11-16)*
@@ -229,13 +229,13 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 
 ### REPLY gegen letzten SEND
 - [ ] Angenommen der REPLY hat `direction="send"`, wenn geprüft wird, dann wird er abgelehnt
-- [ ] Angenommen `sendid` entspricht nicht dem CAGE-Code des beim letzten SEND gewählten Partners, wenn geprüft wird, dann wird „REPLY stammt nicht vom Partner [CAGE]" gemeldet
+- [ ] Angenommen `sendid` entspricht nicht dem CAGE-Code des beim letzten SEND gewählten Empfängers, wenn geprüft wird, dann wird „REPLY stammt nicht vom Empfänger [CAGE]" gemeldet
 - [ ] Angenommen `dmlref` verweist auf einen älteren SEND, wenn geprüft wird, dann wird „REPLY bezieht sich nicht auf den letzten SEND [Versionsindex]" gemeldet
 - [ ] Angenommen `modelic` oder `dmltype` im Kopf weichen von System bzw. DMRL ab, wenn geprüft wird, dann wird ein Fehler gemeldet
 - [ ] Angenommen die DMRL hat nicht den Status „gesendet", wenn ein REPLY geprüft wird, dann wird „Für diese DMRL wird keine Antwort erwartet" gemeldet
 - [ ] Angenommen ein REPLY mit gleichem `dmlc` ist bereits archiviert, wenn er erneut geprüft wird, dann wird „REPLY wurde bereits importiert" gemeldet
 - [ ] Angenommen im REPLY fehlt ein DMC aus dem SEND oder es gibt einen zusätzlichen DMC, wenn geprüft wird, dann wird jeder betroffene DMC gemeldet
-- [ ] Angenommen der Partner hat den Tech Name eines Eintrags geändert, wenn geprüft wird, dann wird „Feld techname wurde gegenüber dem SEND verändert" gemeldet
+- [ ] Angenommen der Empfänger hat den Tech Name eines Eintrags geändert, wenn geprüft wird, dann wird „Feld techname wurde gegenüber dem SEND verändert" gemeldet
 - [ ] Angenommen der REPLY enthält `dml/remarks`, wenn geprüft wird, dann wird kein Fehler gemeldet
 
 ### Antworten vollständig (REPLY)
@@ -281,15 +281,15 @@ Die Gesamtbemerkung `dml/remarks` des Partners ist erlaubt.
 | Eintragstyp wird manuell gesetzt; Regelwerk prüft nur Widersprüche | Vorgabe Product Owner — Bearbeiter weiß am besten, ob ein DM neu/geändert/gelöscht ist | 2026-11-12 |
 | Einträge können nicht entfernt werden (Fehlen = Fehler) | Löschung nur über `d` / `deleted` (Anforderung 02, NSG) | 2026-11-12 |
 | `answer` nur an Einträgen mit Eintragstyp n/c/d; Begründung bei `n` Pflicht | Vorgabe Product Owner, NSG 1.2.1 | 2026-11-12 |
-| ~~`answer`/`answer_comment` beim Check-in nicht veränderbar~~ — ersetzt 2026-11-14 | Keine vorgetäuschte Partner-Freigabe | 2026-11-12 |
+| ~~`answer`/`answer_comment` beim Check-in nicht veränderbar~~ — ersetzt 2026-11-14 | Keine vorgetäuschte Empfänger-Freigabe | 2026-11-12 |
 | Regel „DMC neu ⇒ Eintragstyp `n`“ entfällt; neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* | Vorgabe Product Owner (`/refine PROJ-10`): Bestand aus laufendem Projekt mit erreichtem Bearbeitungsstand übernehmen | 2026-11-18 |
 | Kein Eintrag *in Bearbeitung* ohne Eintragstyp nach dem Check-in (Regel F erweitert, auch für Altbestand) | Solche Einträge würden nie gesendet; die DMRL könnte nicht mehr freigegeben werden (BUG-QA4-1) | 2026-11-14 |
-| Abweichende `answer`/`answer_comment` beim Check-in kein Fehler, sondern optionale Übernahme nur als Information | Altbestände mit Partnerantworten übernehmbar (PROJ-20); vorgetäuschte Freigabe weiterhin ausgeschlossen, da übernommene Antworten den Status nie auf *freigegeben* setzen | 2026-11-14 |
+| Abweichende `answer`/`answer_comment` beim Check-in kein Fehler, sondern optionale Übernahme nur als Information | Altbestände mit Empfängerantworten übernehmbar (PROJ-20); vorgetäuschte Freigabe weiterhin ausgeschlossen, da übernommene Antworten den Status nie auf *freigegeben* setzen | 2026-11-14 |
 | Eintragstyp ↔ DM-Ausgabetyp beim Check-in: `n` → `new`, `c` → `changed`/`revised`/`status`, `d` → `deleted`, leer → keine Prüfung; für alle Einträge mit Eintragstyp; ersetzt „unabhängig, erlaubt“ | Vorgabe Product Owner (`/refine PROJ-10`) | 2026-11-16 |
 | DM-Ausgabetyp `status` gültig; `rinstate-*` weiterhin ungültig | In allen drei Schemas gültig; für `c` vorgesehen | 2026-11-16 |
 | Pflichtfelder inkl. `infoname`, `rpc`, `issno`, `type`, Datum | Vorgabe Product Owner | 2026-11-12 |
 | `issno`/`type`/Datum im REPLY-XML optional, in der Anwendung Pflicht | NSG und Beispieldateien enthalten sie nicht; Demo-Einträge werden ergänzt | 2026-11-12 |
-| REPLY: Partner, `dmlref` auf letzten SEND, gleiche DMCs, keine Feldänderungen | Nachvollziehbarer Zyklus (NSG 1.2.3, PROJ-6) | 2026-11-12 |
+| REPLY: Empfänger, `dmlref` auf letzten SEND, gleiche DMCs, keine Feldänderungen | Nachvollziehbarer Zyklus (NSG 1.2.3, PROJ-6) | 2026-11-12 |
 | `language` nach ISO 639-1, `country` nach ISO 3166 (2-stelliger Ländercode) | Vorgabe Product Owner; S1000D verwendet den 2-stelligen Ländercode | 2026-11-12 |
 | Sicherheitseinstufung der Einträge: nur Format 00–99 | Vorgabe Product Owner | 2026-11-12 |
 | Sicherheitseinstufung auf `01`–`20` eingeschränkt (alle Issues) | Schemas 4.2/5.0 erlauben nur 01–20; Fehler früh beim Check-in statt beim SEND (PROJ-12) | 2026-11-12 |
@@ -344,7 +344,7 @@ Check-in (PROJ-10)                         REPLY-Import (PROJ-13)
 |---|---|---|
 | **CSV-Leser** | liest Semikolon-CSV (UTF-8, mit/ohne BOM, Anführungszeichen), prüft Kopfzeile (Gruppe S), überspringt Leerzeilen | — (Schreiben derselben CSV: PROJ-9/14/18) |
 | **DML-Leser je Issue** | liest Kopf und Einträge einer DML-Datei in 2.3, 4.2 oder 5.0 laut `docs/dmrl-mapping.md` in das gemeinsame Format | PROJ-13, PROJ-15 (Anzeige archivierter Stände), PROJ-1 (Demo-Einträge) |
-| **Prüfkontext** | stellt bereit: MI des Systems, DML-Typ, Stand vor dem Check-out (Sperre) bzw. Einträge und Kopf des letzten SEND, Partner, archivierte REPLYs | — |
+| **Prüfkontext** | stellt bereit: MI des Systems, DML-Typ, Stand vor dem Check-out (Sperre) bzw. Einträge und Kopf des letzten SEND, Empfänger, archivierte REPLYs | — |
 | **Regelwerk** | Gruppen A, B, C, D, E, I (beide), F, K (Check-in), G, H (REPLY); jede Gruppe einzeln, alle laufen vollständig durch | — |
 | **Code-Listen** | ISO 639-1 (Sprachen) und ISO 3166-1 Alpha-2 (Länder) als feste Listen im Projekt | Formularprüfungen bei Bedarf |
 | **Meldungskatalog** | alle deutschen Meldungstexte an einer Stelle | — |
@@ -377,7 +377,7 @@ Das Regelwerk **speichert nichts**. Ein Prüfbericht existiert nur, solange der 
 | Regelgruppen als einzelne, unabhängige Prüfungen | Einzeln testbar; Check-in und REPLY schalten nur die passenden Gruppen ein. |
 | ISO-Codelisten fest im Projekt statt Zusatzpaket | Listen ändern sich praktisch nie; keine Abhängigkeit für zwei kleine Tabellen. |
 | CSV-Paket **PapaParse** statt Eigenbau | Bewährt für Anführungszeichen, Zeilenumbrüche in Werten, BOM; dieselbe Bibliothek erzeugt die CSV in PROJ-9/14/18. |
-| Bericht als CSV herunterladbar | Öffnet in Excel, lässt sich an den Partner weitergeben. |
+| Bericht als CSV herunterladbar | Öffnet in Excel, lässt sich an den Empfänger weitergeben. |
 | Meldungen zentral gesammelt | Einheitliche Formulierungen, einfache Anpassung. |
 
 ### F) Abhängigkeiten (Pakete)
@@ -433,7 +433,7 @@ _Stand 2026-11-13 — `/frontend PROJ-8`_
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 
 

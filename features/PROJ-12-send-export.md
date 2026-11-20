@@ -1,19 +1,19 @@
 # PROJ-12: SEND-Export
 
-## Status: Approved
+## Status: Architected
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-20
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Aktion „SEND", Statusanzeige
 - Requires: PROJ-11 (XSD-Validierung) — Prüfung vor Download und Archivierung
-- Requires: PROJ-4 (Organisationen) — Partnerauswahl
+- Requires: PROJ-4 (Organisationen) — Empfängerauswahl
 - Requires: PROJ-5 / PROJ-6 — MI, Issue, Originator, DML-Typ, Sicherheitseinstufung
 - Requires: PROJ-17 (Berechtigungen)
 - Wird genutzt von: PROJ-13 (REPLY prüft gegen letzten SEND), PROJ-15 (Archiv), PROJ-18 (XML-Aufbau für Export)
 
 ## Beschreibung
-Der Bearbeiter sendet die DMRL an einen externen Partner: Die Anwendung erzeugt eine S1000D-DMRL-XML in der Issue-Version des Systems (2.3, 4.2 oder 5.0), vergibt einen neuen Versionsindex `NNNNN-JJJJ`, prüft die Datei gegen das Schema (PROJ-11), stellt sie zum Download bereit und archiviert sie byte-genau. Die DMRL wartet danach auf die Antwort (REPLY) des Partners. Der Versand selbst erfolgt manuell außerhalb der Anwendung.
+Der Bearbeiter sendet die DMRL an einen externen Empfänger: Die Anwendung erzeugt eine S1000D-DMRL-XML in der Issue-Version des Systems (2.3, 4.2 oder 5.0), vergibt einen neuen Versionsindex `NNNNN-JJJJ`, prüft die Datei gegen das Schema (PROJ-11), stellt sie zum Download bereit und archiviert sie byte-genau. Die DMRL wartet danach auf die Antwort (REPLY) des Empfängers. Der Versand selbst erfolgt manuell außerhalb der Anwendung.
 
 ## Voraussetzungen
 | Voraussetzung | Wenn nicht erfüllt |
@@ -22,14 +22,14 @@ Der Bearbeiter sendet die DMRL an einen externen Partner: Die Anwendung erzeugt 
 | DMRL nicht ausgecheckt | „Die DMRL ist ausgecheckt von [Name]" |
 | DMRL-Status ≠ *gesendet* | „Es wird noch auf die Antwort zum SEND [Versionsindex] gewartet" |
 | Kein Eintrag *zu überarbeiten* | „[n] abgelehnte Einträge sind noch nicht überarbeitet" (per Check-in ändern, mit `d` kennzeichnen oder erneut mit `n` versehen) |
-| Mindestens ein Eintrag mit Eintragstyp `n`, `c` oder `d` | „Es gibt keine Änderungen, die der Partner prüfen müsste" |
+| Mindestens ein Eintrag mit Eintragstyp `n`, `c` oder `d` | „Es gibt keine Änderungen, die der Empfänger prüfen müsste" |
 
 Eine freigegebene DMRL ist damit erst nach einem Check-in mit Änderungen wieder sendefähig.
 
 ## SEND-Dialog
 | Feld / Anzeige | Festlegung |
 |---|---|
-| Partner | Pflicht; alle Organisationen außer dem Originator; vorbelegt mit dem Partner des letzten SEND; bei Abweichung Hinweis „Abweichend vom letzten Partner [CAGE Name]" |
+| Empfänger | Pflicht; alle Organisationen außer dem Originator; vorbelegt mit dem Empfänger des letzten SEND; bei Abweichung Hinweis „Abweichend vom letzten Empfänger [CAGE Name]" |
 | Bemerkung | optional, Freitext → `dml/remarks` |
 | Vorschau | neuer Versionsindex (z. B. `00003-2026`), Dateiname, Anzahl Einträge gesamt / `n` / `c` / `d` |
 | Aktionen | „Senden" / „Abbrechen" |
@@ -63,10 +63,18 @@ Eine freigegebene DMRL ist damit erst nach einem Check-in mit Änderungen wieder
 | Einträge mit `n`/`c`/`d` | Status *gesendet* |
 | Einträge ohne Eintragstyp | unverändert |
 | DMRL | Status *gesendet* (Check-out und weiterer SEND gesperrt bis REPLY) |
-| Archiv | XML byte-genau mit Versionsindex, Partner, Bearbeiter, Zeitpunkt (PROJ-15) |
-| Workflow-Verlauf | „SEND [Versionsindex] an [Partner]" |
-| Partner-Organisation | „im Workflow verwendet" (PROJ-4) |
+| Archiv | XML byte-genau mit Versionsindex, **Sender-Daten `/dml/dmlc`** (modelic, sendid, dmltype, diyear, seqnum), Empfänger, Bearbeiter, Zeitpunkt (PROJ-15) |
+| Workflow-Verlauf | „SEND [Versionsindex] an [Empfänger]" |
+| Empfänger-Organisation | „im Workflow verwendet" (PROJ-4) |
 | Antworten früherer REPLYs (`answer`) | bleiben in der Anwendung erhalten |
+
+## Bezug SEND ↔ REPLY *(Refinement 2026-11-20)*
+| Regel | Festlegung |
+|---|---|
+| Sender-Daten merken | Beim SEND werden die Sender-Daten `/dml/dmlc` (modelic, sendid, dmltype, diyear, seqnum) mit dem Archivstand gespeichert. |
+| Vergleich beim REPLY | `/dml/dmlref/dmlc` der REPLY-DMRL muss in **allen** Feldern (modelic, sendid, dmltype, diyear, seqnum) mit den gemerkten Sender-Daten des **letzten gültigen** SEND übereinstimmen; sonst „REPLY bezieht sich nicht auf den letzten SEND [Versionsindex]" (PROJ-8 G). |
+| seqnum des REPLY | `/dml/dmlc/seqnum` der REPLY-DMRL ist **unabhängig** von der seqnum des SEND und wird nicht dagegen geprüft (z. B. REPLY `00001-2026` auf SEND `00002-2026`). |
+| Versionsindex des REPLY | Eine REPLY-DMRL hat einen **eigenen** Versionsindex aus `/dml/dmlc/seqnum` und `/dml/dmlc/diyear` des Empfängers; so wird sie archiviert und angezeigt (PROJ-13, PROJ-15). |
 
 Besteht das XML die XSD-Prüfung nicht: kein Download, kein Versionsindex, kein Archiv, keine Statusänderung (PROJ-11).
 
@@ -80,11 +88,12 @@ Nur **Administrator**, nur bei Status *gesendet*:
 - Nächster SEND erhält eine neue seqnum
 
 ## User Stories
-- Als **Bearbeiter** möchte ich die DMRL als S1000D-XML an einen Partner senden, damit er die Änderungen prüfen kann.
+- Als **Bearbeiter** möchte ich die DMRL als S1000D-XML an einen Empfänger senden, damit er die Änderungen prüfen kann.
+- Als **Bearbeiter** möchte ich, dass ein REPLY nur angenommen wird, wenn sein `dmlref` genau auf die Sender-Daten meines letzten SEND verweist, damit Antworten eindeutig dem richtigen SEND zugeordnet sind.
 - Als **Bearbeiter** möchte ich vor dem Senden sehen, welcher Versionsindex vergeben wird und wie viele Einträge neu, geändert oder zur Löschung sind.
 - Als **Bearbeiter** möchte ich, dass jede SEND-Datei schemakonform und archiviert ist, damit ich jederzeit nachweisen kann, was an wen gesendet wurde.
 - Als **Bearbeiter** möchte ich daran gehindert werden, eine DMRL mit unbearbeiteten abgelehnten Einträgen zu senden.
-- Als **Administrator** möchte ich einen SEND zurückziehen können, wenn der Partner nicht antwortet oder falsch gewählt wurde, damit die DMRL nicht dauerhaft blockiert ist.
+- Als **Administrator** möchte ich einen SEND zurückziehen können, wenn der Empfänger nicht antwortet oder falsch gewählt wurde, damit die DMRL nicht dauerhaft blockiert ist.
 - Als **Product Owner** möchte ich den SEND für Systeme mit Issue 2.3, 4.2 und 5.0 vorführen.
 
 ## Out of Scope
@@ -106,14 +115,14 @@ Nur **Administrator**, nur bei Status *gesendet*:
 - [ ] Angenommen die DMRL ist ausgecheckt, wenn „SEND" gewählt wird, dann ist es nicht möglich mit „Die DMRL ist ausgecheckt von [Name]"
 - [ ] Angenommen die DMRL hat Status *gesendet*, wenn „SEND" gewählt wird, dann ist es nicht möglich mit Hinweis auf den ausstehenden REPLY
 - [ ] Angenommen ein Eintrag hat Status *zu überarbeiten*, wenn „SEND" gewählt wird, dann ist es nicht möglich mit „[n] abgelehnte Einträge sind noch nicht überarbeitet"
-- [ ] Angenommen kein Eintrag hat Eintragstyp `n`, `c` oder `d`, wenn „SEND" gewählt wird, dann ist es nicht möglich mit „Es gibt keine Änderungen, die der Partner prüfen müsste"
+- [ ] Angenommen kein Eintrag hat Eintragstyp `n`, `c` oder `d`, wenn „SEND" gewählt wird, dann ist es nicht möglich mit „Es gibt keine Änderungen, die der Empfänger prüfen müsste"
 - [ ] Angenommen ein Bearbeiter ist für die DMRL nicht berechtigt, wenn er SEND aufruft, dann erscheint „Keine Berechtigung"
 
 ### Dialog
-- [ ] Angenommen alle Voraussetzungen sind erfüllt, wenn „SEND" gewählt wird, dann zeigt der Dialog Partnerauswahl, Bemerkung, neuen Versionsindex, Dateiname und Anzahl gesamt/n/c/d
-- [ ] Angenommen der Dialog ist offen, wenn die Partnerauswahl geöffnet wird, dann ist der Originator nicht enthalten und der Partner des letzten SEND vorausgewählt
-- [ ] Angenommen ein anderer als der letzte Partner wird gewählt, wenn der Dialog angezeigt wird, dann erscheint der Hinweis „Abweichend vom letzten Partner"
-- [ ] Angenommen kein Partner ist gewählt, wenn „Senden" gewählt wird, dann erscheint ein Pflichtfeldfehler
+- [ ] Angenommen alle Voraussetzungen sind erfüllt, wenn „SEND" gewählt wird, dann zeigt der Dialog Empfängerauswahl, Bemerkung, neuen Versionsindex, Dateiname und Anzahl gesamt/n/c/d
+- [ ] Angenommen der Dialog ist offen, wenn die Empfängerauswahl geöffnet wird, dann ist der Originator nicht enthalten und der Empfänger des letzten SEND vorausgewählt
+- [ ] Angenommen ein anderer als der letzte Empfänger wird gewählt, wenn der Dialog angezeigt wird, dann erscheint der Hinweis „Abweichend vom letzten Empfänger"
+- [ ] Angenommen kein Empfänger ist gewählt, wenn „Senden" gewählt wird, dann erscheint ein Pflichtfeldfehler
 - [ ] Angenommen der Dialog ist offen, wenn „Abbrechen" gewählt wird, dann ändert sich nichts
 
 ### XML
@@ -131,10 +140,16 @@ Nur **Administrator**, nur bei Status *gesendet*:
 ### Wirkung
 - [ ] Angenommen der SEND ist erfolgreich, wenn er abgeschlossen ist, dann wird die XML heruntergeladen, die DMRL hat Status *gesendet* und Einträge mit `n`/`c`/`d` haben Status *gesendet*
 - [ ] Angenommen ein Eintrag hat keinen Eintragstyp und Status *freigegeben*, wenn gesendet wird, dann bleibt er *freigegeben*
-- [ ] Angenommen der SEND ist erfolgreich, wenn das Archiv betrachtet wird, dann ist die XML byte-genau mit Versionsindex, Partner, Bearbeiter und Zeitpunkt gespeichert
-- [ ] Angenommen der SEND ist erfolgreich, wenn der Kopfbereich der Ansicht betrachtet wird, dann zeigt er den neuen Versionsindex sowie Partner, Datum und Bearbeiter (PROJ-7)
+- [ ] Angenommen der SEND ist erfolgreich, wenn das Archiv betrachtet wird, dann ist die XML byte-genau mit Versionsindex, Sender-Daten (`/dml/dmlc`), Empfänger, Bearbeiter und Zeitpunkt gespeichert
+- [ ] Angenommen der SEND ist erfolgreich, wenn der Kopfbereich der Ansicht betrachtet wird, dann zeigt er den neuen Versionsindex sowie Empfänger, Datum und Bearbeiter (PROJ-7)
 - [ ] Angenommen die XML besteht die XSD-Prüfung nicht, wenn gesendet wird, dann wird nichts heruntergeladen, kein Versionsindex vergeben, nichts archiviert und kein Status geändert
-- [ ] Angenommen die Partner-Organisation war noch nicht im Workflow verwendet, wenn gesendet wird, dann gilt sie danach als verwendet (PROJ-4)
+- [ ] Angenommen die Empfänger-Organisation war noch nicht im Workflow verwendet, wenn gesendet wird, dann gilt sie danach als verwendet (PROJ-4)
+
+### Bezug SEND ↔ REPLY *(Refinement 2026-11-20)*
+- [ ] Angenommen SEND `DML-PHUNGUN-D0815-C-2026-00002` wurde an C1234 gesendet, wenn ein REPLY mit `dmlref/dmlc` = PHUNGUN · D0815 · C · 2026 · 00002 importiert wird, dann besteht er die Bezugsprüfung
+- [ ] Angenommen der letzte SEND hat `dmlc` PHUNGUN · D0815 · C · 2026 · 00002, wenn im `dmlref` des REPLY eines der Felder modelic, sendid, dmltype, diyear oder seqnum abweicht, dann wird „REPLY bezieht sich nicht auf den letzten SEND 00002-2026" gemeldet und der REPLY nicht übernommen
+- [ ] Angenommen der REPLY hat `dmlc/seqnum` `00001` und bezieht sich korrekt auf SEND `00002-2026`, wenn er importiert wird, dann ist das kein Fehler (seqnum des REPLY ist unabhängig)
+- [ ] Angenommen ein REPLY mit `dmlc` C1234 · 2026 · 00001 wurde übernommen, wenn Archiv und Verlauf betrachtet werden, dann trägt er den eigenen Versionsindex `00001-2026` und ist dem SEND `00002-2026` zugeordnet
 
 ### Zurückziehen
 - [ ] Angenommen die DMRL hat Status *gesendet*, wenn ein Administrator „SEND zurückziehen" wählt, dann muss er eine Begründung eingeben und bestätigen
@@ -146,8 +161,8 @@ Nur **Administrator**, nur bei Status *gesendet*:
 - **Download blockiert / Datei verloren:** SEND gilt als ausgeführt; erneuter Download aus dem Archiv (PROJ-15).
 - **XSD-Prüfung nicht verfügbar:** SEND blockiert (PROJ-11).
 - **Jahreswechsel zwischen Dialog öffnen und Senden:** Versionsindex wird beim Senden ermittelt; Vorschau ggf. aktualisieren.
-- **Partner-Organisation ist Originator einer anderen DMRL:** erlaubt.
-- **Nur Organisation = Originator vorhanden:** „Keine Partner-Organisation vorhanden — bitte zuerst anlegen (Verwaltung → Organisationen)".
+- **Empfänger-Organisation ist Originator einer anderen DMRL:** erlaubt.
+- **Nur Organisation = Originator vorhanden:** „Keine Empfänger-Organisation vorhanden — bitte zuerst anlegen (Verwaltung → Organisationen)".
 - **Einträge mit Eintragstyp `d` und Antwort `y` aus früherem Zyklus:** bleiben ohne Eintragstyp in der DMRL und werden mitgesendet.
 - **Sehr große DMRL (1.000+ Einträge):** Fortschrittsanzeige während Erzeugung und Prüfung.
 - **Speicher voll beim Archivieren:** SEND schlägt fehl, keine Statusänderung (PROJ-1).
@@ -170,11 +185,14 @@ Nur **Administrator**, nur bei Status *gesendet*:
 | Sicherheitseinstufung `01`–`20` (PROJ-6, PROJ-8 angepasst) | Schemas 4.2/5.0 erlauben nur 01–20 | 2026-11-12 |
 | SEND nur ohne Check-out, nicht im Status *gesendet*, ohne Einträge *zu überarbeiten*, mit mindestens einem `n`/`c`/`d` | NSG (ein Zyklus nach dem anderen), Anforderung 02 | 2026-11-12 |
 | Ausgabedaten der Einträge werden ins XML geschrieben | Vorgabe Product Owner (Option b); ggf. später anpassen | 2026-11-12 |
-| Partner im Dialog, vorbelegt mit letztem Partner, Hinweis bei Abweichung | Vorgabe Product Owner (PROJ-6) | 2026-11-12 |
+| Empfänger im Dialog, vorbelegt mit letztem Empfänger, Hinweis bei Abweichung | Vorgabe Product Owner (PROJ-6) | 2026-11-12 |
+| Begriff „Partner" wird in der **gesamten Anwendung** (alle UI-Texte, Meldungen, Verlauf, Archiv, auch REPLY und Regelwerk) durch „Empfänger" ersetzt; Code-Bezeichner (z. B. `partnerOrganisationId`) bleiben | Vorgabe Product Owner (Variante b) | 2026-11-20 |
+| Beim SEND werden die Sender-Daten `/dml/dmlc` gemerkt; `/dml/dmlref/dmlc` des REPLY muss in allen Feldern damit übereinstimmen | Eindeutige Zuordnung REPLY → SEND; Vorgabe Product Owner (bereits so umgesetzt, jetzt ausdrücklich spezifiziert) | 2026-11-20 |
+| seqnum des REPLY unabhängig von der seqnum des SEND; REPLY hat eigenen Versionsindex (`diyear`/`seqnum` des Empfängers) | Der Empfänger nummeriert seine Antworten selbst (NSG); Vorgabe Product Owner | 2026-11-20 |
 | Alle Einträge, ohne `answer` | Komplette DMRL (DML-Typ c), NSG | 2026-11-12 |
 | `dmlref`: erster SEND auf sich selbst, sonst letzter REPLY, `issno` 001 | NSG 1.2.3, Beispieldateien | 2026-11-12 |
 | seqnum je DMRL und Absender pro Jahr | PRD | 2026-11-12 |
-| Einträge `n`/`c`/`d` → *gesendet*, übrige unverändert | Nur geänderte Einträge werden vom Partner geprüft | 2026-11-12 |
+| Einträge `n`/`c`/`d` → *gesendet*, übrige unverändert | Nur geänderte Einträge werden vom Empfänger geprüft | 2026-11-12 |
 | SEND zurückziehen nur durch Administrator, mit Begründung; Archiveintrag bleibt markiert | Blockade durch fehlenden REPLY auflösbar, nachvollziehbar | 2026-11-12 |
 | DM-Ausgabedaten je Issue schemakonform: 2.3 `addresdm/issno` (`@issno`, `@type`); 4.2/5.0 `dmRefIdent/issueInfo` (`@issueNumber`, `@inWork`) + `dmlEntry/@issueType` | In 4.2/5.0 gibt es kein `issno` und kein `@type` an `issueInfo`; geprüft mit xmllint, bestätigt durch Product Owner | 2026-11-13 |
 
@@ -202,7 +220,7 @@ Der SEND ist eine Workflow-Aktion nach dem Muster aus PROJ-9 (Verfügbarkeitsreg
 ```
 DMRL-Ansicht (PROJ-7) — Aktion „SEND" (gesperrt mit Grund, wenn Voraussetzungen fehlen)
 +-- SEND-Dialog (shadcn Dialog + Form)
-|   +-- Partner (Auswahl: Organisationen außer Originator; vorbelegt letzter Partner; Hinweis bei Abweichung)
+|   +-- Empfänger (Auswahl: Organisationen außer Originator; vorbelegt letzter Empfänger; Hinweis bei Abweichung)
 |   +-- Bemerkung (mehrzeilig, optional)
 |   +-- Vorschau: neuer Versionsindex · Dateiname · Anzahl gesamt / n / c / d
 |   +-- „Senden" · „Abbrechen"
@@ -214,10 +232,12 @@ DMRL-Ansicht (PROJ-7) — Aktion „SEND" (gesperrt mit Grund, wenn Voraussetzun
 
 ### B) Datenmodell (in Klartext)
 Keine neuen Objekte (PROJ-1). Ein erfolgreicher SEND schreibt in **einer** Speicherung:
-- **Archivstand** (Richtung SEND): DML-Code, Versionsindex, `dmlref`, Dateiname, **XML-Text genau wie heruntergeladen**, Zeitpunkt, Bearbeiter, Partner
+- **Archivstand** (Richtung SEND): DML-Code, Versionsindex, `dmlref`, Dateiname, **XML-Text genau wie heruntergeladen**, Sender-Daten `dmlc` (Vergleichsbasis für `dmlref` des REPLY), Zeitpunkt, Bearbeiter, Empfänger
 - **Einträge** mit `n`/`c`/`d` → *gesendet*
 - **DMRL** → *gesendet*
-- **Verlauf** „SEND [Versionsindex] an [Partner]"
+- **Verlauf** „SEND [Versionsindex] an [Empfänger]"
+
+**Refinement 2026-11-20:** Umbenennung „Empfänger" → „Empfänger" in allen UI-Texten, Meldungen (inkl. Regelwerk PROJ-8 G und REPLY-Import PROJ-13), Verlauf und Archiv; Code-Bezeichner und gespeicherte Daten bleiben unverändert (kein Datenumbau). Bestehende Verlaufseinträge mit „Empfänger" bleiben als Historie unverändert. Bezug SEND ↔ REPLY ist bereits umgesetzt (`sameDmlc` in `src/lib/rules/check/reply.ts`) — nur Tests für die neuen Akzeptanzkriterien ergänzen.
 
 Schlägt die XSD-Prüfung fehl: nur Verlaufseintrag „SEND fehlgeschlagen — XSD-Prüfung". **Zurückziehen** schreibt: Archivstand-Kennzeichen „zurückgezogen" (Zeitpunkt, Administrator, Begründung), Einträge *gesendet* → *in Bearbeitung*, DMRL → *in Bearbeitung*, Verlaufseintrag.
 
@@ -264,13 +284,13 @@ _Stand 2026-11-13 — `/frontend PROJ-12`_
 
 **Umgesetzt**
 - `src/lib/data/dml-writer.ts` — **DML-Schreiber je Issue** (gemeinsamer Baustein für PROJ-12/14/18): feste Struktur nach `docs/dmrl-mapping.md` und den Schemas; 2.3 (`dmlc`, `dmentry/addresdm/…`) bzw. 4.2/5.0 (`identAndStatusSection`, `dmlContent/dmlEntry`, Standard-BREX `S1000D-F-…` / `S1000D-G-…`); Antworten nur auf Wunsch (`answers`), beim SEND nie; Eintrag ohne Eintragstyp ohne Attribut; leere optionale Angaben (Ausgabedaten, Info Name, Sprache, Bemerkungen) werden weggelassen; mehrzeilige Bemerkungen in 4.2/5.0 als mehrere `simplePara`; Sonderzeichen maskiert, unzulässige Steuerzeichen entfernt; UTF-8 mit XML-Deklaration.
-- `src/lib/workflows/send.ts` — Voraussetzungen mit Gründen (Berechtigung → ausgecheckt → gesendet → abgelehnte Einträge → keine Änderungen), Partnerliste (ohne Originator) und Vorbelegung, Versionsindex (seqnum je DMRL + Absender + Jahr, zurückgezogene zählen mit), `dmlref` (erster SEND → eigener Code, sonst letzter REPLY; `issno` 001), Dateiname, Vorschau, `prepareSend` (alle Einträge nach DMC, ohne `answer`), atomares `executeSend` (Archiv byte-genau, Einträge n/c/d → gesendet, DMRL → gesendet, Verlauf „SEND … an …"; prüft Voraussetzungen und Versionsindex erneut), `recordFailedSend`, `executeWithdrawSend`.
-- `src/components/workflows/send-dialogs.tsx` — SEND-Dialog (Partner Pflicht, Hinweis „Abweichend vom letzten Partner …", Bemerkung max. 2.000 Zeichen mit Zähler, Vorschau Versionsindex/Dateiname/Anzahlen; Hinweis mit Link, wenn kein Partner existiert) → „XML wird erzeugt und geprüft …" → XSD-Prüfung (PROJ-11) → speichern → Download. Schemafehler: „Anwendungsfehler — SEND abgebrochen" + Prüfbericht, Verlauf „SEND fehlgeschlagen". Prüfung nicht verfügbar: blockiert, nichts gespeichert, „Erneut versuchen". Dialog „SEND zurückziehen" mit Pflicht-Begründung.
+- `src/lib/workflows/send.ts` — Voraussetzungen mit Gründen (Berechtigung → ausgecheckt → gesendet → abgelehnte Einträge → keine Änderungen), Empfängerliste (ohne Originator) und Vorbelegung, Versionsindex (seqnum je DMRL + Absender + Jahr, zurückgezogene zählen mit), `dmlref` (erster SEND → eigener Code, sonst letzter REPLY; `issno` 001), Dateiname, Vorschau, `prepareSend` (alle Einträge nach DMC, ohne `answer`), atomares `executeSend` (Archiv byte-genau, Einträge n/c/d → gesendet, DMRL → gesendet, Verlauf „SEND … an …"; prüft Voraussetzungen und Versionsindex erneut), `recordFailedSend`, `executeWithdrawSend`.
+- `src/components/workflows/send-dialogs.tsx` — SEND-Dialog (Empfänger Pflicht, Hinweis „Abweichend vom letzten Empfänger …", Bemerkung max. 2.000 Zeichen mit Zähler, Vorschau Versionsindex/Dateiname/Anzahlen; Hinweis mit Link, wenn kein Empfänger existiert) → „XML wird erzeugt und geprüft …" → XSD-Prüfung (PROJ-11) → speichern → Download. Schemafehler: „Anwendungsfehler — SEND abgebrochen" + Prüfbericht, Verlauf „SEND fehlgeschlagen". Prüfung nicht verfügbar: blockiert, nichts gespeichert, „Erneut versuchen". Dialog „SEND zurückziehen" mit Pflicht-Begründung.
 - `src/lib/dmrl/actions.ts`, `src/components/dmrl/dmrl-view.tsx` — Aktionen „SEND" und „SEND zurückziehen" angebunden.
 - `src/test/setup.ts` — jsdom-Ergänzungen für Radix-Auswahllisten (erster Test, der eine Auswahlliste bedient).
 
 **Tests**
-- Unit: `dml-writer.test.ts` (9, u. a. Rundlauf Schreiben → Lesen für 2.3/4.2/5.0), `dml-writer.xsd.test.ts` (3, **erzeugte Dateien gegen alle drei Schemas mit echtem xmllint gültig**), `send.test.ts` (14, inkl. Rundlauf SEND → Partner-REPLY → REPLY-Prüfung PROJ-8 fehlerfrei), `send-dialogs.test.tsx` (5); insgesamt 339 Unit-Tests grün.
+- Unit: `dml-writer.test.ts` (9, u. a. Rundlauf Schreiben → Lesen für 2.3/4.2/5.0), `dml-writer.xsd.test.ts` (3, **erzeugte Dateien gegen alle drei Schemas mit echtem xmllint gültig**), `send.test.ts` (14, inkl. Rundlauf SEND → Empfänger-REPLY → REPLY-Prüfung PROJ-8 fehlerfrei), `send-dialogs.test.tsx` (5); insgesamt 339 Unit-Tests grün.
 - E2E: `tests/PROJ-12-send.spec.ts` (2) — Fahrzeug 4.2 und Hubschrauber 5.0 senden, PHUNGUN 2.3 nach Zurückziehen erneut senden (00003); jeweils mit echter XSD-Prüfung über die Serverfunktion.
 
 **Hinweise / Abweichungen**
@@ -295,12 +315,12 @@ _Stand 2026-11-13 — `/frontend PROJ-12`_
 - [x] Voraussetzungen (5/5), Dialog (5/5), XML (10/10), Wirkung (6/6), Zurückziehen (4/4) — Unit (`send.test.ts`, `dml-writer*.test.ts`), Dialogtests, E2E (`PROJ-12-send.spec.ts`, alle drei Issues mit echter XSD-Prüfung)
 
 ### Edge Cases Status
-- [x] Download blockiert (Archiv verfügbar), XSD nicht verfügbar, Jahreswechsel (Versionsindex neu ermittelt, Ablehnung mit Meldung), Partner = Originator anderer DMRL, nur Originator vorhanden (Hinweis mit Link), `d` + `y` aus früherem Zyklus, große DMRL (Fortschrittsanzeige), Speicher voll
+- [x] Download blockiert (Archiv verfügbar), XSD nicht verfügbar, Jahreswechsel (Versionsindex neu ermittelt, Ablehnung mit Meldung), Empfänger = Originator anderer DMRL, nur Originator vorhanden (Hinweis mit Link), `d` + `y` aus früherem Zyklus, große DMRL (Fortschrittsanzeige), Speicher voll
 - [ ] Siehe BUG-QA2-2 (PROJ-15): Speicherkapazität bei sehr großen DMRLs
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 
 

@@ -21,7 +21,7 @@ DMRL-Ansicht
 +-- Kopfbereich
 |   +-- Systembezeichnung · Model Ident Code · S1000D-Issue
 |   +-- Originator · DML-Typ · Sicherheitseinstufung
-|   +-- Versionsindex (z. B. 00002-2026) · letzter SEND (Partner, Datum, Bearbeiter)
+|   +-- Versionsindex (z. B. 00002-2026) · letzter SEND (Empfänger, Datum, Bearbeiter)
 |   +-- DMRL-Status (farbiges Kennzeichen) · Sperre ("ausgecheckt von … seit …")
 |   +-- Hinweisbanner, solange nicht freigegeben
 +-- Aktionsleiste: Check-out · Check-in · SEND · REPLY importieren · Exportieren · Archiv
@@ -29,7 +29,7 @@ DMRL-Ansicht
 +-- Zählerleiste je Eintragsstatus
 +-- Filter (Eintragsstatus, Eintragstyp) · Suche (DMC, Tech Name, Info Name)
 +-- Eintragstabelle
-|   +-- DMC · Tech Name · Info Name · Eintragstyp · Sicherheitseinstufung · Eintragsstatus · Partner-Kommentar
+|   +-- DMC · Tech Name · Info Name · Eintragstyp · Sicherheitseinstufung · Eintragsstatus · Empfänger-Kommentar
 +-- Detailfenster (Klick auf Zeile): alle Felder des Eintrags
 ```
 
@@ -43,7 +43,7 @@ Es gibt **zwei verschiedene Typ-Felder**, die nicht verwechselt werden dürfen:
 
 | Begriff | XPath | Werte | Bedeutung |
 |---|---|---|---|
-| **Eintragstyp** (`dmentryType`) | `/dml/dmentry/@type` | leer, `n`, `c`, `d` | Änderungsart des DMRL-Eintrags in der Abstimmung mit dem Partner |
+| **Eintragstyp** (`dmentryType`) | `/dml/dmentry/@type` | leer, `n`, `c`, `d` | Änderungsart des DMRL-Eintrags in der Abstimmung mit dem Empfänger |
 | **DM-Ausgabetyp** (`type`) | `/dml/dmentry/addresdm/issno/@type` | `new`, `changed`, `revised`, `deleted` | Art der Ausgabe des Datenmoduls selbst |
 
 **Eintragstyp (`/dml/dmentry/@type`) — Bedeutung für die Abstimmung:**
@@ -59,13 +59,13 @@ Es gibt **zwei verschiedene Typ-Felder**, die nicht verwechselt werden dürfen:
 ## Regel REPLY → Eintrag (festgehalten für PROJ-13/14)
 Betrifft ausschließlich den **Eintragstyp** (`/dml/dmentry/@type`); der DM-Ausgabetyp bleibt unverändert.
 - `answer="y"` → **Eintragstyp wird entfernt**, Eintrag ist **genehmigt** (Status *freigegeben*). Gilt auch für Eintragstyp `d`: der Eintrag bleibt in der DMRL bestehen.
-- `answer="n"` → **Eintragstyp bleibt**, Eintrag muss überarbeitet und erneut an den Partner gesendet werden (Status *zu überarbeiten*).
+- `answer="n"` → **Eintragstyp bleibt**, Eintrag muss überarbeitet und erneut an den Empfänger gesendet werden (Status *zu überarbeiten*).
 
 ## User Stories
 - Als **Bearbeiter** möchte ich alle Einträge einer DMRL mit DMC, Titel, Eintragstyp und Status sehen, damit ich den Stand der Abstimmung kenne.
 - Als **Bearbeiter** möchte ich auf einen Blick sehen, ob die DMRL freigegeben, gesendet oder ausgecheckt ist und von wem, damit ich weiß, was als Nächstes zu tun ist.
 - Als **Bearbeiter** möchte ich nach Status und Eintragstyp filtern und nach DMC oder Titel suchen, damit ich bei großen DMRLs gezielt die Einträge „zu überarbeiten" finde.
-- Als **Bearbeiter** möchte ich die Kommentare des Partners zu abgelehnten Einträgen sehen, damit ich weiß, was zu überarbeiten ist.
+- Als **Bearbeiter** möchte ich die Kommentare des Empfängers zu abgelehnten Einträgen sehen, damit ich weiß, was zu überarbeiten ist.
 - Als **Bearbeiter** möchte ich alle Felder eines Eintrags im Detail sehen, damit ich ihn vollständig prüfen kann.
 - Als **Product Owner** möchte ich einen deutlichen Hinweis sehen, solange eine DMRL nicht freigegeben ist, damit niemand sie versehentlich in einem TP-Projekt verwendet.
 
@@ -91,7 +91,7 @@ Betrifft ausschließlich den **Eintragstyp** (`/dml/dmentry/@type`); der DM-Ausg
 
 ### Kopfbereich
 - [ ] Angenommen die DMRL-Ansicht ist geöffnet, wenn der Kopfbereich angezeigt wird, dann zeigt er Systembezeichnung, Model Ident Code, S1000D-Issue, Originator (CAGE-Code und Name), DML-Typ, Sicherheitseinstufung und DMRL-Status
-- [ ] Angenommen die DMRL wurde mindestens einmal gesendet, wenn der Kopfbereich angezeigt wird, dann zeigt er den aktuellen Versionsindex sowie Partner, Datum und Bearbeiter des letzten SEND
+- [ ] Angenommen die DMRL wurde mindestens einmal gesendet, wenn der Kopfbereich angezeigt wird, dann zeigt er den aktuellen Versionsindex sowie Empfänger, Datum und Bearbeiter des letzten SEND
 - [ ] Angenommen die DMRL wurde noch nie gesendet, wenn der Kopfbereich angezeigt wird, dann steht beim Versionsindex „— noch nicht gesendet —"
 - [ ] Angenommen die DMRL ist ausgecheckt, wenn der Kopfbereich angezeigt wird, dann zeigt er „Ausgecheckt von [Name] seit [Datum/Uhrzeit]"
 - [ ] Angenommen die DMRL ist nicht freigegeben, wenn die Ansicht angezeigt wird, dann erscheint das Banner „Nicht freigegeben — darf nicht in einem Technische-Publikation-Projekt verwendet werden"
@@ -102,13 +102,13 @@ Betrifft ausschließlich den **Eintragstyp** (`/dml/dmentry/@type`); der DM-Ausg
 - [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRL PHUNGUN geöffnet wird, dann zeigt die Zählerleiste 32 Einträge, davon 32 gesendet
 
 ### Eintragstabelle
-- [ ] Angenommen die DMRL hat Einträge, wenn die Tabelle angezeigt wird, dann zeigt sie je Eintrag DMC, Tech Name, Info Name, Eintragstyp, Sicherheitseinstufung, Eintragsstatus und Partner-Kommentar, sortiert nach DMC
+- [ ] Angenommen die DMRL hat Einträge, wenn die Tabelle angezeigt wird, dann zeigt sie je Eintrag DMC, Tech Name, Info Name, Eintragstyp, Sicherheitseinstufung, Eintragsstatus und Empfänger-Kommentar, sortiert nach DMC
 - [ ] Angenommen ein Eintrag hat die Felder `PHUNGUN`, `A`, `A05`, `4`, `0`, `0000`, `01`, `A`, `000`, `A`, `A`, wenn die Tabelle angezeigt wird, dann lautet sein DMC `PHUNGUN-A-A05-40-0000-01A-000A-A`
 - [ ] Angenommen ein Eintrag hat Eintragstyp `n`, `c` oder `d`, wenn die Tabelle angezeigt wird, dann wird der Eintragstyp als „neu", „geändert" bzw. „Löschung" angezeigt
 - [ ] Angenommen ein Eintrag hat Eintragstyp `d`, wenn die Tabelle angezeigt wird, dann ist die Zeile durchgestrichen und ausgegraut
 - [ ] Angenommen ein Eintrag hat einen leeren Eintragstyp, wenn die Tabelle angezeigt wird, dann ist die Spalte Eintragstyp leer
 - [ ] Angenommen ein Eintrag hat den DM-Ausgabetyp `deleted` (`addresdm/issno/@type`), wenn die Tabelle angezeigt wird, dann trägt er das Kennzeichen „DM gelöscht"
-- [ ] Angenommen ein Eintrag hat Status „zu überarbeiten", wenn die Tabelle angezeigt wird, dann ist der Status farblich hervorgehoben und der Partner-Kommentar sichtbar
+- [ ] Angenommen ein Eintrag hat Status „zu überarbeiten", wenn die Tabelle angezeigt wird, dann ist der Status farblich hervorgehoben und der Empfänger-Kommentar sichtbar
 - [ ] Angenommen eine Zeile wird angeklickt oder per Tastatur ausgewählt, wenn das Detailfenster öffnet, dann zeigt es alle Felder des Eintrags (inkl. `rpc`, `rpcname`, `language`, `country`, `issno`, DM-Ausgabetyp `type`, Datum, `answer`, `answer_comment`, `remarks`) ohne Bearbeitungsmöglichkeit
 - [ ] Angenommen die DMRL hat keine Einträge, wenn die Ansicht angezeigt wird, dann erscheint „Noch keine Einträge — Einträge werden über Check-out/Check-in erfasst"
 
@@ -166,7 +166,7 @@ Betrifft ausschließlich den **Eintragstyp** (`/dml/dmentry/@type`); der DM-Ausg
 | Detailfenster als seitliches Sheet | Tabelle bleibt sichtbar | 2026-11-12 |
 | Aktionsleiste ohne eigene Logik; Verfügbarkeit + Grund aus den Workflow-Regeln | Keine doppelte Logik | 2026-11-12 |
 | Gemeinsame DMC-Darstellung und Status-/Typ-Badges | Konsistenz über alle Seiten | 2026-11-12 |
-| Ergänzt: Freigabe-Nachweis, Partner-Bemerkung, Export, Aktionen für Sperrinhaber/Administrator | Anforderungen aus PROJ-9/12/13/14/18 | 2026-11-12 |
+| Ergänzt: Freigabe-Nachweis, Empfänger-Bemerkung, Export, Aktionen für Sperrinhaber/Administrator | Anforderungen aus PROJ-9/12/13/14/18 | 2026-11-12 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -181,10 +181,10 @@ Seite „DMRL-Ansicht" (/dmrl/[ID])
 +-- Zugriffswächter „DMRL erlaubt?" (PROJ-2) · „DMRL nicht gefunden"
 +-- Kopfbereich (shadcn Card)
 |   +-- Systembezeichnung · MI · Issue · Originator (CAGE + Name) · DML-Typ · Sicherheitseinstufung
-|   +-- Versionsindex + letzter SEND (Partner, Datum, Bearbeiter) bzw. „— noch nicht gesendet —"
+|   +-- Versionsindex + letzter SEND (Empfänger, Datum, Bearbeiter) bzw. „— noch nicht gesendet —"
 |   +-- Status-Badge · Sperre „Ausgecheckt von … seit …"
 |   +-- Freigabe-Nachweis bzw. „Letzte Freigabe …" mit „Freigabestand anzeigen" (PROJ-14)
-|   +-- Bemerkung des Partners aus dem letzten REPLY (PROJ-13)
+|   +-- Bemerkung des Empfängers aus dem letzten REPLY (PROJ-13)
 |   +-- Banner „Nicht freigegeben …" (shadcn Alert)
 +-- Aktionsleiste (Schaltflächen; Verfügbarkeit aus den Workflow-Regeln, gesperrte mit Tooltip-Grund)
 |   +-- Check-out · Check-in · SEND · REPLY importieren · Exportieren (CSV/XML) · Archiv
@@ -194,7 +194,7 @@ Seite „DMRL-Ansicht" (/dmrl/[ID])
     +-- Zählerleiste je Eintragsstatus + Gesamt
     +-- Filter: Eintragsstatus · Eintragstyp (shadcn Select) · Suche (Input)
     +-- Tabelle (shadcn Table), sortiert nach DMC, seitenweise (shadcn Pagination, 50 je Seite)
-    |   +-- DMC · Tech Name · Info Name · Eintragstyp · Sicherheitseinstufung · Status · Partner-Kommentar
+    |   +-- DMC · Tech Name · Info Name · Eintragstyp · Sicherheitseinstufung · Status · Empfänger-Kommentar
     |   +-- Kennzeichen „DM gelöscht"; Zeilen mit `d` durchgestrichen/ausgegraut; „zu überarbeiten" hervorgehoben
     +-- Leer / „Keine Einträge gefunden" + „Filter zurücksetzen"
     +-- Detailfenster (shadcn Sheet, seitlich): alle 27 Felder, nur lesend
@@ -235,8 +235,8 @@ _Stand 2026-11-13 — `/frontend PROJ-7`_
 **Umgesetzt**
 - `src/lib/dmrl/entries.ts` — gemeinsame Bausteine: DMC-Darstellung (gleich für 2.3/4.2/5.0), Sortierung nach DMC, Filter (Eintragsstatus, Eintragstyp inkl. „ohne Typ", Suche in DMC/Tech Name/Info Name), Zähler je Status, Feldbeschriftungen, Kennzeichen „DM gelöscht".
 - `src/lib/dmrl/actions.ts` — Verfügbarkeit der Aktionen (sichtbar / gesperrt + Grund). Workflow-Aktionen sind vorerst gesperrt mit Hinweis „folgt mit PROJ-x"; Sperrinhaber- und Administrator-Aktionen erscheinen nur in der passenden Situation.
-- `src/components/dmrl/` — `DmrlView` (Seite `/dmrl/[ID]`), `DmrlHeader` (Stammdaten, Versionsindex + letzter SEND, Status, Sperre, Banner „Nicht freigegeben", Freigabe-Nachweis bzw. „Letzte Freigabe", Partner-Bemerkung), `DmrlActionBar`, **wiederverwendbare `EntryTable`** (Zählerleiste als Filter, Suche, Filter, 50 je Seite mit deutscher Seitennavigation, Löschungen durchgestrichen, „zu überarbeiten" hervorgehoben, Leer-/Keine-Treffer-Zustand mit „Filter zurücksetzen"), `EntryDetailSheet` (alle 27 Felder in Gruppen, per Klick oder Tastatur), Status-/Typ-Badges.
-- `src/lib/data/queries.ts` — letzter SEND mit Partner/Bearbeiter, deutsche Datumsformate.
+- `src/components/dmrl/` — `DmrlView` (Seite `/dmrl/[ID]`), `DmrlHeader` (Stammdaten, Versionsindex + letzter SEND, Status, Sperre, Banner „Nicht freigegeben", Freigabe-Nachweis bzw. „Letzte Freigabe", Empfänger-Bemerkung), `DmrlActionBar`, **wiederverwendbare `EntryTable`** (Zählerleiste als Filter, Suche, Filter, 50 je Seite mit deutscher Seitennavigation, Löschungen durchgestrichen, „zu überarbeiten" hervorgehoben, Leer-/Keine-Treffer-Zustand mit „Filter zurücksetzen"), `EntryDetailSheet` (alle 27 Felder in Gruppen, per Klick oder Tastatur), Status-/Typ-Badges.
+- `src/lib/data/queries.ts` — letzter SEND mit Empfänger/Bearbeiter, deutsche Datumsformate.
 
 **Tests**: `entries.test.ts` (9), `dmrl-view.test.tsx` (11) — insgesamt 204 Tests grün.
 
@@ -267,7 +267,7 @@ _Stand 2026-11-13 — `/frontend PROJ-7`_
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 
 

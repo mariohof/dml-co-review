@@ -14,7 +14,7 @@
 - ~~Wird genutzt von: PROJ-21 (XML gegen DMRL prüfen)~~ — PROJ-21 entfällt (2026-11-16): Der Bedarf ist mit PROJ-20 abgedeckt
 
 ## Beschreibung
-Ein **eigenständiges Werkzeug** „XML prüfen“: Der Benutzer lädt eine beliebige DMRL-XML hoch (z. B. von einem Partner, aus einem Altprojekt oder einem anderen System), wählt die S1000D-Issue, und die Datei wird gegen das Schema (XSD) und das fachliche Regelwerk geprüft. Das Ergebnis ist eine Zusammenfassung der Datei mit Prüfbericht und eine **CSV im Check-out-Format**, die sich in Excel bearbeiten und über den normalen Check-in in eine DMRL im System übernehmen lässt.
+Ein **eigenständiges Werkzeug** „XML prüfen“: Der Benutzer lädt eine beliebige DMRL-XML hoch (z. B. von einem Empfänger, aus einem Altprojekt oder einem anderen System), wählt die S1000D-Issue, und die Datei wird gegen das Schema (XSD) und das fachliche Regelwerk geprüft. Das Ergebnis ist eine Zusammenfassung der Datei mit Prüfbericht und eine **CSV im Check-out-Format**, die sich in Excel bearbeiten und über den normalen Check-in in eine DMRL im System übernehmen lässt.
 
 Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine Sperre.
 
@@ -60,7 +60,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 **Zusammenfassung (Kopfdaten der Datei)**
 - Dateiname, gewählte Issue, Richtung (SEND/REPLY, soweit aus der Datei erkennbar)
 - DML-Code, Ausgabestand (`issno`/`inwork`), Datum, Sicherheitseinstufung, Verweis auf die Bezugs-DMRL (`dmlref`), soweit vorhanden
-- MI (bzw. „uneinheitlich“), Anzahl Einträge, Anzahl Partnerantworten freigegeben / zu überarbeiten / ohne Antwort (immer angezeigt, auch bei SEND-Dateien ohne Antworten)
+- MI (bzw. „uneinheitlich“), Anzahl Einträge, Anzahl Empfängerantworten freigegeben / zu überarbeiten / ohne Antwort (immer angezeigt, auch bei SEND-Dateien ohne Antworten)
 - Gesamtergebnis: **„Keine Fehler“** oder **„N Fehler, M Hinweise“**
 - Lange Codes (Dateiname, DML-Code, Bezugs-DMRL) brechen **nach einem Bindestrich** um, nicht mitten in einer Codegruppe (z. B. Zeile 1 `DML-TWLBORFLOS-DN463-C-2026-`, Zeile 2 `00001`). Umsetzung rein per CSS, es werden keine Zeichen eingefügt; nur wenn eine Codegruppe allein nicht in die Zeile passt, wird sie getrennt
 
@@ -73,7 +73,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - Bei Fehlern: Hinweis direkt an der Schaltfläche: „Die CSV enthält Fehler aus der Prüfung — ein Check-in wird abgewiesen, bis sie behoben sind.“
 
 ## User Stories
-- Als **Bearbeiter** möchte ich eine DMRL-XML eines Partners prüfen, ohne sie in eine DMRL im System zu übernehmen, damit ich Fehler früh erkenne und zurückmelden kann.
+- Als **Bearbeiter** möchte ich eine DMRL-XML eines Empfängers prüfen, ohne sie in eine DMRL im System zu übernehmen, damit ich Fehler früh erkenne und zurückmelden kann.
 - Als **Bearbeiter** möchte ich eine fremde oder alte DMRL-XML in eine CSV im Check-out-Format umwandeln, damit ich sie in Excel bearbeiten und per Check-in in eine DMRL im System übernehmen kann.
 - Als **Bearbeiter** möchte ich auch bei Fehlern eine CSV erhalten, damit ich die Fehler in Excel korrigieren kann.
 - Als **Bearbeiter** möchte ich auf einen Blick sehen, was in der Datei steht (DML-Code, MI, Anzahl Einträge, Antworten), ohne sie in einem XML-Editor zu öffnen.
@@ -126,9 +126,9 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 ### Ergebnis und CSV
 - [ ] Angenommen eine Prüfung ist abgeschlossen, wenn die Zusammenfassung angezeigt wird, dann enthält sie Dateiname, Issue, DML-Code, Ausgabestand, Datum, Sicherheitseinstufung, MI, Anzahl Einträge und Anzahl Antworten je Art
 - [ ] Angenommen eine lesbare Datei, wenn „CSV herunterladen“ gewählt wird, dann wird eine CSV im Check-out-Format (27 Spalten, Semikolon, UTF-8 mit BOM, nach DMC sortiert) mit dem Namen der XML-Datei und Endung `.csv` heruntergeladen
-- [ ] Angenommen eine Partner-XML mit Antworten, wenn sie konvertiert wird, dann stehen Antwort und Begründung je Eintrag in den Spalten `answer` und `answer_comment`
+- [ ] Angenommen eine Empfänger-XML mit Antworten, wenn sie konvertiert wird, dann stehen Antwort und Begründung je Eintrag in den Spalten `answer` und `answer_comment`
 - [ ] Angenommen ein Eintrag enthält einen Wert, der mit `=`, `+`, `-` oder `@` beginnt, wenn die CSV erzeugt wird, dann ist der Wert wie bei allen CSV-Dateien gegen Formelausführung geschützt
-- [ ] Angenommen eine fehlerfreie Datei wurde konvertiert, wenn die CSV unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann besteht sie die Regelprüfung des Check-ins (Abweichungen nur aus dem Abgleich mit der DMRL, z. B. MI des Systems); enthält sie Partnerantworten, fragt der Check-in, ob sie übernommen werden (nach Anpassung PROJ-10)
+- [ ] Angenommen eine fehlerfreie Datei wurde konvertiert, wenn die CSV unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann besteht sie die Regelprüfung des Check-ins (Abweichungen nur aus dem Abgleich mit der DMRL, z. B. MI des Systems); enthält sie Empfängerantworten, fragt der Check-in, ob sie übernommen werden (nach Anpassung PROJ-10)
 - [ ] Angenommen eine Prüfung ist abgeschlossen, wenn „Prüfbericht herunterladen“ gewählt wird, dann wird der Bericht wie beim Check-in als CSV heruntergeladen
 
 ### Keine Wirkung auf den Datenbestand
@@ -142,7 +142,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 ## Edge Cases
 - **XML einer anderen Issue gewählt** (z. B. 4.2-Datei, Issue 2.3 gewählt): XSD meldet Fehler; ist die Datei mit dem Leser der gewählten Issue nicht lesbar, Meldung „Datei passt nicht zur gewählten Issue — bitte Issue prüfen“ und keine CSV.
 - **XML ohne Einträge:** schemagültig nicht möglich (mind. ein Eintrag); bei Schemafehler Bericht und CSV nur mit Kopfzeile plus Warnung.
-- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Partner-REPLY): keine Pflichtfeld-Fehler; in der CSV werden `001`, der aus dem Eintragstyp abgeleitete Ausgabetyp und das Datum der Prüfung (und `n` bei leerem Eintragstyp) ergänzt, ein Hinweis nennt die Anzahl. Die CSV wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen; beim Check-in sind die Ausgabedaten damit vorhanden (PROJ-10 unverändert streng). *(geändert Refinement 2 und 3; vorher nur Sammelhinweis, davor Pflichtfeld-Fehler)*
+- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Empfänger-REPLY): keine Pflichtfeld-Fehler; in der CSV werden `001`, der aus dem Eintragstyp abgeleitete Ausgabetyp und das Datum der Prüfung (und `n` bei leerem Eintragstyp) ergänzt, ein Hinweis nennt die Anzahl. Die CSV wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen; beim Check-in sind die Ausgabedaten damit vorhanden (PROJ-10 unverändert streng). *(geändert Refinement 2 und 3; vorher nur Sammelhinweis, davor Pflichtfeld-Fehler)*
 - **Nur ein Teil der Ausgabedaten:** kein Fehler, da jedes Feld einzeln optional ist; nur ein angefangenes Datum muss vollständig sein. Ist der **Ausgabetyp leer** (z. B. `@issno` ohne `@type`), wird ergänzt (Ausgabetyp abgeleitet, Datum nur wenn leer, vorhandene Ausgabenummer bleibt). Ist der **Ausgabetyp vorhanden** und fehlen Ausgabenummer oder Datum: **keine Ergänzung** — Sammelhinweis „beim Check-in sind sie Pflicht“. *(geändert Refinement 3)*
 - **Eintrag mit Eintragstyp `c` oder `d`, aber ohne Ausgabetyp:** Ausgabetyp `changed` bzw. `deleted`; fehlt auch `@issno`, wird `001` ergänzt; der Eintragstyp bleibt `c`/`d` (vorhandene Werte nie überschreiben). *(geändert Refinement 3; vorher immer `new`)*
 - **Eintragstyp mit unbekanntem Wert** (nicht `n`/`c`/`d`, z. B. Tippfehler): Regel A meldet den Fehler wie bisher; ist der Ausgabetyp leer, wird `new` gesetzt und der Eintragstyp bleibt unverändert — die CSV hat ohnehin eine Fehlerwarnung.
@@ -165,7 +165,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - Browser: Chrome (Firefox, Safari nach Möglichkeit)
 
 ## Open Questions
-- [x] Wie behandelt der Check-in eingehende `answer`/`answer_comment` aus einer konvertierten Partner-XML? → Optional übernehmen mit Abfrage, nur als Information (Status bleibt *in Bearbeitung*); Umsetzung per `/refine PROJ-10` (2026-11-14)
+- [x] Wie behandelt der Check-in eingehende `answer`/`answer_comment` aus einer konvertierten Empfänger-XML? → Optional übernehmen mit Abfrage, nur als Information (Status bleibt *in Bearbeitung*); Umsetzung per `/refine PROJ-10` (2026-11-14)
 - [x] Antwortzählung bei SEND-Dateien ausblenden? → Nein, immer anzeigen (2026-11-14)
 - [x] Sollen die genaueren XSD-Meldungen (PROJ-11) auch im REPLY-Import und beim SEND-Export ein „Erneut prüfen“ bekommen? → Nicht nötig: beide haben bereits „Erneut versuchen“; die genaueren Meldungen wirken dort über den gemeinsamen Baustein (2026-11-16)
 - [x] Fehlende Ausgabedaten ergänzen? → Ja, nur in der CSV des Werkzeugs, nur wenn `issno` ganz fehlt; Datum und Eintragstyp nur, wenn leer (2026-11-16) — Auslöser in Refinement 3 geändert: leerer Ausgabetyp
@@ -181,7 +181,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 |----------|-----------|------|
 | Zwei Features: eigenständiges Werkzeug (PROJ-20) und Prüfung aus der DMRL-Ansicht mit Abgleich (PROJ-21) — *überholt, siehe 2026-11-16* | Unterschiedlicher Einstieg und unterschiedliche Prüftiefe; getrennt umsetz- und testbar | 2026-11-14 |
 | Priorität P1 | MVP (P0) ist vollständig freigegeben; Erweiterung für die nächste Ausbaustufe | 2026-11-14 |
-| CSV im Check-out-Format, Prüfung nach Check-in-Regeln | Die CSV soll per Check-in in eine DMRL übernommen werden können (z. B. Altbestand eines Partners) | 2026-11-14 |
+| CSV im Check-out-Format, Prüfung nach Check-in-Regeln | Die CSV soll per Check-in in eine DMRL übernommen werden können (z. B. Altbestand eines Empfängers) | 2026-11-14 |
 | Issue wird immer manuell gewählt | Wunsch Product Owner; eindeutig und nachvollziehbar, keine Fehlinterpretation | 2026-11-14 |
 | MI: Einheitlichkeit in der Datei statt Abgleich mit einem System | Kein System im Werkzeug; der Abgleich mit dem System erfolgt beim Check-in in die Ziel-DMRL | 2026-11-14 |
 | CSV auch bei XSD- oder Regelfehlern (mit Warnung), nicht bei nicht wohlgeformten/nicht lesbaren Dateien | Fehler lassen sich in Excel korrigieren; der Check-in prüft ohnehin erneut | 2026-11-14 |
@@ -189,7 +189,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Zugang für alle angemeldeten Benutzer über eigenen Menüpunkt, ohne DMRL-Berechtigung | Werkzeug liest und ändert keine Daten des Systems | 2026-11-14 |
 | Ergebnis: Zusammenfassung + Prüfbericht, keine Eintragstabelle | Schlank; Details stehen im Bericht und in der CSV | 2026-11-14 |
 | Nichts wird gespeichert (kein Archiv, kein Verlauf) | Reines Hilfswerkzeug außerhalb des Workflows; schont den Browser-Speicher (BUG-QA2-2) | 2026-11-14 |
-| Partnerantworten aus der CSV werden beim Check-in optional (mit Abfrage) übernommen, nur als Information — Status bleibt *in Bearbeitung* | Altbestand mit Antworten soll übernehmbar sein; Freigabe bleibt laut PRD an einen REPLY gebunden | 2026-11-14 |
+| Empfängerantworten aus der CSV werden beim Check-in optional (mit Abfrage) übernommen, nur als Information — Status bleibt *in Bearbeitung* | Altbestand mit Antworten soll übernehmbar sein; Freigabe bleibt laut PRD an einen REPLY gebunden | 2026-11-14 |
 | Änderung am Check-in wird per `/refine PROJ-10` (und PROJ-8 Regel K) spezifiziert, nicht in PROJ-20 | Single Responsibility; PROJ-10/PROJ-8 sind freigegeben und werden danach erneut umgesetzt und getestet | 2026-11-14 |
 | Antwortzählung in der Zusammenfassung immer anzeigen, auch bei SEND-Dateien | Wunsch Product Owner; einheitliche Darstellung | 2026-11-14 |
 | Ausgabedaten (`issno`/`type`/`issdate`) im Werkzeug optional, wie beim REPLY-Import; ein Sammelhinweis statt Fehler je Eintrag | In echten DMRL-XML fehlen sie oft (im Schema optional); 575 Pflichtfeld-Fehler bei 115 Einträgen verdecken echte Fehler (Fall TWLBORFLOS) | 2026-11-16 |
@@ -506,7 +506,7 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 - **Prüfbericht:** gemeinsame Anzeige (PROJ-8); Spalte „Zeile / Eintrag“ (XSD-Befunde mit Dateizeile, Regelbefunde mit Eintragsposition), Anfangssortierung „nach Regel“ (XSD zuerst). `CheckReportView` dafür um zwei optionale Props erweitert (Text nach der Fehlerzahl, Anfangssortierung) — bestehende Aufrufer unverändert.
 - **Veraltete Ergebnisse:** fortlaufende Prüfnummer; neue Datei, Issue-Wechsel oder Verlassen der Seite verwirft die laufende Prüfung. Datei- und Issue-Auswahl bleiben während der Prüfung bedienbar.
 - **Dateinamen:** CSV = XML-Name mit `.csv`; Prüfbericht `Pruefbericht-XML-<XML-Name>-<Datum>.csv`.
-- **Beobachtung:** Die Demo-SEND/REPLY-Dateien enthalten keine Ausgabedaten (`issno`, `type`, Datum) — nach Check-in-Regeln ergeben sich daher Pflichtfeld-Fehler (laut Spec gewollt, Edge Case „Partner-REPLY ohne Ausgabedaten“).
+- **Beobachtung:** Die Demo-SEND/REPLY-Dateien enthalten keine Ausgabedaten (`issno`, `type`, Datum) — nach Check-in-Regeln ergeben sich daher Pflichtfeld-Fehler (laut Spec gewollt, Edge Case „Empfänger-REPLY ohne Ausgabedaten“).
 - **Tests:** 19 Unit-Tests Prüfkern (inkl. Rundlauf CSV → Check-in-Regelprüfung, ISO-8859-1, falsche Issue in beide Richtungen, 4.2-Beispiel mit uneinheitlichem MI), 6 Komponententests, 10 E2E-Tests mit echter XSD-Serverfunktion (Menüpunkt, REPLY-Konvertierung, ohne Anmeldung, ohne Berechtigung, nicht wohlgeformt, Schemafehler, falsche Issue, 375/768/1440 px, Neuladen).
 
 ### Implementierungsnotizen Refinement (Frontend, 2026-11-16)
@@ -567,9 +567,9 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 **Ergebnis und CSV**
 - [x] Zusammenfassung mit Dateiname, Issue, Richtung, DML-Code, Ausgabestand, Datum, Sicherheitseinstufung, Bezugs-DMRL, MI, Einträgen und Antworten je Art
 - [x] CSV im Check-out-Format (27 Spalten, Semikolon, UTF-8 mit BOM, nach DMC sortiert), Name = XML-Name mit `.csv`
-- [x] Partnerantworten in `answer`/`answer_comment` (30 freigegeben / 2 zu überarbeiten mit Begründung)
+- [x] Empfängerantworten in `answer`/`answer_comment` (30 freigegeben / 2 zu überarbeiten mit Begründung)
 - [x] Formelschutz für `=`, `+`, `-`, `@`; der Check-in liest die Werte wieder unverändert
-- [x] Rundlauf: fehlerfreie konvertierte CSV besteht die Check-in-Regelprüfung der ausgecheckten DMRL (E2E); mit Partnerantworten meldet der Check-in sie als abweichende Antworten zur Übernahme (Unit)
+- [x] Rundlauf: fehlerfreie konvertierte CSV besteht die Check-in-Regelprüfung der ausgecheckten DMRL (E2E); mit Empfängerantworten meldet der Check-in sie als abweichende Antworten zur Übernahme (Unit)
 - [x] „Prüfbericht herunterladen“ als CSV wie beim Check-in
 
 **Keine Wirkung auf den Datenbestand**
@@ -582,7 +582,7 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 ### Edge Cases Status
 - [x] Falsche Issue gewählt → nicht lesbar, keine CSV
 - [x] XML ohne Einträge (Schemafehler) → CSV nur mit Kopfzeile, Warnung
-- [x] Partner-REPLY ohne Ausgabedaten → Pflichtfeld-Fehler genau für `issno`, `type`, `day`, `month`, `year` (Demo-Dateien) — *ab 2026-11-16 geändert: Sammelhinweis statt Fehler, siehe QA Refinement*
+- [x] Empfänger-REPLY ohne Ausgabedaten → Pflichtfeld-Fehler genau für `issno`, `type`, `day`, `month`, `year` (Demo-Dateien) — *ab 2026-11-16 geändert: Sammelhinweis statt Fehler, siehe QA Refinement*
 - [x] Keine DMRL-XML (anderes Wurzelelement) → „passt nicht zur gewählten Issue“, keine CSV
 - [x] ISO-8859-1 laut Deklaration korrekt gelesen
 - [x] **BUG-QA1-1:** UTF-16 laut Deklaration wird nicht gelesen → behoben und bestätigt (2026-11-15)
@@ -710,7 +710,7 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 - Testablauf-Wettlauf nach der Anmeldung (Weiterleitung überholte Menü-Navigation) bereits in `f11199f` behoben — kein Fehler der App
 
 **Beobachtungen (Spec-konform, Entscheidung Product Owner)**
-- **B-1 — Eintragstyp `n` bei bestehenden Einträgen:** Enthält eine fremde/alte DMRL-XML Einträge **ohne** Eintragstyp und **ohne** Ausgabedaten (z. B. bereits freigegebene Einträge), erhalten sie in der CSV `n`. Beim Check-in in eine DMRL, in der sie schon existieren, gibt es keinen Fehler (Regel F prüft `n` nur für neue Einträge); sie werden „geändert, Typ n“ und gingen beim nächsten SEND als *neue* Einträge an den Partner. Nachgestellt im Unit-Test (11 freigegebene Einträge → 11 × „geändert:n“, 0 Fehler). Demo-REPLYs sind nicht betroffen (alle Einträge haben einen Typ). *Empfehlung:* `n` nur ergänzen, wenn zugleich der Eintrag beim Check-in neu ist — geht im Werkzeug nicht (kein DMRL-Bezug); alternativ Hinweis im Ergebnis „Eintragstyp n gesetzt — bei bestehenden Einträgen vor dem Check-in prüfen“ oder Check-in-Regel F: `n` bei bestehendem Eintrag als Hinweis/Fehler.
+- **B-1 — Eintragstyp `n` bei bestehenden Einträgen:** Enthält eine fremde/alte DMRL-XML Einträge **ohne** Eintragstyp und **ohne** Ausgabedaten (z. B. bereits freigegebene Einträge), erhalten sie in der CSV `n`. Beim Check-in in eine DMRL, in der sie schon existieren, gibt es keinen Fehler (Regel F prüft `n` nur für neue Einträge); sie werden „geändert, Typ n“ und gingen beim nächsten SEND als *neue* Einträge an den Empfänger. Nachgestellt im Unit-Test (11 freigegebene Einträge → 11 × „geändert:n“, 0 Fehler). Demo-REPLYs sind nicht betroffen (alle Einträge haben einen Typ). *Empfehlung:* `n` nur ergänzen, wenn zugleich der Eintrag beim Check-in neu ist — geht im Werkzeug nicht (kein DMRL-Bezug); alternativ Hinweis im Ergebnis „Eintragstyp n gesetzt — bei bestehenden Einträgen vor dem Check-in prüfen“ oder Check-in-Regel F: `n` bei bestehendem Eintrag als Hinweis/Fehler.
 - **B-2 — Ausgabedatum bestehender Einträge wird überschrieben:** Beim Rundlauf in eine bestehende DMRL (GTFDEMO: `001`/`new` vom 01.11.2026) ersetzt das Prüfdatum das vorhandene Datum; der Check-in meldet 10 geänderte Einträge (je 1 Feld). Laut Tech Design K gewollt und für den Bearbeiter sichtbar.
 
 **Bugs Found:** keine

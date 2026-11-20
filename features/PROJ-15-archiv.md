@@ -13,22 +13,22 @@
 - Requires: PROJ-1 (Datenhaltung) — Demo-Archiv PHUNGUN
 
 ## Beschreibung
-Das Archiv macht den Austausch mit dem Partner und alle Bearbeitungsschritte einer DMRL nachvollziehbar. Es zeigt je DMRL alle SEND- und REPLY-Stände (byte-genau herunterladbar und als Tabelle einsehbar), alle Freigabestände und einen chronologischen Workflow-Verlauf. Das Archiv ist nur lesend; nichts kann gelöscht werden (PRD: „Alle SEND- und REPLY-Stände werden dauerhaft archiviert").
+Das Archiv macht den Austausch mit dem Empfänger und alle Bearbeitungsschritte einer DMRL nachvollziehbar. Es zeigt je DMRL alle SEND- und REPLY-Stände (byte-genau herunterladbar und als Tabelle einsehbar), alle Freigabestände und einen chronologischen Workflow-Verlauf. Das Archiv ist nur lesend; nichts kann gelöscht werden (PRD: „Alle SEND- und REPLY-Stände werden dauerhaft archiviert").
 
 ## Aufbau
 Archivseite je DMRL, erreichbar über die Aktion **„Archiv"** in der DMRL-Ansicht (PROJ-7). Kopf: System, MI, Issue, aktueller DMRL-Status. Drei Registerkarten:
 
 ### 1. Austausch
 - Alle SENDs und REPLYs, neueste oben, als Kette (z. B. `SEND 00002-2026 → REPLY C1234 00001-2026 → SEND 00001-2026`)
-- Je Eintrag: Richtung (SEND/REPLY), Versionsindex, Partner (CAGE + Name), Datum/Uhrzeit, Bearbeiter, Bezug (`dmlref`), Anzahl Einträge (bei REPLY: freigegeben/zu überarbeiten), Dateiname
+- Je Eintrag: Richtung (SEND/REPLY), Versionsindex, Empfänger (CAGE + Name), Datum/Uhrzeit, Bearbeiter, Bezug (`dmlref`), Anzahl Einträge (bei REPLY: freigegeben/zu überarbeiten), Dateiname
 - Zurückgezogene SENDs: Kennzeichen „zurückgezogen" mit Datum, Administrator und Begründung (PROJ-12)
 - Aktionen:
   - **„Herunterladen"** — Original-XML, byte-genau, Original-Dateiname
-  - **„Anzeigen"** — Inhalt als Tabelle wie PROJ-7 (nur lesend, Suche/Filter), Kopfdaten der Datei; bei REPLY mit Antwort und Kommentar je Eintrag sowie Partner-Bemerkung
-- Leer: „Noch kein Austausch mit einem Partner"
+  - **„Anzeigen"** — Inhalt als Tabelle wie PROJ-7 (nur lesend, Suche/Filter), Kopfdaten der Datei; bei REPLY mit Antwort und Kommentar je Eintrag sowie Empfänger-Bemerkung
+- Leer: „Noch kein Austausch mit einem Empfänger"
 
 ### 2. Freigabestände
-- Alle Freigabestände (PROJ-14), neueste oben: Datum, REPLY (Partner + Versionsindex), Bearbeiter, Anzahl Einträge
+- Alle Freigabestände (PROJ-14), neueste oben: Datum, REPLY (Empfänger + Versionsindex), Bearbeiter, Anzahl Einträge
 - Aktionen: „Anzeigen", „Als CSV exportieren", „Als XML exportieren" (wie PROJ-14)
 - Leer: „Die DMRL wurde noch nie freigegeben"
 
@@ -42,10 +42,10 @@ Alle Workflow-Schritte chronologisch (neueste oben): Datum/Uhrzeit, Benutzer, Ak
 | Sperre aufgehoben durch Administrator | Sperrinhaber | PROJ-9 |
 | Check-in | Anzahl neu/geändert/unverändert | PROJ-10 |
 | Check-in abgelehnt | Anzahl Fehler | PROJ-10 |
-| SEND | Versionsindex, Partner | PROJ-12 |
+| SEND | Versionsindex, Empfänger | PROJ-12 |
 | SEND fehlgeschlagen | XSD-Prüfung | PROJ-12 |
 | SEND zurückgezogen | Versionsindex, Begründung | PROJ-12 |
-| REPLY übernommen | Versionsindex, Partner, Anzahl freigegeben/zu überarbeiten, ggf. „DMRL freigegeben" | PROJ-13 |
+| REPLY übernommen | Versionsindex, Empfänger, Anzahl freigegeben/zu überarbeiten, ggf. „DMRL freigegeben" | PROJ-13 |
 | REPLY abgelehnt | Dateiname, „XSD: n Fehler" bzw. „Regelwerk: n Fehler" | PROJ-13 |
 | Kopfdaten geändert | Feld alt → neu (Sicherheitseinstufung, Originator, DML-Typ) | PROJ-6 |
 
@@ -64,8 +64,8 @@ Leer: „Noch keine Workflow-Schritte"
 - Fahrzeug/Fluggerät: leeres Archiv
 
 ## User Stories
-- Als **Bearbeiter** möchte ich alle SEND- und REPLY-Stände einer DMRL sehen, damit ich den Austausch mit dem Partner nachvollziehen kann.
-- Als **Bearbeiter** möchte ich jede archivierte Datei unverändert herunterladen, damit ich sie erneut an den Partner senden oder als Nachweis verwenden kann.
+- Als **Bearbeiter** möchte ich alle SEND- und REPLY-Stände einer DMRL sehen, damit ich den Austausch mit dem Empfänger nachvollziehen kann.
+- Als **Bearbeiter** möchte ich jede archivierte Datei unverändert herunterladen, damit ich sie erneut an den Empfänger senden oder als Nachweis verwenden kann.
 - Als **Bearbeiter** möchte ich den Inhalt eines archivierten Stands als Tabelle einsehen, ohne die Datei herunterzuladen.
 - Als **Bearbeiter** möchte ich im Verlauf sehen, wer wann ausgecheckt, eingecheckt, gesendet oder einen REPLY übernommen hat.
 - Als **Bearbeiter** möchte ich frühere Freigabestände abrufen und exportieren.
@@ -91,11 +91,11 @@ Leer: „Noch keine Workflow-Schritte"
 - [ ] Angenommen das Archiv ist geöffnet, wenn es angezeigt wird, dann gibt es keine Aktion zum Löschen oder Ändern
 
 ### Austausch
-- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn das Archiv von PHUNGUN geöffnet wird, dann zeigt „Austausch" drei Einträge: SEND 00002-2026, REPLY C1234 00001-2026, SEND 00001-2026 (neueste oben) mit Partner, Datum, Bearbeiter, Bezug und Anzahl Einträge
+- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn das Archiv von PHUNGUN geöffnet wird, dann zeigt „Austausch" drei Einträge: SEND 00002-2026, REPLY C1234 00001-2026, SEND 00001-2026 (neueste oben) mit Empfänger, Datum, Bearbeiter, Bezug und Anzahl Einträge
 - [ ] Angenommen ein archivierter Stand wird „Herunterladen", wenn die Datei gespeichert wird, dann ist sie byte-genau identisch mit der gesendeten bzw. importierten Datei und trägt den Original-Dateinamen
-- [ ] Angenommen ein REPLY wird „Anzeigen", wenn die Tabelle geöffnet wird, dann zeigt sie alle Einträge mit Antwort und Kommentar sowie die Partner-Bemerkung, nur lesend
+- [ ] Angenommen ein REPLY wird „Anzeigen", wenn die Tabelle geöffnet wird, dann zeigt sie alle Einträge mit Antwort und Kommentar sowie die Empfänger-Bemerkung, nur lesend
 - [ ] Angenommen ein SEND wurde zurückgezogen, wenn „Austausch" angezeigt wird, dann ist er als „zurückgezogen" mit Datum, Administrator und Begründung gekennzeichnet
-- [ ] Angenommen eine DMRL wurde nie gesendet, wenn „Austausch" angezeigt wird, dann erscheint „Noch kein Austausch mit einem Partner"
+- [ ] Angenommen eine DMRL wurde nie gesendet, wenn „Austausch" angezeigt wird, dann erscheint „Noch kein Austausch mit einem Empfänger"
 
 ### Freigabestände
 - [ ] Angenommen eine DMRL wurde zweimal freigegeben, wenn „Freigabestände" angezeigt wird, dann erscheinen beide mit Datum, REPLY und Bearbeiter, neueste oben
@@ -166,11 +166,11 @@ Seite „Archiv" (/dmrl/[ID]/archiv?ansicht=austausch|freigaben|verlauf)
 +-- Registerkarten (shadcn Tabs; gewählte Karte steht in der Adresse)
     +-- „Austausch"
     |   +-- Liste der Archivstände, neueste oben (shadcn Table)
-    |   |   +-- Richtung (Badge SEND/REPLY) · Versionsindex · Partner (CAGE + Name) · Datum · Bearbeiter
+    |   |   +-- Richtung (Badge SEND/REPLY) · Versionsindex · Empfänger (CAGE + Name) · Datum · Bearbeiter
     |   |   +-- Bezug (`dmlref`) · Einträge (bei REPLY: freigegeben / zu überarbeiten) · Dateiname
     |   |   +-- Kennzeichen „zurückgezogen" mit Datum, Administrator, Begründung (Tooltip/Zeile)
     |   |   +-- Aktionen: „Anzeigen" · „Herunterladen"
-    |   +-- Leer: „Noch kein Austausch mit einem Partner"
+    |   +-- Leer: „Noch kein Austausch mit einem Empfänger"
     +-- „Freigabestände"
     |   +-- Liste: Datum · REPLY · Bearbeiter · Anzahl Einträge
     |   +-- Aktionen: „Anzeigen" (→ Freigabestand-Seite PROJ-14) · „Als CSV exportieren" · „Als XML exportieren"
@@ -181,7 +181,7 @@ Seite „Archiv" (/dmrl/[ID]/archiv?ansicht=austausch|freigaben|verlauf)
         +-- Leer: „Noch keine Workflow-Schritte"
 
 Seite „Archivierter Stand" (/dmrl/[ID]/archiv/[Stand-ID])
-+-- Kopf: Richtung · Versionsindex · Partner · Datum · Bearbeiter · Bezug · Bemerkung (dml/remarks) · „Herunterladen"
++-- Kopf: Richtung · Versionsindex · Empfänger · Datum · Bearbeiter · Bezug · Bemerkung (dml/remarks) · „Herunterladen"
 +-- Eintragstabelle (PROJ-7, nur lesend) — bei REPLY mit Spalten Antwort und Kommentar
 +-- Falls die Datei nicht lesbar ist: Hinweis „Inhalt kann nicht angezeigt werden" — Download bleibt möglich
 ```
@@ -223,13 +223,13 @@ _Stand 2026-11-13 — `/frontend PROJ-15`_
   - **Byte-genauer Download**: Bytes in der Kodierung laut XML-Deklaration (UTF-8 inkl. BOM, ISO-8859-1; Zeilenenden bleiben).
   - Verlauf mit Aktionsnamen und Filtergruppen (Check-out/Check-in, SEND, REPLY, Kopfdaten).
 - `src/components/archive/archive-view.tsx` + Seite `/dmrl/[id]/archiv?ansicht=austausch|freigaben|verlauf` — Registerkarten, die gewählte Karte steht in der Adresse.
-  - **Austausch:** Tabelle mit Stand (Badge SEND/REPLY + Versionsindex), Partner, Datum, Bearbeiter, Bezug, Einträge (REPLY: freigegeben/zu überarbeiten), Datei; Kennzeichen „zurückgezogen am … von … — Begründung"; „Anzeigen" und „Herunterladen".
+  - **Austausch:** Tabelle mit Stand (Badge SEND/REPLY + Versionsindex), Empfänger, Datum, Bearbeiter, Bezug, Einträge (REPLY: freigegeben/zu überarbeiten), Datei; Kennzeichen „zurückgezogen am … von … — Begründung"; „Anzeigen" und „Herunterladen".
   - **Freigabestände:** neueste oben, mit „Anzeigen" (→ Freigabestand-Seite), „Als CSV exportieren" und „Als XML exportieren".
   - **Verlauf:** neueste oben, Filter nach Aktionsart, je 50 Einträge mit „Weitere anzeigen".
   - Leerhinweise laut Spec.
 - `src/components/archive/archived-file-view.tsx` + Seite `/dmrl/[id]/archiv/[standId]`:
   - Kopfdaten und Bemerkung der Datei; Kennzeichen „zurückgezogen"; „Herunterladen".
-  - Eintragstabelle in der neuen **Datei-Ansicht** (ohne Status, mit Spalte „Antwort" und Partner-Kommentar).
+  - Eintragstabelle in der neuen **Datei-Ansicht** (ohne Status, mit Spalte „Antwort" und Empfänger-Kommentar).
   - Nicht lesbare Datei → „Inhalt kann nicht angezeigt werden" (Download bleibt möglich).
 - `src/components/dmrl/entry-table.tsx` / `entry-detail-sheet.tsx` — Option `fileView` (keine Zählerleiste, kein Statusfilter, keine Statusspalte).
 - `src/components/dmrl/release-export.tsx` — Export eines Freigabestands (CSV/XML mit XSD-Prüfung) als gemeinsamer Baustein für die Freigabestand-Seite (PROJ-14) und das Archiv.
@@ -269,7 +269,7 @@ _Stand 2026-11-13 — `/frontend PROJ-15`_
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 
 

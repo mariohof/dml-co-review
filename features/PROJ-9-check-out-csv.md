@@ -36,7 +36,7 @@ Der Bearbeiter checkt die DMRL als CSV-Datei aus, um die Einträge extern (z. B.
 |---|---|
 | Berechtigter Bearbeiter (PROJ-17) oder Administrator | möglich |
 | DMRL bereits ausgecheckt (von wem auch immer) | nicht möglich — „Ausgecheckt von [Name] seit [Datum, Uhrzeit]" |
-| DMRL-Status „gesendet" (wartet auf REPLY) | nicht möglich — „Die DMRL wartet auf die Antwort des Partners (REPLY). Ein neuer Bearbeitungszyklus ist erst danach möglich." |
+| DMRL-Status „gesendet" (wartet auf REPLY) | nicht möglich — „Die DMRL wartet auf die Antwort des Empfängers (REPLY). Ein neuer Bearbeitungszyklus ist erst danach möglich." |
 | DMRL freigegeben | möglich; Freigabe bleibt bestehen, bis ein Check-in etwas ändert (PROJ-14) |
 | DMRL ohne Einträge | möglich |
 
@@ -184,7 +184,7 @@ Keine neuen Objekte — genutzt wird die **Sperre an der DMRL** aus PROJ-1: Benu
 ### C) Verfügbarkeitsregeln
 | Aktion | Verfügbar wenn | Grund sonst |
 |---|---|---|
-| Check-out | berechtigt (Rechte-Regel PROJ-2) · nicht gesperrt · Status ≠ *gesendet* | „Ausgecheckt von …" bzw. „Die DMRL wartet auf die Antwort des Partners …" |
+| Check-out | berechtigt (Rechte-Regel PROJ-2) · nicht gesperrt · Status ≠ *gesendet* | „Ausgecheckt von …" bzw. „Die DMRL wartet auf die Antwort des Empfängers …" |
 | CSV erneut herunterladen | angemeldeter Benutzer = Sperrinhaber | — (nicht angezeigt) |
 | Check-out zurücknehmen | angemeldeter Benutzer = Sperrinhaber | — (nicht angezeigt) |
 | Sperre aufheben | Administrator · gesperrt · Sperrinhaber ≠ angemeldeter Benutzer | — (nicht angezeigt) |
@@ -251,7 +251,7 @@ _Stand 2026-11-13 — `/frontend PROJ-9`_
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 - [ ] **BUG-QA2-1 (Medium):** CSV-Formel-Injection — Werte, die mit `=`, `+`, `-` oder `@` beginnen, werden unverändert in CSV-Dateien geschrieben und von Excel als Formel ausgeführt
 
@@ -261,12 +261,12 @@ _Stand 2026-11-13 — `/frontend PROJ-9`_
 - **Severity:** Medium (Sicherheit)
 - **Betrifft:** CSV-Schreiber (`src/lib/files/csv-writer.ts`) und damit Check-out (PROJ-9), DMRL-Export (PROJ-18), Freigabestand-Export (PROJ-14), Prüfbericht-Download (PROJ-8)
 - **Steps to Reproduce:**
-  1. Partner liefert im REPLY als Begründung (`answer/remarks`) z. B. `=HYPERLINK("http://angreifer.example";"Details")`; REPLY übernehmen
+  1. Empfänger liefert im REPLY als Begründung (`answer/remarks`) z. B. `=HYPERLINK("http://angreifer.example";"Details")`; REPLY übernehmen
   2. DMRL auschecken oder als CSV exportieren und die Datei in Excel öffnen
   3. Expected: Wert wird als Text angezeigt
   4. Actual: Zelle enthält `"=HYPERLINK(""http://angreifer.example"",""Details"")"` — Excel wertet die Formel aus (Link/DDE-Angriffe möglich)
 - **Hinweis zur Behebung:** Ein vorangestelltes `'` (Papa Parse `escapeFormulae`) verhindert die Ausführung, verändert aber den Wert beim Check-in — Lösung muss den Rundlauf Check-out → Check-in erhalten (z. B. Präfix beim Lesen wieder entfernen)
-- **Priority:** Fix before deployment (Daten stammen von externen Partnern)
+- **Priority:** Fix before deployment (Daten stammen von externen Empfängern)
 - **Status:** Behoben 2026-11-14 (`/frontend`) — Neuer Baustein `src/lib/files/csv-formula.ts`: Werte, die mit `=`, `+`, `-`, `@`, Tab oder Wagenrücklauf beginnen (auch nach vorangestellten Apostrophen), erhalten beim Schreiben ein `'`; der CSV-Leser des Check-ins entfernt genau dieses eine Zeichen wieder → Rundlauf Check-out → Check-in verlustfrei. Gilt für alle CSV-Dateien (Check-out, Export, Freigabestand, Prüfbericht). Tests: `csv-formula.test.ts` (6) und E2E „BUG-QA2-1" in `tests/QA-proj7-19.spec.ts` (REPLY mit Formel → Check-out-CSV entschärft → Check-in ohne Änderung)
 
 ### Summary

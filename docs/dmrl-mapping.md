@@ -39,15 +39,15 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 - `/dml/dmentry/remarks`: eigene Bemerkung zum Eintrag (getrennt von `answer/remarks`)
 - **Zwei Typ-Felder:** `/dml/dmentry/@type` = Eintragstyp (n/c/d, Abstimmung) ≠ `/dml/dmentry/addresdm/issno/@type` = DM-Ausgabetyp (new/…/deleted, Datenmodul)
 - REPLY-Übernahme (betrifft nur den Eintragstyp): `answer="y"` → `dmentry/@type` wird entfernt (genehmigt, auch bei `d` — Eintrag bleibt bestehen); `answer="n"` → Typ bleibt, Eintrag muss überarbeitet und erneut gesendet werden
-- `answer` + `answer/remarks` werden nur vom Partner (REPLY) gefüllt; in einer REPLY-DMRL hat jeder `dmentry` mit `@type` die Elemente `answer` und `remarks`
+- `answer` + `answer/remarks` werden nur vom Empfänger (REPLY) gefüllt; in einer REPLY-DMRL hat jeder `dmentry` mit `@type` die Elemente `answer` und `remarks`
 
 ## DMRL-Statusdaten (Kopf)
 
 | Feld | XPath | Bemerkung |
 | --- | --- | --- |
-| direction | /dml/@direction | `send` (Bearbeiter) oder `reply` (Partner) |
+| direction | /dml/@direction | `send` (Bearbeiter) oder `reply` (Empfänger) |
 | dmlc/modelic | /dml/dmlc/modelic | Model Ident Code |
-| dmlc/sendid | /dml/dmlc/sendid | Code des Absenders (z. B. D0815 = Bearbeiter, C1234 = Partner) |
+| dmlc/sendid | /dml/dmlc/sendid | Code des Absenders (z. B. D0815 = Bearbeiter, C1234 = Empfänger) |
 | dmlc/dmltype | /dml/dmlc/dmltype/@type | z. B. `c` |
 | dmlc/diyear | /dml/dmlc/diyear | Jahr (4-stellig) |
 | dmlc/seqnum | /dml/dmlc/seqnum | laufende Nummer, 5-stellig, führende Nullen → Versionsindex `seqnum-diyear` |
@@ -59,7 +59,7 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 
 ## Beispieldateien (Issue 2.3, System PHUNGUN)
 1. `01_DML-PHUNGUN-D0815-C-2026-00001_001-00.XML` — initialer SEND, 11 Einträge (alle `n`)
-2. `02_DML-PHUNGUN-C1234-C-2026-00001-001-00.XML` — REPLY des Partners C1234, alle `answer="y"`
+2. `02_DML-PHUNGUN-C1234-C-2026-00001-001-00.XML` — REPLY des Empfängers C1234, alle `answer="y"`
 3. `03_DML-PHUNGUN-D0815-C-2026-00002_001-00.XML` — zweiter SEND, Einträge `d` (gelöscht) und `n` (neu), dmlref → REPLY C1234-00001
 
 Dateinamensschema: `DML-{modelic}-{sendid}-{dmltype}-{diyear}-{seqnum}_{issno}-{inwork}.XML`

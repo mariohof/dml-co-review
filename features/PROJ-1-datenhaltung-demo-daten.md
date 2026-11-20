@@ -24,7 +24,7 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 ### Organisation
 - CAGE-Code (z. B. `D0815`, `C1234`) — entspricht `sendid` im DML-Code
 - Name
-- (keine Art — Originator wird je DMRL festgelegt (PROJ-6), Partner je SEND (PROJ-12))
+- (keine Art — Originator wird je DMRL festgelegt (PROJ-6), Empfänger je SEND (PROJ-12))
 
 ### Benutzer (simuliert)
 - Name
@@ -49,8 +49,8 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 - Aktueller Versionsindex `NNNNN-JJJJ` (= `seqnum-diyear` des letzten SEND)
 - DMRL-Status: *in Bearbeitung* / *gesendet* / *freigegeben*
 - Sperre: ausgecheckt ja/nein, von wem, seit wann, **Stand der Einträge beim Check-out** (Vergleichsbasis für Check-in und erneuten Download, PROJ-9/10)
-- Bemerkung des Partners aus dem letzten REPLY (`dml/remarks`, PROJ-13)
-- Freigabe-Nachweis der letzten Freigabe: Zeitpunkt, Herkunft (REPLY mit Partner und Versionsindex **oder** Check-in ohne REPLY *(Refinement 2026-11-18)*), übernehmender Benutzer (PROJ-14)
+- Bemerkung des Empfängers aus dem letzten REPLY (`dml/remarks`, PROJ-13)
+- Freigabe-Nachweis der letzten Freigabe: Zeitpunkt, Herkunft (REPLY mit Empfänger und Versionsindex **oder** Check-in ohne REPLY *(Refinement 2026-11-18)*), übernehmender Benutzer (PROJ-14)
 - „Im Workflow verwendet" (PROJ-4/5/6) wird **nicht gespeichert**, sondern aus Verlauf und Archiv abgeleitet
 
 ### DMRL-Eintrag
@@ -64,12 +64,12 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 - Verweis (`dmlref`) auf die vorherige DMRL der Austauschkette
 - Dateiname und unveränderter Original-Dateiinhalt (XML)
 - Zeitpunkt und ausführender Benutzer
-- Partner-Organisation (bei SEND gewählt, PROJ-12; bei REPLY Absender)
+- Empfänger-Organisation (bei SEND gewählt, PROJ-12; bei REPLY Absender)
 - Bei REPLY: zugehöriger SEND, Anzahl freigegeben / zu überarbeiten (PROJ-13)
 - Bei SEND: Kennzeichen „zurückgezogen" mit Zeitpunkt, Administrator und Begründung (PROJ-12)
 
 ### Freigabestand (PROJ-14)
-- Zugehörige DMRL, Zeitpunkt, Herkunft (REPLY mit Partner und Versionsindex **oder** Check-in ohne REPLY *(Refinement 2026-11-18)*), übernehmender Benutzer
+- Zugehörige DMRL, Zeitpunkt, Herkunft (REPLY mit Empfänger und Versionsindex **oder** Check-in ohne REPLY *(Refinement 2026-11-18)*), übernehmender Benutzer
 - Unveränderliche Momentaufnahme aller Einträge (alle Felder) zum Zeitpunkt der Freigabe
 - Wird nie gelöscht
 
@@ -85,13 +85,13 @@ Der Prototyp speichert alle Daten (Benutzer, Organisationen, Systeme, DMRLs, DMR
 
 | Objekt | Inhalt |
 |--------|--------|
-| Organisationen | `D0815` „Musterbehörde Technische Dokumentation" (Originator aller Demo-DMRLs); `C1234` „Partner Systemtechnik GmbH" (Partner der Kette PHUNGUN) |
+| Organisationen | `D0815` „Musterbehörde Technische Dokumentation" (Originator aller Demo-DMRLs); `C1234` „Empfänger Systemtechnik GmbH" (Empfänger der Kette PHUNGUN) |
 | Benutzer | Systemkonto „Administrator"; Bearbeiter „Anna Bearbeitung" und „Ben Bearbeiter" (alle aktiv, keine Organisation) |
 | Berechtigungen (PROJ-17) | Anna Bearbeitung → PHUNGUN, Fahrzeug; Ben Bearbeiter → Fahrzeug, Fluggerät |
 | System 1 | „PHUNGUN" — MI `PHUNGUN`, Issue 2.3 |
 | System 2 | „Geschütztes Transportfahrzeug" — MI `GTFDEMO`, Issue 4.2 |
 | System 3 | „Transporthubschrauber" — MI `THSDEMO`, Issue 5.0 |
-| DMRL PHUNGUN | Originator D0815, DML-Typ `c`, Sicherheitseinstufung `01`. Austauschkette aus den 3 Beispieldateien im Archiv (SEND 00001-2026 → REPLY C1234 00001-2026 → SEND 00002-2026, Partner C1234); aktueller Stand = SEND 00002-2026: 32 Einträge (11 `d`, 21 `n`) im Status *gesendet*, ergänzt um `issno` `001`, DM-Ausgabetyp aus dem Eintragstyp (`d` → `deleted`, `n` → `new`; *Refinement 2026-11-16*, vorher immer `new`), Ausgabedatum = Datum SEND 00002; DMRL-Status *gesendet*; Verlauf: SEND, REPLY übernommen, SEND (Benutzer Anna Bearbeitung, Zeitpunkte aus den Dateien); keine Freigabestände |
+| DMRL PHUNGUN | Originator D0815, DML-Typ `c`, Sicherheitseinstufung `01`. Austauschkette aus den 3 Beispieldateien im Archiv (SEND 00001-2026 → REPLY C1234 00001-2026 → SEND 00002-2026, Empfänger C1234); aktueller Stand = SEND 00002-2026: 32 Einträge (11 `d`, 21 `n`) im Status *gesendet*, ergänzt um `issno` `001`, DM-Ausgabetyp aus dem Eintragstyp (`d` → `deleted`, `n` → `new`; *Refinement 2026-11-16*, vorher immer `new`), Ausgabedatum = Datum SEND 00002; DMRL-Status *gesendet*; Verlauf: SEND, REPLY übernommen, SEND (Benutzer Anna Bearbeitung, Zeitpunkte aus den Dateien); keine Freigabestände |
 | DMRL Fahrzeug | Originator D0815, `c`, `01`; 10 Einträge mit Eintragstyp `n`, Status *in Bearbeitung*, MI `GTFDEMO`, regelkonform nach PROJ-8 (Pflichtfelder, SNS→Tech Name, Infocode→Info Name, `language` `de`, `country` `DE`); kein Archiv, kein Verlauf |
 | DMRL Fluggerät | wie Fahrzeug, MI `THSDEMO` |
 
@@ -193,7 +193,7 @@ Firmennamen aus den Originaldateien (`rpcname`) werden in den Demo-Daten durch n
 | Freigabe-Nachweis und Freigabestand mit Herkunft REPLY oder Check-in (REPLY-Verweis dann leer) | Freigabe durch Übernahme eines abgestimmten Bestands per Check-in (PROJ-10) | 2026-11-18 |
 | CSV-Felder aus `docs/dmrl-mapping.md` sind das einheitliche interne Datenmodell für alle S1000D-Versionen | Check-out/Check-in-CSV bleibt für alle Versionen gleich; Versionsunterschiede nur beim XML-Export/-Import | 2026-11-11 |
 | `rpcname` und `remarks` als zusätzliche Eintragsfelder | In den Beispieldateien vorhanden (`rpc/@rpcname`, `dmentry/remarks`), getrennt von `answer/remarks` | 2026-11-11 |
-| Versionsindex = `seqnum-diyear` aus `dmlc`; Zähler je Absender (eigene Seite und Partner zählen getrennt) | Entspricht dem S1000D-DML-Code und den Beispieldateien | 2026-11-11 |
+| Versionsindex = `seqnum-diyear` aus `dmlc`; Zähler je Absender (eigene Seite und Empfänger zählen getrennt) | Entspricht dem S1000D-DML-Code und den Beispieldateien | 2026-11-11 |
 | `dmlref` verweist immer auf die unmittelbar vorherige DMRL der Austauschkette; initialer SEND auf sich selbst | Bestätigt durch Beispieldatei 03 (SEND 00002 → REPLY C1234 00001) | 2026-11-11 |
 | Demo-Daten: PHUNGUN (2.3) mit echter Austauschkette, Fahrzeug (4.2) und Fluggerät (5.0) ohne Austausch | 2.3 zeigt Historie, 4.2/5.0 ermöglichen einen Live-SEND/REPLY-Zyklus in der Demo | 2026-11-11 |
 | Firmennamen aus Originaldateien durch neutrale Namen ersetzt | Demo-Daten sollen keine realen Firmennamen enthalten | 2026-11-11 |
@@ -265,9 +265,9 @@ Zwei getrennte Speicherbereiche im localStorage:
 - **Organisationen** — ID, CAGE-Code, Name
 - **Benutzer** — ID, Name, Rolle, aktiv ja/nein, Systemkonto ja/nein
 - **Systeme** — ID, Name, Beschreibung, S1000D-Issue, MI
-- **DMRLs** — ID, System, Originator, DML-Typ, Sicherheitseinstufung, berechtigte Bearbeiter, Status, Partner-Bemerkung des letzten REPLY, Freigabe-Nachweis (Zeitpunkt, REPLY-Archivstand, Benutzer) und **Sperre** (Benutzer, Zeitpunkt, **Kopie aller Einträge beim Check-out**)
+- **DMRLs** — ID, System, Originator, DML-Typ, Sicherheitseinstufung, berechtigte Bearbeiter, Status, Empfänger-Bemerkung des letzten REPLY, Freigabe-Nachweis (Zeitpunkt, REPLY-Archivstand, Benutzer) und **Sperre** (Benutzer, Zeitpunkt, **Kopie aller Einträge beim Check-out**)
 - **DMRL-Einträge** — ID, DMRL, Status, alle 27 CSV-Felder als Text
-- **Archivstände** — ID, DMRL, Richtung, DML-Code, Versionsindex, Verweis (`dmlref`), Dateiname, **unveränderter Dateiinhalt**, Zeitpunkt, Benutzer, Partner-Organisation; bei REPLY: zugehöriger SEND-Archivstand und Anzahl freigegeben/zu überarbeiten; bei SEND: optional „zurückgezogen" (Zeitpunkt, Benutzer, Begründung)
+- **Archivstände** — ID, DMRL, Richtung, DML-Code, Versionsindex, Verweis (`dmlref`), Dateiname, **unveränderter Dateiinhalt**, Zeitpunkt, Benutzer, Empfänger-Organisation; bei REPLY: zugehöriger SEND-Archivstand und Anzahl freigegeben/zu überarbeiten; bei SEND: optional „zurückgezogen" (Zeitpunkt, Benutzer, Begründung)
 - **Freigabestände** — ID, DMRL, Zeitpunkt, REPLY-Archivstand, Benutzer, **unveränderliche Kopie aller Einträge**
 - **Verlaufseinträge** — ID, DMRL, Zeitpunkt, Benutzer, Aktion (feste Liste laut Spec), Details als Text bzw. Kennzahlen
 
@@ -288,7 +288,7 @@ Alle Verknüpfungen laufen über IDs. Beim Laden wird geprüft, dass jede Verkn�
 **Speichern:** Jede Änderung schreibt das komplette Paket in einem Schritt. Scheitert das Schreiben (Speicher voll), bleibt der vorherige Stand unangetastet und eine Fehlermeldung erscheint. Workflow-Schritte (z. B. REPLY-Übernahme: Einträge + DMRL + Archiv + Freigabestand + Verlauf) werden als **eine** Änderung gespeichert — entweder alles oder nichts.
 
 ### D) Demo-Datenpaket
-- **Beispiel-XMLs PHUNGUN** liegen als Projektdateien vor; Firmenname in Datei 02 ist in der Projektkopie neutralisiert. Sie werden byte-genau ins Archiv übernommen (3 Archivstände, Partner C1234, REPLY dem SEND 00001 zugeordnet).
+- **Beispiel-XMLs PHUNGUN** liegen als Projektdateien vor; Firmenname in Datei 02 ist in der Projektkopie neutralisiert. Sie werden byte-genau ins Archiv übernommen (3 Archivstände, Empfänger C1234, REPLY dem SEND 00001 zugeordnet).
 - **32 PHUNGUN-Einträge** werden beim Erzeugen aus SEND 00002 ausgelesen (Browser-XML-Leser) und um `issno` `001`, DM-Ausgabetyp `new` und das Ausgabedatum von SEND 00002 ergänzt. Status *gesendet*.
 - **PHUNGUN-Verlauf**: 3 Einträge (SEND, REPLY übernommen, SEND) mit Benutzer „Anna Bearbeitung" und den Datumsangaben aus den Dateien.
 - **Fahrzeug (GTFDEMO, 4.2) und Fluggerät (THSDEMO, 5.0)**: je 10 fest hinterlegte Einträge (Eintragstyp `n`, *in Bearbeitung*), so gewählt, dass sie das Regelwerk (PROJ-8) erfüllen. Ein Unit-Test sichert das ab, sobald das Regelwerk existiert.
@@ -317,7 +317,7 @@ Alle Verknüpfungen laufen über IDs. Beim Laden wird geprüft, dass jede Verkn�
 - **Keine neuen Pakete.** Genutzt: Zod, shadcn/ui (AlertDialog, Button, Card, Alert, Skeleton), Sonner. XML-Lesen mit dem eingebauten Browser-XML-Leser; Tests laufen in der vorhandenen jsdom-Testumgebung.
 
 ### H) Anpassung des angefangenen Codes
-Der unversionierte Code aus dem ersten `/frontend`-Lauf wird weiterverwendet, aber angepasst: Datenmodell (Organisation ohne Art, Benutzer ohne Organisation mit aktiv/Systemkonto, System ohne Art, DMRL ohne Name/Partner mit Originator/DML-Typ/Sicherheitseinstufung/Berechtigungen), neue Objekte (Freigabestände, Verlauf), Demo-Namen und -Einträge, Formatversion 2, Anmeldungs-Speicher.
+Der unversionierte Code aus dem ersten `/frontend`-Lauf wird weiterverwendet, aber angepasst: Datenmodell (Organisation ohne Art, Benutzer ohne Organisation mit aktiv/Systemkonto, System ohne Art, DMRL ohne Name/Empfänger mit Originator/DML-Typ/Sicherheitseinstufung/Berechtigungen), neue Objekte (Freigabestände, Verlauf), Demo-Namen und -Einträge, Formatversion 2, Anmeldungs-Speicher.
 
 ### I) Testbarkeit
 - Unit-Tests: Demo-Paket (3 Systeme, 32 + 10 + 10 Einträge, 3 Archivstände, 3 Verlaufseinträge, Berechtigungen), Gültigkeitsprüfung (gültig / beschädigt / Formatversion 1 / fehlendes Systemkonto / kaputte Verknüpfung), Speicher voll, Byte-Genauigkeit der Archivstände.
@@ -328,7 +328,7 @@ Der unversionierte Code aus dem ersten `/frontend`-Lauf wird weiterverwendet, ab
 _Stand 2026-11-12 — `/frontend PROJ-1`_
 
 **Umgesetzt**
-- `src/lib/data/schema.ts` — Datenmodell Formatversion **2** (Zod): Organisation, Benutzer (aktiv, Systemkonto), System (Beschreibung), DMRL (Originator, DML-Typ, Sicherheitseinstufung 01–20, Berechtigungen, Partner-Bemerkung, Freigabe-Nachweis, Sperre mit Kopie der Einträge), Einträge, Archiv (Partner, REPLY↔SEND, Zählwerte, zurückgezogen), Freigabestände, Verlauf. Gültigkeitsprüfung beim Laden: eindeutige IDs, alle Verknüpfungen, genau ein aktives Systemkonto, max. eine DMRL je System, Grundregel „DMRL freigegeben ⇔ alle Einträge freigegeben" (PROJ-14).
+- `src/lib/data/schema.ts` — Datenmodell Formatversion **2** (Zod): Organisation, Benutzer (aktiv, Systemkonto), System (Beschreibung), DMRL (Originator, DML-Typ, Sicherheitseinstufung 01–20, Berechtigungen, Empfänger-Bemerkung, Freigabe-Nachweis, Sperre mit Kopie der Einträge), Einträge, Archiv (Empfänger, REPLY↔SEND, Zählwerte, zurückgezogen), Freigabestände, Verlauf. Gültigkeitsprüfung beim Laden: eindeutige IDs, alle Verknüpfungen, genau ein aktives Systemkonto, max. eine DMRL je System, Grundregel „DMRL freigegeben ⇔ alle Einträge freigegeben" (PROJ-14).
 - `src/lib/data/storage.ts` — Laden/Speichern des Datenpakets (unverändert im Prinzip) + **Anmelde-Speicher** `dmrl-ms:session` (für PROJ-2).
 - `src/lib/data/demo-data.ts` — Demo-Bestand mit den festgelegten Namen, Berechtigungen, PHUNGUN-Archiv (3 Stände, byte-genau, REPLY↔SEND verknüpft), 32 PHUNGUN-Einträgen mit ergänzten Ausgabedaten, Verlauf (3 Einträge), je 10 regelkonformen Einträgen für GTFDEMO (4.2) und THSDEMO (5.0).
 - `src/lib/data/queries.ts` — abgeleitete Werte: letzter nicht zurückgezogener SEND, aktueller Versionsindex.

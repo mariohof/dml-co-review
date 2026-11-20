@@ -8,7 +8,7 @@
 - Requires: PROJ-2 (Simulierte Anmeldung & Rollen) — Dashboard als Startseite, DMRL-Liste nach Rolle
 - Requires: PROJ-17 (Berechtigungen) — sichtbare DMRLs für Bearbeiter
 - Requires: PROJ-14 (Freigabestatus) — Status von DMRL und Einträgen
-- Requires: PROJ-9 (Check-out) — Sperre, PROJ-12 (SEND) — Versionsindex, Partner
+- Requires: PROJ-9 (Check-out) — Sperre, PROJ-12 (SEND) — Versionsindex, Empfänger
 - Requires: PROJ-7 (DMRL-Ansicht) — Ziel der Aktion „Auswahl"
 
 ## Beschreibung
@@ -259,7 +259,7 @@ _Stand 2026-11-13 — `/frontend PROJ-16`_
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 
 

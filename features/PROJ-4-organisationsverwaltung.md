@@ -7,10 +7,10 @@
 ## Dependencies
 - Requires: PROJ-1 (Datenhaltung + Demo-Daten) — Organisationen werden im Datenbestand gespeichert
 - Requires: PROJ-2 (Simulierte Anmeldung & Rollen) — Zugriff nur für Administratoren
-- Wird genutzt von: PROJ-6 (Auswahl des Originators einer DMRL), PROJ-12 (Auswahl des Partners beim SEND), PROJ-13 (Absenderprüfung REPLY), CAGE-Code als `sendid` im DML-Code
+- Wird genutzt von: PROJ-6 (Auswahl des Originators einer DMRL), PROJ-12 (Auswahl des Empfängers beim SEND), PROJ-13 (Absenderprüfung REPLY), CAGE-Code als `sendid` im DML-Code
 
 ## Beschreibung
-Der Administrator verwaltet unter „Verwaltung → Organisationen" die Organisationen, die als Sender oder Partner an DMRLs beteiligt sind. Eine Organisation wird über ihren CAGE-Code identifiziert, der im S1000D-DML-Code als `sendid` erscheint (z. B. `D0815`, `C1234`). Ob eine Organisation Originator oder Partner ist, wird nicht an der Organisation festgelegt: der Originator an der DMRL (PROJ-6), der Partner je SEND (PROJ-12).
+Der Administrator verwaltet unter „Verwaltung → Organisationen" die Organisationen, die als Sender oder Empfänger an DMRLs beteiligt sind. Eine Organisation wird über ihren CAGE-Code identifiziert, der im S1000D-DML-Code als `sendid` erscheint (z. B. `D0815`, `C1234`). Ob eine Organisation Originator oder Empfänger ist, wird nicht an der Organisation festgelegt: der Originator an der DMRL (PROJ-6), der Empfänger je SEND (PROJ-12).
 
 ## Datenfelder einer Organisation
 | Feld | Regel |
@@ -18,11 +18,11 @@ Der Administrator verwaltet unter „Verwaltung → Organisationen" die Organisa
 | CAGE-Code | Pflicht, genau 5 Zeichen, nur Buchstaben und Ziffern, Eingabe wird automatisch in Großbuchstaben umgewandelt, eindeutig |
 | Name | Pflicht, 2–120 Zeichen (Randleerzeichen werden entfernt), nicht eindeutig |
 
-Keine Art (eigene/Partner), kein Status (aktiv/inaktiv).
+Keine Art (eigene/Empfänger), kein Status (aktiv/inaktiv).
 
 ## Änderungs- und Löschregeln
 
-Eine Organisation gilt als **in einem Workflow benutzt**, sobald eine DMRL, der sie als Originator zugeordnet ist (oder war) oder an die sie als Partner gesendet wurde, mindestens einmal einen der beiden Workflows durchlaufen hat:
+Eine Organisation gilt als **in einem Workflow benutzt**, sobald eine DMRL, der sie als Originator zugeordnet ist (oder war) oder an die sie als Empfänger gesendet wurde, mindestens einmal einen der beiden Workflows durchlaufen hat:
 1. **Check-out / Check-in**
 2. **SEND / REPLY**
 
@@ -35,20 +35,20 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 | In einem Workflow benutzt | **nein, dauerhaft** | **nein** | ja |
 
 ## User Stories
-- Als **Administrator** möchte ich Organisationen mit CAGE-Code und Name anlegen, damit ich sie DMRLs als Originator zuordnen und beim SEND als Partner wählen kann.
+- Als **Administrator** möchte ich Organisationen mit CAGE-Code und Name anlegen, damit ich sie DMRLs als Originator zuordnen und beim SEND als Empfänger wählen kann.
 - Als **Administrator** möchte ich den Namen einer Organisation jederzeit korrigieren können, damit Umfirmierungen abgebildet werden.
 - Als **Administrator** möchte ich falsch angelegte, unbenutzte Organisationen löschen können, damit die Liste übersichtlich bleibt.
 - Als **Bearbeiter** möchte ich, dass am Austausch beteiligte Organisationen nicht gelöscht oder umcodiert werden können, damit ich archivierte DMRLs jederzeit den beteiligten Organisationen zuordnen kann.
 - Als **Administrator** möchte ich sehen, wie vielen DMRLs eine Organisation zugeordnet ist und warum eine Aktion gesperrt ist, damit ich die Einschränkungen verstehe.
 
 ## Out of Scope
-- Art der Organisation (eigene/Partner) — Originator je DMRL (PROJ-6), Partner je SEND (PROJ-12)
+- Art der Organisation (eigene/Empfänger) — Originator je DMRL (PROJ-6), Empfänger je SEND (PROJ-12)
 - Status aktiv/inaktiv
 - Zuordnung von Organisationen zu DMRLs → PROJ-6
 - Zuordnung von Benutzern zu Organisationen (Benutzer haben keine Organisation, PROJ-3)
 - Prüfung des CAGE-Codes gegen ein externes CAGE-Register
 - Weitere Felder (Adresse, Ansprechpartner, Kontaktdaten)
-- Verwaltung der verantwortlichen Partnerfirma je Eintrag (`rpc`/`rpcname`) — bleibt ein Freitextfeld des DMRL-Eintrags
+- Verwaltung der verantwortlichen Empfängerfirma je Eintrag (`rpc`/`rpcname`) — bleibt ein Freitextfeld des DMRL-Eintrags
 - Import/Export von Organisationslisten
 
 ## Acceptance Criteria
@@ -72,7 +72,7 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 - [ ] Angenommen der CAGE-Code hat nicht genau 5 Zeichen oder enthält andere Zeichen als Buchstaben und Ziffern, wenn gespeichert wird, dann erscheint „CAGE-Code muss aus genau 5 Buchstaben/Ziffern bestehen" und nichts wird gespeichert
 - [ ] Angenommen eine Organisation mit CAGE-Code „C1234" existiert, wenn eine weitere mit „C1234" angelegt werden soll, dann erscheint „CAGE-Code bereits vergeben" und nichts wird gespeichert
 - [ ] Angenommen der Name ist leer oder kürzer als 2 bzw. länger als 120 Zeichen, wenn gespeichert wird, dann erscheint eine entsprechende Fehlermeldung und nichts wird gespeichert
-- [ ] Angenommen eine Organisation mit dem Namen „Partner Systemtechnik GmbH" existiert, wenn eine weitere mit demselben Namen und anderem CAGE-Code angelegt wird, dann ist das erlaubt
+- [ ] Angenommen eine Organisation mit dem Namen „Empfänger Systemtechnik GmbH" existiert, wenn eine weitere mit demselben Namen und anderem CAGE-Code angelegt wird, dann ist das erlaubt
 
 ### Bearbeiten
 - [ ] Angenommen eine Organisation ist keiner DMRL zugeordnet, wenn „Bearbeiten" gewählt wird, dann können CAGE-Code und Name geändert werden (gleiche Prüfregeln wie beim Anlegen)
@@ -95,7 +95,7 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 - **CAGE-Code mit Leerzeichen** („C 123"): ungültig — keine automatische Bereinigung von Leerzeichen innerhalb des Codes.
 - **CAGE-Code mit Umlauten oder Sonderzeichen:** ungültig.
 - **Umcodieren auf bestehenden Code** (unbenutzte Organisation „X0001" → „C1234"): abgelehnt, Eindeutigkeit.
-- **Gleiche Organisation als Originator und Partner:** Partner wird beim SEND gewählt (PROJ-12) — Regel dort.
+- **Gleiche Organisation als Originator und Empfänger:** Empfänger wird beim SEND gewählt (PROJ-12) — Regel dort.
 - **Zwei Tabs, gleichzeitiges Bearbeiten:** letzter Speichervorgang gewinnt (Prototyp, PROJ-1).
 
 ## Technical Requirements (optional)
@@ -104,8 +104,8 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 - Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar
 
 ## Open Questions
-- [x] Darf beim SEND der Originator selbst als Partner gewählt werden? → Nein, der Originator wird in der Partnerauswahl nicht angeboten (PROJ-12, 2026-11-12)
-- [x] Prüfung beim REPLY-Import: `dmlc/sendid` der REPLY muss dem beim SEND gewählten Partner entsprechen (PROJ-6/PROJ-13)
+- [x] Darf beim SEND der Originator selbst als Empfänger gewählt werden? → Nein, der Originator wird in der Empfängerauswahl nicht angeboten (PROJ-12, 2026-11-12)
+- [x] Prüfung beim REPLY-Import: `dmlc/sendid` der REPLY muss dem beim SEND gewählten Empfänger entsprechen (PROJ-6/PROJ-13)
 
 ## Decision Log
 
@@ -113,7 +113,7 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 | Decision | Rationale | Date |
 |----------|-----------|------|
 | Code = CAGE-Code, 5 Zeichen alphanumerisch, Großbuchstaben, eindeutig | Vorgabe Product Owner; entspricht `sendid` im DML-Code | 2026-11-12 |
-| Keine Art (eigene/Partner) an der Organisation | Vorgabe Product Owner; Rolle wird je DMRL festgelegt | 2026-11-12 |
+| Keine Art (eigene/Empfänger) an der Organisation | Vorgabe Product Owner; Rolle wird je DMRL festgelegt | 2026-11-12 |
 | Kein Status aktiv/inaktiv | Vorgabe Product Owner | 2026-11-12 |
 | „Benutzt" = beteiligte DMRL hat Check-out/Check-in oder SEND/REPLY durchlaufen; dauerhaft | Vorgabe Product Owner — Nachvollziehbarkeit archivierter DMRLs | 2026-11-12 |
 | Benutzte Organisation: kein Löschen, CAGE-Code fest, Name änderbar | CAGE-Code steckt in DML-Codes und Dateinamen; Name ist nur Anzeige | 2026-11-12 |
@@ -126,7 +126,7 @@ Dieser Zustand ist dauerhaft — die Historie archivierter DMRLs muss nachvollzi
 | Decision | Rationale | Date |
 |----------|-----------|------|
 | Verwaltungsmuster aus PROJ-3 wiederverwendet | Einheitliche Bedienung | 2026-11-12 |
-| Gemeinsame, abgeleitete Regel „im Workflow benutzt" (Check-in im Verlauf oder Archivstand; Partner im Archiv) für PROJ-4/5/6 | Eine Definition, kein gespeichertes Kennzeichen (PROJ-1) | 2026-11-12 |
+| Gemeinsame, abgeleitete Regel „im Workflow benutzt" (Check-in im Verlauf oder Archivstand; Empfänger im Archiv) für PROJ-4/5/6 | Eine Definition, kein gespeichertes Kennzeichen (PROJ-1) | 2026-11-12 |
 | Aktueller Originator genügt für die Regel | Originator nach erstem Workflow unveränderlich (PROJ-6) | 2026-11-12 |
 | Verknüpfung über ID, Anzeige aktueller Name | Umfirmierung wirkt überall, Archivdateien unverändert | 2026-11-12 |
 
@@ -154,14 +154,14 @@ Seite „Verwaltung → Organisationen" (/verwaltung/organisationen)
 ```
 
 ### B) Datenmodell (in Klartext)
-Keine Änderung — Organisation laut PROJ-1: ID, CAGE-Code, Name. Verknüpfungen zu DMRLs (Originator) und Archivständen (Partner) laufen über die ID; deshalb bleibt bei einer Namensänderung alles korrekt verknüpft, archivierte XML-Dateien bleiben unverändert.
+Keine Änderung — Organisation laut PROJ-1: ID, CAGE-Code, Name. Verknüpfungen zu DMRLs (Originator) und Archivständen (Empfänger) laufen über die ID; deshalb bleibt bei einer Namensänderung alles korrekt verknüpft, archivierte XML-Dateien bleiben unverändert.
 
 ### C) Fachregeln (eine Stelle, ohne Oberfläche)
 - **Prüfung:** CAGE-Code genau 5 Buchstaben/Ziffern, in Großbuchstaben, eindeutig (eigener Code ausgenommen); Name 2–120 Zeichen nach Entfernen der Randleerzeichen.
 - **Zugeordnete DMRLs:** DMRLs mit dieser Organisation als Originator (Anzahl und Systemnamen für Meldungen).
 - **Gemeinsame Regel „im Workflow benutzt"** (abgeleitet, nicht gespeichert — PROJ-1):
   - eine DMRL mit dieser Organisation als Originator hat mindestens einen **abgeschlossenen Check-in** (Verlauf) oder **Archivstand** (SEND/REPLY), oder
-  - die Organisation ist **Partner** eines Archivstands (SEND oder REPLY).
+  - die Organisation ist **Empfänger** eines Archivstands (SEND oder REPLY).
   Da der Originator nach dem ersten Workflow nicht mehr geändert werden kann (PROJ-6), genügt der aktuelle Originator.
 - **Rechte je Situation** (Löschen / CAGE-Code ändern / Name ändern) laut Tabelle der Spec, mit Begründungstext für Tooltip und Hinweise.
 
@@ -178,14 +178,14 @@ Keine Änderung — Organisation laut PROJ-1: ID, CAGE-Code, Name. Verknüpfunge
 - **Keine neuen Pakete.**
 
 ### F) Testbarkeit
-- Unit-Tests: CAGE-Prüfung (Länge, Zeichen, Groß-/Kleinschreibung, Eindeutigkeit), Regel „im Workflow benutzt" (Originator mit Check-in, Originator mit Archiv, Partner im Archiv, zugeordnet ohne Workflow, unbenutzt), Rechte-Tabelle.
+- Unit-Tests: CAGE-Prüfung (Länge, Zeichen, Groß-/Kleinschreibung, Eindeutigkeit), Regel „im Workflow benutzt" (Originator mit Check-in, Originator mit Archiv, Empfänger im Archiv, zugeordnet ohne Workflow, unbenutzt), Rechte-Tabelle.
 - E2E: Anlegen/Bearbeiten/Löschen; Demo-Daten: D0815 und C1234 als benutzt erkennbar, Löschen und CAGE-Änderung gesperrt.
 
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend PROJ-4`_
 
 **Umgesetzt**
-- `src/lib/rules/workflow-usage.ts` — **gemeinsame Regel „im Workflow benutzt"** für DMRL, Organisation und System (abgeleitet: abgeschlossener Check-in im Verlauf oder Archivstand; Organisation zusätzlich als Partner eines Archivstands). Wird von PROJ-5/6 wiederverwendet.
+- `src/lib/rules/workflow-usage.ts` — **gemeinsame Regel „im Workflow benutzt"** für DMRL, Organisation und System (abgeleitet: abgeschlossener Check-in im Verlauf oder Archivstand; Organisation zusätzlich als Empfänger eines Archivstands). Wird von PROJ-5/6 wiederverwendet.
 - `src/lib/rules/organisations.ts` — Prüfung CAGE-Code (5 Buchstaben/Ziffern, Großbuchstaben, eindeutig) und Name (2–120), Rechte je Situation laut Regel-Tabelle mit Begründungstexten, Anlegen/Bearbeiten/Löschen mit erneuter Prüfung (gesperrter CAGE-Code kann nicht überschrieben werden).
 - `src/components/admin/organisations/` — Verwaltungsseite (Verwaltungsmuster PROJ-3): Tabelle sortiert nach CAGE-Code, Suche über Code und Name, Spalten zugeordnete DMRLs und „im Workflow benutzt", Löschen gesperrt mit Tooltip-Begründung; Dialog mit automatischer Großschreibung und gesperrtem CAGE-Code-Feld inkl. Hinweis.
 

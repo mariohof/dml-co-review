@@ -22,9 +22,9 @@ PROJ-14 ist die zentrale Referenz für den Status von DMRL und Einträgen (Statu
 | Status | Bedeutung |
 |---|---|
 | *in Bearbeitung* | neu oder geändert, noch nicht gesendet |
-| *gesendet* | mit Eintragstyp `n`/`c`/`d` an den Partner gesendet, Antwort ausstehend |
-| *freigegeben* | vom Partner genehmigt (Eintragstyp leer) — oder als abgestimmter Bestand per Check-in übernommen *(Refinement 2026-11-18)* |
-| *zu überarbeiten* | vom Partner abgelehnt (Eintragstyp bleibt) |
+| *gesendet* | mit Eintragstyp `n`/`c`/`d` an den Empfänger gesendet, Antwort ausstehend |
+| *freigegeben* | vom Empfänger genehmigt (Eintragstyp leer) — oder als abgestimmter Bestand per Check-in übernommen *(Refinement 2026-11-18)* |
+| *zu überarbeiten* | vom Empfänger abgelehnt (Eintragstyp bleibt) |
 
 | Auslöser | Von | Nach | Spec |
 |---|---|---|---|
@@ -63,9 +63,9 @@ Demo-Ausgangsstände: PHUNGUN-Einträge *gesendet*, Fahrzeug/Fluggerät *in Bear
 **Invariante:** DMRL *freigegeben* ⇔ alle Einträge *freigegeben* (und mindestens ein Eintrag vorhanden). Eine DMRL ohne Einträge ist nie freigegeben.
 
 ## Freigabe-Nachweis
-Bei jeder Freigabe (REPLY-Übernahme mit Ergebnis *freigegeben*) wird gespeichert: Datum/Uhrzeit, REPLY-Versionsindex und Partner, übernehmender Bearbeiter.
+Bei jeder Freigabe (REPLY-Übernahme mit Ergebnis *freigegeben*) wird gespeichert: Datum/Uhrzeit, REPLY-Versionsindex und Empfänger, übernehmender Bearbeiter.
 
-Bei einer Freigabe durch **Check-in** (Bestand übernehmen, PROJ-10) *(Refinement 2026-11-18)*: Datum/Uhrzeit, Herkunft „Übernahme Bestand per Check-in“ (kein REPLY, kein Partner), übernehmender Bearbeiter. Anzeige: „Freigegeben am 18.11.2026 durch Übernahme Bestand per Check-in — übernommen von Bea Bearbeiter“; „Letzte Freigabe: 18.11.2026, Übernahme per Check-in“; Freigabestand „Freigabestand vom [Datum] (Übernahme per Check-in)“.
+Bei einer Freigabe durch **Check-in** (Bestand übernehmen, PROJ-10) *(Refinement 2026-11-18)*: Datum/Uhrzeit, Herkunft „Übernahme Bestand per Check-in“ (kein REPLY, kein Empfänger), übernehmender Bearbeiter. Anzeige: „Freigegeben am 18.11.2026 durch Übernahme Bestand per Check-in — übernommen von Bea Bearbeiter“; „Letzte Freigabe: 18.11.2026, Übernahme per Check-in“; Freigabestand „Freigabestand vom [Datum] (Übernahme per Check-in)“.
 
 Kopfbereich der Ansicht (Ergänzung PROJ-7):
 - **freigegeben:** „Freigegeben am 12.11.2026 durch REPLY C1234 00002-2026 — übernommen von Bea Bearbeiter"
@@ -103,7 +103,7 @@ Kopfbereich der Ansicht (Ergänzung PROJ-7):
 - [ ] Angenommen ein Übergang aus der Tabelle wird ausgelöst, wenn er abgeschlossen ist, dann haben DMRL und Einträge den dort angegebenen Status (Prüfung je Zeile)
 
 ### Freigabe-Nachweis
-- [ ] Angenommen ein REPLY wird übernommen und danach sind alle Einträge *freigegeben*, wenn der Kopfbereich betrachtet wird, dann zeigt er „Freigegeben am [Datum] durch REPLY [Partner] [Versionsindex] — übernommen von [Name]"
+- [ ] Angenommen ein REPLY wird übernommen und danach sind alle Einträge *freigegeben*, wenn der Kopfbereich betrachtet wird, dann zeigt er „Freigegeben am [Datum] durch REPLY [Empfänger] [Versionsindex] — übernommen von [Name]"
 - [ ] Angenommen eine DMRL wurde nie freigegeben, wenn der Kopfbereich betrachtet wird, dann erscheint nur das Banner „Nicht freigegeben" ohne Hinweis auf eine letzte Freigabe
 - [ ] Angenommen ein Check-in wird übernommen und danach sind alle Einträge *freigegeben* (mindestens einer als *freigegeben* übernommen), wenn der Kopfbereich betrachtet wird, dann zeigt er „Freigegeben am [Datum] durch Übernahme Bestand per Check-in — übernommen von [Name]“ und ein neuer Freigabestand „(Übernahme per Check-in)“ ist anzeigbar und exportierbar *(Refinement 2026-11-18)*
 
@@ -123,7 +123,7 @@ Kopfbereich der Ansicht (Ergänzung PROJ-7):
 ## Edge Cases
 - **Freigabestand bei vielen Freigaben:** Speicherbedarf wächst; bei vollem Speicher schlägt die REPLY-Übernahme fehl (PROJ-1), nichts geändert.
 - **Benutzer des Freigabe-Nachweises wird deaktiviert:** Name bleibt im Nachweis sichtbar.
-- **Partner-Organisation wird umbenannt:** Nachweis zeigt CAGE-Code und aktuellen Namen.
+- **Empfänger-Organisation wird umbenannt:** Nachweis zeigt CAGE-Code und aktuellen Namen.
 - **Admin zieht SEND zurück nach einer früheren Freigabe:** letzter Freigabestand bleibt unverändert verfügbar.
 - **Demo-Daten neu laden:** Freigabestände der Demo-Daten (keine) ersetzen bestehende.
 
@@ -166,7 +166,7 @@ PROJ-14 liefert drei Dinge: (1) ein **zentrales Statusmodul**, das alle Statusü
 ### A) Komponentenstruktur
 ```
 DMRL-Ansicht (PROJ-7) — Kopfbereich (Ergänzung)
-+-- freigegeben: „Freigegeben am … durch REPLY [Partner] [Versionsindex] — übernommen von [Name]"
++-- freigegeben: „Freigegeben am … durch REPLY [Empfänger] [Versionsindex] — übernommen von [Name]"
 +-- nicht freigegeben, früher freigegeben: Banner „Nicht freigegeben" + „Letzte Freigabe: …" + Link „Freigabestand anzeigen"
 +-- nie freigegeben: nur Banner
 
@@ -212,7 +212,7 @@ _Stand 2026-11-13 — `/frontend PROJ-14`_
 **Umgesetzt**
 - `src/lib/workflows/release.ts`:
   - Freigabestände einer DMRL (neuester zuerst), „Letzte Freigabe" = neuester Freigabestand.
-  - Angaben zur Freigabe: REPLY, zugehöriger SEND, Partner, Bearbeiter (bleibt auch bei deaktivierten Benutzern sichtbar), Versionsindex; Beschriftung „12.11.2026, REPLY C1234 00002-2026".
+  - Angaben zur Freigabe: REPLY, zugehöriger SEND, Empfänger, Bearbeiter (bleibt auch bei deaktivierten Benutzern sichtbar), Versionsindex; Beschriftung „12.11.2026, REPLY C1234 00002-2026".
   - Dateinamen `DML-{MI}-{CAGE}-{DML-Typ}-Freigabe-{JJJJ-MM-TT}` (Datum der Freigabe).
   - CSV über den gemeinsamen CSV-Schreiber.
   - XML über den DML-Schreiber (PROJ-12) mit dem Export-Kopf aus PROJ-18: Richtung `send`, `issno` 000 / `inwork` 01, ohne `answer`, `remarks` „Freigabestand vom … — Export vom …".
@@ -264,7 +264,7 @@ _Stand 2026-11-13 — `/frontend PROJ-14`_
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 
 

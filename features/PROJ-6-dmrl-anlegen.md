@@ -12,7 +12,7 @@
 - Wird genutzt von: PROJ-17 (DMRL-Berechtigungen), PROJ-7 bis PROJ-15 (alle Workflows arbeiten auf einer DMRL)
 
 ## Beschreibung
-Der Administrator legt unter „Verwaltung → DMRLs" zu einem System dessen DMRL an und pflegt die Kopfangaben (Originator, DML-Typ, Sicherheitseinstufung). Eine DMRL hat keine eigene Bezeichnung — sie wird über ihr System angezeigt. Der Partner wird nicht hier, sondern erst beim SEND gewählt (PROJ-12). Die Vergabe von Bearbeiter-Berechtigungen ist ein eigenes Feature (PROJ-17).
+Der Administrator legt unter „Verwaltung → DMRLs" zu einem System dessen DMRL an und pflegt die Kopfangaben (Originator, DML-Typ, Sicherheitseinstufung). Eine DMRL hat keine eigene Bezeichnung — sie wird über ihr System angezeigt. Der Empfänger wird nicht hier, sondern erst beim SEND gewählt (PROJ-12). Die Vergabe von Bearbeiter-Berechtigungen ist ein eigenes Feature (PROJ-17).
 
 ## Datenfelder einer DMRL
 | Feld | Regel |
@@ -25,7 +25,7 @@ Der Administrator legt unter „Verwaltung → DMRLs" zu einem System dessen DMR
 
 Nicht an der DMRL gepflegt:
 - **Berechtigte Bearbeiter** → PROJ-17
-- **Partner** — wird beim SEND gewählt und in der Übertragungshistorie gespeichert (PROJ-12); beim REPLY wird geprüft, ob die Antwort vom richtigen Partner kommt (PROJ-13)
+- **Empfänger** — wird beim SEND gewählt und in der Übertragungshistorie gespeichert (PROJ-12); beim REPLY wird geprüft, ob die Antwort vom richtigen Empfänger kommt (PROJ-13)
 - **Ausführender Benutzer je Workflow-Schritt** — wird im Workflow/Archiv gespeichert (PROJ-9, 10, 12, 13)
 
 Die Sicherheitseinstufung der DMRL ist **unabhängig** von der Sicherheitseinstufung der Datenmodul-Einträge. Einträge werden eigenständig geprüft (Format `01`–`20`, Regelwerk PROJ-8) und müssen nicht mit der DMRL übereinstimmen.
@@ -51,8 +51,8 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 ## Out of Scope
 - Bearbeiter-Berechtigungen → PROJ-17
 - Eigene Bezeichnung der DMRL
-- Auswahl des Partners → PROJ-12 (SEND)
-- Prüfung des Partners beim REPLY → PROJ-13
+- Auswahl des Empfängers → PROJ-12 (SEND)
+- Prüfung des Empfängers beim REPLY → PROJ-13
 - Pflege der DMRL-Einträge → PROJ-9/10 (Check-out/Check-in)
 - Prüfung der Sicherheitseinstufung der Einträge → PROJ-8
 - DMRL-Detailansicht mit Einträgen → PROJ-7
@@ -119,7 +119,7 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 | Keine eigene DMRL-Bezeichnung, Anzeige über Systembezeichnung | Vorgabe Product Owner (1 System = 1 DMRL) | 2026-11-12 |
 | Systembezeichnung fest, sobald DMRL existiert | Vorgabe Product Owner — DMRL-Bezeichnung darf sich nicht unbemerkt ändern | 2026-11-12 |
 | Nur Sender-Organisation (Originator) an der DMRL | Vorgabe Product Owner | 2026-11-12 |
-| Partner wird beim SEND gewählt und in der Übertragungshistorie gespeichert; REPLY wird gegen ihn geprüft | Vorgabe Product Owner — Nachvollziehbarkeit „an wen geliefert" und Absenderprüfung | 2026-11-12 |
+| Empfänger wird beim SEND gewählt und in der Übertragungshistorie gespeichert; REPLY wird gegen ihn geprüft | Vorgabe Product Owner — Nachvollziehbarkeit „an wen geliefert" und Absenderprüfung | 2026-11-12 |
 | DML-Typ: Auswahl `c`, `p`, `s`, vorbelegt `c` | Vorgabe Product Owner | 2026-11-12 |
 | Sicherheitseinstufung 2 Ziffern 00–99, vorbelegt `01` | Vorgabe Product Owner (Format); Vorbelegung entspricht Beispieldateien | 2026-11-12 |
 | Sicherheitseinstufung auf `01`–`20` eingeschränkt | Schemas 4.2/5.0 erlauben nur 01–20 (2.3: 01–24); Vorgabe Product Owner (PROJ-12) | 2026-11-12 |

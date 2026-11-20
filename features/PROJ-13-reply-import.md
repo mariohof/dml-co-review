@@ -5,15 +5,15 @@
 **Last Updated:** 2026-11-13
 
 ## Dependencies
-- Requires: PROJ-12 (SEND-Export) — letzter SEND, Partner, Status *gesendet*
+- Requires: PROJ-12 (SEND-Export) — letzter SEND, Empfänger, Status *gesendet*
 - Requires: PROJ-11 (XSD-Validierung) — Schemaprüfung vor dem Regelwerk
 - Requires: PROJ-8 (Fachliches Regelwerk) — Gruppen A–E, I, G, H
-- Requires: PROJ-7 (DMRL-Ansicht) — Aktion „REPLY importieren", Anzeige von Status, Partner-Kommentar, Partner-Bemerkung
+- Requires: PROJ-7 (DMRL-Ansicht) — Aktion „REPLY importieren", Anzeige von Status, Empfänger-Kommentar, Empfänger-Bemerkung
 - Requires: PROJ-17 (Berechtigungen)
 - Wirkt auf: PROJ-14 (Freigabestatus), PROJ-15 (Archiv)
 
 ## Beschreibung
-Der Bearbeiter importiert die Antwort-DMRL (REPLY) des Partners als S1000D-XML. Die Datei wird gegen das Schema (PROJ-11) und das fachliche Regelwerk (PROJ-8) geprüft. Nach Sichtung einer Zusammenfassung übernimmt der Bearbeiter die Antworten: Jeder vom Partner geprüfte Eintrag wird *freigegeben* oder *zu überarbeiten*. Sind danach alle Einträge freigegeben, ist die DMRL automatisch *freigegeben*. Der REPLY wird byte-genau archiviert.
+Der Bearbeiter importiert die Antwort-DMRL (REPLY) des Empfängers als S1000D-XML. Die Datei wird gegen das Schema (PROJ-11) und das fachliche Regelwerk (PROJ-8) geprüft. Nach Sichtung einer Zusammenfassung übernimmt der Bearbeiter die Antworten: Jeder vom Empfänger geprüfte Eintrag wird *freigegeben* oder *zu überarbeiten*. Sind danach alle Einträge freigegeben, ist die DMRL automatisch *freigegeben*. Der REPLY wird byte-genau archiviert.
 
 ## Ablauf
 1. Berechtigter Bearbeiter oder Administrator wählt **„REPLY importieren"** — nur bei DMRL-Status *gesendet*.
@@ -24,7 +24,7 @@ Der Bearbeiter importiert die Antwort-DMRL (REPLY) des Partners als S1000D-XML. 
    - Absender, Versionsindex und Bezug: „REPLY C1234 00001-2026 auf SEND 00002-2026"
    - „30 freigegeben · 2 zu überarbeiten"
    - Liste der abgelehnten Einträge (DMC, Tech Name, Begründung)
-   - Gesamtbemerkung des Partners (`dml/remarks`)
+   - Gesamtbemerkung des Empfängers (`dml/remarks`)
    - künftiger DMRL-Status (*freigegeben* oder *in Bearbeitung*)
 6. **„Übernehmen"** oder **„Abbrechen"** (nichts geändert, DMRL bleibt *gesendet*).
 
@@ -46,25 +46,25 @@ Bei Fehlern kann sofort eine andere Datei hochgeladen werden.
 | Was | Danach |
 |---|---|
 | Status | *freigegeben*, wenn danach **alle** Einträge *freigegeben* sind; sonst *in Bearbeitung* |
-| Bemerkung des Partners | gespeichert, in der Ansicht sichtbar (PROJ-7) |
-| Archiv | REPLY-XML byte-genau mit Versionsindex (seqnum-diyear des Partners), Partner, Bearbeiter, Zeitpunkt; verknüpft mit dem zugehörigen SEND |
-| Workflow-Verlauf | „REPLY [Versionsindex] von [Partner] übernommen — x freigegeben, y zu überarbeiten" |
+| Bemerkung des Empfängers | gespeichert, in der Ansicht sichtbar (PROJ-7) |
+| Archiv | REPLY-XML byte-genau mit Versionsindex (seqnum-diyear des Empfängers), Empfänger, Bearbeiter, Zeitpunkt; verknüpft mit dem zugehörigen SEND |
+| Workflow-Verlauf | „REPLY [Versionsindex] von [Empfänger] übernommen — x freigegeben, y zu überarbeiten" |
 | `dmlref` des nächsten SEND | verweist auf diesen REPLY (PROJ-12) |
 
 Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeben"-Schritt.
 
 ## User Stories
-- Als **Bearbeiter** möchte ich die Antwort des Partners importieren, damit die DMRL den abgestimmten Stand zeigt.
+- Als **Bearbeiter** möchte ich die Antwort des Empfängers importieren, damit die DMRL den abgestimmten Stand zeigt.
 - Als **Bearbeiter** möchte ich vor der Übernahme sehen, welche Einträge abgelehnt wurden und warum, damit ich die Überarbeitung planen kann.
 - Als **Bearbeiter** möchte ich, dass fehlerhafte oder fremde REPLY-Dateien abgelehnt werden, damit keine falschen Freigaben entstehen.
-- Als **Bearbeiter** möchte ich, dass die DMRL automatisch freigegeben ist, sobald der Partner alle Einträge genehmigt hat.
+- Als **Bearbeiter** möchte ich, dass die DMRL automatisch freigegeben ist, sobald der Empfänger alle Einträge genehmigt hat.
 - Als **Product Owner** möchte ich mit der Beispieldatei 02 einen vollständigen REPLY vorführen.
 
 ## Out of Scope
 - Prüfregeln → PROJ-8, XSD → PROJ-11
 - Manueller „Freigeben"-Schritt bzw. Status *freigabebereit*
 - Freigabe ohne REPLY („Fehler ignorieren", Anforderung 02)
-- Import von Prüfprotokollen des Partners als Anhang (Anforderung 02)
+- Import von Prüfprotokollen des Empfängers als Anhang (Anforderung 02)
 - Teilweise Übernahme einzelner Antworten
 - Rückgängig machen eines übernommenen REPLY
 - Mehrere REPLYs auf denselben SEND (zweiter REPLY wird abgelehnt: Status nicht mehr *gesendet*)
@@ -83,7 +83,7 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 - [ ] Angenommen die Datei besteht die XSD-Prüfung nicht, wenn sie hochgeladen wird, dann erscheint der XSD-Prüfbericht, das Regelwerk läuft nicht und nichts wird übernommen
 - [ ] Angenommen die Datei verletzt das Regelwerk (z. B. falscher Absender), wenn sie geprüft wird, dann erscheint der Prüfbericht und nichts wird übernommen
 - [ ] Angenommen ein Prüfbericht wird angezeigt, wenn eine andere Datei hochgeladen wird, dann wird diese neu geprüft
-- [ ] Angenommen die Datei ist fehlerfrei, wenn die Prüfung endet, dann zeigt die Zusammenfassung Absender, Versionsindex, Bezug, Anzahl freigegeben/zu überarbeiten, abgelehnte Einträge mit Begründung, Partner-Bemerkung und künftigen DMRL-Status
+- [ ] Angenommen die Datei ist fehlerfrei, wenn die Prüfung endet, dann zeigt die Zusammenfassung Absender, Versionsindex, Bezug, Anzahl freigegeben/zu überarbeiten, abgelehnte Einträge mit Begründung, Empfänger-Bemerkung und künftigen DMRL-Status
 
 ### Übernahme
 - [ ] Angenommen die Zusammenfassung ist sichtbar, wenn „Abbrechen" gewählt wird, dann ändert sich nichts und die DMRL bleibt *gesendet*
@@ -94,7 +94,7 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 - [ ] Angenommen alle Einträge sind nach der Übernahme *freigegeben*, wenn die DMRL betrachtet wird, dann ist sie *freigegeben* und das Banner „Nicht freigegeben" verschwindet
 - [ ] Angenommen mindestens ein Eintrag ist *zu überarbeiten*, wenn übernommen wurde, dann ist die DMRL *in Bearbeitung*
 - [ ] Angenommen der REPLY enthält `dml/remarks`, wenn übernommen wird, dann ist die Bemerkung in der DMRL-Ansicht sichtbar
-- [ ] Angenommen der REPLY wurde übernommen, wenn das Archiv betrachtet wird, dann ist die Datei byte-genau mit Versionsindex, Partner, Bearbeiter und Zeitpunkt gespeichert und dem SEND zugeordnet
+- [ ] Angenommen der REPLY wurde übernommen, wenn das Archiv betrachtet wird, dann ist die Datei byte-genau mit Versionsindex, Empfänger, Bearbeiter und Zeitpunkt gespeichert und dem SEND zugeordnet
 - [ ] Angenommen der REPLY wurde übernommen, wenn der Workflow-Verlauf betrachtet wird, dann enthält er den Eintrag mit Anzahl freigegeben/zu überarbeiten
 - [ ] Angenommen ein REPLY wurde übernommen, wenn dieselbe Datei erneut importiert werden soll, dann ist das nicht möglich (Status nicht *gesendet*; Duplikat laut PROJ-8)
 - [ ] Angenommen der REPLY wurde übernommen, wenn danach gesendet wird, dann verweist `dmlref` des neuen SEND auf diesen REPLY
@@ -105,9 +105,9 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 
 ## Edge Cases
 - **REPLY auf zurückgezogenen SEND:** DMRL nicht *gesendet* → Import nicht möglich.
-- **REPLY eines anderen Partners:** Regelwerk G (Absender) → abgelehnt.
+- **REPLY eines anderen Empfängers:** Regelwerk G (Absender) → abgelehnt.
 - **REPLY enthält `answer` bei Einträgen ohne Eintragstyp:** Regelwerk H → abgelehnt.
-- **Partner hat `issno`/Datum weggelassen:** erlaubt, Werte der Anwendung bleiben (PROJ-8 B).
+- **Empfänger hat `issno`/Datum weggelassen:** erlaubt, Werte der Anwendung bleiben (PROJ-8 B).
 - **Alle Einträge `n`:** DMRL *in Bearbeitung*, alle geprüften Einträge *zu überarbeiten*.
 - **Admin zieht SEND zurück, während der Bearbeiter die Zusammenfassung sieht:** „Übernehmen" schlägt fehl mit „Die DMRL wartet nicht mehr auf eine Antwort".
 - **Speicher voll beim Archivieren:** Übernahme schlägt fehl, nichts geändert (PROJ-1).
@@ -164,25 +164,25 @@ DMRL-Ansicht (PROJ-7) — Aktion „REPLY importieren" (nur bei Status gesendet)
         +-- Absender (CAGE + Name) · Versionsindex · Bezug auf SEND [Versionsindex]
         +-- Zahlen: freigegeben · zu überarbeiten
         +-- Tabelle abgelehnter Einträge: DMC · Tech Name · Begründung
-        +-- Bemerkung des Partners (falls vorhanden)
+        +-- Bemerkung des Empfängers (falls vorhanden)
         +-- künftiger DMRL-Status (Badge „freigegeben" / „in Bearbeitung")
         +-- „Übernehmen" · „Abbrechen"
 ```
 
 ### B) Datenmodell (in Klartext)
 Keine neuen Objekte (PROJ-1). Die Übernahme schreibt in **einer** Speicherung:
-- **Archivstand REPLY:** Originaldatei unverändert (auch Zeilenenden und Zeichenkodierung), DML-Code, Versionsindex des Partners, `dmlref`, Dateiname, Zeitpunkt, Bearbeiter, Partner, **zugeordneter SEND**, Anzahl freigegeben / zu überarbeiten
+- **Archivstand REPLY:** Originaldatei unverändert (auch Zeilenenden und Zeichenkodierung), DML-Code, Versionsindex des Empfängers, `dmlref`, Dateiname, Zeitpunkt, Bearbeiter, Empfänger, **zugeordneter SEND**, Anzahl freigegeben / zu überarbeiten
 - **Einträge:** `answer`/`answer_comment` gesetzt; bei `y` Eintragstyp entfernt → *freigegeben*; bei `n` → *zu überarbeiten*; ungeprüfte Einträge unverändert
-- **DMRL:** Status *freigegeben* bzw. *in Bearbeitung*; Bemerkung des Partners
+- **DMRL:** Status *freigegeben* bzw. *in Bearbeitung*; Bemerkung des Empfängers
 - **bei Freigabe zusätzlich (PROJ-14):** Freigabe-Nachweis an der DMRL und neuer **Freigabestand** (Kopie aller Einträge)
-- **Verlauf:** „REPLY [Versionsindex] von [Partner] übernommen — x freigegeben, y zu überarbeiten" (+ „DMRL freigegeben")
+- **Verlauf:** „REPLY [Versionsindex] von [Empfänger] übernommen — x freigegeben, y zu überarbeiten" (+ „DMRL freigegeben")
 
 Abgelehnte Datei: nur Verlaufseintrag „REPLY abgelehnt" (Dateiname, Art/Anzahl der Fehler). Abbrechen: nichts.
 
 ### C) Prüfkontext und Abgleich
-- **Vergleichsbasis:** der **archivierte XML-Text des letzten SEND**, mit demselben DML-Leser gelesen — damit wird gegen exakt das verglichen, was der Partner erhalten hat (PROJ-8 Gruppe G).
+- **Vergleichsbasis:** der **archivierte XML-Text des letzten SEND**, mit demselben DML-Leser gelesen — damit wird gegen exakt das verglichen, was der Empfänger erhalten hat (PROJ-8 Gruppe G).
 - **Zuordnung** REPLY-Eintrag ↔ SEND-Eintrag ↔ Eintrag der Anwendung über den **DMC**.
-- **Weitere Kontextdaten:** MI des Systems, DML-Typ, Partner des letzten SEND, archivierte REPLYs (Duplikat), DMRL-Status.
+- **Weitere Kontextdaten:** MI des Systems, DML-Typ, Empfänger des letzten SEND, archivierte REPLYs (Duplikat), DMRL-Status.
 - Das Ergebnis des Abgleichs (je Eintrag: Antwort, Begründung, künftiger Status) wird einmal berechnet und für Regelwerk, Zusammenfassung und Übernahme genutzt.
 
 ### D) Ablauf
@@ -201,7 +201,7 @@ Abgelehnte Datei: nur Verlaufseintrag „REPLY abgelehnt" (Dateiname, Art/Anzahl
 | Entscheidung | Warum |
 |---|---|
 | Erst XSD (Server), dann Regelwerk (Browser) | Spec PROJ-11; fachliche Prüfung nur bei strukturell korrekter Datei. |
-| Vergleich gegen den archivierten SEND-Text | Exakt das, was der Partner erhalten hat — nicht ein später veränderter Stand. |
+| Vergleich gegen den archivierten SEND-Text | Exakt das, was der Empfänger erhalten hat — nicht ein später veränderter Stand. |
 | Abgleich einmal berechnet für Prüfung, Zusammenfassung, Übernahme | Keine Abweichung zwischen Anzeige und Speicherung. |
 | Übernahme inkl. Freigabestand in einer Speicherung | Freigabe und Einträge können nicht auseinanderlaufen (PROJ-14-Grundregel). |
 | Originaldatei unverändert archiviert | Byte-genauer Nachweis (PRD); Beispieldateien enthalten CRLF. |
@@ -224,9 +224,9 @@ _Stand 2026-11-13 — `/frontend PROJ-13`_
   - Datei lesen **unverändert** in der Kodierung laut XML-Deklaration (UTF-8, ISO-8859-1 …; Zeilenenden und BOM bleiben erhalten).
   - Prüfkontext mit dem **archivierten XML-Text des letzten SEND** als Vergleichsbasis.
   - Abgleich `replyOutcome` (einmal berechnet für Zusammenfassung und Übernahme): `y` → Eintragstyp leer, *freigegeben*; `n` → Typ bleibt, *zu überarbeiten*; nur geprüfte Einträge (Typ n/c/d mit Antwort) ändern sich, übrige behalten Status und frühere Antwort; künftiger DMRL-Status.
-  - Atomare Übernahme `executeReplyImport`: Einträge, DMRL-Status, Partner-Bemerkung, Archiv (byte-genau, mit SEND verknüpft, Anzahlen), Verlauf; bei vollständiger Genehmigung zusätzlich **Freigabe-Nachweis und Freigabestand** (PROJ-14). Prüft vorher erneut Status und letzten SEND („Die DMRL wartet nicht mehr auf eine Antwort.").
+  - Atomare Übernahme `executeReplyImport`: Einträge, DMRL-Status, Empfänger-Bemerkung, Archiv (byte-genau, mit SEND verknüpft, Anzahlen), Verlauf; bei vollständiger Genehmigung zusätzlich **Freigabe-Nachweis und Freigabestand** (PROJ-14). Prüft vorher erneut Status und letzten SEND („Die DMRL wartet nicht mehr auf eine Antwort.").
   - Verlaufseintrag „REPLY … abgelehnt — XSD-Prüfung / Regelwerk, n Fehler".
-- `src/components/workflows/reply-import-dialog.tsx` — mehrstufiger Dialog: Datei wählen (Ziehen & Ablegen oder Auswahl; `.xml`, max. 5 MB) → „Schemaprüfung …" → „Fachliche Prüfung …" → XSD-Bericht bzw. Regelwerk-Bericht (mit „XSD-Prüfung bestanden"), jeweils „Andere Datei wählen" · „Schließen"; bei nicht verfügbarer Prüfung „Erneut versuchen" (ohne Verlaufseintrag) → Zusammenfassung (Absender, „REPLY C1234 00002-2026 auf SEND 00002-2026", künftiger DMRL-Status als Badge, freigegeben/zu überarbeiten, Tabelle der abgelehnten Einträge mit Begründung, Bemerkung des Partners) → „Übernehmen" · „Abbrechen".
+- `src/components/workflows/reply-import-dialog.tsx` — mehrstufiger Dialog: Datei wählen (Ziehen & Ablegen oder Auswahl; `.xml`, max. 5 MB) → „Schemaprüfung …" → „Fachliche Prüfung …" → XSD-Bericht bzw. Regelwerk-Bericht (mit „XSD-Prüfung bestanden"), jeweils „Andere Datei wählen" · „Schließen"; bei nicht verfügbarer Prüfung „Erneut versuchen" (ohne Verlaufseintrag) → Zusammenfassung (Absender, „REPLY C1234 00002-2026 auf SEND 00002-2026", künftiger DMRL-Status als Badge, freigegeben/zu überarbeiten, Tabelle der abgelehnten Einträge mit Begründung, Bemerkung des Empfängers) → „Übernehmen" · „Abbrechen".
 - `src/lib/dmrl/actions.ts`, `src/components/dmrl/dmrl-view.tsx` — Aktion „REPLY importieren" angebunden (sichtbar, bei anderem Status gesperrt mit Grund).
 
 **Tests**
@@ -261,11 +261,11 @@ _Stand 2026-11-13 — `/frontend PROJ-13`_
 - [x] „REPLY importieren" bleibt sichtbar und ist außerhalb von *gesendet* gesperrt (mit Grund) — erfüllt „nicht verfügbar"
 
 ### Edge Cases Status
-- [x] REPLY auf zurückgezogenen SEND, anderer Partner, `answer` ohne Eintragstyp, fehlende Ausgabedaten, alle `n`, SEND während der Zusammenfassung zurückgezogen, Speicher voll, Demo-Stand
+- [x] REPLY auf zurückgezogenen SEND, anderer Empfänger, `answer` ohne Eintragstyp, fehlende Ausgabedaten, alle `n`, SEND während der Zusammenfassung zurückgezogen, Speicher voll, Demo-Stand
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 
 

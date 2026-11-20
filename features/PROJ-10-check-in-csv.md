@@ -8,14 +8,14 @@
 
 > **Refinement 2026-11-16:** Eintragstyp und DM-Ausgabetyp müssen beim Check-in zueinander passen (`n` → `new`; `c` → `changed`/`revised`/`status`; `d` → `deleted`; ohne Eintragstyp keine Prüfung). DM-Ausgabetyp `status` wird gültig. Betrifft PROJ-8 (Regel A und F) und PROJ-1 (Demo-Daten). Geänderte Stellen sind mit *(Refinement 2026-11-16)* markiert. Umgesetzt 2026-11-16 (`/frontend proj-10`).
 
-> **Refinement 2026-11-14:** Abweichende Partnerantworten (`answer`/`answer_comment`) in der CSV werden nicht mehr abgewiesen, sondern nach Abfrage optional übernommen (Anlass: PROJ-20). Betrifft auch PROJ-8 Regel K. Geänderte Stellen sind mit *(Refinement 2026-11-14)* markiert.
+> **Refinement 2026-11-14:** Abweichende Empfängerantworten (`answer`/`answer_comment`) in der CSV werden nicht mehr abgewiesen, sondern nach Abfrage optional übernommen (Anlass: PROJ-20). Betrifft auch PROJ-8 Regel K. Geänderte Stellen sind mit *(Refinement 2026-11-14)* markiert.
 
 ## Dependencies
 - Requires: PROJ-8 (Fachliches Regelwerk) — Prüfung, Prüfbericht, Auffüllen führender Nullen
 - Requires: PROJ-9 (Check-out CSV) — Sperre, Stand beim Check-out, CSV-Aufbau
 - Requires: PROJ-7 (DMRL-Ansicht) — Aktion „Check-in", Anzeige von Status und Sperre
 - Requires: PROJ-17 (DMRL-Berechtigungen) — Berechtigung des Sperrinhabers
-- Wird genutzt von: PROJ-20 (XML-Prüfung & CSV-Konvertierung) — konvertierte CSV, auch mit Partnerantworten
+- Wird genutzt von: PROJ-20 (XML-Prüfung & CSV-Konvertierung) — konvertierte CSV, auch mit Empfängerantworten
 - Wirkt auf: PROJ-14 (Freigabestatus) — Aufhebung der Freigabe bei Änderung; PROJ-4/5/6 — „im Workflow verwendet"
 - Wirkt auf: PROJ-1 (Demo-Daten) — DM-Ausgabetyp der Demo-Einträge wird aus dem Eintragstyp abgeleitet, damit die Demo-DMRLs die Typ-Regel erfüllen *(Refinement 2026-11-16)*
 
@@ -30,7 +30,7 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
    - Zahlen: „32 Einträge geprüft · 3 neu · 2 geändert · 27 unverändert"
    - Hinweise (z. B. aufgefüllte führende Nullen)
    - Liste der neuen und geänderten Einträge; bei geänderten je Feld alter → neuer Wert
-   - **Abweichende Partnerantworten (N Einträge)** *(Refinement 2026-11-14)*: nur wenn `answer` oder `answer_comment` in der Datei vom Stand der DMRL abweichen (bei neuen Einträgen: nicht leer). Liste je Eintrag: DMC, Antwort alt → neu, Begründung alt → neu. Darunter das Kästchen **„Antworten aus der Datei übernehmen“**, standardmäßig **nicht** angekreuzt, mit dem Hinweis „Übernommene Antworten sind nur Information — freigegeben wird ein Eintrag weiterhin nur durch einen REPLY.“
+   - **Abweichende Empfängerantworten (N Einträge)** *(Refinement 2026-11-14)*: nur wenn `answer` oder `answer_comment` in der Datei vom Stand der DMRL abweichen (bei neuen Einträgen: nicht leer). Liste je Eintrag: DMC, Antwort alt → neu, Begründung alt → neu. Darunter das Kästchen **„Antworten aus der Datei übernehmen“**, standardmäßig **nicht** angekreuzt, mit dem Hinweis „Übernommene Antworten sind nur Information — freigegeben wird ein Eintrag weiterhin nur durch einen REPLY.“
 5. **„Übernehmen"** → Daten übernommen, Status gesetzt (s. u.), Sperre aufgehoben, Erfolgsmeldung.
    **„Abbrechen"** → nichts übernommen, Sperre bleibt.
 
@@ -77,9 +77,9 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 
 **Grundsatz Eintragstyp** *(Refinement 2026-11-14, BUG-QA4-1)*: Nach dem Check-in gibt es keinen Eintrag *in Bearbeitung* ohne Eintragstyp (`n`, `c` oder `d`) — SEND nimmt nur solche Einträge mit. Ein entfernter Eintragstyp bei einem Eintrag, der *in Bearbeitung* wäre, ist ein Fehler (PROJ-8 Regel F); das gilt auch für Altbestand, der bereits *in Bearbeitung* ohne Eintragstyp ist.
 
-**Bestand übernehmen** *(Refinement 2026-11-18)*: Eine DMRL aus einem laufenden Projekt hat bereits einen Bearbeitungsstand erreicht, der übernommen werden soll. Neue Einträge dürfen deshalb jeden Eintragstyp haben (`n`, `c`, `d` oder keinen). Ein neuer Eintrag **ohne** Eintragstyp gilt als mit dem Partner bereits abgestimmt und wird *freigegeben* — neben dem REPLY die einzige Stelle, an der *freigegeben* entsteht. Maßgeblich ist allein der fehlende Eintragstyp, nicht der Wert in `answer`. Der Grundsatz Eintragstyp bleibt gewahrt: Es entsteht kein Eintrag *in Bearbeitung* ohne Eintragstyp. Die Zusammenfassung weist diese Einträge gesondert aus („davon N als *freigegeben* übernommen“), damit ein vergessener Eintragstyp vor der Übernahme auffällt.
+**Bestand übernehmen** *(Refinement 2026-11-18)*: Eine DMRL aus einem laufenden Projekt hat bereits einen Bearbeitungsstand erreicht, der übernommen werden soll. Neue Einträge dürfen deshalb jeden Eintragstyp haben (`n`, `c`, `d` oder keinen). Ein neuer Eintrag **ohne** Eintragstyp gilt als mit dem Empfänger bereits abgestimmt und wird *freigegeben* — neben dem REPLY die einzige Stelle, an der *freigegeben* entsteht. Maßgeblich ist allein der fehlende Eintragstyp, nicht der Wert in `answer`. Der Grundsatz Eintragstyp bleibt gewahrt: Es entsteht kein Eintrag *in Bearbeitung* ohne Eintragstyp. Die Zusammenfassung weist diese Einträge gesondert aus („davon N als *freigegeben* übernommen“), damit ein vergessener Eintragstyp vor der Übernahme auffällt.
 
-**Übernommene Partnerantworten** *(Refinement 2026-11-14)* setzen den Eintrag nie auf *freigegeben* oder *zu überarbeiten* — diese Status entstehen nur durch einen REPLY (PRD). Eine übernommene Antwortänderung zählt als Änderung (Eintrag *in Bearbeitung*, eine Freigabe der DMRL wird aufgehoben), damit *freigegeben* immer durch eine echte Partnerantwort belegt ist.
+**Übernommene Empfängerantworten** *(Refinement 2026-11-14)* setzen den Eintrag nie auf *freigegeben* oder *zu überarbeiten* — diese Status entstehen nur durch einen REPLY (PRD). Eine übernommene Antwortänderung zählt als Änderung (Eintrag *in Bearbeitung*, eine Freigabe der DMRL wird aufgehoben), damit *freigegeben* immer durch eine echte Empfängerantwort belegt ist.
 
 **DMRL-Status**
 | Ergebnis | DMRL-Status danach |
@@ -89,7 +89,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 | keine Änderung | unverändert (z. B. bleibt *freigegeben*) |
 
 **Weiteres**
-- Antworten des Partners (`answer`, `answer_comment`) bleiben bei geänderten Einträgen erhalten, bis der nächste REPLY sie ersetzt; sie werden nicht mitgesendet (PROJ-12). Ist „Antworten aus der Datei übernehmen“ angekreuzt, gelten stattdessen die Werte aus der Datei *(Refinement 2026-11-14)*.
+- Antworten des Empfängers (`answer`, `answer_comment`) bleiben bei geänderten Einträgen erhalten, bis der nächste REPLY sie ersetzt; sie werden nicht mitgesendet (PROJ-12). Ist „Antworten aus der Datei übernehmen“ angekreuzt, gelten stattdessen die Werte aus der Datei *(Refinement 2026-11-14)*.
 - Sperre wird aufgehoben.
 - Workflow-Verlauf: „Check-in" mit Datum, Benutzer und Anzahl neu/geändert/unverändert (Anzeige → PROJ-15); bei Übernahme zusätzlich „N Antworten aus der Datei übernommen" *(Refinement 2026-11-14)*.
 - Zusammenfassung und Workflow-Verlauf nennen bei neuen Einträgen ohne Eintragstyp zusätzlich „davon N als freigegeben übernommen“; wird die DMRL dadurch *freigegeben*, enthält der Verlauf außerdem „DMRL freigegeben (Übernahme Bestand)“ *(Refinement 2026-11-18)*.
@@ -100,8 +100,8 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - Als **Bearbeiter** möchte ich meine bearbeitete CSV einchecken, damit meine Änderungen in die DMRL übernommen werden.
 - Als **Bearbeiter** möchte ich vor der Übernahme sehen, welche Einträge neu oder geändert sind, damit ich keine ungewollten Änderungen übernehme.
 - Als **Bearbeiter** möchte ich bei Fehlern einen vollständigen Prüfbericht erhalten und die Datei korrigiert erneut hochladen können, ohne erneut auschecken zu müssen.
-- Als **Bearbeiter** möchte ich nach dem Check-in sehen, welche Einträge *in Bearbeitung* sind, damit ich weiß, was mit dem nächsten SEND an den Partner geht.
-- Als **Bearbeiter** möchte ich eine DMRL eines Partners oder Altprojekts samt Partnerantworten übernehmen (z. B. über PROJ-20 konvertiert), damit die bisherige Abstimmung als Information erhalten bleibt *(Refinement 2026-11-14)*.
+- Als **Bearbeiter** möchte ich nach dem Check-in sehen, welche Einträge *in Bearbeitung* sind, damit ich weiß, was mit dem nächsten SEND an den Empfänger geht.
+- Als **Bearbeiter** möchte ich eine DMRL eines Empfängers oder Altprojekts samt Empfängerantworten übernehmen (z. B. über PROJ-20 konvertiert), damit die bisherige Abstimmung als Information erhalten bleibt *(Refinement 2026-11-14)*.
 - Als **Bearbeiter** möchte ich bewusst entscheiden, ob abweichende Antworten aus der Datei übernommen werden, damit versehentlich geänderte Antworten nicht unbemerkt übernommen werden *(Refinement 2026-11-14)*.
 - Als **Product Owner** möchte ich zeigen, dass eine freigegebene DMRL durch einen Check-in mit Änderungen ihre Freigabe verliert, ein Check-in ohne Änderungen aber nicht.
 - Als **Bearbeiter** möchte ich eine DMRL aus einem laufenden Projekt mit ihrem erreichten Bearbeitungsstand übernehmen (neue Einträge mit `c`/`d` oder ohne Eintragstyp), damit bereits abgestimmte Einträge nicht erneut mit `n` gesendet werden müssen *(Refinement 2026-11-18)*.
@@ -116,7 +116,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - Archivierung der CSV-Datei
 - Anzeige des Workflow-Verlaufs → PROJ-15
 - Rückgängig machen eines Check-ins
-- Übernahme von Partnerantworten je Eintrag einzeln — nur alle oder keine *(Refinement 2026-11-14)*
+- Übernahme von Empfängerantworten je Eintrag einzeln — nur alle oder keine *(Refinement 2026-11-14)*
 - Freigabe von Einträgen oder DMRLs durch übernommene Antworten — nur per REPLY (PROJ-13/14)
 - Prüfung Eintragstyp ↔ DM-Ausgabetyp beim REPLY-Import (PROJ-13) und im Prüfwerkzeug (PROJ-20) — nur beim Check-in *(Refinement 2026-11-16)*
 - DM-Ausgabetypen `rinstate-changed`, `rinstate-revised`, `rinstate-status` — bleiben ungültig (Regel A) *(Refinement 2026-11-16)*
@@ -171,8 +171,8 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - [ ] Angenommen ein Eintrag ist unverändert, wenn übernommen wird, dann behält er seinen Status
 - [ ] Angenommen bei einem Eintrag wurde nur der Eintragstyp geändert (z. B. abgelehnter Eintrag erneut mit `n`), wenn übernommen wird, dann gilt er als geändert und hat den Status *in Bearbeitung*
 
-### Partnerantworten aus der Datei *(Refinement 2026-11-14)*
-- [ ] Angenommen in der Datei weichen `answer` oder `answer_comment` bei Einträgen vom Stand der DMRL ab (bei neuen Einträgen: nicht leer), wenn die Prüfung endet, dann ist das kein Fehler, und die Zusammenfassung zeigt „Abweichende Partnerantworten (N Einträge)" mit DMC und alt → neu je Feld
+### Empfängerantworten aus der Datei *(Refinement 2026-11-14)*
+- [ ] Angenommen in der Datei weichen `answer` oder `answer_comment` bei Einträgen vom Stand der DMRL ab (bei neuen Einträgen: nicht leer), wenn die Prüfung endet, dann ist das kein Fehler, und die Zusammenfassung zeigt „Abweichende Empfängerantworten (N Einträge)" mit DMC und alt → neu je Feld
 - [ ] Angenommen abweichende Antworten werden angezeigt, wenn die Zusammenfassung erscheint, dann ist „Antworten aus der Datei übernehmen" nicht angekreuzt und der Hinweis „nur Information — freigegeben wird nur durch einen REPLY" sichtbar
 - [ ] Angenommen „Antworten aus der Datei übernehmen" ist nicht angekreuzt, wenn übernommen wird, dann behalten alle Einträge ihre bisherigen Antworten, und Einträge, bei denen nur die Antworten abweichen, gelten als unverändert
 - [ ] Angenommen „Antworten aus der Datei übernehmen" ist angekreuzt, wenn übernommen wird, dann stehen bei allen betroffenen Einträgen die Werte aus der Datei, und diese Einträge haben den Status *in Bearbeitung*
@@ -243,12 +243,12 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 | Zusammenfassung mit Vorher/Nachher vor der Übernahme | Keine ungewollten Änderungen übernehmen | 2026-11-12 |
 | Abbrechen bzw. Fehler → Sperre bleibt; erneuter Upload ohne neuen Check-out | Korrektur ohne Umweg | 2026-11-12 |
 | Nur der Sperrinhaber checkt ein; Administrator hebt fremde Sperren nur auf | Eindeutige Verantwortung | 2026-11-12 |
-| Partner-Antworten bleiben bis zum nächsten REPLY erhalten | Begründung der Überarbeitung bleibt sichtbar | 2026-11-12 |
+| Empfänger-Antworten bleiben bis zum nächsten REPLY erhalten | Begründung der Überarbeitung bleibt sichtbar | 2026-11-12 |
 | Änderung nur des Eintragstyps zählt als Änderung | Erneutes Senden abgelehnter Einträge mit `n` (NSG) | 2026-11-12 |
 | Erster abgeschlossener Check-in (auch ohne Änderung) → „im Workflow verwendet" | Konsistent mit PROJ-4/5/6/9 | 2026-11-12 |
-| Abweichende `answer`/`answer_comment` sind kein Fehler mehr, sondern werden optional übernommen | Übernahme von Altbeständen mit Partnerantworten (PROJ-20) | 2026-11-14 |
+| Abweichende `answer`/`answer_comment` sind kein Fehler mehr, sondern werden optional übernommen | Übernahme von Altbeständen mit Empfängerantworten (PROJ-20) | 2026-11-14 |
 | Eine Abfrage für alle abweichenden Antworten (Kästchen, standardmäßig aus) statt je Eintrag | Einfach; bewusste Entscheidung, keine unbemerkte Übernahme | 2026-11-14 |
-| Übernommene Antworten sind nur Information; Status nie *freigegeben*/*zu überarbeiten* | PRD: Freigabe nur durch Partner per REPLY | 2026-11-14 |
+| Übernommene Antworten sind nur Information; Status nie *freigegeben*/*zu überarbeiten* | PRD: Freigabe nur durch Empfänger per REPLY | 2026-11-14 |
 | Übernommene Antwortänderung zählt als Änderung (*in Bearbeitung*, Freigabe der DMRL aufgehoben) | *freigegeben* bleibt immer durch einen REPLY belegt | 2026-11-14 |
 | Nach dem Check-in kein Eintrag *in Bearbeitung* ohne Eintragstyp — Fehler nach Regel F, auch bei entferntem Eintragstyp und für Altbestand | QA-Befund BUG-QA4-1: solche Einträge würden nie gesendet, die DMRL nie wieder freigegeben | 2026-11-14 |
 | Kriterium „freigegebener Eintrag mit geänderter Antwort → in Bearbeitung“ ersetzt durch Eintrag *zu überarbeiten*; freigegebene Einträge ohne Typ sind bei Antwortübernahme immer gesperrt | QA-Befund BUG-QA4-2: Widerspruch zur Entscheidung „Eintragstyp verlangen“ | 2026-11-14 |
@@ -347,7 +347,7 @@ Bei Ablehnung wegen Fehlern wird nur ein Verlaufseintrag „Check-in abgelehnt �
 - Unit-Tests: Abgleich (neu/geändert/unverändert, Nullen aufgefüllt = unverändert, nur Eintragstyp geändert = geändert, veränderter DMC), Status nach Übernahme (Tabellen der Spec), DMRL-Status (freigegeben + Änderung → in Bearbeitung; ohne Änderung bleibt), Verlaufseinträge.
 - E2E: Fahrzeug auschecken → Eintrag ergänzen → einchecken (11 Einträge, 1 neu); fehlerhafte Datei → Bericht, Sperre bleibt; Abbrechen; Sperre zwischenzeitlich aufgehoben.
 
-### I) Refinement 2026-11-14 — Partnerantworten aus der Datei übernehmen
+### I) Refinement 2026-11-14 — Empfängerantworten aus der Datei übernehmen
 Ergänzt das bestehende Design; alles Übrige (A–H) gilt unverändert. Weiterhin alles im Browser, kein Backend.
 
 **Komponenten (Änderungen im Check-in-Dialog, Schritt 3b „Zusammenfassung“)**
@@ -355,7 +355,7 @@ Ergänzt das bestehende Design; alles Übrige (A–H) gilt unverändert. Weiterh
 Zusammenfassung
 +-- Zahlen: geprüft · neu · geändert · unverändert   ← passen sich dem Häkchen sofort an
 +-- Hinweise, Liste neuer / geänderter Einträge       ← Antwortfelder erscheinen hier nicht mehr
-+-- NEU: Abschnitt „Abweichende Partnerantworten (N Einträge)“ (nur wenn N > 0)
++-- NEU: Abschnitt „Abweichende Empfängerantworten (N Einträge)“ (nur wenn N > 0)
 |   +-- Liste je Eintrag (aufklappbar wie bisher, shadcn Accordion):
 |   |   DMC · Antwort alt → neu · Begründung alt → neu
 |   +-- Kästchen „Antworten aus der Datei übernehmen“ (shadcn Checkbox, standardmäßig aus)
@@ -393,7 +393,7 @@ Zusammenfassung
 **Testbarkeit**
 - Unit: Abgleich trennt fachliche Änderung und Antwortabweichung; Zahlen mit/ohne Übernahme; Regel K ohne Fehler; bedingte Prüfung „ohne Eintragstyp“; Übernahme mit/ohne Häkchen (Antwortwerte, Status, DMRL-Status, Verlaufstext); neue Einträge ohne Übernahme → leere Antworten; erneute Prüfung bei der Übernahme.
 - Komponente: Abschnitt nur bei Abweichungen; Häkchen standardmäßig aus; Zahlen schalten um; Sperre von „Übernehmen“ samt Meldung.
-- E2E: Partnerantworten in der Check-out-CSV ändern → einchecken ohne Häkchen (Antworten bleiben, unverändert) und mit Häkchen (Werte übernommen, *in Bearbeitung*, Verlaufszusatz); freigegebenen Eintrag nur in der Antwort ändern → Sperre bei Häkchen; Durchlauf mit einer über PROJ-20 konvertierten CSV, sobald PROJ-20 umgesetzt ist.
+- E2E: Empfängerantworten in der Check-out-CSV ändern → einchecken ohne Häkchen (Antworten bleiben, unverändert) und mit Häkchen (Werte übernommen, *in Bearbeitung*, Verlaufszusatz); freigegebenen Eintrag nur in der Antwort ändern → Sperre bei Häkchen; Durchlauf mit einer über PROJ-20 konvertierten CSV, sobald PROJ-20 umgesetzt ist.
 
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend` (PROJ-10)_
@@ -409,7 +409,7 @@ _Stand 2026-11-13 — `/frontend` (PROJ-10)_
 - Dateifehler (Typ, Größe, Kodierung) werden im Auswahlschritt gemeldet und nicht im Verlauf protokolliert; nur fachlich abgelehnte Dateien erzeugen „Check-in abgelehnt".
 - Browser-E2E-Tests stehen aus → `/qa`.
 
-### Refinement 2026-11-14 — Partnerantworten aus der Datei übernehmen
+### Refinement 2026-11-14 — Empfängerantworten aus der Datei übernehmen
 _Stand 2026-11-14 — `/frontend proj-10` (Tech Design I)_
 
 **Umgesetzt**
@@ -422,7 +422,7 @@ _Stand 2026-11-14 — `/frontend proj-10` (Tech Design I)_
   - Mit Übernahme gelten die Werte aus der Datei; betroffene Einträge werden *in Bearbeitung* (nie *freigegeben*/*zu überarbeiten*).
   - Bei Übernahme mit betroffenen Einträgen ohne Eintragstyp wird abgelehnt (erneute Prüfung beim Speichern).
   - Verlaufszusatz „; N Antworten aus der Datei übernommen“.
-- `src/components/workflows/check-in-dialog.tsx` — neuer Abschnitt „Abweichende Partnerantworten (N Einträge)“ in der Zusammenfassung:
+- `src/components/workflows/check-in-dialog.tsx` — neuer Abschnitt „Abweichende Empfängerantworten (N Einträge)“ in der Zusammenfassung:
   - aufklappbare Liste (Accordion) mit DMC, Antwort bisher → aus der Datei, Tabelle Antwort/Kommentar
   - Kästchen „Antworten aus der Datei übernehmen“ (Checkbox, standardmäßig aus) mit Hinweis „Nur Information …“
   - Kacheln schalten sofort um
@@ -493,7 +493,7 @@ _Stand 2026-11-16 — `/frontend proj-10`; ohne eigenes Tech Design (kleine Rege
 - **Anzeige**
   - Check-in-Dialog: Überschrift „Neue Einträge (N, davon M als freigegeben übernommen)“, grüner Hinweis „Bestand übernehmen“ mit der Aufforderung, bei vergessenem Eintragstyp abzubrechen, sowie die Spalte „Status danach“. Die Erfolgsmeldung nennt die Zahl und gegebenenfalls „Die DMRL ist freigegeben.“
   - Kopfbereich (`dmrl-header.tsx`): „Freigegeben am [Datum] durch Übernahme Bestand per Check-in — übernommen von [Name]“. Die Angabe „Letzte Freigabe: [Datum], Übernahme per Check-in“ kommt aus `releaseLabel` (`release.ts`, neu: `isCheckinRelease`, `releaseSourceLabel`).
-  - Freigabestand-Seite: Titel „Freigabestand vom … (Übernahme per Check-in)“, statt Partner steht „Übernahme Bestand per Check-in“. Archiv-Tab „Freigabestände“: Spalte „REPLY“ heißt jetzt „Herkunft“.
+  - Freigabestand-Seite: Titel „Freigabestand vom … (Übernahme per Check-in)“, statt Empfänger steht „Übernahme Bestand per Check-in“. Archiv-Tab „Freigabestände“: Spalte „REPLY“ heißt jetzt „Herkunft“.
   - XML-Export eines Check-in-Freigabestands: Ohne REPLY fällt `dmlc`/`dmlref` auf den eigenen DML-Code zurück, über denselben Weg wie bisher für fehlende SEND-Angaben.
 - **Tests**
   - `checkin.test.ts`: F1-Test ersetzt (n/c/d/leer fehlerfrei, `alsFreigegeben`); Typ-Regel bei neuem `c`; keine Typ-Prüfung ohne Eintragstyp.
@@ -520,7 +520,7 @@ _Stand 2026-11-16 — `/frontend proj-10`; ohne eigenes Tech Design (kleine Rege
 
 ### Security Audit Results
 - [x] Zugriff ohne Anmeldung → Anmeldeseite; ohne Berechtigung → „Keine Berechtigung" auch für Unterseiten (Archiv, archivierter Stand, Freigabestand) (E2E `QA-proj7-19.spec.ts`)
-- [x] XSS: HTML/Script in Partner-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
+- [x] XSS: HTML/Script in Empfänger-Bemerkung (REPLY) wird in Ansicht, Dialog und Archiv als Text angezeigt; kein `dangerouslySetInnerHTML`, kein `eval` im Code (E2E + Code-Prüfung)
 - [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Rollen/Berechtigungen sind über den Browser-Speicher manipulierbar
 
 
@@ -534,13 +534,13 @@ Keine neuen Bugs in diesem Feature.
 - **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
 - **Production Ready:** YES (keine Critical/High-Bugs)
 
-### QA-Lauf 4 — Refinement 2026-11-14 (Partnerantworten aus der Datei übernehmen)
+### QA-Lauf 4 — Refinement 2026-11-14 (Empfängerantworten aus der Datei übernehmen)
 
 **Tested:** 2026-11-14 · **Tester:** QA Engineer (AI) · **Browser:** Chrome (Playwright, `PW_CHANNEL=chrome`); Firefox/Safari nicht installiert
 **Automatisiert:** Vitest 444 ✅ (1 übersprungen: BUG-QA4-1, nach Behebung aktivieren) · Playwright 72/72 ✅ Gesamtlauf + 2 neue QA-Tests (XSS, 768 px) in `tests/PROJ-10-checkin-antworten.spec.ts`
 
-#### Acceptance Criteria Status (Abschnitt „Partnerantworten aus der Datei“)
-- [x] Abweichende Antworten sind kein Fehler; Abschnitt „Abweichende Partnerantworten (N Einträge)“ mit DMC und alt → neu (Unit, Komponente, E2E)
+#### Acceptance Criteria Status (Abschnitt „Empfängerantworten aus der Datei“)
+- [x] Abweichende Antworten sind kein Fehler; Abschnitt „Abweichende Empfängerantworten (N Einträge)“ mit DMC und alt → neu (Unit, Komponente, E2E)
 - [x] Häkchen standardmäßig aus, Hinweis „Nur Information …“ sichtbar (Komponente, E2E)
 - [x] Ohne Häkchen: bisherige Antworten bleiben, reine Antwortabweichung = unverändert; neue Einträge ohne Antwort (Unit, Komponente, E2E)
 - [x] Mit Häkchen: Werte aus der Datei, betroffene Einträge *in Bearbeitung*; ein übernommenes `y` gibt nie frei — auch bei einem Eintrag *zu überarbeiten* (Unit, QA-Test neu)
@@ -758,7 +758,7 @@ Keine neuen Bugs in diesem Feature.
 - [x] Ein bestehender Eintrag lässt sich nicht über einen geänderten DMC „umbenennen“ und so *freigeben*: Fehler „fehlt“ (Unit)
 - [x] Ein abgelehnter Eintrag (*zu überarbeiten*) lässt sich nicht durch eine Kopie ohne Typ ersetzen: Fehler „fehlt“ (Unit)
 - [x] XSS: Die neuen Texte zeigen nur Zahlen und feste Texte; DMC und Tech Name werden wie bisher als Text ausgegeben
-- [ ] **Hinweis (gewollt, kein Bug):** Wer die DMRL ausgecheckt hat, kann neue Einträge ohne Partner-REPLY als *freigegeben* übernehmen. Das ist die Produktentscheidung vom 2026-11-18 und wird in Zusammenfassung, Verlauf, Freigabe-Nachweis und Archiv („Herkunft: Übernahme per Check-in“) sichtbar gemacht. Es gibt keine Rechteausweitung: Den Check-in kann wie bisher nur der Sperrinhaber ausführen.
+- [ ] **Hinweis (gewollt, kein Bug):** Wer die DMRL ausgecheckt hat, kann neue Einträge ohne Empfänger-REPLY als *freigegeben* übernehmen. Das ist die Produktentscheidung vom 2026-11-18 und wird in Zusammenfassung, Verlauf, Freigabe-Nachweis und Archiv („Herkunft: Übernahme per Check-in“) sichtbar gemacht. Es gibt keine Rechteausweitung: Den Check-in kann wie bisher nur der Sperrinhaber ausführen.
 
 #### Bugs Found
 
@@ -806,7 +806,7 @@ Keine neuen Bugs in diesem Feature.
 #### Security Audit Results (Red Team)
 - [x] 7 Objekt-Eigenschaftsnamen (`constructor`, `__proto__`, `toString`, `hasOwnProperty`, `valueOf`, `isPrototypeOf`, `__defineGetter__`) in 12 Feldern (`dmentryType`, `type`, `answer`, `language`, `country`, `security`, `issno`, `sdc`, `techname`, `infoname`, `rpc`, `answer_comment`) → nie eine Ausnahme, immer ein Prüfbericht (Unit)
 - [x] Alle Zeilen mit präpariertem Eintragstyp → je Zeile genau ein Formatfehler (Unit)
-- [x] REPLY-Prüfung mit Eintragstyp `__proto__` im Partner-XML → kein Absturz, Prüffehler gemeldet (Unit)
+- [x] REPLY-Prüfung mit Eintragstyp `__proto__` im Empfänger-XML → kein Absturz, Prüffehler gemeldet (Unit)
 - [x] Sicherheitsnetz im Dialog: Fängt Ausnahmen der Prüfung ab und zeigt eine Meldung (Code-Review; nach dem Fix nicht mehr auslösbar)
 
 #### Summary
