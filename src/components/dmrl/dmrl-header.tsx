@@ -20,7 +20,7 @@ function Item({ label, children, mono }: { label: string; children: React.ReactN
   )
 }
 
-/** Kopfbereich der DMRL-Ansicht (PROJ-7) inkl. Freigabe-Nachweis (PROJ-14) und Partner-Bemerkung (PROJ-13) */
+/** Kopfbereich der DMRL-Ansicht (PROJ-7) inkl. Freigabe-Nachweis (PROJ-14) und Empfänger-Bemerkung (PROJ-13) */
 export function DmrlHeader({ dmrl }: { dmrl: Dmrl }) {
   const { data } = useDataStore()
   const system = data.systems.find((s) => s.id === dmrl.systemId)
@@ -123,7 +123,7 @@ export function DmrlHeader({ dmrl }: { dmrl: Dmrl }) {
       {dmrl.partnerRemarks && (
         <Alert>
           <MessageSquareQuote className="h-4 w-4" aria-hidden />
-          <AlertTitle>Bemerkung des Partners (letzter REPLY)</AlertTitle>
+          <AlertTitle>Bemerkung des Empfängers (letzter REPLY)</AlertTitle>
           <AlertDescription className="whitespace-pre-line">{dmrl.partnerRemarks}</AlertDescription>
         </Alert>
       )}

@@ -37,7 +37,7 @@ function send(data: Dataset, dmrlId: string, at = AT, userId: string = DEMO_IDS.
 /** PHUNGUN nach Zurückziehen von SEND 00002 durch den Administrator */
 function phungunWithdrawn(at = AT) {
   const demo = buildDemoDataset()
-  const result = executeWithdrawSend(demo, DEMO_IDS.dmrlPhungun, user(demo, DEMO_IDS.admin), "Partner antwortet nicht", at)
+  const result = executeWithdrawSend(demo, DEMO_IDS.dmrlPhungun, user(demo, DEMO_IDS.admin), "Empfänger antwortet nicht", at)
   if (!result.ok) throw new Error(result.message)
   return result.data
 }
@@ -71,11 +71,11 @@ describe("Voraussetzungen", () => {
       entries: demo.entries.map((e) => (e.dmrlId === DEMO_IDS.dmrlVehicle ? { ...e, fields: { ...e.fields, dmentryType: "" } } : e)),
     }
     expect(sendBlocked(untyped, dmrl(untyped, DEMO_IDS.dmrlVehicle), user(untyped, DEMO_IDS.editorBen))).toBe(
-      "Es gibt keine Änderungen, die der Partner prüfen müsste."
+      "Es gibt keine Änderungen, die der Empfänger prüfen müsste."
     )
   })
 
-  it("Partner ohne Originator; „SEND zurückziehen\" nur Administrator bei Status gesendet", () => {
+  it("Empfänger ohne Originator; „SEND zurückziehen\" nur Administrator bei Status gesendet", () => {
     expect(sendPartners(demo, dmrl(demo, DEMO_IDS.dmrlVehicle)).map((o) => o.code)).toEqual(["C1234"])
     expect(lastSendPartner(demo, dmrl(demo, DEMO_IDS.dmrlPhungun))?.code).toBe("C1234")
     expect(lastSendPartner(demo, dmrl(demo, DEMO_IDS.dmrlVehicle))).toBeNull()
@@ -144,7 +144,7 @@ describe("XML-Inhalt", () => {
 })
 
 describe("Wirkung", () => {
-  it("Archiv byte-genau, Einträge n/c/d gesendet, übrige unverändert, DMRL gesendet, Verlauf, Partner verwendet", () => {
+  it("Archiv byte-genau, Einträge n/c/d gesendet, übrige unverändert, DMRL gesendet, Verlauf, Empfänger verwendet", () => {
     const demo = buildDemoDataset()
     // ein Eintrag ohne Eintragstyp, freigegeben aus früherem Zyklus
     demo.entries = demo.entries.map((e) =>
@@ -174,7 +174,7 @@ describe("Wirkung", () => {
     expect(executeSend(data, DEMO_IDS.dmrlVehicle, user(data, DEMO_IDS.editorBen), prepared)).toMatchObject({ ok: false })
   })
 
-  it("lehnt ab bei geändertem Versionsindex (paralleler Tab) und ohne gültigen Partner", () => {
+  it("lehnt ab bei geändertem Versionsindex (paralleler Tab) und ohne gültigen Empfänger", () => {
     const demo = buildDemoDataset()
     const prepared = prepareSend(demo, dmrl(demo, DEMO_IDS.dmrlVehicle), C1234, "", AT)
     expect(executeSend(demo, DEMO_IDS.dmrlVehicle, user(demo, DEMO_IDS.editorBen), { ...prepared, versionIndex: "00009-2026" })).toEqual({
@@ -183,7 +183,7 @@ describe("Wirkung", () => {
     })
     expect(executeSend(demo, DEMO_IDS.dmrlVehicle, user(demo, DEMO_IDS.editorBen), { ...prepared, partnerOrganisationId: "org-d0815" })).toEqual({
       ok: false,
-      message: "Bitte einen Partner auswählen.",
+      message: "Bitte einen Empfänger auswählen.",
     })
   })
 
@@ -197,7 +197,7 @@ describe("Wirkung", () => {
 })
 
 describe("Rundlauf mit der REPLY-Prüfung (PROJ-8)", () => {
-  it("eine Partner-Antwort auf den archivierten SEND ist fehlerfrei", () => {
+  it("eine Empfänger-Antwort auf den archivierten SEND ist fehlerfrei", () => {
     const { data } = send(buildDemoDataset(), DEMO_IDS.dmrlAircraft, AT, DEMO_IDS.editorBen)
     const archived = data.archive.at(-1)!
     const sent = readDml(archived.content, "5.0")
@@ -234,8 +234,8 @@ describe("Zurückziehen", () => {
     expect(data.entries.filter((e) => e.dmrlId === DEMO_IDS.dmrlPhungun).every((e) => e.status === "in_bearbeitung")).toBe(true)
     const withdrawn = data.archive.find((a) => a.withdrawn)!
     expect(withdrawn.versionIndex).toBe("00002-2026")
-    expect(withdrawn.withdrawn).toEqual({ at: AT, userId: DEMO_IDS.admin, reason: "Partner antwortet nicht" })
-    expect(data.history.at(-1)?.details).toBe("SEND 00002-2026 zurückgezogen — Partner antwortet nicht")
+    expect(withdrawn.withdrawn).toEqual({ at: AT, userId: DEMO_IDS.admin, reason: "Empfänger antwortet nicht" })
+    expect(data.history.at(-1)?.details).toBe("SEND 00002-2026 zurückgezogen — Empfänger antwortet nicht")
     expect(datasetSchema.safeParse(data).success).toBe(true)
     // Kopfbereich zeigt wieder den letzten gültigen SEND
     expect(currentVersionIndex(data, DEMO_IDS.dmrlPhungun)).toBe("00001-2026")

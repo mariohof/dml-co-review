@@ -108,7 +108,7 @@ export const FIELD_LABEL: Record<keyof EntryFields, string> = {
   day: "Tag",
   month: "Monat",
   year: "Jahr",
-  answer: "Antwort des Partners",
-  answer_comment: "Kommentar des Partners",
+  answer: "Antwort des Empfängers",
+  answer_comment: "Kommentar des Empfängers",
   remarks: "Bemerkung",
 }

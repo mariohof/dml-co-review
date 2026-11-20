@@ -14,7 +14,7 @@ export function currentVersionIndex(data: Dataset, dmrlId: string): string | nul
   return send ? versionIndexOf(send.dmlc) : null
 }
 
-/** Letzter nicht zurückgezogener SEND mit Partner und Bearbeiter (für den Kopfbereich der DMRL-Ansicht) */
+/** Letzter nicht zurückgezogener SEND mit Empfänger und Bearbeiter (für den Kopfbereich der DMRL-Ansicht) */
 export function latestSendInfo(data: Dataset, dmrlId: string) {
   const send = latestSend(data, dmrlId)
   if (!send) return null

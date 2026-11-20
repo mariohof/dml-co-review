@@ -23,7 +23,7 @@ import { executeWithdrawSend, prepareSend, sendDmlRef } from "./send"
 const ROOT = join(__dirname, "..", "..", "..")
 const DEMO_REPLY_NAME = "DML-PHUNGUN-C1234-C-2026-00002_001-00.XML"
 const demoReply = readFileSync(join(ROOT, "public/demo-dateien", DEMO_REPLY_NAME), "utf8")
-/** Variante: Partner genehmigt alle Einträge */
+/** Variante: Empfänger genehmigt alle Einträge */
 const allApproved = demoReply.replace(/answer="n"/g, 'answer="y"')
 
 const AT = "2026-11-13T12:00:00.000Z"

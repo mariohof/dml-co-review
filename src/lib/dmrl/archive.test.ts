@@ -34,7 +34,7 @@ describe("Austausch", () => {
     expect(dmlRefLabel(send2)).toBe("C1234 00001-2026")
   })
 
-  it("liest archivierte Dateien neu ein (REPLY mit Antworten und Partner-Bemerkung)", () => {
+  it("liest archivierte Dateien neu ein (REPLY mit Antworten und Empfänger-Bemerkung)", () => {
     const reply = archiveEntries(demo, DEMO_IDS.dmrlPhungun)[1]
     const parsed = readArchived(demo, reply)!
     expect(parsed.header.direction).toBe("reply")
@@ -82,10 +82,10 @@ describe("Verlauf", () => {
   })
 
   it("zurückgezogener SEND: Archiv markiert, Verlauf enthält den Schritt", () => {
-    const result = executeWithdrawSend(demo, DEMO_IDS.dmrlPhungun, admin, "Partner antwortet nicht", "2026-11-13T10:00:00.000Z")
+    const result = executeWithdrawSend(demo, DEMO_IDS.dmrlPhungun, admin, "Empfänger antwortet nicht", "2026-11-13T10:00:00.000Z")
     if (!result.ok) throw new Error()
     const [latest] = archiveEntries(result.data, DEMO_IDS.dmrlPhungun)
-    expect(latest.withdrawn).toMatchObject({ userId: DEMO_IDS.admin, reason: "Partner antwortet nicht" })
-    expect(historyEntries(result.data, DEMO_IDS.dmrlPhungun, "send")[0].details).toBe("SEND 00002-2026 zurückgezogen — Partner antwortet nicht")
+    expect(latest.withdrawn).toMatchObject({ userId: DEMO_IDS.admin, reason: "Empfänger antwortet nicht" })
+    expect(historyEntries(result.data, DEMO_IDS.dmrlPhungun, "send")[0].details).toBe("SEND 00002-2026 zurückgezogen — Empfänger antwortet nicht")
   })
 })

@@ -32,14 +32,14 @@ export function sendBlocked(data: Dataset, dmrl: Dmrl, user: User | null): strin
   if (dmrl.lock) return `Die DMRL ist ausgecheckt von ${userName(data, dmrl.lock.userId)}.`
   if (dmrl.status === "gesendet") {
     const index = currentVersionIndex(data, dmrl.id)
-    return index ? `Es wird noch auf die Antwort zum SEND ${index} gewartet.` : "Es wird noch auf die Antwort des Partners gewartet."
+    return index ? `Es wird noch auf die Antwort zum SEND ${index} gewartet.` : "Es wird noch auf die Antwort des Empfängers gewartet."
   }
   const entries = entriesOf(data, dmrl.id)
   const rework = entries.filter((e) => e.status === "zu_ueberarbeiten").length
   if (rework > 0) {
     return `${rework} abgelehnte ${rework === 1 ? "Eintrag ist" : "Einträge sind"} noch nicht überarbeitet (per Check-in ändern, mit „d" kennzeichnen oder erneut mit „n" versehen).`
   }
-  if (!entries.some((e) => hasEntryType(e.fields.dmentryType))) return "Es gibt keine Änderungen, die der Partner prüfen müsste."
+  if (!entries.some((e) => hasEntryType(e.fields.dmentryType))) return "Es gibt keine Änderungen, die der Empfänger prüfen müsste."
   return null
 }
 
@@ -50,12 +50,12 @@ export function withdrawSendBlocked(data: Dataset, dmrl: Dmrl, user: User | null
   return null
 }
 
-/** Partner: alle Organisationen außer dem Originator, nach CAGE-Code sortiert */
+/** Empfänger: alle Organisationen außer dem Originator, nach CAGE-Code sortiert */
 export function sendPartners(data: Dataset, dmrl: Dmrl): Organisation[] {
   return data.organisations.filter((o) => o.id !== dmrl.originatorOrganisationId).sort((a, b) => a.code.localeCompare(b.code))
 }
 
-/** Partner des letzten gültigen SEND (Vorbelegung), oder null */
+/** Empfänger des letzten gültigen SEND (Vorbelegung), oder null */
 export function lastSendPartner(data: Dataset, dmrl: Dmrl): Organisation | null {
   const send = latestSend(data, dmrl.id)
   return send ? (data.organisations.find((o) => o.id === send.partnerOrganisationId) ?? null) : null
@@ -174,7 +174,7 @@ export function executeSend(data: Dataset, dmrlId: string, user: User | null, pr
   const blocked = sendBlocked(data, dmrl, user)
   if (blocked) return { ok: false, message: blocked }
   const partner = data.organisations.find((o) => o.id === prepared.partnerOrganisationId)
-  if (!partner || partner.id === dmrl.originatorOrganisationId) return { ok: false, message: "Bitte einen Partner auswählen." }
+  if (!partner || partner.id === dmrl.originatorOrganisationId) return { ok: false, message: "Bitte einen Empfänger auswählen." }
   if (versionIndexOf(nextSendDmlCode(data, dmrl, prepared.at)) !== prepared.versionIndex) {
     return { ok: false, message: "Der Versionsindex hat sich inzwischen geändert. Bitte erneut senden." }
   }

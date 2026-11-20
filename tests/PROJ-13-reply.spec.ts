@@ -53,7 +53,7 @@ test.describe("REPLY-Import (PROJ-13)", () => {
       ["TEST-1_Pflichtelement-fehlt.XML", /Die Datei entspricht nicht dem Schema S1000D Issue 2\.3 \(dml\.xsd\)/],
       ["TEST-2_Falsches-Issue.XML", /Die Datei entspricht nicht dem Schema S1000D Issue 2\.3 \(dml\.xsd\)/],
       ["TEST-3_Kein-gueltiges-XML.XML", /Die Datei ist kein gültiges XML/],
-      ["TEST-4_Falscher-Absender.XML", /REPLY stammt nicht vom Partner C1234/],
+      ["TEST-4_Falscher-Absender.XML", /REPLY stammt nicht vom Empfänger C1234/],
     ] as const) {
       const dialog = await upload(page, file)
       await expect(dialog.getByText(expected).first()).toBeVisible()

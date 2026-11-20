@@ -59,7 +59,7 @@ interface EntryTableProps {
   emptyMessage?: string;
   /**
    * Inhalt einer archivierten Datei (PROJ-15): kein Eintragsstatus (keine Zählerleiste, kein Statusfilter, keine Statusspalte),
-   * dafür Spalte „Antwort" des Partners
+   * dafür Spalte „Antwort" des Empfängers
    */
   fileView?: boolean;
 }
@@ -227,7 +227,7 @@ export function EntryTable({
                   ) : (
                     <TableHead>Status</TableHead>
                   )}
-                  <TableHead>Partner-Kommentar</TableHead>
+                  <TableHead>Empfänger-Kommentar</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

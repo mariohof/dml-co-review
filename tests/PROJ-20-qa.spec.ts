@@ -52,7 +52,7 @@ test("Rundlauf: exportierte DMRL-XML (4.2) → CSV → Check-in in die ausgechec
   await expect(dialog.getByRole("button", { name: "Übernehmen" })).toBeEnabled()
 })
 
-test("Partner-REPLY mit Ausgabedaten → CSV → Check-in fragt nach Übernahme der Antworten", async ({ page }) => {
+test("Empfänger-REPLY mit Ausgabedaten → CSV → Check-in fragt nach Übernahme der Antworten", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   // PHUNGUN-Einträge erhalten Ausgabedaten, damit die Pflichtfelder des Check-ins erfüllt sind
   const xml = replyXml().replace(/<\/dmtitle>/g, '</dmtitle><issno issno="001" type="new"/><issdate day="01" month="02" year="2027"/>')

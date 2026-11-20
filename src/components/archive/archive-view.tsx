@@ -128,7 +128,7 @@ export function archivedEntryCount(entry: ArchiveEntry, count: number | null): s
 function ExchangeTab({ dmrl }: { dmrl: Dmrl }) {
   const { data } = useDataStore()
   const entries = archiveEntries(data, dmrl.id)
-  if (entries.length === 0) return <Empty text="Noch kein Austausch mit einem Partner" />
+  if (entries.length === 0) return <Empty text="Noch kein Austausch mit einem Empfänger" />
 
   return (
     <div className="space-y-3">
@@ -140,7 +140,7 @@ function ExchangeTab({ dmrl }: { dmrl: Dmrl }) {
           <TableHeader>
             <TableRow>
               <TableHead>Stand</TableHead>
-              <TableHead>Partner</TableHead>
+              <TableHead>Empfänger</TableHead>
               <TableHead>Datum</TableHead>
               <TableHead>Bearbeiter</TableHead>
               <TableHead>Bezug</TableHead>

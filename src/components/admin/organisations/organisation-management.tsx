@@ -73,7 +73,7 @@ export function OrganisationManagement() {
   return (
     <AdminPage
       title="Organisationen"
-      description="Organisationen sind Originator einer DMRL oder Partner beim Austausch. Identifiziert werden sie über den CAGE-Code."
+      description="Organisationen sind Originator einer DMRL oder Empfänger beim Austausch. Identifiziert werden sie über den CAGE-Code."
       action={createButton}
       toolbar={
         data.organisations.length > 0 && (

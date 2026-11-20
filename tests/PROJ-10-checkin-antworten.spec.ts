@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test"
 
 import { readDataset, startAs } from "./helpers"
 
-/** PROJ-10 Refinement 2026-11-14: abweichende Partnerantworten beim Check-in optional übernehmen */
+/** PROJ-10 Refinement 2026-11-14: abweichende Empfängerantworten beim Check-in optional übernehmen */
 
 const COLUMNS = 27
 const ANSWER_COMMENT = 25 // Spalte answer_comment (0-basiert)
@@ -18,7 +18,7 @@ async function checkOut(page: Page) {
   return { name: download.suggestedFilename(), csv: readFileSync((await download.path())!, "utf8") }
 }
 
-/** Begründung der Partnerantwort in der ersten Datenzeile setzen */
+/** Begründung der Empfängerantwort in der ersten Datenzeile setzen */
 function withAnswerComment(csv: string, comment: string) {
   const lines = csv.split("\r\n")
   const cells = lines[1].split(";")
@@ -35,12 +35,12 @@ async function upload(page: Page, file: { name: string; csv: string }) {
   return dialog
 }
 
-test("abweichende Partnerantwort: Abschnitt mit Häkchen (aus), Übernahme mit Häkchen, Eintrag in Bearbeitung, Verlauf", async ({ page }) => {
+test("abweichende Empfängerantwort: Abschnitt mit Häkchen (aus), Übernahme mit Häkchen, Eintrag in Bearbeitung, Verlauf", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   const file = await checkOut(page)
   const dialog = await upload(page, { ...file, csv: withAnswerComment(file.csv, "Begründung aus Altbestand") })
 
-  await expect(dialog.getByText("Abweichende Partnerantworten (1 Eintrag)")).toBeVisible()
+  await expect(dialog.getByText("Abweichende Empfängerantworten (1 Eintrag)")).toBeVisible()
   const checkbox = dialog.getByRole("checkbox", { name: "Antworten aus der Datei übernehmen" })
   await expect(checkbox).not.toBeChecked()
   const summary = dialog.getByLabel("Zusammenfassung")
@@ -60,7 +60,7 @@ test("ohne Häkchen: bisherige Antwort bleibt, Check-in ohne Änderung", async (
   await startAs(page, "Ben Bearbeiter")
   const file = await checkOut(page)
   const dialog = await upload(page, { ...file, csv: withAnswerComment(file.csv, "nicht übernehmen") })
-  await expect(dialog.getByText("Abweichende Partnerantworten (1 Eintrag)")).toBeVisible()
+  await expect(dialog.getByText("Abweichende Empfängerantworten (1 Eintrag)")).toBeVisible()
   await dialog.getByRole("button", { name: "Übernehmen" }).click()
   await expect(dialog).toBeHidden()
   const data = await readDataset(page)

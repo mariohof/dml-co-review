@@ -177,7 +177,7 @@ export const dmrlSchema = z.object({
   /** Berechtigte Bearbeiter (PROJ-17) */
   editorUserIds: z.array(id),
   status: z.enum(DMRL_STATUSES),
-  /** Gesamtbemerkung des Partners aus dem letzten REPLY (PROJ-13) */
+  /** Gesamtbemerkung des Empfängers aus dem letzten REPLY (PROJ-13) */
   partnerRemarks: z.string(),
   /** Nachweis der letzten Freigabe (PROJ-14); bleibt auch nach Aufhebung der Freigabe als „letzte Freigabe" */
   release: releaseProofSchema.nullable(),
@@ -199,7 +199,7 @@ export const archiveEntrySchema = z.object({
   content: z.string().min(1),
   createdAt: timestamp,
   createdByUserId: id,
-  /** SEND: gewählter Partner; REPLY: Absender */
+  /** SEND: gewählter Empfänger; REPLY: Absender */
   partnerOrganisationId: id,
   /** nur REPLY: zugehöriger SEND-Archivstand */
   sendArchiveId: id.nullable(),
@@ -323,7 +323,7 @@ export const datasetSchema = z
     for (const item of data.archive) {
       if (!dmrlIds.has(item.dmrlId)) issue(`Archivstand ${item.id}: DMRL fehlt`)
       if (!userIds.has(item.createdByUserId)) issue(`Archivstand ${item.id}: Benutzer fehlt`)
-      if (!orgIds.has(item.partnerOrganisationId)) issue(`Archivstand ${item.id}: Partner fehlt`)
+      if (!orgIds.has(item.partnerOrganisationId)) issue(`Archivstand ${item.id}: Empfänger fehlt`)
       if (item.direction === "reply") {
         if (!item.sendArchiveId || !archiveIds.has(item.sendArchiveId)) {
           issue(`Archivstand ${item.id}: zugehöriger SEND fehlt`)

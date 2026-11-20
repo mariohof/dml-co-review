@@ -12,7 +12,7 @@ export interface ReplyContext {
   systemModelic: string
   dmlType: string
   dmrlStatus: DmrlStatus
-  /** letzter (nicht zurückgezogener) SEND: DML-Code, Partner-CAGE und Einträge laut archivierter Datei */
+  /** letzter (nicht zurückgezogener) SEND: DML-Code, Empfänger-CAGE und Einträge laut archivierter Datei */
   lastSend: { dmlc: DmlCode; partnerCode: string; entries: EntryFields[] } | null
   /** DML-Codes bereits archivierter REPLYs (Duplikatprüfung) */
   archivedReplies: DmlCode[]
@@ -46,7 +46,7 @@ export function checkReplyAgainstSend(parsed: ParsedDml, candidates: Candidate[]
     return findings
   }
   const send = context.lastSend
-  if (header.dmlc.sendid !== send.partnerCode) findings.push(G(`REPLY stammt nicht vom Partner ${send.partnerCode} (Absender ‚${header.dmlc.sendid}').`))
+  if (header.dmlc.sendid !== send.partnerCode) findings.push(G(`REPLY stammt nicht vom Empfänger ${send.partnerCode} (Absender ‚${header.dmlc.sendid}').`))
   if (!header.dmlref || !sameDmlc(header.dmlref.dmlc, send.dmlc)) {
     findings.push(G(`REPLY bezieht sich nicht auf den letzten SEND ${versionIndexOf(send.dmlc)}.`))
   }

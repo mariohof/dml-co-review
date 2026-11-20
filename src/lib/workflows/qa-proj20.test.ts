@@ -63,7 +63,7 @@ describe("PROJ-20 QA", () => {
     expect(errorCount(result.report)).toBe(1)
   })
 
-  it("Rundlauf mit Antworten: Check-in meldet keine Fehler, aber abweichende Partnerantworten zur Übernahme", () => {
+  it("Rundlauf mit Antworten: Check-in meldet keine Fehler, aber abweichende Empfängerantworten zur Übernahme", () => {
     const result = checkXmlText("reply.xml", "2.3", REPLY, VALID)
     expect(errorCount(result.report)).toBe(0)
     // Stand der DMRL: gleiche Einträge, aber ohne Antworten

@@ -1,6 +1,6 @@
 # PROJ-12: SEND-Export
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-20
 
@@ -299,6 +299,12 @@ _Stand 2026-11-13 — `/frontend PROJ-12`_
 - Freigabestand-Export (PROJ-14) und Export (PROJ-18) können den Schreiber direkt nutzen (`answers: true`).
 
 **UI-Fix Dialogbreite (2026-11-16):** Der XSD-Prüfbericht (6 Spalten inkl. „Meldung“) war im SEND-Dialog (`sm:max-w-2xl`) abgeschnitten. Dialog jetzt `sm:max-w-6xl` (bis 1152 px, auf kleineren Fenstern volle Breite abzüglich Rand) mit `[&>*]:min-w-0` — wie Check-in (PROJ-10) und REPLY (PROJ-13). Bei sehr schmalen Fenstern scrollt nur noch die Tabelle selbst. Der kleine Bestätigungsdialog (Zurückziehen) bleibt unverändert.
+
+**Refinement 2026-11-20 — „Empfänger" statt „Partner", Bezug SEND ↔ REPLY** (`/frontend PROJ-12`)
+- Alle UI-Texte, Meldungen, Verlaufstexte, Toasts und Kommentare: „Partner" → „Empfänger" (auch zusammengesetzt, z. B. „Empfänger-Bemerkung", „Abweichende Empfängerantworten", „Antwort des Empfängers", „REPLY stammt nicht vom Empfänger …"). Betrifft 20 Quelldateien (SEND-/REPLY-/Check-in-Dialoge, DMRL-Kopf, Eintragstabelle, Archiv, Freigabestand, Organisations- und DMRL-Verwaltung, Workflows, Regelwerk) und die zugehörigen Unit-/E2E-Tests.
+- Unverändert: Code-Bezeichner (`partnerId`, `partnerOrganisationId`, `partnerCode` …), gespeicherte Daten und der Name der Demo-Organisation „C1234 Partner Systemtechnik GmbH" (Firmenname). Bereits gespeicherte Verlaufseinträge im Browser behalten ihren alten Text; neue Demo-Daten erzeugen die neuen Texte.
+- Bezug SEND ↔ REPLY war bereits umgesetzt (`sameDmlc` in `src/lib/rules/check/reply.ts`, Archivstand speichert `dmlc`). Neue Tests in `src/lib/rules/check/reply.test.ts`: Übereinstimmung aller Felder, Abweichung je Feld (modelic, sendid, dmltype, diyear, seqnum) → Ablehnung, REPLY-seqnum `00001` auf SEND `00002-2026` fehlerfrei. Eigener Versionsindex und SEND-Zuordnung im Archiv: bestehender Test in `src/lib/workflows/reply.test.ts`.
+- Tests: Vitest 611 ✅ · Playwright 124/125 ✅ gegen Produktionsbuild (der eine Fehlschlag erwartet fest `localhost:3000` und lief nur wegen des Test-Ports 3100 nicht). Vorbestehend, nicht Teil dieser Änderung: Typfehler in `src/lib/workflows/qa-proj10-ausgabetyp.test.ts:197`.
 
 ## QA Test Results
 

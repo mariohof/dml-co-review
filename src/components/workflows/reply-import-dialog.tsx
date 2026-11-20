@@ -126,7 +126,7 @@ function ReplyFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
       <DialogHeader>
         <DialogTitle>REPLY importieren — {system?.name ?? "DMRL"}</DialogTitle>
         <DialogDescription>
-          Antwort des Partners auf SEND {send ? versionIndexOf(send.dmlc) : "—"}. Die Datei wird gegen das Schema (S1000D Issue {system?.s1000dIssue}) und
+          Antwort des Empfängers auf SEND {send ? versionIndexOf(send.dmlc) : "—"}. Die Datei wird gegen das Schema (S1000D Issue {system?.s1000dIssue}) und
           das Regelwerk geprüft; übernommen wird erst nach Ihrer Bestätigung.
         </DialogDescription>
       </DialogHeader>
@@ -321,7 +321,7 @@ function ReplySummary({
       {header.remarks && (
         <Alert>
           <MessageSquareQuote className="h-4 w-4" aria-hidden />
-          <AlertTitle>Bemerkung des Partners</AlertTitle>
+          <AlertTitle>Bemerkung des Empfängers</AlertTitle>
           <AlertDescription className="whitespace-pre-line">{header.remarks}</AlertDescription>
         </Alert>
       )}

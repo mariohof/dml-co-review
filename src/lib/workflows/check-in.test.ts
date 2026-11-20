@@ -206,7 +206,7 @@ describe("Übernahme", () => {
     })
   })
 
-  describe("Partnerantworten aus der Datei (Refinement 2026-11-14)", () => {
+  describe("Empfängerantworten aus der Datei (Refinement 2026-11-14)", () => {
     const ben = (data: Dataset) => user(data, DEMO_IDS.editorBen)
     const newEntry = (rows: EntrySnapshot[], answer: string) => ({
       id: "neu",
@@ -234,14 +234,14 @@ describe("Übernahme", () => {
     it("mit Übernahme: Werte aus der Datei, betroffene Einträge in Bearbeitung (nie freigegeben), Freigabe entfällt, Verlaufszusatz", () => {
       const data = checkedOut(true)
       const csv = csvOf(data, (rows) => {
-        Object.assign(rows[0].fields, { dmentryType: "c", type: "changed", answer: "n", answer_comment: "Partner lehnt ab" })
+        Object.assign(rows[0].fields, { dmentryType: "c", type: "changed", answer: "n", answer_comment: "Empfänger lehnt ab" })
         return [...rows, newEntry(rows, "y")]
       })
       const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), check(data, csv), AT, true)
       if (!result.ok) throw new Error(result.message)
       const entries = vehicleEntries(result.data)
       const first = entries.find((e) => e.id === vehicleEntries(data)[0].id)!
-      expect(first).toMatchObject({ status: "in_bearbeitung", fields: { answer: "n", answer_comment: "Partner lehnt ab" } })
+      expect(first).toMatchObject({ status: "in_bearbeitung", fields: { answer: "n", answer_comment: "Empfänger lehnt ab" } })
       const added = entries.find((e) => e.fields.itemloc === "B")!
       expect(added).toMatchObject({ status: "in_bearbeitung", fields: { answer: "y", answer_comment: "aus Altbestand" } })
       expect(entries.filter((e) => e.status === "freigegeben")).toHaveLength(9)

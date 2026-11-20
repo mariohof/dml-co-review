@@ -121,7 +121,7 @@ describe("PROJ-10 — Check-in", () => {
   })
 })
 
-describe("QA PROJ-10 Refinement 2026-11-14 — Partnerantworten aus der Datei", () => {
+describe("QA PROJ-10 Refinement 2026-11-14 — Empfängerantworten aus der Datei", () => {
   /** Fahrzeug-DMRL: erster Eintrag *zu überarbeiten* (Typ c, Antwort n), ausgecheckt von Ben */
   function withRejectedFirst() {
     const demo = buildDemoDataset()
@@ -138,7 +138,7 @@ describe("QA PROJ-10 Refinement 2026-11-14 — Partnerantworten aus der Datei", 
   it("Eintrag „zu überarbeiten“ mit reiner Antwortänderung: ohne Übernahme bleibt Status und Antwort, mit Übernahme in Bearbeitung mit Werten aus der Datei", () => {
     const { data, firstId } = withRejectedFirst()
     const csv = csvFromLock(data, DEMO_IDS.dmrlVehicle, (rows) => {
-      Object.assign(rows.find((r) => r.id === firstId)!.fields, { answer: "y", answer_comment: "Partner hat telefonisch zugestimmt" })
+      Object.assign(rows.find((r) => r.id === firstId)!.fields, { answer: "y", answer_comment: "Empfänger hat telefonisch zugestimmt" })
       return rows
     })
     const result = checkCheckinFile(data, dmrl(data, DEMO_IDS.dmrlVehicle), csv)
@@ -150,7 +150,7 @@ describe("QA PROJ-10 Refinement 2026-11-14 — Partnerantworten aus der Datei", 
     const withTake = ok(executeCheckIn(data, DEMO_IDS.dmrlVehicle, user(data, DEMO_IDS.editorBen), result, AT, true))
     expect(withTake.entries.find((e) => e.id === firstId)).toMatchObject({
       status: "in_bearbeitung",
-      fields: { dmentryType: "c", answer: "y", answer_comment: "Partner hat telefonisch zugestimmt" },
+      fields: { dmentryType: "c", answer: "y", answer_comment: "Empfänger hat telefonisch zugestimmt" },
     })
     expect(withTake.entries.filter((e) => e.status === "freigegeben")).toHaveLength(0) // übernommenes y gibt nie frei
   })

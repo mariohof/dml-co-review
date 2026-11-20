@@ -21,7 +21,7 @@ async function checkFile(page: Page, name: string, issue = "2.3") {
   await page.getByRole("button", { name: "Prüfen" }).click()
 }
 
-test("Menüpunkt „XML prüfen“; Partner-REPLY: Zusammenfassung mit Antworten, CSV-Download mit Namen der XML", async ({ page }) => {
+test("Menüpunkt „XML prüfen“; Empfänger-REPLY: Zusammenfassung mit Antworten, CSV-Download mit Namen der XML", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   await openTool(page)
   await expect(page.getByText("Bitte zuerst die S1000D-Issue der Datei wählen.")).toBeVisible()

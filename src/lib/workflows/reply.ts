@@ -24,7 +24,7 @@ export const NOT_WAITING = "Die DMRL wartet nicht mehr auf eine Antwort."
 /** null = REPLY-Import möglich; sonst Grund */
 export function replyBlocked(dmrl: Dmrl, user: User | null): string | null {
   if (!canAccessDmrl(user, dmrl)) return "Keine Berechtigung für diese DMRL."
-  if (dmrl.status !== "gesendet") return "Es wird keine Antwort des Partners erwartet — die DMRL ist nicht gesendet."
+  if (dmrl.status !== "gesendet") return "Es wird keine Antwort des Empfängers erwartet — die DMRL ist nicht gesendet."
   return null
 }
 
@@ -112,7 +112,7 @@ export function replyOutcome(data: Dataset, dmrlId: string, result: ReplyResult)
     .filter((e) => e.dmrlId === dmrlId)
     .map((entry): DmrlEntry => {
       const reply = answers.get(formatDmc(entry.fields))
-      // Nur vom Partner geprüfte Einträge (Eintragstyp n/c/d mit Antwort); übrige unverändert inkl. früherer Antwort
+      // Nur vom Empfänger geprüfte Einträge (Eintragstyp n/c/d mit Antwort); übrige unverändert inkl. früherer Antwort
       if (!reply || !["n", "c", "d"].includes(entry.fields.dmentryType) || !reply.answer) return entry
       if (reply.answer === "y") {
         approved++
@@ -167,7 +167,7 @@ export interface ReplyImport {
 }
 
 /**
- * Übernahme in einer Speicherung: Einträge, DMRL-Status, Partner-Bemerkung, Archiv (byte-genau, mit SEND verknüpft), Verlauf;
+ * Übernahme in einer Speicherung: Einträge, DMRL-Status, Empfänger-Bemerkung, Archiv (byte-genau, mit SEND verknüpft), Verlauf;
  * bei vollständiger Freigabe zusätzlich Freigabe-Nachweis und Freigabestand (PROJ-14).
  */
 export function executeReplyImport(data: Dataset, dmrlId: string, user: User | null, input: ReplyImport, at = new Date().toISOString()): WorkflowResult {
@@ -202,7 +202,7 @@ export function executeReplyImport(data: Dataset, dmrlId: string, user: User | n
     withdrawn: null,
   }
   const released = outcome.futureStatus === "freigegeben"
-  const details = `REPLY ${versionIndex} von ${partner ? organisationLabel(partner) : "Partner"} übernommen — ${outcome.approved} freigegeben, ${outcome.rework} zu überarbeiten${released ? " — DMRL freigegeben" : ""}`
+  const details = `REPLY ${versionIndex} von ${partner ? organisationLabel(partner) : "Empfänger"} übernommen — ${outcome.approved} freigegeben, ${outcome.rework} zu überarbeiten${released ? " — DMRL freigegeben" : ""}`
 
   return {
     ok: true,

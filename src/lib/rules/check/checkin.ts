@@ -7,7 +7,7 @@ import type { Candidate, Finding, Report } from "./types"
 
 /**
  * Check-in-Prüfung (PROJ-8 Gruppen S, A–E, I, F) inkl. Abgleich mit dem Stand beim Check-out (PROJ-10).
- * Gruppe K liefert seit dem Refinement 2026-11-14 keine Fehler mehr, sondern die abweichenden Partnerantworten
+ * Gruppe K liefert seit dem Refinement 2026-11-14 keine Fehler mehr, sondern die abweichenden Empfängerantworten
  * zur optionalen Übernahme (PROJ-10 Tech Design I).
  */
 
@@ -113,7 +113,7 @@ export function checkIssueTypeMatchesEntryType(comparison: Comparison): Finding[
   return findings
 }
 
-/** Gruppe K — abweichende Partnerantworten (kein Fehler; Übernahme nur nach Abfrage, PROJ-10) */
+/** Gruppe K — abweichende Empfängerantworten (kein Fehler; Übernahme nur nach Abfrage, PROJ-10) */
 export const answerDeviations = (comparison: Comparison): ComparedEntry[] => comparison.entries.filter((e) => e.answerChanged)
 
 /**
@@ -127,7 +127,7 @@ export const ANSWER_TAKEOVER_BLOCKED =
   "Eintragstyp setzen (n, c oder d), damit der Eintrag erneut gesendet werden kann — Datei korrigieren oder Antworten nicht übernehmen."
 
 /**
- * Bestand übernehmen (Refinement 2026-11-18): neue Einträge ohne Eintragstyp gelten als mit dem Partner abgestimmt
+ * Bestand übernehmen (Refinement 2026-11-18): neue Einträge ohne Eintragstyp gelten als mit dem Empfänger abgestimmt
  * und werden beim Check-in *freigegeben*. Maßgeblich ist allein der fehlende Eintragstyp, nicht `answer`.
  */
 export const isReleasedOnTakeover = (entry: ComparedEntry): boolean =>
@@ -149,7 +149,7 @@ export interface CheckinSummary {
   alsFreigegeben: number
 }
 
-/** Zahlen der Zusammenfassung — ohne bzw. mit Übernahme der Partnerantworten (aus demselben Abgleich) */
+/** Zahlen der Zusammenfassung — ohne bzw. mit Übernahme der Empfängerantworten (aus demselben Abgleich) */
 export function checkinSummary(candidates: Candidate[], comparison: Comparison | null, takeAnswers = false): CheckinSummary {
   const entries = comparison?.entries ?? []
   const count = (k: Classification) => entries.filter((e) => effectiveClassification(e, takeAnswers) === k).length
@@ -174,7 +174,7 @@ export interface CheckinResult {
   candidates: Candidate[]
   /** nur ohne Strukturfehler vorhanden */
   comparison: Comparison | null
-  /** Zahlen ohne Übernahme der Partnerantworten (Standard) */
+  /** Zahlen ohne Übernahme der Empfängerantworten (Standard) */
   summary: CheckinSummary
 }
 

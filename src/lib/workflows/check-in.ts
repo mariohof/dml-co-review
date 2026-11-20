@@ -65,7 +65,7 @@ export function recordRejectedCheckIn(data: Dataset, dmrlId: string, user: User,
  * Übernahme in einer Speicherung (PROJ-10 Tech Design B):
  * Einträge durch Dateiinhalt ersetzen (IDs per DMC erhalten), Status laut Spec, DMRL-Status, Sperre aufheben, Verlauf.
  *
- * Partnerantworten (Tech Design I, Refinement 2026-11-14): Ohne `takeAnswers` behalten bestehende Einträge ihre bisherigen
+ * Empfängerantworten (Tech Design I, Refinement 2026-11-14): Ohne `takeAnswers` behalten bestehende Einträge ihre bisherigen
  * Antwortfelder, neue erhalten leere. Mit `takeAnswers` gelten die Werte aus der Datei; eine reine Antwortabweichung zählt
  * als Änderung (*in Bearbeitung*). Übernommene Antworten setzen nie *freigegeben* oder *zu überarbeiten*.
  */

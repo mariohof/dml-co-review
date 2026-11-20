@@ -40,8 +40,42 @@ describe("REPLY-Prüfung", () => {
     expect(m).toContain("G: REPLY wurde bereits importiert.")
   })
 
+  describe("Bezug SEND ↔ REPLY (PROJ-12, Refinement 2026-11-20)", () => {
+    /** ändert nur den Block /dml/dmlref, nicht /dml/dmlc des REPLY */
+    const withDmlref = (change: (dmlref: string) => string) =>
+      demoReply.replace(/<dmlref>[\s\S]*?<\/dmlref>/, (block) => change(block))
+    const notLastSend = "G: REPLY bezieht sich nicht auf den letzten SEND 00002-2026."
+
+    it("dmlref stimmt in allen Feldern mit den Sender-Daten des letzten SEND überein → kein Bezugsfehler", () => {
+      expect(messages(demoReply)).not.toContain(notLastSend)
+    })
+
+    it.each([
+      ["modelic", (b: string) => b.replace("<modelic>PHUNGUN</modelic>", "<modelic>ANDERES</modelic>")],
+      ["sendid", (b: string) => b.replace("<sendid>D0815</sendid>", "<sendid>D0816</sendid>")],
+      ["dmltype", (b: string) => b.replace('<dmltype type="c"/>', '<dmltype type="s"/>')],
+      ["diyear", (b: string) => b.replace("<diyear>2026</diyear>", "<diyear>2025</diyear>")],
+      ["seqnum", (b: string) => b.replace("<seqnum>00002</seqnum>", "<seqnum>00003</seqnum>")],
+    ])("abweichendes %s im dmlref → REPLY wird abgelehnt", (_field, change) => {
+      const xml = withDmlref(change)
+      expect(xml).not.toBe(demoReply)
+      const result = runReplyCheck(xml, context)
+      expect(result.report.findings.map((f) => `${f.group}: ${f.message}`)).toContain(notLastSend)
+      expect(errorCount(result.report)).toBeGreaterThan(0)
+    })
+
+    it("seqnum des REPLY ist unabhängig von der seqnum des SEND (REPLY 00001-2026 auf SEND 00002-2026)", () => {
+      const ownSeqnum = demoReply.replace(/(<dmlc>[\s\S]*?<seqnum>)00002(<\/seqnum>)/, "$100001$2")
+      expect(ownSeqnum).not.toBe(demoReply)
+      const result = runReplyCheck(ownSeqnum, { ...context, archivedReplies: [] })
+      expect(result.report.findings).toEqual([])
+      expect(result.parsed?.header.dmlc.seqnum).toBe("00001")
+      expect(result.parsed?.header.dmlref?.dmlc.seqnum).toBe("00002")
+    })
+  })
+
   it("Testdatei 4: falscher Absender", () => {
-    expect(messages(demoFile("TEST-4_Falscher-Absender.XML"))).toContain("G: REPLY stammt nicht vom Partner C1234 (Absender ‚C9999').")
+    expect(messages(demoFile("TEST-4_Falscher-Absender.XML"))).toContain("G: REPLY stammt nicht vom Empfänger C1234 (Absender ‚C9999').")
   })
 
   it("lehnt eine Datei mit Richtung send ab", () => {
@@ -73,7 +107,7 @@ describe("REPLY-Prüfung", () => {
     expect(messages(untyped)).toContain("H: Antwort nur bei Eintragstyp n/c/d zulässig.")
   })
 
-  it("erlaubt fehlende Ausgabedaten im REPLY und die Gesamtbemerkung des Partners", () => {
+  it("erlaubt fehlende Ausgabedaten im REPLY und die Gesamtbemerkung des Empfängers", () => {
     const result = runReplyCheck(demoReply, context)
     expect(result.parsed?.header.remarks).toBe("Bitte abgelehnte Einträge überarbeiten.")
     expect(result.candidates.every((c) => c.fields.issno === "")).toBe(true)

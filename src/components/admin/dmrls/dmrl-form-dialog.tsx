@@ -77,7 +77,7 @@ export function DmrlFormDialog({ open, onOpenChange, data, dmrl, fieldBlocked, o
         <DialogHeader>
           <DialogTitle>{dmrl ? "DMRL bearbeiten" : "DMRL anlegen"}</DialogTitle>
           <DialogDescription>
-            Eine DMRL gehört zu genau einem System und wird über dessen Bezeichnung angezeigt. Der Partner wird erst beim SEND gewählt.
+            Eine DMRL gehört zu genau einem System und wird über dessen Bezeichnung angezeigt. Der Empfänger wird erst beim SEND gewählt.
           </DialogDescription>
         </DialogHeader>
         {organisations.length === 0 && (

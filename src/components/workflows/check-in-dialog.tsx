@@ -254,7 +254,7 @@ function CheckInSummary({
               <BadgeCheck className="h-4 w-4" aria-hidden />
               <AlertTitle>Bestand übernehmen: davon {alsFreigegeben} als freigegeben übernommen</AlertTitle>
               <AlertDescription>
-                Neue Einträge ohne Eintragstyp gelten als mit dem Partner bereits abgestimmt und werden <em>freigegeben</em>. Fehlt
+                Neue Einträge ohne Eintragstyp gelten als mit dem Empfänger bereits abgestimmt und werden <em>freigegeben</em>. Fehlt
                 der Eintragstyp versehentlich, bitte abbrechen und in der Datei <code>n</code>, <code>c</code> oder <code>d</code> setzen.
               </AlertDescription>
             </Alert>
@@ -354,7 +354,7 @@ function CheckInSummary({
 const answerText = (field: (typeof ANSWER_FIELDS)[number], value: string | undefined) =>
   !value ? "—" : field === "answer" ? (ANSWER_LABEL[value] ?? value) : value
 
-/** Abweichende Partnerantworten mit Abfrage zur Übernahme (PROJ-10 Tech Design I, Refinement 2026-11-14) */
+/** Abweichende Empfängerantworten mit Abfrage zur Übernahme (PROJ-10 Tech Design I, Refinement 2026-11-14) */
 function AnswerDeviations({
   deviations,
   takeAnswers,
@@ -370,7 +370,7 @@ function AnswerDeviations({
   return (
     <section className="space-y-3" aria-labelledby={`${checkboxId}-titel`}>
       <h3 id={`${checkboxId}-titel`} className="text-sm font-semibold">
-        Abweichende Partnerantworten ({deviations.length} {deviations.length === 1 ? "Eintrag" : "Einträge"})
+        Abweichende Empfängerantworten ({deviations.length} {deviations.length === 1 ? "Eintrag" : "Einträge"})
       </h3>
       <Accordion type="multiple" className="rounded-md border px-3">
         {deviations.map(({ candidate, previous }) => (

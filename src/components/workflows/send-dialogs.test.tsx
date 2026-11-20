@@ -58,7 +58,7 @@ describe("SEND in der DMRL-Ansicht", () => {
     validate.mockReset()
   })
 
-  it("Dialog zeigt Vorschau; ohne Partner Pflichtfeldfehler; Abbrechen ändert nichts", async () => {
+  it("Dialog zeigt Vorschau; ohne Empfänger Pflichtfeldfehler; Abbrechen ändert nichts", async () => {
     renderAs(DEMO_IDS.editorBen)
     const dialog = await openSend()
     const preview = within(dialog).getByLabelText("Vorschau")
@@ -66,7 +66,7 @@ describe("SEND in der DMRL-Ansicht", () => {
     expect(preview).toHaveTextContent(`DML-GTFDEMO-D0815-C-${year}-00001_001-00.XML`)
     expect(preview).toHaveTextContent("10 gesamt · 10 neu (n) · 0 geändert (c) · 0 Löschung (d)")
     fireEvent.click(within(dialog).getByRole("button", { name: "Senden" }))
-    expect(await within(dialog).findByText("Bitte einen Partner auswählen.")).toBeInTheDocument()
+    expect(await within(dialog).findByText("Bitte einen Empfänger auswählen.")).toBeInTheDocument()
     expect(validate).not.toHaveBeenCalled()
     fireEvent.click(within(dialog).getByRole("button", { name: "Abbrechen" }))
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
@@ -77,7 +77,7 @@ describe("SEND in der DMRL-Ansicht", () => {
     validate.mockResolvedValue({ state: "gueltig", issue: "4.2" })
     renderAs(DEMO_IDS.editorBen)
     const dialog = await openSend()
-    fireEvent.click(within(dialog).getByRole("combobox", { name: "Partner" }))
+    fireEvent.click(within(dialog).getByRole("combobox", { name: "Empfänger" }))
     fireEvent.click(await screen.findByRole("option", { name: /C1234/ }))
     fireEvent.change(within(dialog).getByLabelText("Bemerkung (optional)"), { target: { value: "Bitte prüfen" } })
     await act(async () => {
@@ -96,7 +96,7 @@ describe("SEND in der DMRL-Ansicht", () => {
     validate.mockResolvedValue({ state: "schemafehler", issue: "4.2", findings: [{ line: 3, message: "Element 'x': not expected." }] })
     renderAs(DEMO_IDS.editorBen)
     const dialog = await openSend()
-    fireEvent.click(within(dialog).getByRole("combobox", { name: "Partner" }))
+    fireEvent.click(within(dialog).getByRole("combobox", { name: "Empfänger" }))
     fireEvent.click(await screen.findByRole("option", { name: /C1234/ }))
     await act(async () => {
       fireEvent.click(within(dialog).getByRole("button", { name: "Senden" }))
@@ -114,7 +114,7 @@ describe("SEND in der DMRL-Ansicht", () => {
     renderAs(DEMO_IDS.editorBen)
     const historyBefore = stored().history.length
     const dialog = await openSend()
-    fireEvent.click(within(dialog).getByRole("combobox", { name: "Partner" }))
+    fireEvent.click(within(dialog).getByRole("combobox", { name: "Empfänger" }))
     fireEvent.click(await screen.findByRole("option", { name: /C1234/ }))
     await act(async () => {
       fireEvent.click(within(dialog).getByRole("button", { name: "Senden" }))
@@ -145,11 +145,11 @@ describe("SEND zurückziehen", () => {
     expect(within(dialog).getByText("SEND 00002-2026 zurückziehen?")).toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole("button", { name: "Zurückziehen" }))
     expect(await within(dialog).findByText("Bitte eine Begründung angeben.")).toBeInTheDocument()
-    fireEvent.change(within(dialog).getByLabelText("Begründung"), { target: { value: "Partner antwortet nicht" } })
+    fireEvent.change(within(dialog).getByLabelText("Begründung"), { target: { value: "Empfänger antwortet nicht" } })
     fireEvent.click(within(dialog).getByRole("button", { name: "Zurückziehen" }))
     await waitFor(() => expect(dmrlOf(DEMO_IDS.dmrlPhungun).status).toBe("in_bearbeitung"))
     expect(stored().archive.find((a) => a.versionIndex === "00002-2026" && a.direction === "send")?.withdrawn?.reason).toBe(
-      "Partner antwortet nicht"
+      "Empfänger antwortet nicht"
     )
   })
 })

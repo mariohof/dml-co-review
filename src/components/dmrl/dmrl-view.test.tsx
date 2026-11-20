@@ -79,7 +79,7 @@ describe("DMRL-Ansicht PHUNGUN (Demo)", () => {
     const sheet = screen.getByRole("dialog")
     expect(within(sheet).getByText("Tech Name")).toBeInTheDocument()
     expect(within(sheet).getByText("DM-Ausgabetyp (issno/@type)")).toBeInTheDocument()
-    expect(within(sheet).getByText("Kommentar des Partners")).toBeInTheDocument()
+    expect(within(sheet).getByText("Kommentar des Empfängers")).toBeInTheDocument()
     expect(within(sheet).queryByRole("textbox")).toBeNull()
   })
 
@@ -96,7 +96,7 @@ describe("DMRL-Ansicht PHUNGUN (Demo)", () => {
     for (const label of ["Check-out", "SEND"]) {
       expect(within(toolbar).getByRole("button", { name: label })).toBeDisabled()
     }
-    expect(within(toolbar).getByLabelText(/Die DMRL wartet auf die Antwort des Partners/)).toBeInTheDocument()
+    expect(within(toolbar).getByLabelText(/Die DMRL wartet auf die Antwort des Empfängers/)).toBeInTheDocument()
     expect(within(toolbar).getByLabelText("Es wird noch auf die Antwort zum SEND 00002-2026 gewartet.")).toBeInTheDocument()
     expect(within(toolbar).getByRole("button", { name: "SEND zurückziehen" })).toBeEnabled()
     // Check-in sieht nur der Sperrinhaber (PROJ-10)
@@ -109,7 +109,7 @@ describe("DMRL-Ansicht PHUNGUN (Demo)", () => {
 })
 
 describe("DMRL-Ansicht: weitere Zustände", () => {
-  it("zeigt „— noch nicht gesendet —\", Partner-Bemerkung, Sperre und „DM gelöscht\"", async () => {
+  it("zeigt „— noch nicht gesendet —\", Empfänger-Bemerkung, Sperre und „DM gelöscht\"", async () => {
     const demo = buildDemoDataset()
     demo.dmrls = demo.dmrls.map((d) =>
       d.id === DEMO_IDS.dmrlVehicle

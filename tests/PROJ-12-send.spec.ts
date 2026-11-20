@@ -14,7 +14,7 @@ async function sendTo(page: Page, dmrlId: string, remarks = "") {
   await page.goto(`/dmrl/${dmrlId}`)
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "SEND" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByRole("combobox", { name: "Partner" }).click()
+  await dialog.getByRole("combobox", { name: "Empfänger" }).click()
   await page.getByRole("option", { name: /C1234/ }).click()
   if (remarks) await dialog.getByLabel("Bemerkung (optional)").fill(remarks)
   const downloadPromise = page.waitForEvent("download")
@@ -51,7 +51,7 @@ test.describe("SEND-Export (PROJ-12)", () => {
     await page.goto("/dmrl/dmrl-phungun")
     await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "SEND zurückziehen" }).click()
     const dialog = page.getByRole("dialog")
-    await dialog.getByLabel("Begründung").fill("Partner antwortet nicht")
+    await dialog.getByLabel("Begründung").fill("Empfänger antwortet nicht")
     await dialog.getByRole("button", { name: "Zurückziehen" }).click()
     await expect(dialog).toBeHidden()
 

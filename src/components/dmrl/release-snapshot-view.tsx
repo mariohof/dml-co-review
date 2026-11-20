@@ -60,7 +60,7 @@ export function ReleaseSnapshotView({ dmrl, snapshotId }: { dmrl: Dmrl; snapshot
           <h1 className="text-2xl font-semibold">{system?.name ?? "DMRL"}</h1>
           <p className="text-sm text-muted-foreground">
             {snapshot.entries.length} Einträge ·{" "}
-            {isCheckinRelease(snapshot) ? "Übernahme Bestand per Check-in" : `Partner ${info.partner ? `${info.partner.code} ${info.partner.name}` : "—"}`} · übernommen von{" "}
+            {isCheckinRelease(snapshot) ? "Übernahme Bestand per Check-in" : `Empfänger ${info.partner ? `${info.partner.code} ${info.partner.name}` : "—"}`} · übernommen von{" "}
             {info.user?.name ?? "unbekannt"}
           </p>
         </div>

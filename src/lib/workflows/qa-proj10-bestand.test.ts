@@ -107,7 +107,7 @@ describe("QA PROJ-10 Bestand übernehmen — Folgezyklus und Statusmodell", () =
       ).result
     )
     expect(dmrl(data, id).status).toBe("freigegeben")
-    expect(sendBlocked(data, dmrl(data, id), user(data, DEMO_IDS.admin))).toBe("Es gibt keine Änderungen, die der Partner prüfen müsste.")
+    expect(sendBlocked(data, dmrl(data, id), user(data, DEMO_IDS.admin))).toBe("Es gibt keine Änderungen, die der Empfänger prüfen müsste.")
 
     data = ok(cycle(data, id, (rows) => [...rows, newEntry(rows[0], "Q", "n", "new")], LATER).result)
     expect(dmrl(data, id).status).toBe("in_bearbeitung")
@@ -192,7 +192,7 @@ describe("QA PROJ-10 Bestand übernehmen — Red Team", () => {
     expect(errors(out, id, writeEntriesCsv([...without, copy])).some((f) => f.message.includes("fehlt"))).toBe(true)
   })
 
-  it("Hinweis (gewollt): Ein Bearbeiter kann neue Einträge ohne Partner-REPLY als freigegeben übernehmen — sichtbar in Verlauf und Nachweis", () => {
+  it("Hinweis (gewollt): Ein Bearbeiter kann neue Einträge ohne Empfänger-REPLY als freigegeben übernehmen — sichtbar in Verlauf und Nachweis", () => {
     const demo = buildDemoDataset()
     const id = DEMO_IDS.dmrlVehicle
     const after = ok(cycle(demo, id, (rows) => [...rows, newEntry(rows[0], "Q")]).result)

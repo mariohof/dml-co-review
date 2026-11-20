@@ -44,7 +44,7 @@ import { validateXml, xsdResultToReport } from "@/lib/xsd/client"
 const XML_MIME = "application/xml;charset=utf-8"
 
 const sendFormSchema = z.object({
-  partnerId: z.string().min(1, "Bitte einen Partner auswählen."),
+  partnerId: z.string().min(1, "Bitte einen Empfänger auswählen."),
   remarks: z.string().max(MAX_SEND_REMARKS, `Höchstens ${MAX_SEND_REMARKS} Zeichen.`),
 })
 type SendFormValues = z.infer<typeof sendFormSchema>
@@ -55,7 +55,7 @@ interface DialogProps {
   onClose: () => void
 }
 
-/** SEND-Dialog (PROJ-12): Partner, Bemerkung, Vorschau → erzeugen → XSD-Prüfung (PROJ-11) → speichern → Download */
+/** SEND-Dialog (PROJ-12): Empfänger, Bemerkung, Vorschau → erzeugen → XSD-Prüfung (PROJ-11) → speichern → Download */
 export function SendDialog({ dmrl, open, onClose }: DialogProps) {
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
@@ -116,7 +116,7 @@ function SendFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
     }
     downloadTextFile(prepared.fileName, prepared.xml, XML_MIME)
     const partner = partners.find((p) => p.id === values.partnerId)
-    toast.success(`SEND ${prepared.versionIndex} an ${partner ? organisationLabel(partner) : "Partner"} erstellt. Die Datei wurde heruntergeladen und archiviert.`)
+    toast.success(`SEND ${prepared.versionIndex} an ${partner ? organisationLabel(partner) : "Empfänger"} erstellt. Die Datei wurde heruntergeladen und archiviert.`)
     onClose()
   }
 
@@ -127,7 +127,7 @@ function SendFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
       <DialogTitle>SEND — {system?.name ?? "DMRL"}</DialogTitle>
       <DialogDescription>
         Die DMRL wird als S1000D-XML (Issue {system?.s1000dIssue}) erzeugt, gegen das Schema geprüft, archiviert und heruntergeladen. Den Versand an den
-        Partner erledigen Sie außerhalb der Anwendung.
+        Empfänger erledigen Sie außerhalb der Anwendung.
       </DialogDescription>
     </DialogHeader>
   )
@@ -177,7 +177,7 @@ function SendFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
         <Alert>
           <Info className="h-4 w-4" aria-hidden />
           <AlertDescription>
-            Keine Partner-Organisation vorhanden — bitte zuerst anlegen (
+            Keine Empfänger-Organisation vorhanden — bitte zuerst anlegen (
             <Link href="/verwaltung/organisationen" className="text-primary underline-offset-4 hover:underline">
               Verwaltung → Organisationen
             </Link>
@@ -192,11 +192,11 @@ function SendFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
             name="partnerId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Partner</FormLabel>
+                <FormLabel>Empfänger</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange} disabled={partners.length === 0}>
                   <FormControl>
-                    <SelectTrigger aria-label="Partner">
-                      <SelectValue placeholder="Partner wählen" />
+                    <SelectTrigger aria-label="Empfänger">
+                      <SelectValue placeholder="Empfänger wählen" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -209,7 +209,7 @@ function SendFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
                 </Select>
                 {deviates && (
                   <p className="text-sm text-amber-700" role="status">
-                    Abweichend vom letzten Partner {organisationLabel(lastPartner)}
+                    Abweichend vom letzten Empfänger {organisationLabel(lastPartner)}
                   </p>
                 )}
                 <FormMessage />
@@ -223,7 +223,7 @@ function SendFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
               <FormItem>
                 <FormLabel>Bemerkung (optional)</FormLabel>
                 <FormControl>
-                  <Textarea rows={3} placeholder="Begleittext für den Partner" {...field} />
+                  <Textarea rows={3} placeholder="Begleittext für den Empfänger" {...field} />
                 </FormControl>
                 <FormDescription>
                   Wird als Bemerkung zur DMRL in die Datei geschrieben · {remarks.length}/{MAX_SEND_REMARKS}
@@ -288,7 +288,7 @@ export function WithdrawSendDialog({ dmrl, open, onClose }: DialogProps) {
           <DialogTitle>SEND {versionIndex} zurückziehen?</DialogTitle>
           <DialogDescription>
             Die DMRL und die gesendeten Einträge gehen zurück in Bearbeitung. Der Archivstand bleibt erhalten und wird als „zurückgezogen“ markiert; eine
-            spätere Antwort des Partners auf diesen SEND wird abgelehnt. Der nächste SEND erhält einen neuen Versionsindex.
+            spätere Antwort des Empfängers auf diesen SEND wird abgelehnt. Der nächste SEND erhält einen neuen Versionsindex.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -300,7 +300,7 @@ export function WithdrawSendDialog({ dmrl, open, onClose }: DialogProps) {
                 <FormItem>
                   <FormLabel>Begründung</FormLabel>
                   <FormControl>
-                    <Textarea rows={3} placeholder="z. B. Partner antwortet nicht, falscher Partner gewählt" {...field} />
+                    <Textarea rows={3} placeholder="z. B. Empfänger antwortet nicht, falscher Empfänger gewählt" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

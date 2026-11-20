@@ -18,7 +18,7 @@ export function checkOutBlocked(data: Dataset, dmrl: Dmrl, user: User | null): s
   if (!canAccessDmrl(user, dmrl)) return "Keine Berechtigung für diese DMRL."
   if (dmrl.lock) return `Ausgecheckt von ${userName(data, dmrl.lock.userId)} seit ${formatDateTime(dmrl.lock.since)}.`
   if (dmrl.status === "gesendet") {
-    return "Die DMRL wartet auf die Antwort des Partners (REPLY). Ein neuer Bearbeitungszyklus ist erst danach möglich."
+    return "Die DMRL wartet auf die Antwort des Empfängers (REPLY). Ein neuer Bearbeitungszyklus ist erst danach möglich."
   }
   return null
 }

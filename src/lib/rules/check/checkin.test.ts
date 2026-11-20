@@ -354,7 +354,7 @@ describe("Gruppe F — Eintragstyp ↔ DM-Ausgabetyp (Refinement 2026-11-16)", (
   })
 })
 
-describe("Gruppe K — abweichende Partnerantworten (Refinement 2026-11-14)", () => {
+describe("Gruppe K — abweichende Empfängerantworten (Refinement 2026-11-14)", () => {
   // Ausgangsstand: erster Eintrag freigegeben (ohne Eintragstyp), übrige wie im Demo-Bestand
   const base = structuredClone(vehicle)
   base[0] = { ...base[0], status: "freigegeben", fields: { ...base[0].fields, dmentryType: "" } }

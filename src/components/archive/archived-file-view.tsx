@@ -56,8 +56,8 @@ export function ArchivedFileView({ dmrl, archiveId }: { dmrl: Dmrl; archiveId: s
       <Card>
         <CardContent className="pt-6">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm sm:grid-cols-3 lg:grid-cols-6" aria-label="Kopfdaten">
-            <Item label="Richtung">{isReply ? "REPLY (Antwort des Partners)" : "SEND (an den Partner)"}</Item>
-            <Item label="Partner">{organisationLabelById(data, entry.partnerOrganisationId)}</Item>
+            <Item label="Richtung">{isReply ? "REPLY (Antwort des Empfängers)" : "SEND (an den Empfänger)"}</Item>
+            <Item label="Empfänger">{organisationLabelById(data, entry.partnerOrganisationId)}</Item>
             <Item label="Datum">{formatDateTime(entry.createdAt)}</Item>
             <Item label="Bearbeiter">
               {user.name}
@@ -84,7 +84,7 @@ export function ArchivedFileView({ dmrl, archiveId }: { dmrl: Dmrl; archiveId: s
       {parsed?.header.remarks && (
         <Alert>
           <MessageSquareQuote className="h-4 w-4" aria-hidden />
-          <AlertTitle>{isReply ? "Bemerkung des Partners" : "Bemerkung zur DMRL"}</AlertTitle>
+          <AlertTitle>{isReply ? "Bemerkung des Empfängers" : "Bemerkung zur DMRL"}</AlertTitle>
           <AlertDescription className="whitespace-pre-line">{parsed.header.remarks}</AlertDescription>
         </Alert>
       )}

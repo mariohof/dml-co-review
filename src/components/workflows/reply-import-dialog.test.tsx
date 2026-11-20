@@ -82,7 +82,7 @@ describe("REPLY importieren", () => {
     await waitFor(() => expect(phungun().status).toBe("in_bearbeitung"))
     expect(stored().archive.at(-1)).toMatchObject({ direction: "reply", fileName: DEMO_REPLY, replyCounts: { approved: 30, rework: 2 } })
     expect(stored().archive.at(-1)?.content).toBe(demoFile(DEMO_REPLY))
-    // Partner-Bemerkung erscheint in der Ansicht
+    // Empfänger-Bemerkung erscheint in der Ansicht
     expect(await screen.findByText("Bitte abgelehnte Einträge überarbeiten.")).toBeInTheDocument()
   })
 
@@ -101,7 +101,7 @@ describe("REPLY importieren", () => {
     const dialog = await upload(demoFile("TEST-4_Falscher-Absender.XML"), "TEST-4_Falscher-Absender.XML")
     expect(await within(dialog).findByText("REPLY kann nicht übernommen werden")).toBeInTheDocument()
     expect(within(dialog).getByText("XSD-Prüfung bestanden (S1000D Issue 2.3)")).toBeInTheDocument()
-    expect(within(dialog).getByText("REPLY stammt nicht vom Partner C1234 (Absender ‚C9999').")).toBeInTheDocument()
+    expect(within(dialog).getByText("REPLY stammt nicht vom Empfänger C1234 (Absender ‚C9999').")).toBeInTheDocument()
     expect(phungun().status).toBe("gesendet")
     expect(stored().history.at(-1)).toMatchObject({ action: "reply_abgelehnt" })
     fireEvent.click(within(dialog).getByRole("button", { name: "Andere Datei wählen" }))

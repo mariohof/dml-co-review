@@ -14,7 +14,7 @@ export function isDmrlUsedInWorkflow(data: Dataset, dmrlId: string): boolean {
 }
 
 /**
- * Organisation ist Originator einer im Workflow benutzten DMRL oder Partner eines Archivstands.
+ * Organisation ist Originator einer im Workflow benutzten DMRL oder Empfänger eines Archivstands.
  * Der aktuelle Originator genügt, da er nach dem ersten Workflow nicht mehr geändert werden kann (PROJ-6).
  */
 export function isOrganisationUsedInWorkflow(data: Dataset, organisationId: string): boolean {

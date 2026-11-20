@@ -48,7 +48,7 @@ function renderPage(dmrlId: string, options: { archiveId?: string; tab?: string;
 describe("Archiv — Austausch", () => {
   beforeEach(() => downloadBytes.mockClear())
 
-  it("PHUNGUN: drei Stände mit Partner, Bearbeiter, Bezug, Anzahl; Kette; keine Lösch-/Änderungsaktionen", async () => {
+  it("PHUNGUN: drei Stände mit Empfänger, Bearbeiter, Bezug, Anzahl; Kette; keine Lösch-/Änderungsaktionen", async () => {
     renderPage(DEMO_IDS.dmrlPhungun)
     expect(await screen.findByLabelText("Austauschkette")).toHaveTextContent("SEND 00002-2026 → REPLY C1234 00001-2026 → SEND 00001-2026")
     const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1)
@@ -75,17 +75,17 @@ describe("Archiv — Austausch", () => {
   it("zurückgezogener SEND ist gekennzeichnet", async () => {
     const data = buildDemoDataset()
     data.archive = data.archive.map((a) =>
-      a.id === DEMO_IDS.archiveSend2 ? { ...a, withdrawn: { at: "2026-11-13T10:00:00.000Z", userId: DEMO_IDS.admin, reason: "Partner antwortet nicht" } } : a
+      a.id === DEMO_IDS.archiveSend2 ? { ...a, withdrawn: { at: "2026-11-13T10:00:00.000Z", userId: DEMO_IDS.admin, reason: "Empfänger antwortet nicht" } } : a
     )
     data.dmrls = data.dmrls.map((d) => (d.id === DEMO_IDS.dmrlPhungun ? { ...d, status: "in_bearbeitung" } : d))
     data.entries = data.entries.map((e) => (e.dmrlId === DEMO_IDS.dmrlPhungun ? { ...e, status: "in_bearbeitung" } : e))
     renderPage(DEMO_IDS.dmrlPhungun, { data })
-    expect(await screen.findByText(/zurückgezogen am 13\.11\.2026, \d\d:\d\d von Administrator — Partner antwortet nicht/)).toBeInTheDocument()
+    expect(await screen.findByText(/zurückgezogen am 13\.11\.2026, \d\d:\d\d von Administrator — Empfänger antwortet nicht/)).toBeInTheDocument()
   })
 
   it("leere Hinweise für eine DMRL ohne Austausch, Freigabe und Verlauf", async () => {
     const view = renderPage(DEMO_IDS.dmrlVehicle)
-    expect(await screen.findByText("Noch kein Austausch mit einem Partner")).toBeInTheDocument()
+    expect(await screen.findByText("Noch kein Austausch mit einem Empfänger")).toBeInTheDocument()
     view.unmount()
     renderPage(DEMO_IDS.dmrlVehicle, { tab: "freigaben" })
     expect(await screen.findByText("Die DMRL wurde noch nie freigegeben")).toBeInTheDocument()
@@ -115,7 +115,7 @@ describe("Archivierter Stand", () => {
   it("REPLY: Kopfdaten, Einträge mit Antwort und ohne Status, nur lesend", async () => {
     renderPage(DEMO_IDS.dmrlPhungun, { archiveId: DEMO_IDS.archiveReply1 })
     expect(await screen.findByRole("heading", { name: /REPLY C1234 00001-2026/ })).toBeInTheDocument()
-    expect(screen.getByLabelText("Kopfdaten")).toHaveTextContent("REPLY (Antwort des Partners)")
+    expect(screen.getByLabelText("Kopfdaten")).toHaveTextContent("REPLY (Antwort des Empfängers)")
     expect(screen.getByRole("columnheader", { name: "Antwort" })).toBeInTheDocument()
     expect(screen.queryByRole("columnheader", { name: "Status" })).toBeNull()
     expect(screen.queryByLabelText("Einträge je Status")).toBeNull()

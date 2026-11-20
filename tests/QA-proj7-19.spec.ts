@@ -40,7 +40,7 @@ test.describe("Zugriff", () => {
   })
 })
 
-test("XSS: Partner-Bemerkung mit HTML wird als Text angezeigt (Ansicht, REPLY-Dialog, Archiv)", async ({ page }) => {
+test("XSS: Empfänger-Bemerkung mit HTML wird als Text angezeigt (Ansicht, REPLY-Dialog, Archiv)", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   let dialogOpened = false
   page.on("dialog", (d) => {

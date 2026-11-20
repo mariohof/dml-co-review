@@ -57,7 +57,7 @@ describe("Regel „im Workflow benutzt\"", () => {
     expect(isDmrlUsedInWorkflow(data, DEMO_IDS.dmrlVehicle)).toBe(false)
   })
 
-  it("erkennt Originator (D0815) und Partner (C1234) der Demo als benutzt", () => {
+  it("erkennt Originator (D0815) und Empfänger (C1234) der Demo als benutzt", () => {
     expect(isOrganisationUsedInWorkflow(demo, DEMO_IDS.orgOriginator)).toBe(true)
     expect(isOrganisationUsedInWorkflow(demo, DEMO_IDS.orgPartner)).toBe(true)
   })
@@ -120,8 +120,8 @@ describe("Anlegen, Bearbeiten, Löschen", () => {
   const data = withExtraOrgs()
 
   it("legt eine Organisation an; Datenbestand bleibt gültig", () => {
-    const result = createOrganisation(demo, { code: "z9999", name: "Neue Partner GmbH" }, "org-z")
-    expect(result.ok && result.data.organisations.at(-1)).toEqual({ id: "org-z", code: "Z9999", name: "Neue Partner GmbH" })
+    const result = createOrganisation(demo, { code: "z9999", name: "Neue Empfänger GmbH" }, "org-z")
+    expect(result.ok && result.data.organisations.at(-1)).toEqual({ id: "org-z", code: "Z9999", name: "Neue Empfänger GmbH" })
     expect(result.ok && datasetSchema.safeParse(result.data).success).toBe(true)
   })
 

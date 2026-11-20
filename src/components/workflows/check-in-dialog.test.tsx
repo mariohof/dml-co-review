@@ -134,24 +134,24 @@ describe("Check-in in der DMRL-Ansicht", () => {
     renderAs(DEMO_IDS.editorBen)
     const dialog = await openAndUpload(csvOf(data))
     expect(await within(dialog).findByText(/Keine Änderungen/)).toBeInTheDocument()
-    expect(within(dialog).queryByText(/Abweichende Partnerantworten/)).toBeNull()
+    expect(within(dialog).queryByText(/Abweichende Empfängerantworten/)).toBeNull()
     expect(within(dialog).queryByLabelText("Antworten aus der Datei übernehmen")).toBeNull()
     fireEvent.click(within(dialog).getByRole("button", { name: "Abbrechen" }))
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
     expect(vehicle(stored()).lock).not.toBeNull()
   })
 
-  describe("Abweichende Partnerantworten (Refinement 2026-11-14)", () => {
+  describe("Abweichende Empfängerantworten (Refinement 2026-11-14)", () => {
     const tile = (summary: HTMLElement, label: string) => within(summary).getByText(label).nextSibling
 
     it("Abschnitt mit alt → neu, Häkchen standardmäßig aus, Zahlen schalten um; Übernahme mit Häkchen speichert die Antworten", async () => {
       renderAs(DEMO_IDS.editorBen)
       const csv = csvOf(data, (rows) => {
-        Object.assign(rows[0].fields, { answer: "n", answer_comment: "Partner lehnt ab" }) // Eintragstyp n bleibt
+        Object.assign(rows[0].fields, { answer: "n", answer_comment: "Empfänger lehnt ab" }) // Eintragstyp n bleibt
         return rows
       })
       const dialog = await openAndUpload(csv)
-      expect(await within(dialog).findByText("Abweichende Partnerantworten (1 Eintrag)")).toBeInTheDocument()
+      expect(await within(dialog).findByText("Abweichende Empfängerantworten (1 Eintrag)")).toBeInTheDocument()
       expect(within(dialog).getByText(/Nur Information — freigegeben wird ein Eintrag weiterhin nur durch einen REPLY/)).toBeInTheDocument()
       const checkbox = within(dialog).getByRole("checkbox", { name: "Antworten aus der Datei übernehmen" })
       expect(checkbox).not.toBeChecked()
@@ -160,7 +160,7 @@ describe("Check-in in der DMRL-Ansicht", () => {
       expect(tile(summary, "unverändert")).toHaveTextContent("10")
 
       fireEvent.click(within(dialog).getByRole("button", { name: /GTFDEMO-.*abgelehnt \(n\)/ }))
-      expect(within(dialog).getByText("Partner lehnt ab")).toBeInTheDocument()
+      expect(within(dialog).getByText("Empfänger lehnt ab")).toBeInTheDocument()
 
       fireEvent.click(checkbox)
       expect(tile(summary, "geändert")).toHaveTextContent("1")
@@ -168,7 +168,7 @@ describe("Check-in in der DMRL-Ansicht", () => {
 
       fireEvent.click(within(dialog).getByRole("button", { name: "Übernehmen" }))
       await waitFor(() => expect(vehicle(stored()).lock).toBeNull())
-      expect(stored().entries.find((e) => e.fields.answer_comment === "Partner lehnt ab")?.status).toBe("in_bearbeitung")
+      expect(stored().entries.find((e) => e.fields.answer_comment === "Empfänger lehnt ab")?.status).toBe("in_bearbeitung")
       expect(stored().history.at(-1)?.details).toBe("Check-in — 0 neu, 1 geändert, 9 unverändert; 1 Antworten aus der Datei übernommen")
     })
 

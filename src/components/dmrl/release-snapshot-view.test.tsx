@@ -66,7 +66,7 @@ function renderPage(data: Dataset, kind: "view" | "snapshot", snapshotId?: strin
 }
 
 describe("Freigabe im Kopfbereich", () => {
-  it("freigegeben: Nachweis mit REPLY, Partner und Bearbeiter, Link zum Freigabestand", async () => {
+  it("freigegeben: Nachweis mit REPLY, Empfänger und Bearbeiter, Link zum Freigabestand", async () => {
     const data = releasedDataset()
     renderPage(data, "view")
     expect(await screen.findByText(/Freigegeben am 12\.11\.2026 durch REPLY C1234 00002-2026 — übernommen von Anna Bearbeitung/)).toBeInTheDocument()
