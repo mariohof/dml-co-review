@@ -361,7 +361,7 @@ Keine neuen Bugs in diesem Feature.
 #### Edge Cases Status
 - [x] Bereits gespeicherte Verlaufseinträge behalten ihren alten Text (wie entschieden); neue Einträge mit Empfänger-Text
 - [x] Code-Bezeichner unverändert, gespeicherte Daten ohne Umbau ladbar
-- [ ] BUG-QA10-1: Demo-Anleitung `LIESMICH.txt` zitiert noch „Partner“
+- [x] BUG-QA10-1: Demo-Anleitung `LIESMICH.txt` zitiert noch „Partner“ → behoben (2026-11-21)
 
 #### Security Audit Results (Red Team)
 - [x] `answer_timestamp` aus einer präparierten CSV (z. B. `1999-01-01T00:00:00`) wird nie übernommen — weder mit noch ohne „Antworten aus der Datei übernehmen“ (E2E + Unit); damit kein vorgetäuschter Übernahme-Zeitpunkt
@@ -379,6 +379,7 @@ Keine neuen Bugs in diesem Feature.
   2. Expected: Text und zitierte Meldung wie in der Anwendung („REPLY stammt nicht vom Empfänger C1234“, „Antwort … des Empfängers“)
   3. Actual: Zeile 8 „Gültige Antwort (REPLY) des Partners C1234 …“, Zeile 23 zitiert die alte Meldung „REPLY stammt nicht vom Partner C1234“; ebenso die Vorlage in `generate-demo-files.py` (Zeilen 52, 130, 145)
 - **Priority:** Nice to have (Anwender-Dokument, keine Funktionsauswirkung)
+- **Status:** Behoben (2026-11-21) — Vorlage in `generate-demo-files.py` auf „Empfänger“ umgestellt (Texte, Kommentar, Konstante `EMPFAENGER_REMARKS`; das S1000D-Element `responsiblePartnerCompany` bleibt), `LIESMICH.txt` neu erzeugt; die Demo-XML-Dateien sind byte-gleich geblieben
 
 #### Summary
 - **Acceptance Criteria (Refinement):** 7/7 passed

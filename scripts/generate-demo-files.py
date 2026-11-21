@@ -24,7 +24,7 @@ REJECTIONS = {
     4: "Tech Name entspricht nicht der SNS – bitte prüfen",
     11: "Infocode nicht im beauftragten Leistungsumfang",
 }
-PARTNER_REMARKS = "Bitte abgelehnte Einträge überarbeiten."
+EMPFAENGER_REMARKS = "Bitte abgelehnte Einträge überarbeiten."
 
 NEW_DMLREF = """   <dmlref>
       <dmlc>
@@ -49,7 +49,7 @@ def answer_block(answer: str, comment: str) -> str:
 
 
 def build_reply(send: str, sendid: str = "C1234") -> str:
-    """Antwort des Partners auf SEND 00002: alle d und n genehmigt außer REJECTIONS."""
+    """Antwort des Empfängers auf SEND 00002: alle d und n genehmigt außer REJECTIONS."""
     text = send.replace('<dml direction="send"', '<dml direction="reply"', 1)
 
     # Kopf: Absender, Ausgabedatum, Verweis auf SEND 00002
@@ -73,7 +73,7 @@ def build_reply(send: str, sendid: str = "C1234") -> str:
         return entry.replace("   </dmentry>", block + "   </dmentry>")
 
     body = re.sub(r'<dmentry type="([ncd])">.*?</dmentry>', add_answer, body, flags=re.S)
-    body = body.replace("</dml>", f"   <remarks>{PARTNER_REMARKS}</remarks>\n</dml>", 1)
+    body = body.replace("</dml>", f"   <remarks>{EMPFAENGER_REMARKS}</remarks>\n</dml>", 1)
     return head + body
 
 
@@ -127,7 +127,7 @@ Alle Dateien beziehen sich auf die Demo-DMRL PHUNGUN (S1000D Issue 2.3) im Demo-
 (aktueller Stand: SEND 00002-2026, wartet auf REPLY). Erzeugt mit scripts/generate-demo-files.py.
 
 DML-PHUNGUN-C1234-C-2026-00002_001-00.XML
-    Gültige Antwort (REPLY) des Partners C1234 auf SEND 00002-2026.
+    Gültige Antwort (REPLY) des Empfängers C1234 auf SEND 00002-2026.
     Alle 11 Löschungen (d) und 19 neue Einträge (n) genehmigt, 2 Einträge abgelehnt mit Begründung.
     Ergebnis nach dem Import: 30 freigegeben, 2 zu überarbeiten, DMRL "in Bearbeitung".
 
@@ -142,7 +142,7 @@ TEST-3_Kein-gueltiges-XML.XML
 
 TEST-4_Falscher-Absender.XML
     Schemagültig, aber Absender C9999 statt C1234 → besteht die XSD-Prüfung,
-    scheitert am fachlichen Regelwerk ("REPLY stammt nicht vom Partner C1234").
+    scheitert am fachlichen Regelwerk ("REPLY stammt nicht vom Empfänger C1234").
 """
 
 
