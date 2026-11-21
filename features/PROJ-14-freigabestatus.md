@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die Freigabestand-CSV enthält die 28. Spalte `answer_timestamp`; das Freigabestand-XML nicht (kein S1000D-Element).
 
 > **Refinement 2026-11-18 (über `/refine PROJ-10`):** Neben dem REPLY kann auch ein Check-in Einträge *freigeben*: Neue Einträge ohne Eintragstyp werden als abgestimmter Bestand *freigegeben*. Sind danach alle Einträge *freigegeben*, wird die DMRL *freigegeben* mit Freigabe-Nachweis „Übernahme Bestand per Check-in“ (ohne REPLY) und Freigabestand. Umgesetzt 2026-11-18 zusammen mit PROJ-10 (`check-in.ts`, `release.ts`, Kopfbereich, Freigabestand-Seite, Archiv).
 

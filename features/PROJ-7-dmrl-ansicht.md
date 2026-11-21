@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die Eintragstabelle zeigt neben „Antwort“ und „Empfänger-Kommentar“ die Spalte **„Antwort übernommen“** (`answer_timestamp`, Anzeige „21.11.2026 14:30“, leer = —).
 
 ## Dependencies
 - Requires: PROJ-1 (Datenhaltung + Demo-Daten) — DMRL, Einträge, Archiv

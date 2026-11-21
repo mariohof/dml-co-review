@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die Check-out-CSV hat 28 Spalten: `answer_timestamp` steht direkt nach `answer_comment` (ISO 8601 Ortszeit `JJJJ-MM-TTThh:mm:ss`, leer wenn keine Antwort übernommen wurde). Formelschutz gilt auch für diese Spalte.
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung & Rollen) — angemeldeter Benutzer, Rolle

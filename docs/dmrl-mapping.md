@@ -32,6 +32,7 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 | year | /dml/dmentry/addresdm/issdate/@year | 4 Stellen, führende Nullen |
 | answer | /dml/dmentry/answer/@answer | y, n |
 | answer_comment | /dml/dmentry/answer/remarks | alphanumerisch |
+| answer_timestamp | — (nur CSV/Anwendung, nicht im XML) | ISO 8601 Ortszeit `JJJJ-MM-TTThh:mm:ss`, Zeitpunkt der Übernahme der Antwort (REPLY bzw. Check-in mit Antwortübernahme); *Refinement 2026-11-21* |
 | remarks | /dml/dmentry/remarks | alphanumerisch, eigene Bemerkung zum Eintrag (optional) |
 
 ### Ergänzungen aus den Beispieldateien

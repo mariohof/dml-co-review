@@ -2,7 +2,9 @@
 
 ## Status: In Progress
 **Created:** 2026-11-14
-**Last Updated:** 2026-11-16 (Refinement 3: Ausgabetyp aus dem Eintragstyp ableiten, sobald `issno/@type` leer ist)
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die konvertierte CSV hat 28 Spalten (wie Check-out); `answer_timestamp` ist leer, da eine Empfänger-XML keinen Übernahme-Zeitpunkt enthält.
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung) — nur angemeldete Benutzer

@@ -1,8 +1,10 @@
 # PROJ-13: REPLY-Import
 
-## Status: Approved
+## Status: Architected
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 — Feld `answer_timestamp`:** Jeder Eintrag erhält das zusätzliche Feld `answer_timestamp`: Zeitpunkt, zu dem eine Antwort (`answer`) in die DMRL übernommen wurde — gesetzt beim „Übernehmen“ eines REPLY für jeden Eintrag, dessen Antwort übernommen wird (`y` und `n`). Format ISO 8601 in Ortszeit ohne Zeitzone, z. B. `2026-11-21T14:30:05`. Das Feld ist die **28. CSV-Spalte** (direkt nach `answer_comment`) in Check-out, Export, Freigabestand-CSV und XML-Konvertierung, wird in der DMRL-Ansicht angezeigt, aber **nicht** ins XML geschrieben (kein S1000D-Element). Betrifft PROJ-1 (Datenmodell, Demo-Daten), PROJ-7 (Ansicht), PROJ-8 (Regelwerk), PROJ-9 (Check-out), PROJ-10 (Check-in), PROJ-14 (Freigabestand), PROJ-18 (Export), PROJ-20 (Konvertierung) und `docs/dmrl-mapping.md`. Geänderte Stellen sind mit *(Refinement 2026-11-21)* markiert.
 
 ## Dependencies
 - Requires: PROJ-12 (SEND-Export) — letzter SEND, Empfänger, Status *gesendet*
@@ -39,6 +41,7 @@ Bei Fehlern kann sofort eine andere Datei hochgeladen werden.
 | ohne Eintragstyp (nicht geprüft) | unverändert, inkl. Antwort aus früherem Zyklus |
 
 - Bei Einträgen mit Antwort werden `answer` und `answer_comment` aus dem REPLY gespeichert und ersetzen frühere Werte.
+- `answer_timestamp` wird bei diesen Einträgen auf den **Zeitpunkt der Übernahme** gesetzt (Klick auf „Übernehmen“, ISO 8601 Ortszeit, z. B. `2026-11-21T14:30:05`) und ersetzt einen früheren Wert; alle übernommenen Einträge eines REPLY erhalten denselben Zeitpunkt (= Zeitpunkt des Archivstands). Einträge ohne Eintragstyp behalten ihren bisherigen `answer_timestamp` *(Refinement 2026-11-21)*.
 - `issno`, DM-Ausgabetyp und Datum: Werte der Anwendung bleiben erhalten (PROJ-8 B — im REPLY optional; falls vorhanden identisch).
 - Alle übrigen Felder sind laut PROJ-8 G unverändert gegenüber dem SEND.
 
@@ -59,6 +62,7 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 - Als **Bearbeiter** möchte ich, dass fehlerhafte oder fremde REPLY-Dateien abgelehnt werden, damit keine falschen Freigaben entstehen.
 - Als **Bearbeiter** möchte ich, dass die DMRL automatisch freigegeben ist, sobald der Empfänger alle Einträge genehmigt hat.
 - Als **Product Owner** möchte ich mit der Beispieldatei 02 einen vollständigen REPLY vorführen.
+- Als **Bearbeiter** möchte ich je Eintrag sehen, wann die Antwort des Empfängers übernommen wurde (auch in der CSV), damit ich nachvollziehen kann, aus welchem Abstimmungszyklus eine Antwort stammt *(Refinement 2026-11-21)*.
 
 ## Out of Scope
 - Prüfregeln → PROJ-8, XSD → PROJ-11
@@ -69,6 +73,8 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 - Rückgängig machen eines übernommenen REPLY
 - Mehrere REPLYs auf denselben SEND (zweiter REPLY wird abgelehnt: Status nicht mehr *gesendet*)
 - Anzeige des Archivs → PROJ-15
+- `answer_timestamp` im XML (SEND, Export, Freigabestand) — S1000D kennt kein solches Element *(Refinement 2026-11-21)*
+- Zeitpunkt der Antwort beim Empfänger (z. B. aus `issdate` des REPLY) — erfasst wird nur der Zeitpunkt der Übernahme *(Refinement 2026-11-21)*
 
 ## Acceptance Criteria
 
@@ -99,6 +105,14 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 - [ ] Angenommen ein REPLY wurde übernommen, wenn dieselbe Datei erneut importiert werden soll, dann ist das nicht möglich (Status nicht *gesendet*; Duplikat laut PROJ-8)
 - [ ] Angenommen der REPLY wurde übernommen, wenn danach gesendet wird, dann verweist `dmlref` des neuen SEND auf diesen REPLY
 
+### Antwort-Zeitpunkt *(Refinement 2026-11-21)*
+- [ ] Angenommen der Demo-REPLY auf SEND 00002-2026 wird am 21.11.2026 um 14:30:05 übernommen, wenn die DMRL betrachtet wird, dann haben alle 32 geprüften Einträge (30 `y`, 2 `n`) `answer_timestamp` `2026-11-21T14:30:05`, und die Ansicht zeigt „21.11.2026 14:30“
+- [ ] Angenommen ein Eintrag hat keinen Eintragstyp und einen `answer_timestamp` aus einem früheren REPLY, wenn ein neuer REPLY übernommen wird, dann bleibt sein `answer_timestamp` unverändert
+- [ ] Angenommen ein Eintrag hat einen `answer_timestamp` aus einem früheren REPLY und wird erneut geprüft, wenn der neue REPLY übernommen wird, dann ersetzt der neue Zeitpunkt den alten
+- [ ] Angenommen der REPLY wird mit „Abbrechen“ verworfen oder abgelehnt, wenn die DMRL betrachtet wird, dann ist kein `answer_timestamp` verändert
+- [ ] Angenommen Antworten wurden übernommen, wenn die DMRL ausgecheckt oder exportiert wird, dann enthält die CSV die Spalte `answer_timestamp` (28. Spalte, nach `answer_comment`) mit dem Zeitpunkt im Format `JJJJ-MM-TTThh:mm:ss`
+- [ ] Angenommen Antworten wurden übernommen, wenn gesendet oder als XML exportiert wird, dann enthält das XML keinen `answer_timestamp` und besteht die XSD-Prüfung
+
 ### Demo
 - [ ] Angenommen der Demo-Datenbestand ist geladen (PHUNGUN nach SEND 00002-2026), wenn Beispieldatei 02 (REPLY auf SEND 00001-2026) importiert wird, dann wird sie abgelehnt mit „REPLY bezieht sich nicht auf den letzten SEND 00002-2026" bzw. „REPLY wurde bereits importiert"
 - [ ] Angenommen eine Demo-REPLY-Datei auf SEND 00002-2026 mit einigen `answer="n"` liegt vor, wenn sie importiert wird, dann sind die `y`-Einträge *freigegeben*, die `n`-Einträge *zu überarbeiten* und die DMRL *in Bearbeitung*
@@ -111,6 +125,7 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 - **Alle Einträge `n`:** DMRL *in Bearbeitung*, alle geprüften Einträge *zu überarbeiten*.
 - **Admin zieht SEND zurück, während der Bearbeiter die Zusammenfassung sieht:** „Übernehmen" schlägt fehl mit „Die DMRL wartet nicht mehr auf eine Antwort".
 - **Speicher voll beim Archivieren:** Übernahme schlägt fehl, nichts geändert (PROJ-1).
+- **Bestehende Daten ohne `answer_timestamp`** *(Refinement 2026-11-21)*: Beim Laden erhalten alle Einträge ein leeres `answer_timestamp`; nichts wird nachträglich berechnet. Demo-Daten: Einträge mit Antwort aus dem archivierten REPLY C1234 00001-2026 erhalten dessen Archiv-Zeitpunkt.
 - **Demo-Stand PHUNGUN:** aktueller Stand ist SEND 00002-2026; ein passender REPLY liegt nicht als Beispieldatei vor (siehe Open Questions).
 
 ## Technical Requirements (optional)
@@ -132,6 +147,10 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 | Antworten nur bei geprüften Einträgen ersetzen; ungeprüfte behalten frühere Antwort | Nachweis früherer Freigaben bleibt erhalten | 2026-11-12 |
 | Zusammenfassung mit abgelehnten Einträgen und künftigem DMRL-Status vor Übernahme | Bewusste Übernahme durch den Bearbeiter | 2026-11-12 |
 | Kein manueller Freigabe-Schritt, kein Status *freigabebereit* | Einfacher Ablauf, eindeutiger Status | 2026-11-12 |
+| Neues Eintragsfeld `answer_timestamp` = Zeitpunkt der Übernahme einer Antwort (REPLY: `y` und `n`) | Vorgabe Product Owner; Nachvollziehbarkeit je Eintrag | 2026-11-21 |
+| `answer_timestamp` als 28. CSV-Spalte und in der Ansicht, nicht im XML | Sichtbar in Excel; XML bleibt S1000D-/XSD-konform (Variante a) | 2026-11-21 |
+| Format ISO 8601 Ortszeit ohne Zeitzone (`2026-11-21T14:30:05`); Anzeige „21.11.2026 14:30“ | Eindeutig, sortierbar in Excel, für Anwender ohne Zeitverschiebung (Variante a) | 2026-11-21 |
+| Bestehende Einträge erhalten leeres `answer_timestamp`; Demo-Daten aus Archiv-Zeitpunkt des REPLY | Keine geratenen Werte; Demo vollständig | 2026-11-21 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |

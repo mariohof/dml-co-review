@@ -24,10 +24,10 @@
 | PROJ-7 | DMRL-Ansicht — Anzeige der DMRL mit Einträgen und Eintragsstatus · P0 · Deps: PROJ-6, PROJ-17 | Approved | [PROJ-7](PROJ-7-dmrl-ansicht.md) | 2026-11-11 |
 | PROJ-8 | Fachliches Regelwerk — gemeinsame Prüfregeln für Check-in und REPLY · P0 · Deps: PROJ-7 | Approved | [PROJ-8](PROJ-8-fachliches-regelwerk.md) | 2026-11-11 |
 | PROJ-9 | Check-out CSV — Export zur externen Bearbeitung, sperrt die DMRL · P0 · Deps: PROJ-7 | Approved | [PROJ-9](PROJ-9-check-out-csv.md) | 2026-11-11 |
-| PROJ-10 | Check-in CSV — Import mit Regelprüfung, Übernahme, Entsperren · P0 · Deps: PROJ-8, PROJ-9 | Approved | [PROJ-10](PROJ-10-check-in-csv.md) | 2026-11-11 |
+| PROJ-10 | Check-in CSV — Import mit Regelprüfung, Übernahme, Entsperren · P0 · Deps: PROJ-8, PROJ-9 | Architected | [PROJ-10](PROJ-10-check-in-csv.md) | 2026-11-11 |
 | PROJ-11 | XSD-Validierung — Prüfung gegen dml.xsd (2.3/4.2/5.0) via xmllint · P0 · Deps: PROJ-5 | Approved | [PROJ-11](PROJ-11-xsd-validierung.md) | 2026-11-11 |
 | PROJ-12 | SEND-Export — S1000D-DMRL-XML mit Versionsindex NNNNN-JJJJ · P0 · Deps: PROJ-7, PROJ-11 | In Progress | [PROJ-12](PROJ-12-send-export.md) | 2026-11-11 |
-| PROJ-13 | REPLY-Import — Empfänger-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | Approved | [PROJ-13](PROJ-13-reply-import.md) | 2026-11-11 |
+| PROJ-13 | REPLY-Import — Empfänger-XML prüfen, Einträge freigegeben/zu überarbeiten · P0 · Deps: PROJ-8, PROJ-11, PROJ-12 | Architected | [PROJ-13](PROJ-13-reply-import.md) | 2026-11-11 |
 | PROJ-14 | Freigabestatus DMRL — Statusmodell, Freigabe-Nachweis, Freigabestand (CSV/XML) · P0 · Deps: PROJ-10, PROJ-13, PROJ-18 | Approved | [PROJ-14](PROJ-14-freigabestatus.md) | 2026-11-11 |
 | PROJ-15 | Archiv SEND/REPLY — alle Austauschstände einsehen und herunterladen · P0 · Deps: PROJ-12, PROJ-13 | Approved | [PROJ-15](PROJ-15-archiv.md) | 2026-11-11 |
 | PROJ-16 | Dashboard — Übersicht aller DMRLs und ihres Status · P1 · Deps: PROJ-14 | Approved | [PROJ-16](PROJ-16-dashboard.md) | 2026-11-11 |

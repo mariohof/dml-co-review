@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-11
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Eintrag erhält das Feld `answer_timestamp` (Text, ISO 8601 Ortszeit `JJJJ-MM-TTThh:mm:ss` oder leer). Beim Laden bestehender Daten wird es leer ergänzt (keine neue Formatversion nötig, kein Datenverlust). Demo-Daten: Einträge mit Antwort erhalten den Archiv-Zeitpunkt des REPLY C1234 00001-2026.
 
 > **Refinement 2026-11-18 (über `/refine PROJ-10`):** Freigabe-Nachweis und Freigabestand können statt aus einem REPLY auch aus einem Check-in stammen (Bestand übernehmen): Herkunft REPLY oder Check-in; der Verweis auf den REPLY-Archivstand ist dann leer. Gültigkeitsprüfung beim Laden entsprechend anpassen. Umgesetzt 2026-11-18 (`schema.ts`: `replyArchiveId` nullable, keine neue Formatversion).
 

@@ -1,8 +1,15 @@
 # PROJ-10: Check-in CSV
 
-## Status: Approved
+## Status: Architected
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die CSV hat 28 Spalten; neu ist `answer_timestamp` (nach `answer_comment`). Der Wert in der Datei wird **nie** übernommen; Änderungen daran sind kein Fehler und werden ohne Meldung ignoriert. Werden abweichende Empfängerantworten übernommen („Antworten aus der Datei übernehmen“), erhält jeder betroffene Eintrag als `answer_timestamp` den **Zeitpunkt des Check-ins**; ist die Antwort danach leer, ist auch `answer_timestamp` leer. Ohne Übernahme bleibt `answer_timestamp` unverändert. Neue Einträge haben `answer_timestamp` leer, außer bei Übernahme mit Antwort. Eine CSV mit 27 Spalten (alter Stand, ohne `answer_timestamp`) wird weiterhin angenommen; die fehlende Spalte gilt als unverändert.
+> - [ ] Angenommen „Antworten aus der Datei übernehmen“ ist angekreuzt und ein Eintrag erhält `answer` `y`, wenn am 21.11.2026 um 15:00:00 eingecheckt wird, dann hat er `answer_timestamp` `2026-11-21T15:00:00`
+> - [ ] Angenommen eine Antwort wird per Übernahme entfernt (Datei leer), wenn eingecheckt wird, dann ist `answer_timestamp` leer
+> - [ ] Angenommen „Antworten aus der Datei übernehmen“ ist nicht angekreuzt, wenn eingecheckt wird, dann bleibt `answer_timestamp` aller Einträge unverändert
+> - [ ] Angenommen in der Datei wurde nur `answer_timestamp` geändert, wenn eingecheckt wird, dann gibt es keinen Fehler, keine abweichende Antwort und der gespeicherte Wert bleibt
+> - [ ] Angenommen eine CSV mit 27 Spalten (ohne `answer_timestamp`) wird eingecheckt, wenn sie sonst korrekt ist, dann wird sie angenommen
 
 > **Refinement 2026-11-18 — Bestand übernehmen:** Neue Einträge brauchen nicht mehr den Eintragstyp `n` (PROJ-8 Regel F, Zeile „DMC neu und Eintragstyp ≠ n“ entfällt). Anlass: Eine DMRL aus einem laufenden Projekt hat bereits einen Bearbeitungsstand erreicht, der übernommen werden soll. Neue Einträge mit `n`, `c` oder `d` werden *in Bearbeitung*; neue Einträge **ohne** Eintragstyp gelten als bereits abgestimmter Bestand und werden *freigegeben*. Sind danach alle Einträge *freigegeben*, wird die DMRL *freigegeben* — mit Freigabe-Nachweis „Übernahme Bestand per Check-in“ und Freigabestand. Betrifft PROJ-8 (Regel F), PROJ-14 (Statusmodell, Nachweis, Freigabestand), PROJ-1 (Datenmodell) und PRD (Kernablauf Freigabe). Geänderte Stellen sind mit *(Refinement 2026-11-18)* markiert. Umgesetzt 2026-11-18 (`/frontend proj-10`).
 

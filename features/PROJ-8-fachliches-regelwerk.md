@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-18
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Neues Feld `answer_timestamp` (28. CSV-Spalte). Es wird **nicht** geprüft: beim Check-in ignoriert (kein Fehler, keine abweichende Antwort in Regel K), beim REPLY nicht vorhanden und von Gruppe G (Feldvergleich mit dem SEND) ausgenommen. Eine CSV mit 27 Spalten ohne `answer_timestamp` ist in Gruppe S weiterhin gültig.
 
 > **Refinement 2026-11-18 (über `/refine PROJ-10`):** Regel F — die Zeile „DMC neu und Eintragstyp ≠ `n` → Fehler“ entfällt. Neue Einträge dürfen `n`, `c`, `d` oder keinen Eintragstyp haben (Bestand aus laufendem Projekt übernehmen); neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* (Details PROJ-10). Umgesetzt 2026-11-18 zusammen mit PROJ-10 (`checkin.ts`: F1 entfernt, `isReleasedOnTakeover`).
 

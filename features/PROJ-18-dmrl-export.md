@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-13
+**Last Updated:** 2026-11-21
+
+> **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Der CSV-Export enthält die 28. Spalte `answer_timestamp`; der XML-Export nicht (kein S1000D-Element, XSD-konform).
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Aktion „Exportieren"
