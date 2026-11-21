@@ -1,6 +1,6 @@
 # PROJ-12: SEND-Export
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-20
 
@@ -339,6 +339,52 @@ Keine neuen Bugs in diesem Feature.
 - **Bugs Found:** 0 total (0 critical, 0 high, 0 medium, 0 low)
 - **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
 - **Production Ready:** YES (keine Critical/High-Bugs)
+
+### QA-Lauf 10 — Refinement 2026-11-20 (Empfänger statt Partner, Bezug SEND ↔ REPLY)
+
+**Tested:** 2026-11-21 · **Tester:** QA Engineer (AI) · **App:** http://localhost:3000 (`npm run dev`) · **Browser:** Chrome (Playwright); Firefox/Safari nicht geprüft (Firefox und WebKit nicht installiert, wie bisher)
+
+**Automatisiert**
+- **Vitest:** 625 bestanden, 1 übersprungen (BUG-QA8-1) · **Lint:** 0 Fehler · **Startskript:** Tests OK
+- **Playwright Chrome:** 138 von 139 im Gesamtlauf; der eine Fehlschlag (`PROJ-3-to-6-17-verwaltung.spec.ts` „Anlegen: neuer Benutzer …“) trat nur unter paralleler Last auf, dreifach einzeln wiederholt 51/51 grün → keine Regression
+- **Neu:** `tests/QA-proj10-12-13-refinement.spec.ts` (14 Tests, alle grün, echte XSD-Prüfung über die Serverfunktion)
+
+#### Acceptance Criteria Status
+- [x] Dialog: Feld „Empfänger“ (Auswahl, Pflichtfehler „Bitte einen Empfänger auswählen.“), Vorbelegung mit letztem Empfänger, Hinweis „Abweichend vom letzten Empfänger C1234 …“ bei dritter Organisation (E2E)
+- [x] Keine sichtbaren „Partner“-Texte in DMRL-Ansicht, REPLY-Dialog (vor/nach Übernahme), Archiv, Zurückziehen-Dialog, Organisations- und DMRL-Verwaltung — außer dem Firmennamen „Partner Systemtechnik GmbH“ (E2E)
+- [x] Bezug SEND ↔ REPLY: `dmlref` stimmt mit den archivierten Sender-Daten überein → bestanden (E2E, bestehende Tests)
+- [x] Abweichung in **jedem** der 5 Felder (modelic, sendid, dmltype, diyear, seqnum) → „REPLY bezieht sich nicht auf den letzten SEND 00002-2026.“, keine Übernahme, DMRL bleibt *gesendet* (E2E 5×, Unit 5×)
+- [x] Eigene seqnum des REPLY (`00007`) ist unabhängig: Zusammenfassung „REPLY C1234 00007-2026 auf SEND 00002-2026“, übernommen (E2E)
+- [x] REPLY mit eigenem Versionsindex `00007-2026` archiviert, dem SEND zugeordnet (`sendArchiveId`), `dmlref` = `dmlc` des SEND, im Archiv sichtbar (E2E)
+- [x] Bestehende Kriterien (Voraussetzungen, Dialog, XML, Wirkung, Zurückziehen): Regression grün (`PROJ-12-send.spec.ts`, Unit)
+
+#### Edge Cases Status
+- [x] Bereits gespeicherte Verlaufseinträge behalten ihren alten Text (wie entschieden); neue Einträge mit Empfänger-Text
+- [x] Code-Bezeichner unverändert, gespeicherte Daten ohne Umbau ladbar
+- [ ] BUG-QA10-1: Demo-Anleitung `LIESMICH.txt` zitiert noch „Partner“
+
+#### Security Audit Results (Red Team)
+- [x] `answer_timestamp` aus einer präparierten CSV (z. B. `1999-01-01T00:00:00`) wird nie übernommen — weder mit noch ohne „Antworten aus der Datei übernehmen“ (E2E + Unit); damit kein vorgetäuschter Übernahme-Zeitpunkt
+- [x] Ausgabe in Ansicht/Detailfenster über React-Text (`<time>`), kein `dangerouslySetInnerHTML`; unbekannte Formate werden unverändert als Text angezeigt (Code-Review + Unit)
+- [x] CSV-Formelschutz (BUG-QA2-1) gilt auch für die neue Spalte (gemeinsamer `csv-writer`)
+- [x] Präparierter `dmlref` (jedes der 5 Felder einzeln) → REPLY abgelehnt, nichts übernommen (E2E)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Daten sind über den Browser-Speicher manipulierbar
+
+#### Bugs Found
+##### BUG-QA10-1: Demo-Anleitung zitiert noch „Partner“
+- **Severity:** Low
+- **Feature:** PROJ-12 (Umbenennung „Partner“ → „Empfänger“)
+- **Steps to Reproduce:**
+  1. `public/demo-dateien/LIESMICH.txt` öffnen (wird von `scripts/generate-demo-files.py` erzeugt)
+  2. Expected: Text und zitierte Meldung wie in der Anwendung („REPLY stammt nicht vom Empfänger C1234“, „Antwort … des Empfängers“)
+  3. Actual: Zeile 8 „Gültige Antwort (REPLY) des Partners C1234 …“, Zeile 23 zitiert die alte Meldung „REPLY stammt nicht vom Partner C1234“; ebenso die Vorlage in `generate-demo-files.py` (Zeilen 52, 130, 145)
+- **Priority:** Nice to have (Anwender-Dokument, keine Funktionsauswirkung)
+
+#### Summary
+- **Acceptance Criteria (Refinement):** 7/7 passed
+- **Bugs Found:** 1 (0 critical, 0 high, 0 medium, 1 low)
+- **Security:** Pass
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

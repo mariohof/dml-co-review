@@ -1,6 +1,6 @@
 # PROJ-13: REPLY-Import
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-21
 
@@ -318,6 +318,47 @@ Keine neuen Bugs in diesem Feature.
 - Tests: `npm test` 483/483 grün (UTF-16-QA-Test aktiviert); E2E vollständig 98/98 grün (Chromium, neu: `tests/BUG-QA1-1-utf16.spec.ts`, 4 Tests). Firefox/Safari nicht installiert, nicht getestet.
 - Während des Tests: zwei Fehler in den Testdaten korrigiert (Gedankenstrich „–“ nicht in ISO-8859-1 darstellbar; geänderter techname verletzt korrekt die Regel REPLY ↔ SEND) — kein Fehler der App.
 - **Neue Bugs:** keine
+- **Production Ready:** YES
+
+### QA-Lauf 10 — Refinement 2026-11-21 (`answer_timestamp`)
+
+**Tested:** 2026-11-21 · **Tester:** QA Engineer (AI) · **App:** http://localhost:3000 (`npm run dev`) · **Browser:** Chrome (Playwright); Firefox/Safari nicht geprüft (Firefox und WebKit nicht installiert, wie bisher)
+
+**Automatisiert**
+- **Vitest:** 625 bestanden, 1 übersprungen (BUG-QA8-1) · **Lint:** 0 Fehler · **Startskript:** Tests OK
+- **Playwright Chrome:** 138 von 139 im Gesamtlauf; der eine Fehlschlag (`PROJ-3-to-6-17-verwaltung.spec.ts` „Anlegen: neuer Benutzer …“) trat nur unter paralleler Last auf, dreifach einzeln wiederholt 51/51 grün → keine Regression
+- **Neu:** `tests/QA-proj10-12-13-refinement.spec.ts` (14 Tests, alle grün, echte XSD-Prüfung über die Serverfunktion)
+
+#### Acceptance Criteria Status (Antwort-Zeitpunkt)
+- [x] Demo-REPLY übernommen → alle 32 geprüften Einträge (30 `y`, 2 `n`) mit demselben Zeitpunkt `JJJJ-MM-TTThh:mm:ss` in Ortszeit (± 2 min um den Klick), Anzeige „TT.MM.JJJJ hh:mm“ in der Spalte „Antwort übernommen“ (E2E, Unit)
+- [x] Eintrag ohne Eintragstyp behält seinen früheren Zeitpunkt (Unit)
+- [x] Erneut geprüfter Eintrag: neuer Zeitpunkt ersetzt den alten (Unit; E2E nicht sinnvoll, erfordert vollständigen zweiten Zyklus)
+- [x] „Abbrechen“ und abgelehnter REPLY verändern keinen Zeitpunkt (E2E, Unit)
+- [x] CSV-Export und Check-out-CSV: 28 Spalten, `answer_timestamp` direkt nach `answer_comment`, Wert = Zeitpunkt der Übernahme (E2E)
+- [x] XML-Export enthält weder `answer_timestamp` noch den Zeitpunkt; XSD-Prüfung bestanden (E2E; Unit für 2.3/4.2/5.0)
+
+#### Edge Cases Status
+- [x] Gespeicherte Daten ohne `answer_timestamp` (Einträge, Sperr-Kopie, Freigabestände) → gültig, Feld leer (Unit; gemeinsames `entrySnapshotSchema`)
+- [x] Freigabestand nach vollständig genehmigtem REPLY übernimmt den Zeitpunkt (Code-Review: Freigabestand aus `outcome.entries`)
+- [x] Archivierte Dateien (fileView) ohne Spalte „Antwort übernommen“ (Komponententest)
+- [x] Detailfenster zeigt „Antwort übernommen“ formatiert (Komponententest)
+- [x] 375 px: Ansicht mit neuer Spalte ohne waagerechtes Scrollen der Seite (E2E; bestehende Responsive-Tests 375/768/1440 grün)
+- [x] Regression REPLY (XSD, Regelwerk, Testdateien 1–4, Freigabe, Archiv byte-genau): grün
+
+#### Security Audit Results (Red Team)
+- [x] `answer_timestamp` aus einer präparierten CSV (z. B. `1999-01-01T00:00:00`) wird nie übernommen — weder mit noch ohne „Antworten aus der Datei übernehmen“ (E2E + Unit); damit kein vorgetäuschter Übernahme-Zeitpunkt
+- [x] Ausgabe in Ansicht/Detailfenster über React-Text (`<time>`), kein `dangerouslySetInnerHTML`; unbekannte Formate werden unverändert als Text angezeigt (Code-Review + Unit)
+- [x] CSV-Formelschutz (BUG-QA2-1) gilt auch für die neue Spalte (gemeinsamer `csv-writer`)
+- [x] Präparierter `dmlref` (jedes der 5 Felder einzeln) → REPLY abgelehnt, nichts übernommen (E2E)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Daten sind über den Browser-Speicher manipulierbar
+
+#### Bugs Found
+Keine neuen Bugs in diesem Feature.
+
+#### Summary
+- **Acceptance Criteria (Refinement):** 6/6 passed
+- **Bugs Found:** 0
+- **Security:** Pass
 - **Production Ready:** YES
 
 ## Deployment

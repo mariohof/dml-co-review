@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-21
 
@@ -827,6 +827,49 @@ Keine neuen Bugs in diesem Feature.
 - **BUG-QA7-1:** bestätigt behoben
 - **Offene Bugs:** BUG-QA8-1 (Low), BUG-QA7-2 (Low, Spec)
 - **Neue Bugs:** keine
+- **Production Ready:** YES
+
+### QA-Lauf 10 — Refinement 2026-11-21 (`answer_timestamp`, über PROJ-13)
+
+**Tested:** 2026-11-21 · **Tester:** QA Engineer (AI) · **App:** http://localhost:3000 (`npm run dev`) · **Browser:** Chrome (Playwright); Firefox/Safari nicht geprüft (Firefox und WebKit nicht installiert, wie bisher)
+
+**Automatisiert**
+- **Vitest:** 625 bestanden, 1 übersprungen (BUG-QA8-1) · **Lint:** 0 Fehler · **Startskript:** Tests OK
+- **Playwright Chrome:** 138 von 139 im Gesamtlauf; der eine Fehlschlag (`PROJ-3-to-6-17-verwaltung.spec.ts` „Anlegen: neuer Benutzer …“) trat nur unter paralleler Last auf, dreifach einzeln wiederholt 51/51 grün → keine Regression
+- **Neu:** `tests/QA-proj10-12-13-refinement.spec.ts` (14 Tests, alle grün, echte XSD-Prüfung über die Serverfunktion)
+
+#### Acceptance Criteria Status
+- [x] „Antworten aus der Datei übernehmen“ + Antwort `y` → Zeitpunkt des Check-ins (± 2 min), Wert aus der Datei (`1999-01-01T00:00:00`) ignoriert, Anzeige in der Ansicht (E2E, Unit)
+- [x] Antwort per Übernahme entfernt → `answer_timestamp` leer (Unit)
+- [x] Ohne Übernahme → `answer_timestamp` aller Einträge unverändert (Unit)
+- [x] Nur `answer_timestamp` in der Datei geändert → kein Fehler, keine abweichende Antwort, „0 neu, 0 geändert, 10 unverändert“, Wert bleibt (E2E, Unit)
+- [x] CSV mit 27 Spalten (ohne `answer_timestamp`) wird angenommen, Sperre aufgehoben (E2E, Unit)
+
+#### Edge Cases Status
+- [x] Kopfzeilen-Grenzfälle: 28er-Kopf korrekt / 27er-Kopf korrekt → ok; 27er-Kopf vertauscht → „Spalten in falscher Reihenfolge“; `answer_timestamp` am Ende → Reihenfolgefehler; fehlende Spalte → „Spalte ‚remarks' fehlt.“; 28er-Kopf mit 27 Zellen → „Zeile hat 27 statt 28 Spalten.“ (Unit-Probe)
+- [x] Regression Check-in (Antwortübernahme, Bestand übernehmen, Ausgabetyp, Dialogbreite, XSS): grün; `PROJ-10-checkin-antworten.spec.ts` auf 28 Spalten angepasst
+
+#### Security Audit Results (Red Team)
+- [x] `answer_timestamp` aus einer präparierten CSV (z. B. `1999-01-01T00:00:00`) wird nie übernommen — weder mit noch ohne „Antworten aus der Datei übernehmen“ (E2E + Unit); damit kein vorgetäuschter Übernahme-Zeitpunkt
+- [x] Ausgabe in Ansicht/Detailfenster über React-Text (`<time>`), kein `dangerouslySetInnerHTML`; unbekannte Formate werden unverändert als Text angezeigt (Code-Review + Unit)
+- [x] CSV-Formelschutz (BUG-QA2-1) gilt auch für die neue Spalte (gemeinsamer `csv-writer`)
+- [x] Präparierter `dmlref` (jedes der 5 Felder einzeln) → REPLY abgelehnt, nichts übernommen (E2E)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend — Daten sind über den Browser-Speicher manipulierbar
+
+#### Bugs Found
+##### BUG-QA10-2: Typprüfung (`tsc --noEmit`) schlägt in einer QA-Testdatei fehl
+- **Severity:** Low
+- **Feature:** PROJ-10 (Testcode, vorbestehend seit `dddb63e`)
+- **Steps to Reproduce:**
+  1. `npx tsc --noEmit`
+  2. Expected: keine Fehler
+  3. Actual: `src/lib/workflows/qa-proj10-ausgabetyp.test.ts(197,46): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Uint8Array<ArrayBufferLike>'` — Vitest und `npm run build` laufen trotzdem (Testdateien werden beim Build nicht geprüft)
+- **Priority:** Nice to have
+
+#### Summary
+- **Acceptance Criteria (Refinement):** 5/5 passed
+- **Bugs Found:** 1 neu (0 critical, 0 high, 0 medium, 1 low); weiterhin offen: BUG-QA8-1 (Low), BUG-QA7-2 (Low, Spec)
+- **Security:** Pass
 - **Production Ready:** YES
 
 ## Deployment
