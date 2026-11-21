@@ -194,7 +194,7 @@ describe.skipIf(!hasXmllint)("Schema — Ausgabetyp status im SEND", () => {
   it.each(S1000D_ISSUES)("Issue %s: SEND mit c + status ist schemagültig", async (issue) => {
     const xml = writeDml({ header, entries }, issue, { answers: false })
     expect(xml).toMatch(/type="status"|issueType="status"/)
-    const result = await validateWithXmllint(xml, issue)
+    const result = await validateWithXmllint(new TextEncoder().encode(xml), issue)
     expect(result).toMatchObject({ state: "gueltig" })
   })
 })

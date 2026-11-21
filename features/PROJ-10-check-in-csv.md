@@ -865,6 +865,7 @@ Keine neuen Bugs in diesem Feature.
   2. Expected: keine Fehler
   3. Actual: `src/lib/workflows/qa-proj10-ausgabetyp.test.ts(197,46): error TS2345: Argument of type 'string' is not assignable to parameter of type 'Uint8Array<ArrayBufferLike>'` — Vitest und `npm run build` laufen trotzdem (Testdateien werden beim Build nicht geprüft)
 - **Priority:** Nice to have
+- **Status:** Behoben (2026-11-21) — XML wird wie in den übrigen Tests per `new TextEncoder().encode(xml)` übergeben; `tsc --noEmit` fehlerfrei
 
 #### Summary
 - **Acceptance Criteria (Refinement):** 5/5 passed
