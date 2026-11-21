@@ -110,5 +110,6 @@ export const FIELD_LABEL: Record<keyof EntryFields, string> = {
   year: "Jahr",
   answer: "Antwort des Empfängers",
   answer_comment: "Kommentar des Empfängers",
+  answer_timestamp: "Antwort übernommen",
   remarks: "Bemerkung",
 }

@@ -35,18 +35,19 @@ export const ENTRY_FIELD_NAMES = [
   "year",
   "answer",
   "answer_comment",
+  /** Zeitpunkt der Übernahme der Antwort (ISO 8601 Ortszeit, nur CSV/Anwendung, nicht im XML) — PROJ-13 Refinement 2026-11-21 */
+  "answer_timestamp",
   "remarks",
 ] as const
 
 export type EntryFieldName = (typeof ENTRY_FIELD_NAMES)[number]
 
 // Alle Felder als Text, damit führende Nullen erhalten bleiben. Fachliche Prüfung: PROJ-8.
-export const entryFieldsSchema = z.object(
-  Object.fromEntries(ENTRY_FIELD_NAMES.map((name) => [name, z.string()])) as Record<
-    EntryFieldName,
-    z.ZodString
-  >
-)
+export const entryFieldsSchema = z.object({
+  ...(Object.fromEntries(ENTRY_FIELD_NAMES.map((name) => [name, z.string()])) as Record<EntryFieldName, z.ZodString>),
+  // Bestehende Daten ohne answer_timestamp bleiben gültig und erhalten ein leeres Feld (PROJ-13, Refinement 2026-11-21)
+  answer_timestamp: z.string().default(""),
+})
 export type EntryFields = z.infer<typeof entryFieldsSchema>
 
 export function emptyEntryFields(): EntryFields {

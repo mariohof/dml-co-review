@@ -27,6 +27,8 @@ export interface ComparedEntry {
 /** Antwortfelder — werden getrennt von den übrigen Feldern abgeglichen (Refinement 2026-11-14) */
 export const ANSWER_FIELDS = ["answer", "answer_comment"] as const satisfies readonly (keyof EntryFields)[]
 const isAnswerField = (name: keyof EntryFields) => (ANSWER_FIELDS as readonly string[]).includes(name)
+/** answer_timestamp aus der Datei wird nie übernommen und nie verglichen (PROJ-10, Refinement 2026-11-21) */
+const isIgnoredField = (name: keyof EntryFields) => name === "answer_timestamp"
 
 export interface Comparison {
   entries: ComparedEntry[]
@@ -45,7 +47,7 @@ export function compareWithSnapshot(snapshot: EntrySnapshot[], candidates: Candi
     if (!previous) {
       return { candidate, classification: "neu", previous: null, changedFields: [], answerChanged: ANSWER_FIELDS.some((f) => candidate.fields[f] !== "") }
     }
-    const changedFields = ENTRY_FIELD_NAMES.filter((name) => !isAnswerField(name) && candidate.fields[name] !== previous.fields[name])
+    const changedFields = ENTRY_FIELD_NAMES.filter((name) => !isAnswerField(name) && !isIgnoredField(name) && candidate.fields[name] !== previous.fields[name])
     const answerChanged = ANSWER_FIELDS.some((f) => candidate.fields[f] !== previous.fields[f])
     return { candidate, classification: changedFields.length > 0 ? "geaendert" : "unveraendert", previous, changedFields, answerChanged }
   })
@@ -54,7 +56,7 @@ export function compareWithSnapshot(snapshot: EntrySnapshot[], candidates: Candi
 }
 
 /** Fachliche Felder = alle außer Eintragstyp und Antwortfeldern */
-const NON_BUSINESS: (keyof EntryFields)[] = ["dmentryType", "answer", "answer_comment"]
+const NON_BUSINESS: (keyof EntryFields)[] = ["dmentryType", "answer", "answer_comment", "answer_timestamp"]
 
 export const IN_PROGRESS_WITHOUT_TYPE = "Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden."
 

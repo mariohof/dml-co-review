@@ -48,6 +48,7 @@ import {
   isFilterActive,
   type EntryFilter,
 } from "@/lib/dmrl/entries";
+import { formatAnswerTimestamp } from "@/lib/dmrl/answer-timestamp";
 import { cn } from "@/lib/utils";
 import { EntryDetailSheet } from "./entry-detail-sheet";
 
@@ -228,6 +229,9 @@ export function EntryTable({
                     <TableHead>Status</TableHead>
                   )}
                   <TableHead>Empfänger-Kommentar</TableHead>
+                  {!fileView && (
+                    <TableHead className="whitespace-nowrap">Antwort übernommen</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -323,6 +327,17 @@ export function EntryTable({
                           {entry.fields.answer_comment}
                         </span>
                       </TableCell>
+                      {!fileView && (
+                        <TableCell className="whitespace-nowrap tabular-nums">
+                          {entry.fields.answer_timestamp ? (
+                            <time dateTime={entry.fields.answer_timestamp}>
+                              {formatAnswerTimestamp(entry.fields.answer_timestamp)}
+                            </time>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

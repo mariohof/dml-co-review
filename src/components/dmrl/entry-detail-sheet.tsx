@@ -4,13 +4,14 @@ import { DmDeletedBadge, EntryStatusBadge, EntryTypeLabel } from "@/components/d
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { ENTRY_FIELD_NAMES, type EntrySnapshot } from "@/lib/data/schema"
+import { formatAnswerTimestamp } from "@/lib/dmrl/answer-timestamp"
 import { FIELD_LABEL, formatDmc, isDmDeleted } from "@/lib/dmrl/entries"
 
 const GROUPS: { title: string; fields: (typeof ENTRY_FIELD_NAMES)[number][] }[] = [
   { title: "Data Module Code", fields: ["modelic", "sdc", "chapnum", "section", "subsect", "subject", "discode", "discodev", "incode", "incodev", "itemloc"] },
   { title: "Titel & Sprache", fields: ["techname", "infoname", "language", "country"] },
   { title: "Ausgabe des Datenmoduls", fields: ["issno", "type", "day", "month", "year"] },
-  { title: "Abstimmung", fields: ["dmentryType", "security", "rpc", "rpcname", "answer", "answer_comment", "remarks"] },
+  { title: "Abstimmung", fields: ["dmentryType", "security", "rpc", "rpcname", "answer", "answer_comment", "answer_timestamp", "remarks"] },
 ]
 
 interface EntryDetailSheetProps {
@@ -20,7 +21,7 @@ interface EntryDetailSheetProps {
   fileView?: boolean
 }
 
-/** Detailfenster: alle 27 Felder eines Eintrags, nur lesend (PROJ-7) */
+/** Detailfenster: alle 28 Felder eines Eintrags, nur lesend (PROJ-7) */
 export function EntryDetailSheet({ entry, onClose, fileView = false }: EntryDetailSheetProps) {
   return (
     <Sheet open={entry !== null} onOpenChange={(open) => !open && onClose()}>
@@ -46,7 +47,11 @@ export function EntryDetailSheet({ entry, onClose, fileView = false }: EntryDeta
                     {group.fields.map((name) => (
                       <div key={name} className="contents">
                         <dt className="text-muted-foreground">{FIELD_LABEL[name]}</dt>
-                        <dd className="break-words font-medium">{entry.fields[name] || <span className="text-muted-foreground">—</span>}</dd>
+                        <dd className="break-words font-medium">
+                          {(name === "answer_timestamp" ? formatAnswerTimestamp(entry.fields[name]) : entry.fields[name]) || (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </dd>
                       </div>
                     ))}
                   </dl>

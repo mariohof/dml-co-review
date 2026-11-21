@@ -64,7 +64,7 @@ export function checkReplyAgainstSend(parsed: ParsedDml, candidates: Candidate[]
       continue
     }
     for (const name of ENTRY_FIELD_NAMES) {
-      if (name === "answer" || name === "answer_comment") continue
+      if (name === "answer" || name === "answer_comment" || name === "answer_timestamp") continue
       if (OPTIONAL_IN_REPLY.includes(name) && c.fields[name] === "") continue
       if (c.fields[name] !== sent[name]) {
         findings.push(G(`Feld ${name} wurde gegenüber dem SEND verändert (SEND ‚${sent[name]}', REPLY ‚${c.fields[name]}').`, { line: c.line, dmc, field: name }))

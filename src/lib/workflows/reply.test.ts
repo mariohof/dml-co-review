@@ -6,6 +6,7 @@ import { buildDemoDataset, DEMO_FILES, DEMO_IDS } from "@/lib/data/demo-data"
 import { DEMO_XML_FILES } from "@/lib/data/demo-xml.generated"
 import { latestSend } from "@/lib/data/queries"
 import { datasetSchema, type Dataset, type Dmrl, type User } from "@/lib/data/schema"
+import { toAnswerTimestamp } from "@/lib/dmrl/answer-timestamp"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { errorCount } from "@/lib/rules/check/types"
 import {
@@ -232,5 +233,44 @@ describe("Vollständiger Zyklus 4.2: SEND → REPLY", () => {
     expect(dmrl(done.data, DEMO_IDS.dmrlVehicle).status).toBe("in_bearbeitung")
     expect(done.data.entries.filter((e) => e.dmrlId === DEMO_IDS.dmrlVehicle && e.status === "zu_ueberarbeiten")).toHaveLength(1)
     expect(datasetSchema.safeParse(done.data).success).toBe(true)
+  })
+})
+
+/** answer_timestamp beim REPLY (PROJ-13, Refinement 2026-11-21) */
+describe("answer_timestamp", () => {
+  it("alle 32 geprüften Einträge (30 y, 2 n) erhalten den Zeitpunkt der Übernahme", () => {
+    const done = importReply(buildDemoDataset(), demoReply)
+    if (!done.ok) throw new Error(done.message)
+    const entries = phungun(done.data)
+    expect(entries).toHaveLength(32)
+    expect(entries.every((e) => e.fields.answer_timestamp === toAnswerTimestamp(AT))).toBe(true)
+    expect(entries.filter((e) => e.fields.answer === "n")).toHaveLength(2)
+  })
+
+  it("ungeprüfte Einträge (ohne Eintragstyp) behalten ihren Zeitpunkt, geprüfte erhalten den neuen", () => {
+    const demo = buildDemoDataset()
+    const result = checkReplyFile(demo, dmrl(demo, DEMO_IDS.dmrlPhungun), demoReply)
+    const [untyped, typed] = phungun(demo)
+    const data: Dataset = {
+      ...demo,
+      entries: demo.entries.map((e) =>
+        e.id === untyped.id
+          ? { ...e, status: "freigegeben", fields: { ...e.fields, dmentryType: "", answer: "y", answer_timestamp: "2026-10-01T09:00:00" } }
+          : e.id === typed.id
+            ? { ...e, fields: { ...e.fields, answer_timestamp: "2026-10-01T09:00:00" } }
+            : e
+      ),
+    }
+    const outcome = replyOutcome(data, DEMO_IDS.dmrlPhungun, result, AT)
+    expect(outcome.entries.find((e) => e.id === untyped.id)?.fields.answer_timestamp).toBe("2026-10-01T09:00:00")
+    expect(outcome.entries.find((e) => e.id === typed.id)?.fields.answer_timestamp).toBe(toAnswerTimestamp(AT))
+  })
+
+  it("Vorschau ohne Übernahme und abgelehnter REPLY verändern keinen Zeitpunkt", () => {
+    const demo = buildDemoDataset()
+    const result = checkReplyFile(demo, dmrl(demo, DEMO_IDS.dmrlPhungun), demoReply)
+    expect(replyOutcome(demo, DEMO_IDS.dmrlPhungun, result).entries.every((e) => e.fields.answer_timestamp === "")).toBe(true)
+    const rejected = recordRejectedReply(demo, DEMO_IDS.dmrlPhungun, user(demo, DEMO_IDS.editorAnna), "falsch.xml", "Regelwerk", 1, AT)
+    expect(phungun(rejected).map((e) => e.fields.answer_timestamp)).toEqual(phungun(demo).map((e) => e.fields.answer_timestamp))
   })
 })

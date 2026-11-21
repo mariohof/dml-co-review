@@ -5,6 +5,7 @@ import { datasetSchema, type Dataset, type Dmrl, type EntrySnapshot, type User }
 import { writeEntriesCsv } from "@/lib/files/csv-writer"
 import { isDmrlUsedInWorkflow } from "@/lib/rules/workflow-usage"
 import { checkCheckinFile, checkInBlocked, executeCheckIn, MAX_CHECKIN_BYTES, readCheckinFile, recordRejectedCheckIn } from "./check-in"
+import { toAnswerTimestamp } from "@/lib/dmrl/answer-timestamp"
 import { executeCheckOut, executeReleaseLock } from "./check-out"
 
 const AT = "2026-11-13T10:00:00.000Z"
@@ -274,5 +275,82 @@ describe("Übernahme", () => {
     expect(after.history.at(-1)?.details).toMatch(/^Check-in abgelehnt — \d+ Fehler$/)
     expect(dmrl(after, DEMO_IDS.dmrlVehicle).lock).not.toBeNull()
     expect(after.entries).toBe(data.entries)
+  })
+})
+
+/** answer_timestamp beim Check-in (PROJ-10, Refinement 2026-11-21) */
+describe("answer_timestamp", () => {
+  const OLD = "2026-11-01T08:00:00"
+  const ben = (data: Dataset) => user(data, DEMO_IDS.editorBen)
+
+  /** Fahrzeug-DMRL: alle Einträge freigegeben mit Antwort y und früherem answer_timestamp, ausgecheckt von Ben */
+  function checkedOutWithAnswers(): Dataset {
+    const demo = buildDemoDataset()
+    const base: Dataset = {
+      ...demo,
+      dmrls: demo.dmrls.map((d) => (d.id === DEMO_IDS.dmrlVehicle ? { ...d, status: "freigegeben" } : d)),
+      entries: demo.entries.map((e) =>
+        e.dmrlId === DEMO_IDS.dmrlVehicle
+          ? { ...e, status: "freigegeben", fields: { ...e.fields, dmentryType: "", answer: "y", answer_timestamp: OLD } }
+          : e
+      ),
+    }
+    const result = executeCheckOut(base, DEMO_IDS.dmrlVehicle, ben(base), AT)
+    if (!result.ok) throw new Error(result.message)
+    return result.data
+  }
+  const byId = (data: Dataset, id: string) => vehicleEntries(data).find((e) => e.id === id)!
+
+  it("Übernahme abweichender Antworten → Zeitpunkt des Check-ins; entfernte Antwort → leer; übrige behalten ihren Wert", () => {
+    const data = checkedOutWithAnswers()
+    const [first, second, third] = vehicleEntries(data)
+    const csv = csvOf(data, (rows) => {
+      Object.assign(rows[0].fields, { dmentryType: "c", type: "changed", answer: "n", answer_comment: "Empfänger lehnt ab" })
+      Object.assign(rows[1].fields, { dmentryType: "c", type: "changed", answer: "" })
+      return rows
+    })
+    const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), check(data, csv), AT, true)
+    if (!result.ok) throw new Error(result.message)
+    expect(byId(result.data, first.id).fields.answer_timestamp).toBe(toAnswerTimestamp(AT))
+    expect(byId(result.data, second.id).fields).toMatchObject({ answer: "", answer_timestamp: "" })
+    expect(byId(result.data, third.id).fields.answer_timestamp).toBe(OLD)
+  })
+
+  it("ohne Übernahme bleibt answer_timestamp aller Einträge unverändert", () => {
+    const data = checkedOutWithAnswers()
+    const csv = csvOf(data, (rows) => {
+      Object.assign(rows[0].fields, { dmentryType: "c", type: "changed", answer: "n" })
+      return rows
+    })
+    const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), check(data, csv), AT)
+    if (!result.ok) throw new Error(result.message)
+    expect(vehicleEntries(result.data).every((e) => e.fields.answer_timestamp === OLD)).toBe(true)
+  })
+
+  it("nur answer_timestamp in der Datei geändert → kein Fehler, keine Abweichung, gespeicherter Wert bleibt", () => {
+    const data = checkedOutWithAnswers()
+    const csv = csvOf(data, (rows) => {
+      rows[0].fields.answer_timestamp = "1999-01-01T00:00:00"
+      return rows
+    })
+    const checked = check(data, csv)
+    expect(checked.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
+    expect(checked.comparison?.entries.every((e) => e.classification === "unveraendert" && !e.answerChanged)).toBe(true)
+    const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), checked, AT, true)
+    if (!result.ok) throw new Error(result.message)
+    expect(vehicleEntries(result.data).every((e) => e.fields.answer_timestamp === OLD)).toBe(true)
+  })
+
+  it("CSV mit 27 Spalten (alter Stand ohne answer_timestamp) wird angenommen; Wert bleibt", () => {
+    const data = checkedOutWithAnswers()
+    const lines = csvOf(data).replace(/^﻿/, "").split("\r\n")
+    const column = lines[0].split(";").indexOf("answer_timestamp")
+    const legacy = "﻿" + lines.map((line) => (line === "" ? line : line.split(";").filter((_, i) => i !== column).join(";"))).join("\r\n")
+    expect(legacy.split("\r\n")[0].split(";")).toHaveLength(27)
+    const checked = check(data, legacy)
+    expect(checked.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
+    const result = executeCheckIn(data, DEMO_IDS.dmrlVehicle, ben(data), checked, AT)
+    if (!result.ok) throw new Error(result.message)
+    expect(vehicleEntries(result.data).every((e) => e.fields.answer_timestamp === OLD)).toBe(true)
   })
 })

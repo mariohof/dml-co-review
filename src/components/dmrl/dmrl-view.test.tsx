@@ -152,3 +152,28 @@ describe("Eintragstabelle: Seiten", () => {
     expect(screen.getByText("Seite 2 von 2")).toBeInTheDocument()
   })
 })
+
+describe("Spalte „Antwort übernommen“ (PROJ-13, Refinement 2026-11-21)", () => {
+  const entry = (answer_timestamp: string, id: string): EntrySnapshot => ({
+    id,
+    status: "freigegeben",
+    fields: { ...emptyEntryFields(), modelic: "GTFDEMO", chapnum: id, techname: "Rad", answer: answer_timestamp ? "y" : "", answer_timestamp },
+  })
+
+  it("zeigt den Zeitpunkt als „21.11.2026 14:30“, ohne Zeitpunkt „—“; im Detailfenster ebenso", () => {
+    render(<EntryTable entries={[entry("2026-11-21T14:30:05", "01"), entry("", "02")]} />)
+    expect(screen.getByRole("columnheader", { name: "Antwort übernommen" })).toBeInTheDocument()
+    const [withTime, without] = dataRows()
+    expect(within(withTime).getByText("21.11.2026 14:30")).toHaveAttribute("dateTime", "2026-11-21T14:30:05")
+    expect(within(without).getAllByText("—").length).toBeGreaterThan(0)
+    fireEvent.click(withTime)
+    const sheet = screen.getByRole("dialog")
+    expect(within(sheet).getByText("Antwort übernommen")).toBeInTheDocument()
+    expect(within(sheet).getByText("21.11.2026 14:30")).toBeInTheDocument()
+  })
+
+  it("archivierte Datei (fileView): keine Spalte „Antwort übernommen“", () => {
+    render(<EntryTable entries={[entry("2026-11-21T14:30:05", "01")]} fileView />)
+    expect(screen.queryByRole("columnheader", { name: "Antwort übernommen" })).not.toBeInTheDocument()
+  })
+})

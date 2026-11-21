@@ -35,6 +35,17 @@ test.describe("REPLY-Import (PROJ-13)", () => {
     expect(reply.direction).toBe("reply")
     expect(reply.content).toBe(readFileSync(join(DEMO, DEMO_REPLY), "utf8"))
     expect(data.dmrls.find((d: { id: string }) => d.id === "dmrl-phungun").status).toBe("in_bearbeitung")
+
+    // answer_timestamp (Refinement 2026-11-21): alle 32 geprüften Einträge, Format JJJJ-MM-TTThh:mm:ss, Anzeige TT.MM.JJJJ hh:mm
+    const stamps = data.entries
+      .filter((e: { dmrlId: string }) => e.dmrlId === "dmrl-phungun")
+      .map((e: { fields: { answer_timestamp: string } }) => e.fields.answer_timestamp)
+    expect(stamps).toHaveLength(32)
+    expect(new Set(stamps).size).toBe(1)
+    expect(stamps[0]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/)
+    const [, y, m, d, hh, mm] = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(stamps[0])!
+    await expect(page.getByRole("columnheader", { name: "Antwort übernommen" })).toBeVisible()
+    await expect(page.getByRole("cell", { name: `${d}.${m}.${y} ${hh}:${mm}` }).first()).toBeVisible()
   })
 
   test("alle genehmigt → DMRL freigegeben", async ({ page }) => {

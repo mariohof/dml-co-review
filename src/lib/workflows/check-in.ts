@@ -1,4 +1,5 @@
 import type { Dataset, Dmrl, DmrlEntry, DmrlStatus, HistoryEntry, User } from "@/lib/data/schema"
+import { toAnswerTimestamp } from "@/lib/dmrl/answer-timestamp"
 import { newId } from "@/lib/ids"
 import {
   ANSWER_TAKEOVER_BLOCKED,
@@ -87,11 +88,23 @@ export function executeCheckIn(
   if (takeAnswers && answerTakeoverBlockers(result.comparison).length > 0) return { ok: false, message: ANSWER_TAKEOVER_BLOCKED }
 
   const currentStatus = new Map(data.entries.filter((e) => e.dmrlId === dmrlId).map((e) => [e.id, e.status]))
+  const checkinTimestamp = toAnswerTimestamp(at)
   const entries: DmrlEntry[] = result.comparison.entries.map((compared) => {
     const { candidate, previous } = compared
+    // answer_timestamp (Refinement 2026-11-21): Wert aus der Datei nie übernehmen; bei übernommener abweichender Antwort
+    // = Zeitpunkt des Check-ins (leer, wenn die Antwort danach leer ist), sonst bisheriger Wert
+    const previousTimestamp = previous?.fields.answer_timestamp ?? ""
     const fields = takeAnswers
-      ? candidate.fields
-      : { ...candidate.fields, answer: previous?.fields.answer ?? "", answer_comment: previous?.fields.answer_comment ?? "" }
+      ? {
+          ...candidate.fields,
+          answer_timestamp: compared.answerChanged ? (candidate.fields.answer ? checkinTimestamp : "") : previousTimestamp,
+        }
+      : {
+          ...candidate.fields,
+          answer: previous?.fields.answer ?? "",
+          answer_comment: previous?.fields.answer_comment ?? "",
+          answer_timestamp: previousTimestamp,
+        }
     const classification = effectiveClassification(compared, takeAnswers)
     if (classification === "neu" || !previous) {
       // Bestand übernehmen (Refinement 2026-11-18): neu ohne Eintragstyp → freigegeben

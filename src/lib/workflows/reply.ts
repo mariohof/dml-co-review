@@ -12,6 +12,7 @@ import {
   type User,
 } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
+import { toAnswerTimestamp } from "@/lib/dmrl/answer-timestamp"
 import { newId } from "@/lib/ids"
 import { runReplyCheck, type ReplyContext, type ReplyResult } from "@/lib/rules/check/reply"
 import type { WorkflowResult } from "./check-out"
@@ -103,7 +104,12 @@ export interface ReplyOutcome {
   futureStatus: DmrlStatus
 }
 
-export function replyOutcome(data: Dataset, dmrlId: string, result: ReplyResult): ReplyOutcome {
+/**
+ * `at` = Zeitpunkt der Übernahme (ISO); setzt answer_timestamp bei allen geprüften Einträgen (Refinement 2026-11-21).
+ * Ohne `at` (nur Vorschau der Zusammenfassung) bleibt answer_timestamp leer.
+ */
+export function replyOutcome(data: Dataset, dmrlId: string, result: ReplyResult, at?: string): ReplyOutcome {
+  const answeredAt = at ? toAnswerTimestamp(at) : ""
   const answers = new Map(result.candidates.map((c) => [formatDmc(c.fields), c.fields]))
   let approved = 0
   let rework = 0
@@ -119,12 +125,16 @@ export function replyOutcome(data: Dataset, dmrlId: string, result: ReplyResult)
         return {
           ...entry,
           status: "freigegeben",
-          fields: { ...entry.fields, dmentryType: "", answer: "y", answer_comment: reply.answer_comment },
+          fields: { ...entry.fields, dmentryType: "", answer: "y", answer_comment: reply.answer_comment, answer_timestamp: answeredAt },
         }
       }
       rework++
       rejected.push({ dmc: formatDmc(entry.fields), techname: entry.fields.techname, comment: reply.answer_comment })
-      return { ...entry, status: "zu_ueberarbeiten", fields: { ...entry.fields, answer: "n", answer_comment: reply.answer_comment } }
+      return {
+        ...entry,
+        status: "zu_ueberarbeiten",
+        fields: { ...entry.fields, answer: "n", answer_comment: reply.answer_comment, answer_timestamp: answeredAt },
+      }
     })
   const futureStatus: DmrlStatus = entries.length > 0 && entries.every((e) => e.status === "freigegeben") ? "freigegeben" : "in_bearbeitung"
   return { entries, approved, rework, rejected: rejected.sort((a, b) => a.dmc.localeCompare(b.dmc)), futureStatus }
@@ -181,7 +191,7 @@ export function executeReplyImport(data: Dataset, dmrlId: string, user: User | n
     return { ok: false, message: "Die Datei enthält Fehler und kann nicht übernommen werden." }
   }
 
-  const outcome = replyOutcome(data, dmrlId, result)
+  const outcome = replyOutcome(data, dmrlId, result, at)
   const header = result.parsed.header
   const partner = data.organisations.find((o) => o.id === send.partnerOrganisationId)
   const versionIndex = versionIndexOf(header.dmlc)

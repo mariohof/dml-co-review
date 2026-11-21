@@ -1,6 +1,6 @@
 # PROJ-13: REPLY-Import
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-21
 
@@ -263,6 +263,16 @@ _Stand 2026-11-13 — `/frontend PROJ-13`_
 
 ### UI-Fix Dialogbreite (2026-11-16)
 - Der Prüfbericht (6 Spalten inkl. „Meldung“) war im REPLY-Dialog (`sm:max-w-3xl`) abgeschnitten, der ganze Dialog musste waagerecht gescrollt werden. Dialog jetzt `sm:max-w-6xl` (bis 1152 px, auf kleineren Fenstern volle Breite abzüglich Rand) mit `[&>*]:min-w-0` — wie der Check-in-Dialog (PROJ-10). Bei sehr schmalen Fenstern scrollt nur noch die Tabelle selbst.
+
+### Refinement 2026-11-21 — `answer_timestamp` (`/frontend PROJ-13`)
+- **Datenmodell** (`src/lib/data/schema.ts`): neues Feld `answer_timestamp` in `ENTRY_FIELD_NAMES` zwischen `answer_comment` und `remarks` → 28 Felder/CSV-Spalten. Im Zod-Schema mit Vorgabe `""`: gespeicherte Daten ohne das Feld bleiben gültig (keine neue Formatversion). Demo-Daten: Die PHUNGUN-Einträge stammen aus SEND 00002 und haben keine Antworten → `answer_timestamp` leer (nichts nachzutragen).
+- **Helfer** `src/lib/dmrl/answer-timestamp.ts`: `toAnswerTimestamp(iso)` → `JJJJ-MM-TTThh:mm:ss` in Ortszeit; `formatAnswerTimestamp` → „21.11.2026 14:30“.
+- **REPLY** (`src/lib/workflows/reply.ts`): `replyOutcome(…, at)` setzt bei allen geprüften Einträgen (`y`/`n`) den Zeitpunkt der Übernahme (= Zeitpunkt des Archivstands); ohne `at` (Vorschau im Dialog) leer. Ungeprüfte Einträge unverändert. Regelwerk G (`src/lib/rules/check/reply.ts`) nimmt `answer_timestamp` vom Feldvergleich mit dem SEND aus.
+- **Check-in** (PROJ-10): `csv-reader.ts` akzeptiert neben 28 auch 27 Spalten (alter Stand, `LEGACY_CSV_COLUMNS`/`expectedColumns`); `checkin.ts` ignoriert `answer_timestamp` beim Abgleich (keine Änderung, keine Antwortabweichung); `check-in.ts`: Wert aus der Datei nie übernommen — bei übernommener abweichender Antwort Zeitpunkt des Check-ins (leer, wenn Antwort leer), sonst bisheriger Wert.
+- **CSV** (Check-out, Export, Freigabestand, PROJ-20-Konvertierung): Spalte automatisch über `ENTRY_FIELD_NAMES` im `csv-writer`; Formelschutz gilt. **XML**: Der DML-Schreiber schreibt nur benannte Felder → kein `answer_timestamp` (Test für 2.3/4.2/5.0; XSD-Tests mit xmllint grün).
+- **Ansicht** (PROJ-7): Eintragstabelle mit Spalte „Antwort übernommen“ (`<time>`, „—“ wenn leer; nicht bei archivierten Dateien, die keinen Zeitpunkt haben); Detailfenster zeigt das Feld in der Gruppe „Abstimmung“.
+- **Tests:** `src/lib/dmrl/answer-timestamp.test.ts` (5: Format, CSV-Spalte, nicht im XML, Laden alter Daten), `reply.test.ts` (+3), `check-in.test.ts` (+4: Übernahme, ohne Übernahme, nur Zeitstempel geändert, 27-Spalten-CSV), `dmrl-view.test.tsx` (+2: Spalte, Detailfenster, fileView). E2E: `PROJ-13-reply.spec.ts` prüft Zeitstempel und Anzeige; `PROJ-10-checkin-antworten.spec.ts` auf 28 Spalten angepasst. Vitest 625 ✅ · Playwright 125/125 ✅ (Chrome).
+
 
 ## QA Test Results
 

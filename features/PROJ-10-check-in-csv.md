@@ -1,6 +1,6 @@
 # PROJ-10: Check-in CSV
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-21
 
@@ -506,6 +506,13 @@ _Stand 2026-11-16 — `/frontend proj-10`; ohne eigenes Tech Design (kleine Rege
   - `checkin.test.ts`: F1-Test ersetzt (n/c/d/leer fehlerfrei, `alsFreigegeben`); Typ-Regel bei neuem `c`; keine Typ-Prüfung ohne Eintragstyp.
   - `check-in.test.ts`, Block „Bestand übernehmen“ (4 Fälle): Mischfall, alle freigegeben (Nachweis und Freigabestand), Erstübernahme in eine leere DMRL, kein neuer Nachweis ohne Änderung. Die Ladeprüfung ist jeweils gültig.
   - `release.test.ts`: Beschriftung, CSV und XML eines Freigabestands ohne REPLY.
+
+### Refinement 2026-11-21 — `answer_timestamp` (umgesetzt mit `/frontend PROJ-13`)
+- `src/lib/rules/check/csv-reader.ts`: 28 Spalten; eine CSV mit 27 Spalten (ohne `answer_timestamp`) wird weiterhin angenommen (`LEGACY_CSV_COLUMNS`, `expectedColumns`).
+- `src/lib/rules/check/checkin.ts`: `answer_timestamp` zählt nie als Änderung oder Antwortabweichung (`isIgnoredField`, `NON_BUSINESS`).
+- `src/lib/workflows/check-in.ts`: Wert aus der Datei wird nie übernommen; mit „Antworten aus der Datei übernehmen“ erhalten Einträge mit abweichender Antwort den Zeitpunkt des Check-ins (leer, wenn die Antwort leer ist), alle übrigen behalten ihren Wert.
+- Tests: `check-in.test.ts` (+4), E2E `PROJ-10-checkin-antworten.spec.ts` (28 Spalten).
+
 
 ## QA Test Results
 

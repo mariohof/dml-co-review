@@ -1,6 +1,6 @@
 import Papa from "papaparse"
 
-import { emptyEntryFields, ENTRY_FIELD_NAMES, type EntryFields } from "@/lib/data/schema"
+import { emptyEntryFields, ENTRY_FIELD_NAMES, type EntryFieldName, type EntryFields } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { unguardCsvCell } from "@/lib/files/csv-formula"
 import type { Candidate, Finding } from "./types"
@@ -19,9 +19,17 @@ export interface CsvReadResult {
 
 const S = (message: string, line?: number): Finding => ({ severity: "fehler", group: "S", line, message })
 
+/** Spalten einer CSV vom Stand vor dem 21.11.2026 (27 Spalten, ohne answer_timestamp) — weiterhin gültig (PROJ-10) */
+export const LEGACY_CSV_COLUMNS = ENTRY_FIELD_NAMES.filter((name) => name !== "answer_timestamp")
+
+/** Erwartete Spaltenfolge zur Kopfzeile: aktuell (28) oder alter Stand (27), je nachdem ob answer_timestamp vorkommt */
+export function expectedColumns(header: string[]): readonly EntryFieldName[] {
+  return header.includes("answer_timestamp") ? ENTRY_FIELD_NAMES : LEGACY_CSV_COLUMNS
+}
+
 /** Prüft die Kopfzeile; liefert Strukturfehler (leer = in Ordnung) */
 export function checkHeader(header: string[]): Finding[] {
-  const expected = ENTRY_FIELD_NAMES as readonly string[]
+  const expected = expectedColumns(header) as readonly string[]
   const findings: Finding[] = []
   const seen = new Set<string>()
   for (const name of header) {
@@ -73,17 +81,18 @@ export function readCheckinCsv(text: string): CsvReadResult {
   const headerFindings = checkHeader(header)
   if (headerFindings.length > 0) return { candidates: [], findings: headerFindings, aborted: true }
 
+  const columns = expectedColumns(header)
   const findings: Finding[] = []
   const candidates: Candidate[] = []
   rows.forEach((row, index) => {
     if (index <= headerIndex || row.every((cell) => cell.trim() === "")) return
     const line = index + 1
-    if (row.length !== ENTRY_FIELD_NAMES.length) {
-      findings.push(S(`Zeile hat ${row.length} statt ${ENTRY_FIELD_NAMES.length} Spalten.`, line))
+    if (row.length !== columns.length) {
+      findings.push(S(`Zeile hat ${row.length} statt ${columns.length} Spalten.`, line))
       return
     }
     const fields = emptyEntryFields()
-    ENTRY_FIELD_NAMES.forEach((name, column) => {
+    columns.forEach((name, column) => {
       // Entschärfung gegen Formel-Injection aus Check-out/Export rückgängig machen (BUG-QA2-1)
       fields[name] = unguardCsvCell((row[column] ?? "").trim())
     })
