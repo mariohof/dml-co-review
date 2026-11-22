@@ -1,6 +1,6 @@
 # PROJ-6: DMRL anlegen
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-22
 
@@ -354,6 +354,63 @@ Keine Bugs in diesem Feature.
 - **Production Ready:** YES
 - **Recommendation:** Freigeben; Medium/Low-Bugs bei Gelegenheit beheben
 - **E2E-Tests:** `tests/PROJ-1-datenhaltung.spec.ts`, `tests/PROJ-2-anmeldung.spec.ts`, `tests/PROJ-3-to-6-17-verwaltung.spec.ts`, `tests/security-responsive.spec.ts`
+
+## QA Test Results — Refinement „Versionsindex erster SEND" (2026-11-22)
+
+**Tested:** 2026-11-22
+**App URL:** http://localhost:3000 (`npm run dev`)
+**Tester:** QA Engineer (AI)
+**Automatisiert:** Vitest 646 ✅ (1 übersprungen, wie bisher) · Playwright Chromium 146/146 ✅ (gesamte Regressionssuite inkl. neuer `tests/PROJ-6-versionsindex.spec.ts`, echte XSD-Prüfung beim SEND)
+**Browser:** Chromium (Desktop) vollständig · **Mobile Safari (WebKit, iPhone 13)** erstmals ausführbar (WebKit in diesem Lauf installiert): Funktion korrekt dargestellt, Tests scheitern an BUG-QA6-1 · Firefox nicht installiert, nicht getestet
+**Responsive:** 1440×900 und 768×1024 ✅ · 1280×720 knapp ✅ (17 px Rand) · 390×664 (iPhone) ❌ BUG-QA6-1
+
+### Acceptance Criteria Status (neue/geänderte Kriterien)
+- [x] Anlegen-Dialog: Vorbelegung `00001-<Jahr>` und Hinweistext — E2E + Komponente
+- [x] Formatprüfung („13-2026", „000013-2026", „00000-2026", „ABCDE-2026", „00013/2026", leer) mit Meldung „Versionsindex muss das Format NNNNN-JJJJ haben (00001–99999)." — E2E + Unit
+- [x] Jahresprüfung „Das Jahr muss das aktuelle Jahr (JJJJ) sein." — E2E + Unit
+- [x] Erster SEND mit Vorgabe `00013-<Jahr>`: Datei `…-00013_001-00.XML`, `dmlCode` und `dmlRef` beide `00013` (Verweis auf sich selbst), XSD gültig; nächster SEND `00014` — E2E (Issue 4.2) + Unit
+- [x] Erster SEND in späterem Jahr → `00001-<neues Jahr>` mit Hinweis in der SEND-Vorschau — E2E (simuliert über Vorgabe aus Vorjahr) + Unit
+- [x] XML-Export ohne SEND trägt die Vorgabe — E2E + Unit
+- [x] Bearbeiten ohne SEND (auch nach Check-in) änderbar; Verlauf „Kopfdaten geändert: Versionsindex erster SEND alt → neu" — E2E + Unit
+- [x] Ab SEND (auch zurückgezogen) gesperrt mit „Versionsindex wird bereits vom SEND-Zähler fortgeführt." — E2E + Unit
+- [x] Abgelaufene Vorgabe: andere Kopfdaten speicherbar, Hinweis „Vorgabe abgelaufen — der erste SEND erhält 00001-JJJJ." — E2E + Unit
+- [x] Demo-Daten: PHUNGUN `00001-2026` gesperrt, Fahrzeug/Fluggerät `00001-<Jahr>` änderbar — E2E
+- [x] Bestehende Kriterien PROJ-6 unverändert grün (Regression `PROJ-3-to-6-17-verwaltung.spec.ts`, Chromium)
+
+### Edge Cases Status
+- [x] Altbestand ohne Vorgabe: Datenbestand bleibt ladbar, Feld zeigt `00001-<Jahr>` bzw. den ersten SEND, unverändertes Speichern schreibt nichts, erster SEND `00001` — E2E + Unit
+- [x] Einziger SEND zurückgezogen → Feld bleibt gesperrt, nächster SEND = Vorgabe + 1 — E2E + Unit
+- [x] Vorgabe bei vorhandenen SENDs wirkungslos (PHUNGUN mit manipulierter Vorgabe → `00003`) — Unit
+- [x] `99999-JJJJ` zulässig — Unit. Hinweis: ein weiterer SEND im selben Jahr ergäbe eine 6-stellige seqnum und scheitert an der XSD-Prüfung (nichts wird heruntergeladen/archiviert) — laut Decision Log bewusst nicht geregelt, kein Bug
+- [x] Abgelaufene Vorgabe `00001-JJJJ` wird in der SEND-Vorschau nicht gemeldet (identisches Ergebnis) — Unit, siehe Implementation Notes
+
+### Security Audit Results
+- [x] Nur Administratoren erreichen den Dialog (unverändert, Regression E2E)
+- [x] Eingabe ist auf `NNNNN-JJJJ` begrenzt (Zod im Formular und beim Speichern) — keine Zeichen für XML-/HTML-Injection möglich; React rendert den Wert als Text
+- [x] Manipulierter Wert im Browser-Speicher (ungültiges Format) wird beim Laden von der Schemaprüfung abgewiesen (bestehender Mechanismus, PROJ-1)
+- [x] Sperre wird auch beim Speichern geprüft, nicht nur in der Oberfläche (Unit)
+- [x] Keine neuen Serverfunktionen, keine Geheimnisse im Client
+
+### Bugs Found
+
+#### BUG-QA6-1: DMRL-Dialog auf kleinen Bildschirmen nicht scrollbar — Speichern/Abbrechen nicht erreichbar
+- **Severity:** Medium (bestand schon vorher, durch das neue Feld verstärkt)
+- **Steps to Reproduce:**
+  1. Fenster auf 390×664 (iPhone 13) oder Desktop-Fenster niedriger als ca. 690 px
+  2. „Verwaltung → DMRLs" → beliebige DMRL „Bearbeiten"
+  3. Expected: Dialog passt in den Bildschirm oder ist scrollbar; Speichern/Abbrechen erreichbar
+  4. Actual: Dialog 918 px hoch (vorher 782 px, neues Feld +120 px), `overflow` sichtbar, oben 127 px abgeschnitten, Buttons außerhalb des Bildschirms — auf dem iPhone-Profil nicht bedienbar (Playwright-Timeout beim Klick)
+- **Ursache:** `DialogContent` in `dmrl-form-dialog.tsx` ohne `max-h-[90vh] overflow-y-auto` — das Muster, das SEND-, Check-in-, REPLY- und Export-Dialog bereits verwenden
+- **Workaround:** Desktop mit ausreichender Fensterhöhe (Hauptnutzung des lokalen Prototyps)
+- **Priority:** Fix in next sprint (vor Abnahme auf Tablet/Smartphone)
+
+### Summary
+- **Acceptance Criteria:** 11/11 passed (Chromium)
+- **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low)
+- **Security:** Pass
+- **Production Ready:** YES (keine Critical/High-Bugs)
+- **Recommendation:** Freigeben; BUG-QA6-1 zeitnah beheben (eine Zeile, gleiches Muster wie die übrigen Dialoge). Da WebKit jetzt installiert ist, empfiehlt sich ein eigener Mobile-Safari-Lauf der gesamten Suite — bisher wurde dieses Projekt in keinem QA-Lauf ausgeführt.
+- **E2E-Tests:** `tests/PROJ-6-versionsindex.spec.ts` (6 Tests)
 
 ## Deployment
 _To be added by /deploy_
