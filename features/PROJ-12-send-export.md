@@ -40,7 +40,7 @@ Eine freigegebene DMRL ist damit erst nach einem Check-in mit Änderungen wieder
 |---|---|
 | Richtung | `send` |
 | `dmlc` | MI des Systems · CAGE Originator · DML-Typ der DMRL · aktuelles Jahr · seqnum |
-| seqnum | nächste freie Nummer je DMRL und Absender im aktuellen Jahr; beginnt bei `00001`, im neuen Jahr wieder bei `00001`; zurückgezogene SENDs belegen ihre Nummer weiterhin |
+| seqnum | nächste freie Nummer je DMRL und Absender im aktuellen Jahr; beginnt bei `00001` — **erster SEND einer DMRL: vorgegebener Versionsindex aus PROJ-6**, sofern dessen Jahr dem aktuellen Jahr entspricht (sonst `00001` mit Hinweis in der Vorschau) —, im neuen Jahr wieder bei `00001`; zurückgezogene SENDs belegen ihre Nummer weiterhin |
 | `issno` / `inwork` / `type` | `001` / `00` / `new` |
 | `issdate` | Datum des SEND |
 | `security` | Sicherheitseinstufung der DMRL |

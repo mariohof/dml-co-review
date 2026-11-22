@@ -1,8 +1,8 @@
 # PROJ-6: DMRL anlegen
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-12
+**Last Updated:** 2026-11-22
 
 ## Dependencies
 - Requires: PROJ-1 (Datenhaltung + Demo-Daten) — DMRLs werden im Datenbestand gespeichert
@@ -22,6 +22,7 @@ Der Administrator legt unter „Verwaltung → DMRLs" zu einem System dessen DMR
 | Originator (Sender-Organisation) | Pflicht; Auswahl aus angelegten Organisationen (CAGE-Code + Name); wird als `dmlc/sendid` verwendet |
 | DML-Typ | Pflicht; Auswahl `c`, `p` oder `s`; vorbelegt mit `c` |
 | Sicherheitseinstufung | Pflicht; genau 2 Ziffern, `01`–`20`; vorbelegt mit `01` |
+| Versionsindex erster SEND | Pflicht; Format `NNNNN-JJJJ`; Nummer `00001`–`99999`, Jahr = **aktuelles Jahr**; vorbelegt mit `00001-<aktuelles Jahr>`. Hinweistext unter dem Feld: „Versionsindex des ersten SEND. Bei einem bereits laufenden Austausch die nächste Nummer eintragen, die der Empfänger erwartet (z. B. 00013-2026). Danach zählt die Anwendung automatisch weiter.“ Wird vom ersten SEND verwendet (PROJ-12) |
 
 Nicht an der DMRL gepflegt:
 - **Berechtigte Bearbeiter** → PROJ-17
@@ -41,11 +42,20 @@ Eine DMRL gilt als **in einem Workflow benutzt**, sobald sie mindestens einmal C
 
 Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 
+**Versionsindex erster SEND** — eigene Regel, unabhängig von „im Workflow benutzt“: änderbar bis zum **ersten SEND** (ein Check-out/Check-in davor sperrt ihn nicht); ab dem ersten SEND — auch wenn dieser zurückgezogen wurde — gesperrt mit dem Hinweis „Versionsindex wird bereits vom SEND-Zähler fortgeführt“.
+
+### Versionsindex erster SEND — Wirkung (PROJ-12)
+- Der erste SEND erhält genau den vorgegebenen Versionsindex (seqnum + diyear); danach zählt PROJ-12 wie gewohnt weiter (z. B. Vorgabe `00013-2026` → erster SEND `00013-2026`, nächster `00014-2026`).
+- Der `dmlref` des ersten SEND verweist weiterhin auf sich selbst (mit dem vorgegebenen Versionsindex); Bezugsdaten eines früheren Empfänger-REPLY werden nicht erfasst.
+- Liegt der erste SEND in einem späteren Jahr als die Vorgabe, gilt die normale Jahreswechsel-Regel: `00001-<neues Jahr>`; die SEND-Vorschau weist darauf hin, dass die Vorgabe nicht mehr angewendet wird.
+- Wird der erste SEND zurückgezogen, belegt er seine Nummer weiterhin (PROJ-12); der nächste SEND erhält Vorgabe + 1.
+
 ## User Stories
 - Als **Administrator** möchte ich zu einem System seine DMRL mit Originator, DML-Typ und Sicherheitseinstufung anlegen, damit daran gearbeitet werden kann.
 - Als **Administrator** möchte ich eine versehentlich angelegte DMRL löschen, solange sie noch keinen Workflow durchlaufen hat, damit ich Fehler korrigieren kann.
 - Als **Bearbeiter** möchte ich, dass Originator und DML-Typ nach dem ersten Workflow nicht mehr geändert werden können, damit DML-Codes und Archiv konsistent bleiben.
 - Als **Administrator** möchte ich die Sicherheitseinstufung einer DMRL auch später anpassen können, damit der nächste SEND korrekt eingestuft ist.
+- Als **Administrator** möchte ich beim Anlegen den Versionsindex des ersten SEND vorgeben, damit ein bereits laufender DMRL-Austausch (z. B. bisher per Excel/E-Mail) mit der vom Empfänger erwarteten Nummer nahtlos fortgesetzt werden kann.
 - Als **Administrator** möchte ich in einer Liste alle DMRLs mit System, Originator und Status sehen, damit ich den Überblick behalte.
 
 ## Out of Scope
@@ -57,6 +67,8 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - Prüfung der Sicherheitseinstufung der Einträge → PROJ-8
 - DMRL-Detailansicht mit Einträgen → PROJ-7
 - Kopieren einer DMRL auf ein anderes System
+- Erfassung der Bezugsdaten (`dmlref`) eines früheren Empfänger-REPLY für den ersten SEND
+- Vorgabe eines Versionsindex aus einem vergangenen oder zukünftigen Jahr
 
 ## Acceptance Criteria
 
@@ -72,19 +84,26 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - [ ] Angenommen es existieren keine DMRLs, wenn die Liste angezeigt wird, dann erscheint „Noch keine DMRLs angelegt" mit der Aktion „DMRL anlegen"
 
 ### Anlegen
-- [ ] Angenommen es gibt mindestens ein System ohne DMRL, wenn „DMRL anlegen" gewählt wird, dann öffnet sich ein Dialog mit System, Originator, DML-Typ (Auswahl `c`/`p`/`s`, vorbelegt `c`) und Sicherheitseinstufung (vorbelegt `01`)
+- [ ] Angenommen es gibt mindestens ein System ohne DMRL, wenn „DMRL anlegen" gewählt wird, dann öffnet sich ein Dialog mit System, Originator, DML-Typ (Auswahl `c`/`p`/`s`, vorbelegt `c`) und Sicherheitseinstufung (vorbelegt `01`) und Versionsindex erster SEND (vorbelegt `00001-<aktuelles Jahr>`, mit Hinweistext)
 - [ ] Angenommen der Anlegen-Dialog ist geöffnet, wenn die Systemauswahl geöffnet wird, dann enthält sie nur Systeme ohne DMRL
 - [ ] Angenommen alle Systeme haben bereits eine DMRL oder es gibt keine Systeme, wenn „DMRL anlegen" angezeigt wird, dann ist die Aktion gesperrt mit dem Hinweis „Kein System ohne DMRL vorhanden — legen Sie zuerst ein System an"
 - [ ] Angenommen es gibt keine Organisationen, wenn der Anlegen-Dialog geöffnet wird, dann weist er darauf hin, zuerst eine Organisation anzulegen
 - [ ] Angenommen der Dialog ist gültig ausgefüllt, wenn gespeichert wird, dann erscheint die DMRL mit Status „in Bearbeitung" und ohne Einträge in der Liste
 - [ ] Angenommen System oder Originator sind nicht gewählt, wenn gespeichert wird, dann erscheint je Pflichtfeld eine Fehlermeldung und nichts wird gespeichert
 - [ ] Angenommen die Sicherheitseinstufung ist nicht genau zwei Ziffern (z. B. „1", „100", „A1", „00", „21"), wenn gespeichert wird, dann erscheint „Sicherheitseinstufung muss zweistellig sein (01–20)" und nichts wird gespeichert
+- [ ] Angenommen der Anlegen-Dialog ist geöffnet, wenn das Feld „Versionsindex erster SEND“ angezeigt wird, dann ist es mit `00001-<aktuelles Jahr>` vorbelegt und darunter steht der Hinweistext „Versionsindex des ersten SEND. Bei einem bereits laufenden Austausch die nächste Nummer eintragen, die der Empfänger erwartet (z. B. 00013-2026). Danach zählt die Anwendung automatisch weiter.“
+- [ ] Angenommen der Versionsindex entspricht nicht dem Format `NNNNN-JJJJ` oder die Nummer ist `00000` (z. B. „13-2026“, „000013-2026“, „00000-2026“, „ABCDE-2026“), wenn gespeichert wird, dann erscheint „Versionsindex muss das Format NNNNN-JJJJ haben (00001–99999)“ und nichts wird gespeichert
+- [ ] Angenommen das Jahr im Versionsindex ist nicht das aktuelle Jahr (z. B. `00013-2025` im Jahr 2026), wenn gespeichert wird, dann erscheint „Das Jahr muss das aktuelle Jahr (2026) sein“ und nichts wird gespeichert
+- [ ] Angenommen eine DMRL wurde mit Versionsindex `00013-2026` angelegt, wenn 2026 der erste SEND erfolgt, dann hat das XML seqnum `00013`, diyear `2026`, der `dmlref` verweist auf sich selbst und der nächste SEND erhält `00014-2026` (PROJ-12)
+- [ ] Angenommen eine DMRL wurde mit Versionsindex `00013-2026` angelegt, wenn der erste SEND erst 2027 erfolgt, dann erhält er `00001-2027` und die SEND-Vorschau weist darauf hin, dass die Vorgabe `00013-2026` nicht mehr angewendet wird (PROJ-12)
 - [ ] Angenommen der DML-Typ wird ausgewählt, wenn die Auswahl geöffnet wird, dann stehen genau `c`, `p` und `s` zur Verfügung
 - [ ] Angenommen eine DMRL wurde zu einem System angelegt, wenn danach die Systemverwaltung geöffnet wird, dann ist die Systembezeichnung dieses Systems nicht mehr änderbar (PROJ-5)
 
 ### Bearbeiten
 - [ ] Angenommen eine DMRL hat noch keinen Workflow durchlaufen, wenn „Bearbeiten" gewählt wird, dann sind Originator, DML-Typ und Sicherheitseinstufung änderbar und das System ist fest
 - [ ] Angenommen eine DMRL hat einen Workflow durchlaufen, wenn „Bearbeiten" gewählt wird, dann ist nur die Sicherheitseinstufung änderbar; System, Originator und DML-Typ sind gesperrt mit dem Hinweis „wird in Workflows verwendet"
+- [ ] Angenommen eine DMRL hat noch keinen SEND (auch wenn bereits Check-out/Check-in erfolgt ist), wenn „Bearbeiten“ gewählt wird, dann ist der Versionsindex erster SEND änderbar (gleiche Prüfungen wie beim Anlegen)
+- [ ] Angenommen eine DMRL hat mindestens einen SEND (auch zurückgezogen), wenn „Bearbeiten“ gewählt wird, dann ist der Versionsindex erster SEND gesperrt mit dem Hinweis „Versionsindex wird bereits vom SEND-Zähler fortgeführt“
 - [ ] Angenommen die Sicherheitseinstufung der DMRL wird geändert, wenn gespeichert wird, dann bleiben die Sicherheitseinstufungen der Einträge unverändert
 
 ### Löschen
@@ -94,13 +113,16 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - [ ] Angenommen eine gesperrte Aktion oder ein gesperrtes Feld wird angezeigt, wenn der Mauszeiger darauf zeigt oder es fokussiert wird, dann erklärt ein Tooltip den Grund
 
 ### Demo-Daten
-- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRL-Verwaltung geöffnet wird, dann ist die DMRL PHUNGUN nicht löschbar und nur ihre Sicherheitseinstufung änderbar; die DMRLs von Fahrzeug und Fluggerät sind löschbar und vollständig änderbar (außer System)
+- [ ] Angenommen der Demo-Datenbestand ist geladen, wenn die DMRL-Verwaltung geöffnet wird, dann ist die DMRL PHUNGUN nicht löschbar und nur ihre Sicherheitseinstufung änderbar; die DMRLs von Fahrzeug und Fluggerät sind löschbar und vollständig änderbar (außer System). PHUNGUN zeigt den Versionsindex erster SEND gesperrt; Fahrzeug und Fluggerät haben `00001-<aktuelles Jahr>` und sind änderbar
 
 ## Edge Cases
 - **System wird nach Löschen der DMRL wieder frei:** erscheint erneut in der Systemauswahl; Systembezeichnung ist wieder änderbar (PROJ-5).
 - **Originator-Organisation einer DMRL ohne Workflow soll gelöscht werden:** gesperrt, bis Originator geändert oder DMRL gelöscht wird (PROJ-4).
 - **DMRL ist gerade ausgecheckt und soll gelöscht werden:** Löschen gesperrt mit „Die DMRL ist ausgecheckt von [Name]" (eigener Sperrgrund; „im Workflow benutzt" gilt erst nach abgeschlossenem Check-in, PROJ-9). Nach Rücknahme des Check-outs ohne Check-in wieder löschbar.
 - **Sicherheitseinstufung der DMRL `01`, Einträge `02`:** zulässig, keine Abhängigkeit.
+- **Bestehende DMRLs ohne Vorgabe (Altbestand im localStorage):** gelten als `00001-<Jahr des ersten SEND>` — Verhalten wie bisher.
+- **Versionsindex `99999-JJJJ` vorgegeben:** zulässig; das Verhalten beim nächsten SEND im selben Jahr (Zählerüberlauf) ist noch offen — siehe Open Questions.
+- **Einziger SEND zurückgezogen, danach Versionsindex ändern:** nicht möglich — der zurückgezogene SEND hat die Vorgabe bereits verbraucht.
 - **Zwei Tabs, gleichzeitiges Bearbeiten:** letzter Speichervorgang gewinnt (Prototyp, PROJ-1).
 
 ## Technical Requirements (optional)
@@ -109,6 +131,8 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar
 
 ## Open Questions
+- [ ] Tech Design ergänzen (`/architecture`): Feld am DMRL-Datensatz (PROJ-1), Altbestand-Migration, Übergabe an die seqnum-Berechnung (PROJ-12), Hinweis in der SEND-Vorschau
+- [ ] Zählerüberlauf: Was passiert beim SEND nach `99999-JJJJ` im selben Jahr? Heute in PROJ-12 nicht geregelt; durch die Vorgabe erstmals praktisch erreichbar. Empfehlung: SEND mit Meldung sperren (2026-11-22)
 - [x] Bedeutung der DML-Typen `c`, `p`, `s` für die Anzeige? → S1000D: „c – vollständig", „p – partiell", „s – Status" in der Auswahl; in Listen nur das Kürzel (2026-11-12)
 
 ## Decision Log
@@ -129,6 +153,11 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 | Löschen nur ohne Workflow-Historie; Einträge und Berechtigungen werden mitgelöscht | Vorgabe Product Owner, analog PROJ-4/5 | 2026-11-12 |
 | DML-Typ-Klartexte „c – vollständig", „p – partiell", „s – Status" in der Auswahl | S1000D-Bedeutung; offene Frage geschlossen | 2026-11-12 |
 | Originator und DML-Typ fest ab erstem Workflow; Sicherheitseinstufung bleibt änderbar | Originator/DML-Typ stehen im DML-Code archivierter Stände; Einstufung wirkt erst beim nächsten SEND | 2026-11-12 |
+| Versionsindex des ersten SEND wird beim Anlegen vorgegeben (Pflichtfeld, vorbelegt `00001-<aktuelles Jahr>`) — eingegeben wird der *nächste* Index, nicht der zuletzt verwendete | Laufender DMRL-Austausch (z. B. aus Excel/E-Mail) muss beim Empfänger nahtlos fortgesetzt werden; Administrator sieht direkt die Nummer der ersten Datei; Vorbelegung = bisheriges Verhalten. Vorgabe Product Owner | 2026-11-22 |
+| Hinweistext unter dem Feld erklärt die Bedeutung | Vorgabe Product Owner | 2026-11-22 |
+| `dmlref` des ersten SEND verweist weiterhin auf sich selbst; keine Erfassung eines früheren Empfänger-REPLY | Kein zusätzliches Feld, Regel bleibt einfach, XML bleibt schemagültig. Vorgabe Product Owner | 2026-11-22 |
+| Nur das aktuelle Jahr zulässig; erster SEND in späterem Jahr → `00001-<neues Jahr>` mit Hinweis in der SEND-Vorschau | Jahreswechsel-Regel (PRD) bleibt ausnahmslos gültig. Vorgabe Product Owner | 2026-11-22 |
+| Versionsindex änderbar bis zum ersten SEND (auch nach Check-in); ab erstem SEND — auch zurückgezogen — gesperrt | Bei laufendem Austausch wird typischerweise erst der Bestand eingecheckt, dann gesendet. Vorgabe Product Owner | 2026-11-22 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
