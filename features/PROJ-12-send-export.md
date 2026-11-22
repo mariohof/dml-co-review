@@ -2,7 +2,7 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-20
+**Last Updated:** 2026-11-22
 
 ## Dependencies
 - Requires: PROJ-7 (DMRL-Ansicht) — Aktion „SEND", Statusanzeige
@@ -174,6 +174,7 @@ Nur **Administrator**, nur bei Status *gesendet*:
 
 ## Open Questions
 - [ ] Ausgabedaten der Einträge (`issno`, DM-Ausgabetyp, Datum) im SEND-XML: derzeit enthalten (Vorgabe Product Owner), NSG sieht sie nicht vor — ggf. später anpassen
+- [ ] Soll die seqnum eines zurückgezogenen SEND wieder freigegeben werden (z. B. SEND `00003-2026` zurückgezogen → nächster SEND erneut `00003-2026` statt `00004-2026`)? Derzeit belegen zurückgezogene SENDs ihre Nummer (Decision Log 2026-11-12). Zu bedenken: die zurückgezogene Datei kann bereits beim Empfänger sein; doppelter Versionsindex im Archiv; ein später REPLY auf den zurückgezogenen SEND hätte denselben `dmlref` wie der neue SEND und würde von der Bezugsprüfung (PROJ-8 G) fälschlich angenommen. → Klärung mit Stakeholdern (2026-11-22)
 - [x] Beispieldatei Issue 5.0 → `docs/beispiele/issue-5.0/DML-S1000DBIKE-B6865-S-2019-00001_001-00.XML`, schemagültig (2026-11-12)
 
 ## Decision Log
