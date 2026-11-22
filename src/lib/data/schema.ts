@@ -141,6 +141,8 @@ export const DML_TYPES = ["c", "p", "s"] as const
 
 /** Sicherheitseinstufung: zwei Ziffern 01–20 (Schemas 4.2/5.0) */
 export const SECURITY_PATTERN = /^(0[1-9]|1[0-9]|20)$/
+/** Versionsindex NNNNN-JJJJ, Nummer 00001–99999 (PROJ-6, Refinement 2026-11-22) */
+export const VERSION_INDEX_PATTERN = /^(?!00000)\d{5}-\d{4}$/
 
 /** Eintrag ohne DMRL-Bezug — für Kopien in Sperre und Freigabestand */
 export const entrySnapshotSchema = z.object({
@@ -175,6 +177,11 @@ export const dmrlSchema = z.object({
   originatorOrganisationId: id,
   dmlType: z.enum(DML_TYPES),
   security: z.string().regex(SECURITY_PATTERN),
+  /**
+   * Versionsindex des ersten SEND (PROJ-6, Refinement 2026-11-22) — erlaubt die Fortsetzung eines laufenden Austauschs.
+   * Optional: ältere Bestände ohne Angabe verhalten sich wie bisher (00001 im Jahr des ersten SEND).
+   */
+  firstSendVersionIndex: z.string().regex(VERSION_INDEX_PATTERN).optional(),
   /** Berechtigte Bearbeiter (PROJ-17) */
   editorUserIds: z.array(id),
   status: z.enum(DMRL_STATUSES),

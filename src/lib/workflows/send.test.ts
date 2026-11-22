@@ -109,6 +109,57 @@ describe("Versionsindex und Dateiname", () => {
   })
 })
 
+describe("Versionsindex erster SEND aus PROJ-6 (Refinement 2026-11-22)", () => {
+  const withPreset = (preset: string): Dataset => {
+    const demo = buildDemoDataset()
+    return { ...demo, dmrls: demo.dmrls.map((d) => (d.id === DEMO_IDS.dmrlVehicle ? { ...d, firstSendVersionIndex: preset } : d)) }
+  }
+
+  it("erster SEND verwendet die Vorgabe, dmlref auf sich selbst; danach wird fortgezählt", () => {
+    const data = withPreset("00013-2026")
+    expect(sendPreview(data, dmrl(data, DEMO_IDS.dmrlVehicle), AT)).toMatchObject({
+      versionIndex: "00013-2026",
+      fileName: "DML-GTFDEMO-D0815-C-2026-00013_001-00.XML",
+      expiredPreset: null,
+    })
+    const { data: after, prepared } = send(data, DEMO_IDS.dmrlVehicle)
+    expect(prepared.dmlref.dmlc).toEqual(prepared.dmlc)
+    expect(readDml(prepared.xml, "4.2").header.dmlc).toMatchObject({ diyear: "2026", seqnum: "00013" })
+    expect(currentVersionIndex(after, DEMO_IDS.dmrlVehicle)).toBe("00013-2026")
+    // nach dem ersten SEND zählt das Archiv weiter (Zurückziehen, damit erneut gesendet werden kann)
+    const withdrawn = executeWithdrawSend(after, DEMO_IDS.dmrlVehicle, user(after, DEMO_IDS.admin), "Test", AT)
+    if (!withdrawn.ok) throw new Error(withdrawn.message)
+    expect(sendPreview(withdrawn.data, dmrl(withdrawn.data, DEMO_IDS.dmrlVehicle), AT).versionIndex).toBe("00014-2026")
+  })
+
+  it("Vorgabe aus vergangenem Jahr: 00001 im neuen Jahr mit Hinweis in der Vorschau", () => {
+    const data = withPreset("00013-2026")
+    expect(sendPreview(data, dmrl(data, DEMO_IDS.dmrlVehicle), "2027-01-02T10:00:00.000Z")).toMatchObject({
+      versionIndex: "00001-2027",
+      expiredPreset: "00013-2026",
+    })
+  })
+
+  it("abgelaufene Vorgabe 00001 wird nicht gemeldet (gleiches Ergebnis)", () => {
+    const data = withPreset("00001-2026")
+    expect(sendPreview(data, dmrl(data, DEMO_IDS.dmrlVehicle), "2027-01-02T10:00:00.000Z").expiredPreset).toBeNull()
+  })
+
+  it("Altbestand ohne Vorgabe: unverändert 00001", () => {
+    const demo = buildDemoDataset()
+    const data = { ...demo, dmrls: demo.dmrls.map((d) => ({ ...d, firstSendVersionIndex: undefined })) }
+    expect(sendPreview(data, dmrl(data, DEMO_IDS.dmrlVehicle), AT).versionIndex).toBe("00001-2026")
+  })
+
+  it("bei vorhandenen SENDs wirkt die Vorgabe nicht (PHUNGUN)", () => {
+    const demo = buildDemoDataset()
+    const data = { ...demo, dmrls: demo.dmrls.map((d) => (d.id === DEMO_IDS.dmrlPhungun ? { ...d, firstSendVersionIndex: "00050-2026" } : d)) }
+    const withdrawn = executeWithdrawSend(data, DEMO_IDS.dmrlPhungun, user(data, DEMO_IDS.admin), "Test", AT)
+    if (!withdrawn.ok) throw new Error(withdrawn.message)
+    expect(sendPreview(withdrawn.data, dmrl(withdrawn.data, DEMO_IDS.dmrlPhungun), AT).versionIndex).toBe("00003-2026")
+  })
+})
+
 describe("XML-Inhalt", () => {
   it("erster SEND: dmlref auf sich selbst (issno 001), Kopf aus DMRL, alle Einträge nach DMC, BREX bei 4.2, Bemerkung", () => {
     const demo = buildDemoDataset()

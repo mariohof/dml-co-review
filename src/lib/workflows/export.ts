@@ -4,7 +4,7 @@ import { formatDate, latestSend } from "@/lib/data/queries"
 import type { Dataset, DmlCode, DmlRef, Dmrl, EntrySnapshot, S1000dIssue, User } from "@/lib/data/schema"
 import { compareByDmc } from "@/lib/dmrl/entries"
 import { writeEntriesCsv } from "@/lib/files/csv-writer"
-import { sendDmlRef } from "./send"
+import { presetSeqnum, sendDmlRef } from "./send"
 
 /**
  * DMRL-Export (PROJ-18): liest nur, schreibt nichts in den Datenbestand
@@ -71,7 +71,8 @@ export function writeExportDml(input: {
 }
 
 /**
- * XML-Export des aktuellen Stands: dmlc = letzter nicht zurückgezogener SEND (ohne SEND: aktuelles Jahr, 00001),
+ * XML-Export des aktuellen Stands: dmlc = letzter nicht zurückgezogener SEND (ohne SEND: aktuelles Jahr und
+ * vorgegebener Versionsindex erster SEND laut PROJ-6, sonst 00001),
  * dmlref wie beim nächsten SEND; Dateiname DML-{MI}-{CAGE}-{DML-Typ}-{Jahr}-{seqnum}_000-01.XML
  */
 export function exportXml(data: Dataset, dmrl: Dmrl, at = new Date().toISOString()) {
@@ -84,7 +85,8 @@ export function exportXml(data: Dataset, dmrl: Dmrl, at = new Date().toISOString
     sendid: originator?.code ?? "",
     dmltype: dmrl.dmlType,
     diyear: String(new Date(at).getFullYear()),
-    seqnum: "00001", // Schema: positiveInteger — 00000 ist ungültig (Entscheidung PO 2026-11-13)
+    // Vorgabe erster SEND (PROJ-6); sonst 00001 — Schema: positiveInteger, 00000 ist ungültig (Entscheidung PO 2026-11-13)
+    seqnum: presetSeqnum(data, dmrl, String(new Date(at).getFullYear())) ?? "00001",
   }
   const content = writeExportDml({
     dmrl,

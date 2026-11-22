@@ -69,6 +69,31 @@ describe("DMRL-Verwaltung", () => {
     expect(stored().history.at(-1)?.details).toBe("Kopfdaten geändert: Sicherheitseinstufung 01 → 02")
   })
 
+  it("zeigt den Versionsindex erster SEND: bei PHUNGUN gesperrt, beim Fahrzeug vorbelegt, mit Hinweis und Prüfung änderbar", async () => {
+    const year = String(new Date().getFullYear())
+    renderPage()
+    fireEvent.click(await screen.findByLabelText("DMRL PHUNGUN bearbeiten"))
+    let dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByLabelText("Versionsindex erster SEND")).toBeDisabled()
+    expect(within(dialog).getByText("Versionsindex wird bereits vom SEND-Zähler fortgeführt.")).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole("button", { name: "Abbrechen" }))
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+
+    fireEvent.click(screen.getByLabelText("DMRL Geschütztes Transportfahrzeug bearbeiten"))
+    dialog = await screen.findByRole("dialog")
+    const field = within(dialog).getByLabelText("Versionsindex erster SEND")
+    expect(field).not.toBeDisabled()
+    expect(field).toHaveValue(`00001-${year}`)
+    expect(within(dialog).getByText(/Bei einem bereits laufenden Austausch die nächste Nummer eintragen/)).toBeInTheDocument()
+    fireEvent.change(field, { target: { value: "13-2026" } })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Speichern" }))
+    expect(await within(dialog).findByText("Versionsindex muss das Format NNNNN-JJJJ haben (00001–99999).")).toBeInTheDocument()
+    fireEvent.change(field, { target: { value: `00013-${year}` } })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Speichern" }))
+    await waitFor(() => expect(stored().dmrls.find((d) => d.id === DEMO_IDS.dmrlVehicle)?.firstSendVersionIndex).toBe(`00013-${year}`))
+    expect(stored().history.at(-1)?.details).toBe(`Kopfdaten geändert: Versionsindex erster SEND 00001-${year} → 00013-${year}`)
+  })
+
   it("löscht eine DMRL ohne Workflow mit Einträgen; danach ist „DMRL anlegen\" möglich", async () => {
     renderPage()
     fireEvent.click(await screen.findByLabelText("DMRL Geschütztes Transportfahrzeug löschen"))

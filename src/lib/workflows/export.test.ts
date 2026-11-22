@@ -77,6 +77,13 @@ describe("XML", () => {
     expect(parsed.header.dmlref?.dmlc).toEqual(parsed.header.dmlc)
   })
 
+  it("nie gesendet mit Vorgabe 00013-2026 (PROJ-6): Export trägt 00013-2026; abgelaufene Vorgabe → 00001", () => {
+    const demo = buildDemoDataset()
+    const data = { ...demo, dmrls: demo.dmrls.map((d) => (d.id === DEMO_IDS.dmrlVehicle ? { ...d, firstSendVersionIndex: "00013-2026" } : d)) }
+    expect(exportXml(data, dmrl(data, DEMO_IDS.dmrlVehicle), AT).fileName).toBe("DML-GTFDEMO-D0815-C-2026-00013_000-01.XML")
+    expect(exportXml(data, dmrl(data, DEMO_IDS.dmrlVehicle), "2027-03-01T10:00:00.000Z").fileName).toBe("DML-GTFDEMO-D0815-C-2027-00001_000-01.XML")
+  })
+
   it("letzter SEND zurückgezogen: dmlc vom letzten gültigen SEND; Jahreswechsel behält Jahr/seqnum des SEND", () => {
     const demo = buildDemoDataset()
     const withdrawn = executeWithdrawSend(demo, DEMO_IDS.dmrlPhungun, user(demo, DEMO_IDS.admin), "Test", AT)

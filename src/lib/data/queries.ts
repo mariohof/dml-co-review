@@ -8,6 +8,11 @@ export function latestSend(data: Dataset, dmrlId: string): ArchiveEntry | null {
   return sends.at(-1) ?? null
 }
 
+/** Hat die DMRL bereits einen SEND-Archivstand (auch zurückgezogen)? Dann führt allein das Archiv den Zähler fort (PROJ-6). */
+export function hasAnySend(data: Dataset, dmrlId: string): boolean {
+  return data.archive.some((item) => item.dmrlId === dmrlId && item.direction === "send")
+}
+
 /** Aktueller Versionsindex NNNNN-JJJJ einer DMRL (abgeleitet aus dem Archiv), oder null wenn nie gesendet */
 export function currentVersionIndex(data: Dataset, dmrlId: string): string | null {
   const send = latestSend(data, dmrlId)

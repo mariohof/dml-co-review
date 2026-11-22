@@ -1,6 +1,6 @@
 import { canAccessAdministration, canAccessDmrl } from "@/lib/auth/permissions"
 import { writeDml } from "@/lib/data/dml-writer"
-import { currentVersionIndex, latestSend } from "@/lib/data/queries"
+import { currentVersionIndex, hasAnySend, latestSend } from "@/lib/data/queries"
 import {
   versionIndexOf,
   type ArchiveEntry,
@@ -61,7 +61,32 @@ export function lastSendPartner(data: Dataset, dmrl: Dmrl): Organisation | null 
   return send ? (data.organisations.find((o) => o.id === send.partnerOrganisationId) ?? null) : null
 }
 
-/** Nächster DML-Code: seqnum je DMRL + Absender + Jahr; zurückgezogene SENDs belegen ihre Nummer */
+/**
+ * seqnum aus dem vorgegebenen Versionsindex erster SEND (PROJ-6): nur solange es keinen SEND gibt
+ * und das Jahr der Vorgabe dem SEND-Jahr entspricht; sonst null (normale Zählregel).
+ */
+export function presetSeqnum(data: Dataset, dmrl: Dmrl, year: string): string | null {
+  const preset = dmrl.firstSendVersionIndex
+  if (!preset || hasAnySend(data, dmrl.id)) return null
+  const [seqnum, presetYear] = preset.split("-")
+  return presetYear === year ? seqnum : null
+}
+
+/**
+ * Vorgabe, die wegen eines vergangenen Jahres nicht mehr angewendet wird (Hinweis in der SEND-Vorschau), sonst null.
+ * Eine Vorgabe 00001 ergibt dasselbe Ergebnis wie die normale Regel und wird nicht gemeldet.
+ */
+export function expiredPreset(data: Dataset, dmrl: Dmrl, year: string): string | null {
+  const preset = dmrl.firstSendVersionIndex
+  if (!preset || hasAnySend(data, dmrl.id)) return null
+  const [seqnum, presetYear] = preset.split("-")
+  return presetYear !== year && seqnum !== "00001" ? preset : null
+}
+
+/**
+ * Nächster DML-Code: seqnum je DMRL + Absender + Jahr; zurückgezogene SENDs belegen ihre Nummer.
+ * Erster SEND: vorgegebener Versionsindex (PROJ-6), sofern aus dem SEND-Jahr.
+ */
 export function nextSendDmlCode(data: Dataset, dmrl: Dmrl, at: string): DmlCode {
   const system = data.systems.find((s) => s.id === dmrl.systemId)
   const originator = data.organisations.find((o) => o.id === dmrl.originatorOrganisationId)
@@ -70,7 +95,7 @@ export function nextSendDmlCode(data: Dataset, dmrl: Dmrl, at: string): DmlCode 
   const used = data.archive
     .filter((a) => a.dmrlId === dmrl.id && a.direction === "send" && a.dmlc.sendid === sendid && a.dmlc.diyear === year)
     .map((a) => Number(a.dmlc.seqnum) || 0)
-  const seqnum = String(Math.max(0, ...used) + 1).padStart(5, "0")
+  const seqnum = presetSeqnum(data, dmrl, year) ?? String(Math.max(0, ...used) + 1).padStart(5, "0")
   return { modelic: system?.modelic ?? "", sendid, dmltype: dmrl.dmlType, diyear: year, seqnum }
 }
 
@@ -103,13 +128,21 @@ export function sendCounts(data: Dataset, dmrlId: string): SendCounts {
 export interface SendPreview {
   dmlc: DmlCode
   versionIndex: string
+  /** Vorgabe aus vergangenem Jahr, die nicht mehr angewendet wird (PROJ-6), sonst null */
+  expiredPreset: string | null
   fileName: string
   counts: SendCounts
 }
 
 export function sendPreview(data: Dataset, dmrl: Dmrl, at: string): SendPreview {
   const dmlc = nextSendDmlCode(data, dmrl, at)
-  return { dmlc, versionIndex: versionIndexOf(dmlc), fileName: sendFileName(dmlc), counts: sendCounts(data, dmrl.id) }
+  return {
+    dmlc,
+    versionIndex: versionIndexOf(dmlc),
+    expiredPreset: expiredPreset(data, dmrl, dmlc.diyear),
+    fileName: sendFileName(dmlc),
+    counts: sendCounts(data, dmrl.id),
+  }
 }
 
 export interface PreparedSend extends SendPreview {

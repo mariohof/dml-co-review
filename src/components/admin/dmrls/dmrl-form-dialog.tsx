@@ -4,7 +4,7 @@ import { useEffect } from "react"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Info } from "lucide-react"
+import { CalendarClock, Info } from "lucide-react"
 
 import { FieldLockHint } from "@/components/admin/field-lock-hint"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -23,8 +23,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DML_TYPES, type Dataset, type Dmrl } from "@/lib/data/schema"
 import {
   DML_TYPE_LABEL,
-  DMRL_FORM_DEFAULTS,
+  VERSION_INDEX_HINT,
+  dmrlFormDefaults,
   dmrlFormSchema,
+  dmrlFormValuesOf,
+  expiredPresetHint,
   systemsWithoutDmrl,
   type DmrlFormInput,
   type DmrlFormValues,
@@ -45,23 +48,16 @@ interface DmrlFormDialogProps {
 export function DmrlFormDialog({ open, onOpenChange, data, dmrl, fieldBlocked, onSubmit }: DmrlFormDialogProps) {
   const form = useForm<DmrlFormInput, unknown, DmrlFormValues>({
     resolver: zodResolver(dmrlFormSchema(data, dmrl?.id)),
-    defaultValues: DMRL_FORM_DEFAULTS,
+    defaultValues: dmrlFormDefaults(),
     mode: "onTouched",
   })
 
   useEffect(() => {
     if (!open) return
-    form.reset(
-      dmrl
-        ? {
-            systemId: dmrl.systemId,
-            originatorOrganisationId: dmrl.originatorOrganisationId,
-            dmlType: dmrl.dmlType,
-            security: dmrl.security,
-          }
-        : DMRL_FORM_DEFAULTS
-    )
-  }, [open, dmrl, form])
+    form.reset(dmrl ? dmrlFormValuesOf(data, dmrl) : dmrlFormDefaults())
+  }, [open, dmrl, data, form])
+
+  const expiredHint = dmrl && !fieldBlocked?.firstSendVersionIndex ? expiredPresetHint(data, dmrl) : null
 
   // Beim Bearbeiten das eigene System anzeigen, beim Anlegen nur freie Systeme
   const systems = dmrl ? data.systems.filter((s) => s.id === dmrl.systemId) : systemsWithoutDmrl(data)
@@ -189,6 +185,38 @@ export function DmrlFormDialog({ open, onOpenChange, data, dmrl, fieldBlocked, o
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="firstSendVersionIndex"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Versionsindex erster SEND</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      inputMode="numeric"
+                      maxLength={10}
+                      placeholder="NNNNN-JJJJ"
+                      className="font-mono sm:max-w-[12rem]"
+                      autoComplete="off"
+                      disabled={!!fieldBlocked?.firstSendVersionIndex}
+                    />
+                  </FormControl>
+                  {fieldBlocked?.firstSendVersionIndex ? (
+                    <FieldLockHint reason={fieldBlocked.firstSendVersionIndex} />
+                  ) : (
+                    <FormDescription>{VERSION_INDEX_HINT}</FormDescription>
+                  )}
+                  {expiredHint && (
+                    <p className="flex items-center gap-1 text-sm text-amber-900">
+                      <CalendarClock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      {expiredHint}
+                    </p>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Abbrechen

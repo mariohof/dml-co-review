@@ -1,6 +1,6 @@
 # PROJ-6: DMRL anlegen
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-22
 
@@ -294,6 +294,26 @@ _Stand 2026-11-13 — `/frontend PROJ-6`_
 - Spalte „Bearbeiter" und Aktion „Berechtigungen" folgen mit PROJ-17 auf derselben Seite.
 - Bearbeiten ohne Änderung speichert nichts und erzeugt keinen Verlaufseintrag.
 - Browser-E2E-Tests stehen aus → `/qa`.
+
+### Erweiterung „Versionsindex erster SEND" (2026-11-22)
+_`/frontend PROJ-6` nach Refinement/Tech Design 2026-11-22_
+
+**Umgesetzt**
+- `src/lib/data/schema.ts` — DMRL-Feld `firstSendVersionIndex` (optional, Muster `VERSION_INDEX_PATTERN`: `NNNNN-JJJJ`, nicht `00000`); Datenformat-Version unverändert, Altbestände bleiben ladbar.
+- `src/lib/data/queries.ts` — `hasAnySend` (SEND-Archivstand vorhanden, auch zurückgezogen), gemeinsam genutzt von Verwaltung und SEND.
+- `src/lib/workflows/send.ts` — `presetSeqnum` (Vorgabe nur ohne SEND und bei passendem Jahr) in `nextSendDmlCode`; `expiredPreset` → neues Vorschau-Feld `expiredPreset`. `dmlref` des ersten SEND unverändert auf sich selbst.
+- `src/lib/workflows/export.ts` — XML-Export ohne SEND nutzt `presetSeqnum` (sonst `00001`); mit nur zurückgezogenem SEND wie bisher `00001`.
+- `src/lib/rules/dmrls.ts` — Formularfeld mit Prüfung (Format/`00000` → „Versionsindex muss das Format NNNNN-JJJJ haben (00001–99999).“; Jahr → „Das Jahr muss das aktuelle Jahr (JJJJ) sein.“, nur bei geändertem Wert), Sperre ab SEND („Versionsindex wird bereits vom SEND-Zähler fortgeführt.“), `dmrlFormDefaults` (Vorbelegung `00001-<aktuelles Jahr>`, ersetzt `DMRL_FORM_DEFAULTS`), `dmrlFormValuesOf`, `firstSendVersionIndexOf` (Anzeige: Vorgabe · Altbestand: Versionsindex des ersten SEND · sonst `00001-<Jahr>`), `expiredPresetHint`; Änderung → Verlauf „Kopfdaten geändert: Versionsindex erster SEND alt → neu“.
+- `src/components/admin/dmrls/dmrl-form-dialog.tsx` — Feld „Versionsindex erster SEND“ (volle Breite unter DML-Typ/Sicherheitseinstufung) mit Hinweistext, Sperrhinweis und Hinweis „Vorgabe abgelaufen — der erste SEND erhält 00001-JJJJ.“
+- `src/components/workflows/send-dialogs.tsx` — Hinweis (amber) unter der Vorschau, wenn eine Vorgabe aus einem vergangenen Jahr nicht mehr angewendet wird.
+- `src/lib/data/demo-data.ts` — PHUNGUN `00001-2026` (gesperrt), Fahrzeug/Fluggerät `00001-<aktuelles Jahr>`.
+
+**Tests**: `dmrls.test.ts` (+14), `send.test.ts` (+5), `export.test.ts` (+1), `dmrl-management.test.tsx` (+1) — insgesamt 646 Tests grün, Typprüfung und Lint ohne Fehler.
+
+**Abweichungen / Präzisierungen**
+- Eine abgelaufene Vorgabe `00001-JJJJ` wird in der SEND-Vorschau **nicht** gemeldet, da das Ergebnis identisch ist (`00001` im neuen Jahr). Der Hinweis im Bearbeiten-Dialog erscheint dagegen bei jeder abgelaufenen gespeicherten Vorgabe.
+- Altbestand ohne gespeicherte Vorgabe: Das Feld zeigt den berechneten Wert; unverändertes Speichern schreibt keine Vorgabe.
+- Browser-E2E für die Erweiterung (Anlegen mit `00013-<Jahr>` → Check-in → SEND → `00014`) steht aus → `/qa`.
 
 ## QA Test Results
 

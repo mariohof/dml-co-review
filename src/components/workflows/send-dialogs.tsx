@@ -242,6 +242,15 @@ function SendFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
               {preview.counts.gesamt} gesamt · {preview.counts.n} neu (n) · {preview.counts.c} geändert (c) · {preview.counts.d} Löschung (d)
             </dd>
           </dl>
+          {preview.expiredPreset && (
+            <Alert className="border-amber-300 bg-amber-50 text-amber-950 [&>svg]:text-amber-700">
+              <TriangleAlert className="h-4 w-4" aria-hidden />
+              <AlertDescription>
+                Der vorgegebene Versionsindex {preview.expiredPreset} stammt aus einem vergangenen Jahr und wird nicht mehr angewendet. Der erste
+                SEND erhält {preview.versionIndex}.
+              </AlertDescription>
+            </Alert>
+          )}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={onClose}>
               Abbrechen
