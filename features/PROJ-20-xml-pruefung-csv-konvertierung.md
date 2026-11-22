@@ -2,9 +2,11 @@
 
 ## Status: In Progress
 **Created:** 2026-11-14
-**Last Updated:** 2026-11-21
+**Last Updated:** 2026-11-22
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die konvertierte CSV hat 28 Spalten (wie Check-out); `answer_timestamp` ist leer, da eine Empfänger-XML keinen Übernahme-Zeitpunkt enthält.
+
+> **Refinement 2026-11-22 — Benennung „Werkzeug“:** Menüpunkt in der Kopfzeile und Seitenüberschrift heißen **„Werkzeug“** (bisher „XML prüfen“). Die Adresse `/xml-pruefung` und die Funktion bleiben unverändert. Die kleine Zeile über der Überschrift (bisher „Werkzeug“) lautet jetzt „XML prüfen“, damit die Funktion weiterhin auf einen Blick erkennbar ist und „Werkzeug“ nicht doppelt steht.
 
 ## Dependencies
 - Requires: PROJ-2 (Simulierte Anmeldung) — nur angemeldete Benutzer
@@ -16,12 +18,12 @@
 - ~~Wird genutzt von: PROJ-21 (XML gegen DMRL prüfen)~~ — PROJ-21 entfällt (2026-11-16): Der Bedarf ist mit PROJ-20 abgedeckt
 
 ## Beschreibung
-Ein **eigenständiges Werkzeug** „XML prüfen“: Der Benutzer lädt eine beliebige DMRL-XML hoch (z. B. von einem Empfänger, aus einem Altprojekt oder einem anderen System), wählt die S1000D-Issue, und die Datei wird gegen das Schema (XSD) und das fachliche Regelwerk geprüft. Das Ergebnis ist eine Zusammenfassung der Datei mit Prüfbericht und eine **CSV im Check-out-Format**, die sich in Excel bearbeiten und über den normalen Check-in in eine DMRL im System übernehmen lässt.
+Ein **eigenständiges Werkzeug** (Menüpunkt und Seite „Werkzeug“, Funktion „XML prüfen“): Der Benutzer lädt eine beliebige DMRL-XML hoch (z. B. von einem Empfänger, aus einem Altprojekt oder einem anderen System), wählt die S1000D-Issue, und die Datei wird gegen das Schema (XSD) und das fachliche Regelwerk geprüft. Das Ergebnis ist eine Zusammenfassung der Datei mit Prüfbericht und eine **CSV im Check-out-Format**, die sich in Excel bearbeiten und über den normalen Check-in in eine DMRL im System übernehmen lässt.
 
 Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine Sperre.
 
 ## Ablauf
-1. Menüpunkt **„XML prüfen“** in der Kopfzeile (neben „Dashboard“) öffnen
+1. Menüpunkt **„Werkzeug“** in der Kopfzeile (neben „Dashboard“) öffnen
 2. **S1000D-Issue wählen** (2.3, 4.2 oder 5.0); ohne Auswahl ist keine Prüfung möglich
 3. **XML-Datei auswählen** (höchstens 5 MB, wie PROJ-11) und „Prüfen“
 4. Prüfung: Wohlgeformtheit und XSD (PROJ-11), dann Einlesen der Einträge und Regelprüfung
@@ -97,7 +99,8 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 **Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
 
 ### Zugang
-- [ ] Angenommen ein Bearbeiter oder Administrator ist angemeldet, wenn er die Kopfzeile ansieht, dann gibt es den Menüpunkt „XML prüfen“, der zum Werkzeug führt
+- [ ] Angenommen ein Bearbeiter oder Administrator ist angemeldet, wenn er die Kopfzeile ansieht, dann gibt es den Menüpunkt „Werkzeug“ (neben „Dashboard“), der zum Werkzeug führt; der Menüpunkt „XML prüfen“ existiert nicht mehr
+- [ ] Angenommen das Werkzeug ist geöffnet, wenn die Seite angezeigt wird, dann lautet die Überschrift „Werkzeug.“, darüber steht die Zeile „XML prüfen“, und die Adresse ist weiterhin `/xml-pruefung`
 - [ ] Angenommen niemand ist angemeldet, wenn die Adresse des Werkzeugs aufgerufen wird, dann erscheint die Anmeldeseite
 - [ ] Angenommen ein Bearbeiter ohne jede DMRL-Berechtigung ist angemeldet, wenn er das Werkzeug öffnet, dann kann er es uneingeschränkt nutzen
 
@@ -206,6 +209,9 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Auslöser der Ergänzung ist ein leerer Ausgabetyp (nicht mehr nur ein ganz fehlendes `issno`); Ausgabenummer `001` und Datum nur, wenn leer | Wunsch Product Owner; der Ausgabetyp ist aus dem Eintragstyp eindeutig ableitbar. Lockert die Regel „bei Teildaten keine Ergänzung“ aus Refinement 2 | 2026-11-16 |
 | Fehlt nur die Ausgabenummer (Ausgabetyp vorhanden), wird nichts ergänzt | Bei `changed`/`deleted` wäre `001` meist falsch; die Nummer klärt der Bearbeiter | 2026-11-16 |
 | Lange Codes in der Zusammenfassung nach Bindestrichen umbrechen, rein per CSS (kein eingefügtes Zeichen) — bereits umgesetzt | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar; Wunsch Product Owner: nur CSS | 2026-11-16 |
+| Menüpunkt und Seitenüberschrift heißen „Werkzeug“ statt „XML prüfen“ | Wunsch Product Owner | 2026-11-22 |
+| Adresse `/xml-pruefung` bleibt | Lesezeichen und Verweise bleiben gültig; die Adresse beschreibt weiterhin die Funktion | 2026-11-22 |
+| Zeile über der Überschrift wechselt von „Werkzeug“ zu „XML prüfen“ | Vermeidet „Werkzeug“ doppelt; die Funktion bleibt auf der Seite benannt | 2026-11-22 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
@@ -244,9 +250,9 @@ Der Prüf- und Konvertierungskern wird als eigener, wiederverwendbarer Baustein 
 ### B) Seitenstruktur
 ```
 Kopfzeile (bestehend)
-+-- Menüpunkt „XML prüfen“ (neu, neben „Dashboard“, für alle angemeldeten Benutzer)
++-- Menüpunkt „Werkzeug“ (neben „Dashboard“, für alle angemeldeten Benutzer; bis 2026-11-22 „XML prüfen“)
 
-Seite „XML prüfen“ (neue Adresse /xml-pruefung, nur nach Anmeldung)
+Seite „Werkzeug“ (Adresse /xml-pruefung, nur nach Anmeldung; Zeile über der Überschrift: „XML prüfen“)
 +-- Kopf: Titel + kurze Erklärung („Nichts wird gespeichert“)
 +-- Auswahlkarte
 |   +-- S1000D-Issue (Auswahl 2.3 / 4.2 / 5.0, anfangs leer)
