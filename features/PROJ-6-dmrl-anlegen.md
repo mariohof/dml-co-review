@@ -1,6 +1,6 @@
 # PROJ-6: DMRL anlegen
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-22
 
@@ -96,6 +96,7 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - [ ] Angenommen das Jahr im Versionsindex ist nicht das aktuelle Jahr (z. B. `00013-2025` im Jahr 2026), wenn gespeichert wird, dann erscheint „Das Jahr muss das aktuelle Jahr (2026) sein“ und nichts wird gespeichert
 - [ ] Angenommen eine DMRL wurde mit Versionsindex `00013-2026` angelegt, wenn 2026 der erste SEND erfolgt, dann hat das XML seqnum `00013`, diyear `2026`, der `dmlref` verweist auf sich selbst und der nächste SEND erhält `00014-2026` (PROJ-12)
 - [ ] Angenommen eine DMRL wurde mit Versionsindex `00013-2026` angelegt, wenn der erste SEND erst 2027 erfolgt, dann erhält er `00001-2027` und die SEND-Vorschau weist darauf hin, dass die Vorgabe `00013-2026` nicht mehr angewendet wird (PROJ-12)
+- [ ] Angenommen eine DMRL ohne SEND hat die Vorgabe `00013-2026`, wenn 2026 ein XML-Export (PROJ-18) erfolgt, dann trägt die Datei den Versionsindex `00013-2026`
 - [ ] Angenommen der DML-Typ wird ausgewählt, wenn die Auswahl geöffnet wird, dann stehen genau `c`, `p` und `s` zur Verfügung
 - [ ] Angenommen eine DMRL wurde zu einem System angelegt, wenn danach die Systemverwaltung geöffnet wird, dann ist die Systembezeichnung dieses Systems nicht mehr änderbar (PROJ-5)
 
@@ -104,6 +105,7 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - [ ] Angenommen eine DMRL hat einen Workflow durchlaufen, wenn „Bearbeiten" gewählt wird, dann ist nur die Sicherheitseinstufung änderbar; System, Originator und DML-Typ sind gesperrt mit dem Hinweis „wird in Workflows verwendet"
 - [ ] Angenommen eine DMRL hat noch keinen SEND (auch wenn bereits Check-out/Check-in erfolgt ist), wenn „Bearbeiten“ gewählt wird, dann ist der Versionsindex erster SEND änderbar (gleiche Prüfungen wie beim Anlegen)
 - [ ] Angenommen eine DMRL hat mindestens einen SEND (auch zurückgezogen), wenn „Bearbeiten“ gewählt wird, dann ist der Versionsindex erster SEND gesperrt mit dem Hinweis „Versionsindex wird bereits vom SEND-Zähler fortgeführt“
+- [ ] Angenommen eine DMRL ohne SEND hat die Vorgabe `00013-2026` und es ist 2027, wenn „Bearbeiten“ gewählt und nur die Sicherheitseinstufung geändert wird, dann wird gespeichert und der Dialog zeigt den Hinweis, dass die Vorgabe abgelaufen ist und der erste SEND `00001-2027` erhält
 - [ ] Angenommen die Sicherheitseinstufung der DMRL wird geändert, wenn gespeichert wird, dann bleiben die Sicherheitseinstufungen der Einträge unverändert
 
 ### Löschen
@@ -121,7 +123,9 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - **DMRL ist gerade ausgecheckt und soll gelöscht werden:** Löschen gesperrt mit „Die DMRL ist ausgecheckt von [Name]" (eigener Sperrgrund; „im Workflow benutzt" gilt erst nach abgeschlossenem Check-in, PROJ-9). Nach Rücknahme des Check-outs ohne Check-in wieder löschbar.
 - **Sicherheitseinstufung der DMRL `01`, Einträge `02`:** zulässig, keine Abhängigkeit.
 - **Bestehende DMRLs ohne Vorgabe (Altbestand im localStorage):** gelten als `00001-<Jahr des ersten SEND>` — Verhalten wie bisher.
-- **Versionsindex `99999-JJJJ` vorgegeben:** zulässig; das Verhalten beim nächsten SEND im selben Jahr (Zählerüberlauf) ist noch offen — siehe Open Questions.
+- **Versionsindex `99999-JJJJ` vorgegeben:** zulässig; der Zählerüberlauf beim nächsten SEND im selben Jahr wird bewusst nicht geregelt (Entscheidung Product Owner 2026-11-22).
+- **Vorgabe aus vergangenem Jahr, DMRL wird bearbeitet:** Speichern erlaubt, solange der Versionsindex nicht geändert wird; der Dialog weist darauf hin, dass die Vorgabe abgelaufen ist und der erste SEND `00001-<aktuelles Jahr>` erhält. Die Jahresprüfung greift nur, wenn das Feld geändert wird.
+- **XML-Export (PROJ-18) vor dem ersten SEND:** verwendet die Vorgabe (sofern aus dem aktuellen Jahr), damit Export und erster SEND denselben Versionsindex zeigen.
 - **Einziger SEND zurückgezogen, danach Versionsindex ändern:** nicht möglich — der zurückgezogene SEND hat die Vorgabe bereits verbraucht.
 - **Zwei Tabs, gleichzeitiges Bearbeiten:** letzter Speichervorgang gewinnt (Prototyp, PROJ-1).
 
@@ -131,8 +135,8 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 - Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar
 
 ## Open Questions
-- [ ] Tech Design ergänzen (`/architecture`): Feld am DMRL-Datensatz (PROJ-1), Altbestand-Migration, Übergabe an die seqnum-Berechnung (PROJ-12), Hinweis in der SEND-Vorschau
-- [ ] Zählerüberlauf: Was passiert beim SEND nach `99999-JJJJ` im selben Jahr? Heute in PROJ-12 nicht geregelt; durch die Vorgabe erstmals praktisch erreichbar. Empfehlung: SEND mit Meldung sperren (2026-11-22)
+- [x] Tech Design ergänzen (`/architecture`) → Abschnitt „Erweiterung 2026-11-22“ im Tech Design (2026-11-22)
+- [x] Zählerüberlauf: Was passiert beim SEND nach `99999-JJJJ` im selben Jahr? → Wird nicht geregelt; in der Praxis nicht relevant, Entscheidung Product Owner (2026-11-22)
 - [x] Bedeutung der DML-Typen `c`, `p`, `s` für die Anzeige? → S1000D: „c – vollständig", „p – partiell", „s – Status" in der Auswahl; in Listen nur das Kürzel (2026-11-12)
 
 ## Decision Log
@@ -167,6 +171,12 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 | Löschen atomar: DMRL, Einträge, Berechtigungen, Verlauf | Keine verwaisten Daten | 2026-11-12 |
 | Ausgecheckte DMRL nicht löschbar (eigener Sperrgrund) | Konsistenz mit PROJ-9 | 2026-11-12 |
 | Kopfdaten-Änderungen erzeugen Verlaufseintrag in derselben Speicherung | PROJ-15 | 2026-11-12 |
+| Vorgabe als zusätzliches **optionales** Feld am DMRL-Datensatz; fehlt es (Altbestand), gilt `00001-<Jahr des SEND>`; Datenformat-Version bleibt unverändert | Gespeicherte Daten im Browser bleiben ladbar — eine Erhöhung der Formatversion würde vorhandene Bestände als „inkompatibel“ verwerfen | 2026-11-22 |
+| Vorgabe wird nur genutzt, solange die DMRL **keinen** SEND-Archivstand hat (auch keinen zurückgezogenen) und ihr Jahr dem SEND-Jahr entspricht; sonst unveränderte Zählregel | Eine Stelle im SEND-Ablauf entscheidet; nach dem ersten SEND führt allein das Archiv den Zähler fort | 2026-11-22 |
+| XML-Export (PROJ-18) ohne SEND nutzt dieselbe Regel wie der SEND | Export und erster SEND zeigen denselben Versionsindex. Vorgabe Product Owner | 2026-11-22 |
+| Jahresprüfung nur bei Änderung des Feldes; abgelaufene Vorgabe wird als Hinweis angezeigt | Andere Kopfdaten bleiben pflegbar, ohne die Vorgabe korrigieren zu müssen. Vorgabe Product Owner | 2026-11-22 |
+| Kein Schutz gegen Zählerüberlauf nach `99999` | Praktisch nicht relevant. Vorgabe Product Owner | 2026-11-22 |
+| Änderung der Vorgabe erzeugt Verlaufseintrag „Kopfdaten geändert: Versionsindex erster SEND alt → neu“ | Gleiche Nachvollziehbarkeit wie die übrigen Kopfdaten (PROJ-15) | 2026-11-22 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -220,6 +230,56 @@ Keine Änderung — DMRL laut PROJ-1. Beim **Anlegen** entsteht eine DMRL mit St
 ### F) Testbarkeit
 - Unit-Tests: Prüfungen, Systemauswahl (nur ohne DMRL), Feldsperren je Zustand, Sperrgründe Löschen (benutzt / ausgecheckt), Löschen entfernt Einträge und Berechtigungen, Verlaufseintrag bei Kopfdatenänderung.
 - E2E: Anlegen (inkl. „kein System frei"), Bearbeiten, Löschen; Demo-Daten: PHUNGUN nur Sicherheitseinstufung änderbar, Fahrzeug/Fluggerät löschbar.
+
+### Erweiterung 2026-11-22: Versionsindex erster SEND
+
+Kleine Erweiterung bestehender Teile — keine neue Seite, kein Backend, keine neuen Pakete.
+
+**A) Betroffene Oberflächen**
+```
+Formular-Dialog „DMRL anlegen / bearbeiten“ (bestehend)
++-- … System · Originator · DML-Typ · Sicherheitseinstufung
++-- NEU: Feld „Versionsindex erster SEND“ (vorbelegt 00001-<aktuelles Jahr>)
+    +-- Hinweistext unter dem Feld (Wortlaut laut Datenfelder-Tabelle)
+    +-- Fehlermeldungen: Format NNNNN-JJJJ / Nummer 00001–99999 / Jahr = aktuelles Jahr (nur bei Änderung)
+    +-- gesperrt mit Hinweis „Versionsindex wird bereits vom SEND-Zähler fortgeführt“, sobald ein SEND existiert
+    +-- Hinweis „Vorgabe abgelaufen — erster SEND erhält 00001-<Jahr>“, wenn das Jahr vergangen ist
+
+SEND-Dialog (PROJ-12, bestehend)
++-- Vorschau Versionsindex — nutzt die Vorgabe beim ersten SEND
++-- NEU: Hinweis, wenn eine Vorgabe aus einem vergangenen Jahr nicht mehr angewendet wird
+
+DMRL-Liste: keine neue Spalte (Versionsindex ist im Dialog und in der SEND-Vorschau sichtbar)
+```
+
+**B) Datenmodell (Klartext)**
+- Jede DMRL erhält zusätzlich: **Versionsindex erster SEND** — Nummer (5-stellig) und Jahr.
+- Neue DMRLs speichern den Wert immer. Bereits gespeicherte DMRLs ohne den Wert bleiben gültig und verhalten sich wie bisher (`00001` im Jahr des ersten SEND).
+- Gespeichert im bestehenden Datenpaket im Browser (localStorage); die Datenformat-Version bleibt gleich, vorhandene Bestände werden nicht verworfen.
+- Demo-Daten: Fahrzeug und Fluggerät `00001-<aktuelles Jahr>`; PHUNGUN `00001-2026` (passend zum vorhandenen Archiv, gesperrt, weil SENDs existieren).
+
+**C) Fachregeln (eine Stelle, ohne Oberfläche)**
+- **Prüfung beim Speichern:** Format `NNNNN-JJJJ`, Nummer `00001`–`99999`; Jahr = aktuelles Jahr, aber nur wenn der Wert neu ist oder geändert wurde.
+- **Änderbarkeit:** frei, solange es keinen SEND-Archivstand gibt (auch keinen zurückgezogenen) — unabhängig von der Regel „im Workflow benutzt“; Sperre gilt in der Oberfläche und beim Speichern.
+- **Nächster Versionsindex (PROJ-12):** Gibt es noch keinen SEND und stimmt das Jahr der Vorgabe mit dem SEND-Jahr überein → Vorgabe. Sonst unveränderte Regel (höchste genutzte Nummer des Jahres + 1, sonst `00001`).
+- **`dmlref` des ersten SEND:** unverändert auf sich selbst — mit dem so ermittelten Versionsindex.
+- **XML-Export ohne SEND (PROJ-18):** gleiche Regel wie der nächste SEND.
+- **Verlauf:** Änderung der Vorgabe → „Kopfdaten geändert: Versionsindex erster SEND alt → neu“.
+
+**D) Technische Entscheidungen (für PM erklärt)**
+| Entscheidung | Warum |
+|---|---|
+| Optionales Feld statt neuer Datenformat-Version | Vorhandene Daten im Browser bleiben erhalten; kein Zurücksetzen nötig. |
+| Eine gemeinsame Regel „nächster Versionsindex“ für SEND, SEND-Vorschau und Export | Alle Stellen zeigen garantiert dieselbe Nummer. |
+| Sperre an „SEND vorhanden“ statt an „im Workflow benutzt“ | Bestand kann vor dem ersten SEND eingecheckt und die Vorgabe trotzdem noch korrigiert werden. |
+| Jahresprüfung nur bei Änderung | Ein abgelaufener Wert blockiert die Pflege anderer Kopfdaten nicht. |
+
+**E) Abhängigkeiten (Pakete):** keine neuen.
+
+**F) Testbarkeit**
+- Unit: Prüfung (Format, 00000, Jahr nur bei Änderung), Sperre ab SEND (auch zurückgezogen), nächster Versionsindex (Vorgabe greift / abgelaufen / nach erstem SEND fortgezählt / zurückgezogener erster SEND → Vorgabe + 1), Altbestand ohne Feld, Export ohne SEND, Verlaufseintrag.
+- Komponenten: Feld mit Vorbelegung und Hinweistext, Fehlermeldungen, Sperr- und Ablauf-Hinweis, Hinweis in der SEND-Vorschau.
+- E2E: DMRL mit `00013-<Jahr>` anlegen → Check-in → SEND erzeugt `…-00013_001-00.XML` → nächster SEND `00014`.
 
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend PROJ-6`_

@@ -38,7 +38,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 | Feld | Wert |
 |---|---|
 | Richtung | `send` |
-| `dmlc` | MI · CAGE Originator · DML-Typ · Jahr und seqnum des **letzten SEND**; ohne SEND: aktuelles Jahr und `00001` (Schema verlangt eine positive Zahl) |
+| `dmlc` | MI · CAGE Originator · DML-Typ · Jahr und seqnum des **letzten SEND**; ohne SEND: **vorgegebener Versionsindex erster SEND (PROJ-6)**, sofern aus dem aktuellen Jahr, sonst aktuelles Jahr und `00001` (Schema verlangt eine positive Zahl) — gleiche Regel wie der nächste SEND (Refinement PROJ-6, 2026-11-22) |
 | `issno` / `inwork` | **`000` / `01`** (S1000D-Arbeitsstand; SEND hat `001` / `00`) |
 | `issdate` | Datum des Exports |
 | `security` | Sicherheitseinstufung der DMRL |
@@ -85,7 +85,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 
 ### XML
 - [ ] Angenommen PHUNGUN (letzter SEND 00002-2026) wird als XML exportiert, wenn die Datei gespeichert wird, dann heißt sie `DML-PHUNGUN-D0815-C-2026-00002_000-01.XML` und hat `issno` `000`, `inwork` `01`
-- [ ] Angenommen eine DMRL wurde nie gesendet, wenn als XML exportiert wird, dann hat `dmlc` die seqnum `00001` und das aktuelle Jahr, und `dmlref` verweist auf sich selbst
+- [ ] Angenommen eine DMRL wurde nie gesendet, wenn als XML exportiert wird, dann hat `dmlc` seqnum und Jahr des vorgegebenen Versionsindex erster SEND (PROJ-6; Standard `00001` und aktuelles Jahr), und `dmlref` verweist auf sich selbst
 - [ ] Angenommen ein XML-Export wird erzeugt, wenn er geöffnet wird, dann enthält `remarks` „Export vom [Datum] — kein offizieller Austauschstand" und kein Eintrag hat `answer`
 - [ ] Angenommen das System hat Issue 2.3 / 4.2 / 5.0, wenn als XML exportiert wird, dann besteht die Datei die XSD-Prüfung des jeweiligen Issues
 - [ ] Angenommen die XSD-Prüfung schlägt fehl oder ist nicht verfügbar, wenn als XML exportiert wird, dann wird nichts heruntergeladen und eine Meldung erscheint
