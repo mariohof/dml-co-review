@@ -13,7 +13,7 @@ export default defineConfig({
   projects: [
     // PW_CHANNEL=chrome nutzt das installierte Google Chrome statt des Playwright-Chromium
     { name: 'chromium', use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL || undefined } },
-    { name: 'Mobile Safari', use: { ...devices['iPhone 13'] } },
+    // Nur Desktop (PRD, Constraints): keine Mobil-/Tablet-Projekte
   ],
   webServer: {
     command: 'npm run dev',

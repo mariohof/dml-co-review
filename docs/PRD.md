@@ -46,6 +46,7 @@ Details und Abhängigkeiten: siehe `features/INDEX.md`.
 - **S1000D-Version:** wird pro System festgelegt; alle drei Versionen sind im MVP enthalten.
 - **Design system:** see `docs/design-system.md`
 - UI-Sprache: Deutsch.
+- **Nur Desktop:** Die Anwendung wird ausschließlich auf Desktop-Rechnern genutzt; Smartphones und Tablets (iPhone, iPad usw.) werden weder unterstützt noch getestet (Vorgabe Product Owner, 2026-11-22).
 - Team: Product Owner + KI-gestützte Entwicklung; kein fester Termin.
 
 ## Non-Goals

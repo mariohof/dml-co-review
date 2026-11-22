@@ -132,7 +132,7 @@ Die Sicherheitseinstufung wirkt ab dem nächsten SEND.
 ## Technical Requirements (optional)
 - Nur für Administratoren erreichbar (PROJ-2)
 - Formularvalidierung mit sofortigen, deutschsprachigen Fehlermeldungen
-- Responsiv: Tabelle auf kleinen Bildschirmen horizontal scrollbar
+- Nur Desktop (PRD); Tabelle bei schmalem Fenster horizontal scrollbar
 
 ## Open Questions
 - [x] Tech Design ergänzen (`/architecture`) → Abschnitt „Erweiterung 2026-11-22“ im Tech Design (2026-11-22)
@@ -394,7 +394,8 @@ Keine Bugs in diesem Feature.
 ### Bugs Found
 
 #### BUG-QA6-1: DMRL-Dialog auf kleinen Bildschirmen nicht scrollbar — Speichern/Abbrechen nicht erreichbar
-- **Severity:** Medium (bestand schon vorher, durch das neue Feld verstärkt)
+- **Status (2026-11-22):** Smartphone/Tablet außerhalb des Umfangs — die Anwendung wird nur auf dem Desktop genutzt (Vorgabe Product Owner, PRD Constraints). Mobil-Projekt aus der Playwright-Konfiguration entfernt. Verbleibend nur der Desktop-Fall „Fenster niedriger als ca. 690 px“ → herabgestuft auf **Low**.
+- **Severity:** ~~Medium~~ → Low (nur noch Desktop-Fenster mit geringer Höhe)
 - **Steps to Reproduce:**
   1. Fenster auf 390×664 (iPhone 13) oder Desktop-Fenster niedriger als ca. 690 px
   2. „Verwaltung → DMRLs" → beliebige DMRL „Bearbeiten"
@@ -406,10 +407,10 @@ Keine Bugs in diesem Feature.
 
 ### Summary
 - **Acceptance Criteria:** 11/11 passed (Chromium)
-- **Bugs Found:** 1 total (0 critical, 0 high, 1 medium, 0 low)
+- **Bugs Found:** 1 total (0 critical, 0 high, 0 medium, 1 low — BUG-QA6-1 nach PO-Entscheidung „nur Desktop“ herabgestuft)
 - **Security:** Pass
 - **Production Ready:** YES (keine Critical/High-Bugs)
-- **Recommendation:** Freigeben; BUG-QA6-1 zeitnah beheben (eine Zeile, gleiches Muster wie die übrigen Dialoge). Da WebKit jetzt installiert ist, empfiehlt sich ein eigener Mobile-Safari-Lauf der gesamten Suite — bisher wurde dieses Projekt in keinem QA-Lauf ausgeführt.
+- **Recommendation:** Freigeben; BUG-QA6-1 (Low) nur bei Bedarf beheben, falls Desktop-Fenster mit geringer Höhe (z. B. Laptop 1366×768) genutzt werden. Mobile/Tablet-Prüfungen entfallen (PRD: nur Desktop).
 - **E2E-Tests:** `tests/PROJ-6-versionsindex.spec.ts` (6 Tests)
 
 ## Deployment
