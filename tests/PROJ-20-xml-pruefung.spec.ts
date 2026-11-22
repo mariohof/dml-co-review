@@ -10,8 +10,8 @@ const DEMO_DIR = join(__dirname, "..", "public", "demo-dateien")
 const REPLY = "DML-PHUNGUN-C1234-C-2026-00002_001-00.XML"
 
 async function openTool(page: Page) {
-  await page.getByRole("navigation", { name: "Hauptnavigation" }).getByRole("link", { name: "XML prüfen" }).click()
-  await expect(page.getByRole("heading", { name: "XML prüfen." })).toBeVisible()
+  await page.getByRole("navigation", { name: "Hauptnavigation" }).getByRole("link", { name: "Werkzeug" }).click()
+  await expect(page.getByRole("heading", { name: "Werkzeug." })).toBeVisible()
 }
 
 async function checkFile(page: Page, name: string, issue = "2.3") {
@@ -21,7 +21,18 @@ async function checkFile(page: Page, name: string, issue = "2.3") {
   await page.getByRole("button", { name: "Prüfen" }).click()
 }
 
-test("Menüpunkt „XML prüfen“; Empfänger-REPLY: Zusammenfassung mit Antworten, CSV-Download mit Namen der XML", async ({ page }) => {
+test("Benennung „Werkzeug“ (Refinement 2026-11-22): Menüpunkt, Überschrift, Zeile „XML prüfen“, Adresse unverändert", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  const nav = page.getByRole("navigation", { name: "Hauptnavigation" })
+  await expect(nav.getByRole("link", { name: "XML prüfen" })).toHaveCount(0)
+  await openTool(page)
+  await expect(page).toHaveURL(/\/xml-pruefung$/)
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Werkzeug.")
+  await expect(page.getByText("XML prüfen", { exact: true })).toBeVisible()
+  await expect(nav.getByRole("link", { name: "Werkzeug" })).toHaveAttribute("aria-current", "page")
+})
+
+test("Menüpunkt „Werkzeug“; Empfänger-REPLY: Zusammenfassung mit Antworten, CSV-Download mit Namen der XML", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   await openTool(page)
   await expect(page.getByText("Bitte zuerst die S1000D-Issue der Datei wählen.")).toBeVisible()
@@ -101,7 +112,7 @@ test("Neuladen: Ergebnis ist weg", async ({ page }) => {
   await checkFile(page, REPLY)
   await expect(page.getByLabel("Zusammenfassung")).toBeVisible()
   await page.reload()
-  await expect(page.getByRole("heading", { name: "XML prüfen." })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Werkzeug." })).toBeVisible()
   await expect(page.getByLabel("Zusammenfassung")).toHaveCount(0)
 })
 

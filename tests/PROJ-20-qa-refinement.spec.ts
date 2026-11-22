@@ -12,9 +12,9 @@ const REPLY = "DML-PHUNGUN-C1234-C-2026-00002_001-00.XML"
 const XSD = (url: URL) => url.pathname === "/api/xsd-pruefung"
 
 async function toolCheck(page: Page, buffer: Buffer, name = REPLY) {
-  await page.getByRole("navigation", { name: "Hauptnavigation" }).getByRole("link", { name: "XML prüfen" }).click()
+  await page.getByRole("navigation", { name: "Hauptnavigation" }).getByRole("link", { name: "Werkzeug" }).click()
   // Seite fertig geladen (Entwicklungsserver kompiliert beim ersten Aufruf und lädt ggf. neu)
-  await expect(page.getByRole("heading", { name: "XML prüfen." })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Werkzeug." })).toBeVisible()
   await page.waitForLoadState("networkidle")
   await page.getByRole("combobox", { name: "S1000D-Issue" }).click()
   await page.getByRole("option", { name: "Issue 2.3" }).click()
@@ -90,7 +90,7 @@ test("echt, ohne Abfangen: App über Netzwerkadresse geöffnet → Serverfunktio
   await expect(page.getByRole("button", { name: /Benutzer: Ben Bearbeiter/ })).toBeVisible()
   // Weiterleitung zum Dashboard abwarten, bevor über das Menü navigiert wird
   await expect(page).toHaveURL(`${base}/`)
-  await page.getByRole("navigation", { name: "Hauptnavigation" }).getByRole("link", { name: "XML prüfen" }).click()
+  await page.getByRole("navigation", { name: "Hauptnavigation" }).getByRole("link", { name: "Werkzeug" }).click()
   await expect(page).toHaveURL(`${base}/xml-pruefung`)
   await page.getByRole("combobox", { name: "S1000D-Issue" }).click()
   await page.getByRole("option", { name: "Issue 2.3" }).click()

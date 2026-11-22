@@ -109,7 +109,7 @@ test("Benutzerwechsel bei angezeigtem Ergebnis: Werkzeug bleibt offen und nutzba
   await expect(page.getByLabel("Zusammenfassung")).toBeVisible()
   await switchUser(page, "Anna Bearbeitung")
   await expect(page).toHaveURL(/\/xml-pruefung/)
-  await expect(page.getByRole("heading", { name: "XML prüfen." })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Werkzeug." })).toBeVisible()
 })
 
 test("Keine DMRL-XML (wohlgeformt, anderes Wurzelelement): keine CSV", async ({ page }) => {

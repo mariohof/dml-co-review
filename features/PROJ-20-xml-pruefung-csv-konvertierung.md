@@ -538,6 +538,12 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 - Leser, CSV-Schreiber, Regelwerk, Seite, Check-in und REPLY-Import unverändert.
 - **Tests:** `xml-check.test.ts` +6 (Ableitungstabelle, je Eintragstyp inkl. unbekanntem Wert mit Regel-A-Fehler, vorhandene Nummer `002` mit/ohne Datum, Ausgabetyp vorhanden → Sammelhinweis, Issue 4.2, Rundlauf c/changed + d/deleted in den Check-in); `qa-proj20.test.ts` +1 (Issue 5.0). Angepasst: Hinweistext, `c`/`d`-Erwartungen, Teildaten-Fälle (`@issno` ohne Typ wird jetzt ergänzt), Komponententest (zusätzlich `d;…;001;deleted`), E2E „Ausgabedaten fehlen“ (Typ je Eintragstyp) und 4.2-Tests in `PROJ-20-qa-refinement2.spec.ts` (issueInfo ohne issueType wird jetzt ergänzt, Nummer und Datum bleiben). `npm test` 518/518 grün, Typprüfung und Lint ohne Fehler, E2E PROJ-20 31/31 grün.
 
+### Implementierungsnotizen Refinement 2026-11-22 (Frontend) — Benennung „Werkzeug“
+- Kopfzeile (`src/components/layout/app-header.tsx`): Menüpunkt „Werkzeug“ statt „XML prüfen“, Ziel weiterhin `/xml-pruefung`, aktiv markiert (`aria-current="page"`) wie bisher.
+- Seite (`src/app/(app)/xml-pruefung/page.tsx`): Überschrift „Werkzeug.“, kleine Zeile darüber „XML prüfen“ (bisher umgekehrt); Erklärungstext und Werkzeug unverändert.
+- E2E-Tests (`PROJ-20-xml-pruefung.spec.ts`, `PROJ-20-qa.spec.ts`, `PROJ-20-qa-refinement.spec.ts`) auf Menüpunkt/Überschrift „Werkzeug“ umgestellt; neuer Test „Benennung ‚Werkzeug‘“ prüft Menüpunkt, Überschrift, Zeile „XML prüfen“, Adresse und dass kein Menüpunkt „XML prüfen“ mehr existiert.
+- Interne Bezeichner, Adresse und Code-Kommentare zur Funktion („Prüfkern ‚XML prüfen‘“) bleiben unverändert.
+
 ### Bugfix BUG-QA1-1 (2026-11-15) — UTF-16-Dateien
 - `declaredEncoding` (`src/lib/workflows/reply.ts`) erkennt UTF-16 jetzt am BOM (`FF FE` / `FE FF`) oder — ohne BOM — am Bytemuster von „<?“ (Little/Big Endian); sonst wie bisher die XML-Deklaration (Standard UTF-8). Gemeinsamer Baustein für REPLY-Import (PROJ-13) und „XML prüfen“ (PROJ-20).
 - Archiv-Download (`archiveFileBytes`, PROJ-15): UTF-16-Stände werden wieder als UTF-16 LE mit BOM ausgegeben (byte-genau für die übliche LE-Datei mit BOM; bei BE oder fehlendem BOM als LE mit BOM).
