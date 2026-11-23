@@ -10,8 +10,15 @@ user-invocable: true
 ## Ziel
 Ein ZIP `DMRL-Management-System-Windows-offline-<JJJJ-MM-TT>[-vN].zip` (Ablage: Elternordner des Projekts, `/Users/mario/Documents/Claude/`) für den Windows-11-Firmenrechner des Product Owners:
 - portable Node.js unter `c:\tools\node`, xmllint unter `c:\tools\xmllint\bin`, Firmen-Proxy, **keine Paketinstallation und kein Internet** möglich
-- Inhalt: Projektstand aus **git HEAD** + `node_modules` mit **Windows-x64**-Binärdateien (`.bin` als `.cmd`/`.ps1`-Shims, keine Symlinks) + vorgebautes `.next` + `.start-stand.json` + `OFFLINE-WINDOWS-LIESMICH.txt`
+- Inhalt: Projektstand aus **git HEAD** + `node_modules` mit **Windows-x64**-Binärdateien (`.bin` als `.cmd`/`.ps1`-Shims, keine Symlinks) + vorgebautes `.next` (ohne `.next/cache`) + `.start-stand.json` + `OFFLINE-WINDOWS-LIESMICH.txt`
 - Beim Start (`Start.bat`) erkennt das Startskript (PROJ-19) über `.start-stand.json`: nichts zu installieren, nichts zu bauen
+
+### Paketinhalt: nur was die Anwendung braucht
+**Bleibt im Paket:** `.next` (vorgebaute App), `node_modules`, `src/` (ohne Testdateien), `public/`, `schemas/`, `scripts/start.py`, `Start.bat`, `START-HIER.md`, `docs/beispiele/` (Beispiel-XML zum Ausprobieren), `package.json`, `package-lock.json`, `next.config.ts`, `tsconfig.json`, `postcss.config.mjs`, `tailwind.config.ts`.
+`src/` und die Build-Konfiguration bleiben, weil das Startskript daraus den Build-Fingerabdruck bildet und ein Neubau (`--neu-bauen`) auf Windows möglich bleiben soll.
+
+**Wird entfernt (Liste `DEV_FILES` in `build-package.sh`):** `.claude/`, `CLAUDE.md`, `README.md`, `features/`, `tests/`, `src/test/`, `src/**/*.test.ts(x)`, `docs/` außer `beispiele/`, `.gitattributes`, `.gitignore`, `.env.local.example`, `playwright.config.ts`, `vitest.config.ts`, `eslint.config.mjs`, `components.json`, `Start.command`, `start.sh`, `scripts/test_start.py`, `scripts/generate-demo-*`; nach dem Build außerdem `.next/cache`, `start.log`, `__pycache__`, `tsconfig.tsbuildinfo`.
+Die Dateien werden **vor** dem Build entfernt, damit der Start-Vermerk zum ausgelieferten Stand passt. Am Ende prüft das Skript, dass keine davon im Paket ist. Kommen neue Entwicklungsdateien ins Repo, die Liste `DEV_FILES` ergänzen.
 
 Hintergrund und frühere Windows-Fehler: `features/PROJ-19-lokaler-start.md`, Abschnitt „Bugfixes 2026-11-16 (… Offline-Paket)“.
 
@@ -56,3 +63,4 @@ bash .claude/skills/deploy-windows-offline/build-package.sh "<scratchpad>/win-of
 - Alte Pakete nicht löschen (sie dienen als Quelle für `node_modules`); Aufräumen nur auf Wunsch des Benutzers.
 - Den Arbeitsordner nicht ins Projekt legen.
 - Ändert sich der Startablauf (`scripts/start.py`, `Start.bat`) oder kommen neue native Pakete hinzu, das Skript und diese Anleitung anpassen.
+- Keine Claude-/Entwicklungsdateien ins Paket — `.next` (vorgebaute App) aber **nie** entfernen, sonst baut Windows beim ersten Start neu.

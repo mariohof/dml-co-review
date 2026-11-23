@@ -6,7 +6,9 @@
 #   ZIELORDNER     Ablage des ZIP (Standard: Elternordner des Projekts)
 #
 # Ablauf:
-#   1. Projektstand = git HEAD (nur eingecheckte Dateien)
+#   1. Projektstand = git HEAD (nur eingecheckte Dateien), ohne Claude-/Entwicklungsdateien
+#      (.claude, CLAUDE.md, features/, tests/, Testdateien, docs/ außer beispiele/, Test-/Lint-Konfiguration,
+#      Mac/Linux-Startdateien); .next (vorgebaute App) bleibt im Paket
 #   2. node_modules für Windows x64: aus dem letzten Offline-ZIP mit gleicher Lock-Datei übernehmen,
 #      sonst `npm ci --os=win32 --cpu=x64` + .bin-Symlinks in Windows-Shims (.cmd/.ps1) umwandeln
 #   3. macOS-Binärdateien vorübergehend ergänzen, mit dem Startskript bauen + Probestart (Port 8899)
@@ -39,7 +41,25 @@ if [ -n "$(git -C "$REPO" status --porcelain --untracked-files=no)" ]; then
 fi
 rm -rf "$PKG"; mkdir -p "$PKG"
 git -C "$REPO" archive HEAD | tar -x -C "$PKG"
+
+# Nur was die Anwendung zum Laufen (und für einen Neubau auf Windows) braucht — keine
+# Claude-/Entwicklungsdateien. Vor dem Build entfernen, damit der Build-Fingerabdruck
+# im Start-Vermerk zum ausgelieferten Stand passt.
+say "Entferne Entwicklungsdateien (Claude, Specs, Tests, Doku, Mac/Linux-Start)"
+DEV_FILES=(
+  .claude CLAUDE.md README.md features tests
+  .gitattributes .gitignore .env.local.example
+  playwright.config.ts vitest.config.ts eslint.config.mjs components.json
+  Start.command start.sh
+  scripts/test_start.py scripts/generate-demo-files.py scripts/generate-demo-xml.mjs
+  src/test
+)
+for f in "${DEV_FILES[@]}"; do rm -rf "${PKG:?}/$f"; done
+# docs/: nur die Beispiel-XML (zum Ausprobieren von REPLY/XML-Prüfung) bleibt
+find "$PKG/docs" -mindepth 1 -maxdepth 1 ! -name beispiele -exec rm -rf {} +
+find "$PKG/src" -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) -delete
 cp "$SKILL_DIR/OFFLINE-WINDOWS-LIESMICH.txt" "$PKG/"
+echo "Paketinhalt (oberste Ebene): $(cd "$PKG" && ls -A | tr '\n' ' ')"
 
 LOCK_HASH="$(shasum -a 256 "$PKG/package-lock.json" | cut -d' ' -f1)"
 echo "Lock-Datei: $LOCK_HASH"
@@ -129,7 +149,7 @@ if lsof -nP -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; then fail "Server auf Port
 # ---------------------------------------------------------------- 5. Aufräumen + Start-Vermerk prüfen
 say "Entferne macOS-Binärdateien, Protokoll und Build-Cache"
 for d in $MAC_NATIVE; do rm -rf "$PKG/$d"; done
-rm -rf "$PKG/start.log" "$PKG/scripts/__pycache__" "$PKG/.next/cache"
+rm -rf "$PKG/start.log" "$PKG/scripts/__pycache__" "$PKG/.next/cache" "$PKG/tsconfig.tsbuildinfo"
 left="$(find "$PKG/node_modules" -maxdepth 2 -type d -name '*darwin*' | wc -l | tr -d ' ')"
 [ "$left" = "0" ] || fail "macOS-Binärdateien noch vorhanden"
 
@@ -141,6 +161,11 @@ print("Start-Vermerk:", s); print("Installation nötig:", i, "| Build nötig:", 
 sys.exit(1 if (i or b) else 0)
 ') || fail "Start-Vermerk passt nicht — Windows würde installieren oder neu bauen"
 rm -rf "$PKG/scripts/__pycache__"
+
+# keine Claude-/Entwicklungsdateien im Paket
+for f in "${DEV_FILES[@]}"; do [ ! -e "$PKG/$f" ] || fail "Entwicklungsdatei im Paket: $f"; done
+[ -z "$(find "$PKG/src" -name '*.test.ts*' | head -1)" ] || fail "Testdateien in src/"
+[ -f "$PKG/.next/BUILD_ID" ] || fail ".next/BUILD_ID fehlt (vorgebaute Anwendung)"
 
 # ---------------------------------------------------------------- 6. ZIP
 DATE="$(date +%Y-%m-%d)"
