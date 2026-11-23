@@ -57,6 +57,9 @@ DEV_FILES=(
 for f in "${DEV_FILES[@]}"; do rm -rf "${PKG:?}/$f"; done
 # docs/: nur die Beispiel-XML (zum Ausprobieren von REPLY/XML-Prüfung) bleibt
 find "$PKG/docs" -mindepth 1 -maxdepth 1 ! -name beispiele -exec rm -rf {} +
+find "$PKG/docs/beispiele" -type f ! -iname '*.xml' -delete
+# macOS-Reste (Textclips, Finder-Dateien), falls versehentlich eingecheckt
+find "$PKG" \( -name '*.textClipping' -o -name '.DS_Store' \) -delete
 find "$PKG/src" -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) -delete
 cp "$SKILL_DIR/OFFLINE-WINDOWS-LIESMICH.txt" "$PKG/"
 echo "Paketinhalt (oberste Ebene): $(cd "$PKG" && ls -A | tr '\n' ' ')"
