@@ -3,7 +3,8 @@ import { writeDml } from "@/lib/data/dml-writer"
 import { formatDate, latestSend } from "@/lib/data/queries"
 import type { Dataset, DmlCode, DmlRef, Dmrl, EntrySnapshot, S1000dIssue, User } from "@/lib/data/schema"
 import { compareByDmc } from "@/lib/dmrl/entries"
-import { writeEntriesCsv } from "@/lib/files/csv-writer"
+import { entriesTable, writeEntriesCsv } from "@/lib/files/csv-writer"
+import { writeXlsx } from "@/lib/files/xlsx-writer"
 import { presetSeqnum, sendDmlRef } from "./send"
 
 /**
@@ -35,6 +36,18 @@ const fileStem = (data: Dataset, dmrl: Dmrl) => {
 export function exportCsv(data: Dataset, dmrl: Dmrl, at = new Date().toISOString()) {
   const entries = data.entries.filter((e) => e.dmrlId === dmrl.id)
   return { fileName: `${fileStem(data, dmrl)}-Export-${isoDate(at)}.csv`, content: writeEntriesCsv(entries) }
+}
+
+/** Blattname im Excel-Export (Refinement 2026-11-24) */
+export const XLSX_SHEET_NAME = "Einträge"
+
+/**
+ * Excel im Aufbau des CSV-Exports (Refinement 2026-11-24): ein Blatt „Einträge", gleiche Spalten, Reihenfolge und Werte,
+ * alle Zellen als Text — DML-{MI}-{CAGE}-{DML-Typ}-Export-{JJJJ-MM-TT}.xlsx
+ */
+export function exportXlsx(data: Dataset, dmrl: Dmrl, at = new Date().toISOString()) {
+  const entries = data.entries.filter((e) => e.dmrlId === dmrl.id)
+  return { fileName: `${fileStem(data, dmrl)}-Export-${isoDate(at)}.xlsx`, bytes: writeXlsx({ sheetName: XLSX_SHEET_NAME, ...entriesTable(entries) }) }
 }
 
 /**

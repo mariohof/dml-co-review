@@ -1,6 +1,6 @@
 "use client"
 
-import { Archive, ChevronDown, Download, FileCode2, FileDown, FileSpreadsheet, FileUp, Loader2, LockOpen, RotateCcw, Send, Undo2, Upload } from "lucide-react"
+import { Archive, ChevronDown, Download, FileCode2, FileDown, FileSpreadsheet, FileUp, Loader2, Sheet, LockOpen, RotateCcw, Send, Undo2, Upload } from "lucide-react"
 
 import { BlockedAction } from "@/components/admin/blocked-action"
 import { useSession } from "@/components/auth/session-provider"
@@ -27,8 +27,8 @@ interface DmrlActionBarProps {
   dmrl: Dmrl
   /** Aufruf einer erlaubten Aktion — die Workflow-Features hängen hier ihre Dialoge ein */
   onAction?: (id: DmrlActionId) => void
-  /** „Exportieren" als Aufklappmenü mit CSV/XML (PROJ-18) */
-  onExport?: (format: "csv" | "xml") => void
+  /** „Exportieren" als Aufklappmenü mit CSV/XML/Excel (PROJ-18) */
+  onExport?: (format: "csv" | "xml" | "xlsx") => void
   /** XML-Export läuft */
   exportBusy?: boolean
 }
@@ -61,6 +61,10 @@ export function DmrlActionBar({ dmrl, onAction, onExport, exportBusy = false }: 
                 <DropdownMenuItem onSelect={() => onExport("xml")}>
                   <FileCode2 className="mr-2 h-4 w-4" aria-hidden />
                   Als XML exportieren
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onExport("xlsx")}>
+                  <Sheet className="mr-2 h-4 w-4" aria-hidden />
+                  Als Excel exportieren
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1,6 +1,6 @@
 # PROJ-18: DMRL-Export (CSV/XML/Excel)
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-24
 
@@ -290,6 +290,32 @@ _Stand 2026-11-13 — `/frontend PROJ-18`_
 
 **Abweichung**
 - seqnum `00001` statt `00000` ohne SEND (siehe Decision Log); gilt ebenso als Rückfallwert im Freigabestand-Export.
+
+### Excel-Export (.xlsx) *(Refinement 2026-11-24)*
+_Stand 2026-11-24 — `/frontend PROJ-18`_
+
+**Umgesetzt**
+- `src/lib/files/xlsx-writer.ts` — **neu**, allgemeiner Excel-Schreiber (Kopfzeile + Textzeilen → .xlsx, ZIP über `fflate`):
+  - ein Blatt, alle Zellen Inline-Text mit Zahlenformat „@" (Text, auch beim Bearbeiten in Excel), keine Formel- oder Zahlenzellen
+  - Kopfzeile fett und fixiert, Autofilter über den gesamten Bereich (inkl. verstecktem Namen `_xlnm._FilterDatabase`, wie Excel selbst ihn anlegt)
+  - Spaltenbreite = längste Zeile + 2, mindestens 8, höchstens 60 Zeichen; voller Inhalt bleibt in der Zelle
+  - in XML unzulässige Steuerzeichen und einzelne Surrogate werden entfernt; `& < > "` maskiert; Excel-Zeichencodes `_xHHHH_` im Text als `_x005F_xHHHH_` maskiert (sonst würde Excel z. B. `_x000D_` als Zeilenumbruch lesen)
+  - Blattname geprüft (max. 31 Zeichen, ohne `[]:*?/\`)
+- `src/lib/files/csv-writer.ts` — **Eintrags-Tabelle** `entriesTable` herausgelöst (Kopfzeile = alle Eintragsfelder, Sortierung nach DMC, Werte unverändert); CSV-Schreiber nutzt sie und entschärft danach wie bisher (BUG-QA2-1).
+- `src/lib/workflows/export.ts` — `exportXlsx`: Blatt „Einträge", Dateiname `DML-{MI}-{CAGE}-{DML-Typ}-Export-{JJJJ-MM-TT}.xlsx`; liest nur.
+- `src/components/workflows/dmrl-export.tsx` — Format `xlsx`: sofortiger Download (Binärdatei-Download, Excel-Dateityp), Erfolgsmeldung „Als Excel exportiert (…)"; unerwarteter Fehler → Fehlermeldung, kein Download.
+- `src/components/dmrl/dmrl-action-bar.tsx` — dritter Menüeintrag **„Als Excel exportieren"** (Symbol `Sheet`).
+- `package.json` — `fflate` ^0.8.3 als direkte Abhängigkeit (bisher nur indirekt über `@vitest/ui`).
+
+**Tests**
+- Unit: `xlsx-writer.test.ts` (11: Paketaufbau, Textzellen, Formelzeichen ohne Apostroph, Fixierung/Fettdruck/Autofilter, leere Tabelle, Spaltenbreiten, Steuerzeichen, `_xHHHH_`, fehlende Zellen, Spaltenbuchstaben, ungültige Blattnamen); `export.test.ts` (+4: Dateiname, gleiche Kopfzeile/Werte/Reihenfolge wie CSV-Export, 28 Spalten, Formelzeichen/führende Nullen, leere DMRL, fremde Sperre, Datenbestand unverändert); `dmrl-export.test.tsx` (+1: Download ohne XSD-Prüfung); `csv-writer.test.ts` (+1: Eintrags-Tabelle). Insgesamt 663 Unit-Tests grün.
+- E2E: `tests/PROJ-18-export.spec.ts` (+1): Excel-Download bei Status *gesendet* (Blatt „Einträge", Fixierung, Autofilter, keine Formeln, Datenbestand unverändert); Check-in der exportierten .xlsx → „Bitte eine CSV-Datei auswählen."
+- Gegenprobe mit LibreOffice (headless, .xlsx → CSV): Datei öffnet, 1 Kopfzeile + 32 Einträge, führende Nullen erhalten, `=1+1 & <x> _x000D_ Ümlaut` unverändert als Text.
+- `npm run build` erfolgreich.
+
+**Abweichung / Hinweis**
+- In Excel steht der **Originalwert** ohne Apostroph (Textzelle statt CSV-Entschärfung) — wie im Tech Design G festgelegt.
+- **Nicht automatisiert prüfbar:** Öffnen in MS Excel ohne Reparaturmeldung (kein Excel unter Linux) → manuelle Prüfung in `/qa` bzw. durch den Product Owner.
 
 ## QA Test Results
 

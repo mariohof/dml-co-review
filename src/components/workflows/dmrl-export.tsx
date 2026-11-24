@@ -10,16 +10,17 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { Dmrl } from "@/lib/data/schema"
-import { downloadTextFile } from "@/lib/files/download"
-import { exportCsv, exportXml } from "@/lib/workflows/export"
+import { downloadBytes, downloadTextFile } from "@/lib/files/download"
+import { XLSX_MIME_TYPE } from "@/lib/files/xlsx-writer"
+import { exportCsv, exportXlsx, exportXml } from "@/lib/workflows/export"
 import { unavailableDetail, validateXml, XSD_UNAVAILABLE_MESSAGE } from "@/lib/xsd/client"
 import type { XsdResult } from "@/lib/xsd/types"
 
-export type ExportFormat = "csv" | "xml"
+export type ExportFormat = "csv" | "xml" | "xlsx"
 
 /**
  * Export des aktuellen Stands (PROJ-18) — schreibt nichts in den Datenbestand.
- * XML nur nach bestandener XSD-Prüfung; Schemafehler als Anwendungsfehler mit Bericht, sonst Meldung.
+ * CSV und Excel sofort; XML nur nach bestandener XSD-Prüfung; Schemafehler als Anwendungsfehler mit Bericht, sonst Meldung.
  */
 export function useDmrlExport(dmrl: Dmrl) {
   const { data } = useDataStore()
@@ -32,6 +33,16 @@ export function useDmrlExport(dmrl: Dmrl) {
       const file = exportCsv(data, dmrl)
       downloadTextFile(file.fileName, file.content, "text/csv;charset=utf-8")
       toast.success(`Als CSV exportiert (${file.fileName}).`)
+      return
+    }
+    if (format === "xlsx") {
+      try {
+        const file = exportXlsx(data, dmrl)
+        downloadBytes(file.fileName, file.bytes, XLSX_MIME_TYPE)
+        toast.success(`Als Excel exportiert (${file.fileName}).`)
+      } catch (error) {
+        toast.error(`Excel-Export nicht möglich: ${(error as Error).message}`)
+      }
       return
     }
     let file

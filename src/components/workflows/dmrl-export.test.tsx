@@ -12,7 +12,11 @@ import type { XsdResult } from "@/lib/xsd/types"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }), usePathname: () => "/" }))
 const download = vi.fn()
-vi.mock("@/lib/files/download", () => ({ downloadTextFile: (...args: unknown[]) => download(...args) }))
+const downloadBytes = vi.fn()
+vi.mock("@/lib/files/download", () => ({
+  downloadTextFile: (...args: unknown[]) => download(...args),
+  downloadBytes: (...args: unknown[]) => downloadBytes(...args),
+}))
 const toastError = vi.fn()
 vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), {
@@ -48,7 +52,7 @@ function renderView(dmrlId: string, data: Dataset = buildDemoDataset()) {
   )
 }
 
-async function choose(format: "Als CSV exportieren" | "Als XML exportieren") {
+async function choose(format: "Als CSV exportieren" | "Als XML exportieren" | "Als Excel exportieren") {
   const trigger = within(screen.getByRole("toolbar", { name: "Aktionen" })).getByRole("button", { name: "Exportieren" })
   fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
   await act(async () => {
@@ -59,6 +63,7 @@ async function choose(format: "Als CSV exportieren" | "Als XML exportieren") {
 describe("Exportieren in der DMRL-Ansicht", () => {
   beforeEach(() => {
     download.mockReset()
+    downloadBytes.mockReset()
     validate.mockReset()
     toastError.mockReset()
   })
@@ -68,6 +73,19 @@ describe("Exportieren in der DMRL-Ansicht", () => {
     const before = JSON.stringify(loadDataset())
     await choose("Als CSV exportieren")
     expect(download).toHaveBeenCalledWith(expect.stringMatching(/^DML-PHUNGUN-D0815-C-Export-\d{4}-\d\d-\d\d\.csv$/), expect.any(String), "text/csv;charset=utf-8")
+    expect(JSON.stringify(loadDataset())).toBe(before)
+  })
+
+  it("Excel bei Status gesendet: sofortiger Download ohne XSD-Prüfung, keine Änderung am Datenbestand", async () => {
+    renderView(DEMO_IDS.dmrlPhungun)
+    const before = JSON.stringify(loadDataset())
+    await choose("Als Excel exportieren")
+    expect(downloadBytes).toHaveBeenCalledWith(
+      expect.stringMatching(/^DML-PHUNGUN-D0815-C-Export-\d{4}-\d\d-\d\d\.xlsx$/),
+      expect.any(Uint8Array),
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    expect(validate).not.toHaveBeenCalled()
     expect(JSON.stringify(loadDataset())).toBe(before)
   })
 

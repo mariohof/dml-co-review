@@ -1,13 +1,14 @@
 import { spawnSync } from "node:child_process"
+import { strFromU8, unzipSync } from "fflate"
 import { describe, expect, it } from "vitest"
 
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
 import { readDml } from "@/lib/data/dml-reader"
 import type { Dataset, Dmrl, User } from "@/lib/data/schema"
-import { writeEntriesCsv } from "@/lib/files/csv-writer"
+import { entriesTable, writeEntriesCsv } from "@/lib/files/csv-writer"
 import { validateWithXmllint } from "@/lib/xsd/server/xmllint"
 import { executeCheckOut } from "./check-out"
-import { exportBlocked, exportCsv, exportXml, NO_ENTRIES } from "./export"
+import { exportBlocked, exportCsv, exportXlsx, exportXml, NO_ENTRIES } from "./export"
 import { executeWithdrawSend } from "./send"
 
 const hasXmllint = spawnSync("xmllint", ["--version"]).status === 0
@@ -108,5 +109,65 @@ describe("XML", () => {
       const file = exportXml(demo, dmrl(demo, id), AT)
       expect(await validateWithXmllint(new TextEncoder().encode(file.content), issue), issue).toEqual({ state: "gueltig", issue })
     }
+  })
+})
+
+/** Zelltexte des einzigen Blatts (Inline-Strings; leere Zellen als "") */
+function xlsxCells(bytes: Uint8Array): { sheetNames: string[]; cells: string[][] } {
+  const files = unzipSync(bytes)
+  const workbook = strFromU8(files["xl/workbook.xml"])
+  const sheet = strFromU8(files["xl/worksheets/sheet1.xml"])
+  const decode = (t: string) => t.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+  return {
+    sheetNames: [...workbook.matchAll(/<sheet name="([^"]+)"/g)].map(([, name]) => name),
+    cells: [...sheet.matchAll(/<row r="\d+">(.*?)<\/row>/g)].map(([, row]) =>
+      [...row.matchAll(/<c r="[A-Z]+\d+" s="\d"(?:\/>| t="inlineStr"><is><t xml:space="preserve">(.*?)<\/t><\/is><\/c>)/g)].map(([, t]) => decode(t ?? ""))
+    ),
+  }
+}
+
+describe("Excel (Refinement 2026-11-24)", () => {
+  it("PHUNGUN am 24.11.2026: Dateiname, ein Blatt „Einträge\", gleiche Kopfzeile, Werte und Reihenfolge wie der CSV-Export; Datenbestand unverändert", () => {
+    const demo = buildDemoDataset()
+    const snapshot = JSON.stringify(demo)
+    const file = exportXlsx(demo, dmrl(demo, DEMO_IDS.dmrlPhungun), "2026-11-24T10:00:00.000Z")
+    expect(file.fileName).toBe("DML-PHUNGUN-D0815-C-Export-2026-11-24.xlsx")
+    const { sheetNames, cells } = xlsxCells(file.bytes)
+    expect(sheetNames).toEqual(["Einträge"])
+    const table = entriesTable(demo.entries.filter((e) => e.dmrlId === DEMO_IDS.dmrlPhungun))
+    expect(cells).toEqual([table.header, ...table.rows])
+    expect(cells[0]).toHaveLength(28)
+    expect(cells[0]).toContain("answer_timestamp")
+    // gleiche Zeilen wie die CSV (Kopfzeile + Einträge)
+    expect(cells).toHaveLength(exportCsv(demo, dmrl(demo, DEMO_IDS.dmrlPhungun), AT).content.trim().split("\r\n").length)
+    expect(JSON.stringify(demo)).toBe(snapshot)
+  })
+
+  it("Formelzeichen und führende Nullen bleiben Text, ohne Apostroph", () => {
+    const demo = buildDemoDataset()
+    const first = demo.entries.find((e) => e.dmrlId === DEMO_IDS.dmrlPhungun)!
+    first.fields.techname = "=HYPERLINK(\"http://x\")"
+    first.fields.infoname = "@SUMME(A1)"
+    const { cells } = xlsxCells(exportXlsx(demo, dmrl(demo, DEMO_IDS.dmrlPhungun), AT).bytes)
+    const flat = cells.flat()
+    expect(flat).toContain("=HYPERLINK(\"http://x\")")
+    expect(flat).toContain("@SUMME(A1)")
+    expect(flat.some((v) => v.startsWith("'"))).toBe(false)
+    expect(flat).toContain("01")
+  })
+
+  it("DMRL ohne Einträge: nur Kopfzeile", () => {
+    const demo = buildDemoDataset()
+    demo.entries = demo.entries.filter((e) => e.dmrlId !== DEMO_IDS.dmrlVehicle)
+    expect(xlsxCells(exportXlsx(demo, dmrl(demo, DEMO_IDS.dmrlVehicle), AT).bytes).cells).toHaveLength(1)
+  })
+
+  it("bei fremder Sperre: Stand der Anwendung", () => {
+    const demo = buildDemoDataset()
+    const locked = executeCheckOut(demo, DEMO_IDS.dmrlVehicle, user(demo, DEMO_IDS.editorBen), AT)
+    if (!locked.ok) throw new Error()
+    expect(xlsxCells(exportXlsx(locked.data, dmrl(locked.data, DEMO_IDS.dmrlVehicle), AT).bytes)).toEqual(
+      xlsxCells(exportXlsx(demo, dmrl(demo, DEMO_IDS.dmrlVehicle), AT).bytes)
+    )
   })
 })
