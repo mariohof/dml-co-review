@@ -2,7 +2,9 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-21
+**Last Updated:** 2026-11-24
+
+> **Refinement 2026-11-24 (über PROJ-13) — Bezeichnung „REPLY“:** Die Aktion „REPLY importieren“ heißt in der Aktionsleiste **„REPLY“** (analog zu „SEND“).
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die Eintragstabelle zeigt neben „Antwort“ und „Empfänger-Kommentar“ die Spalte **„Antwort übernommen“** (`answer_timestamp`, Anzeige „21.11.2026 14:30“, leer = —).
 
@@ -26,7 +28,7 @@ DMRL-Ansicht
 |   +-- Versionsindex (z. B. 00002-2026) · letzter SEND (Empfänger, Datum, Bearbeiter)
 |   +-- DMRL-Status (farbiges Kennzeichen) · Sperre ("ausgecheckt von … seit …")
 |   +-- Hinweisbanner, solange nicht freigegeben
-+-- Aktionsleiste: Check-out · Check-in · SEND · REPLY importieren · Exportieren · Archiv
++-- Aktionsleiste: Check-out · Check-in · SEND · REPLY · Exportieren · Archiv
 |   (+ Sperrinhaber/Administrator-Aktionen; Verhalten → PROJ-9, 10, 12, 13, 15, 18)
 +-- Zählerleiste je Eintragsstatus
 +-- Filter (Eintragsstatus, Eintragstyp) · Suche (DMC, Tech Name, Info Name)
@@ -124,7 +126,7 @@ Betrifft ausschließlich den **Eintragstyp** (`/dml/dmentry/@type`); der DM-Ausg
 - [ ] Angenommen die DMRL-Ansicht ist geöffnet, wenn ein Eintrag betrachtet wird, dann gibt es keine Möglichkeit, ihn direkt zu ändern, hinzuzufügen oder zu löschen
 
 ### Aktionsleiste
-- [ ] Angenommen die DMRL-Ansicht ist geöffnet, wenn die Aktionsleiste angezeigt wird, dann enthält sie Check-out, Check-in, SEND, REPLY importieren und Archiv; Verfügbarkeit und Verhalten richten sich nach PROJ-9, 10, 12, 13, 15
+- [ ] Angenommen die DMRL-Ansicht ist geöffnet, wenn die Aktionsleiste angezeigt wird, dann enthält sie Check-out, Check-in, SEND, REPLY *(Refinement 2026-11-24)* und Archiv; Verfügbarkeit und Verhalten richten sich nach PROJ-9, 10, 12, 13, 15
 
 ## Edge Cases
 - **Große DMRL (mehrere hundert Einträge):** Tabelle bleibt bedienbar (Seitenweise Anzeige oder Scrollen); Filter und Suche reagieren ohne spürbare Verzögerung.
@@ -189,7 +191,7 @@ Seite „DMRL-Ansicht" (/dmrl/[ID])
 |   +-- Bemerkung des Empfängers aus dem letzten REPLY (PROJ-13)
 |   +-- Banner „Nicht freigegeben …" (shadcn Alert)
 +-- Aktionsleiste (Schaltflächen; Verfügbarkeit aus den Workflow-Regeln, gesperrte mit Tooltip-Grund)
-|   +-- Check-out · Check-in · SEND · REPLY importieren · Exportieren (CSV/XML) · Archiv
+|   +-- Check-out · Check-in · SEND · REPLY · Exportieren (CSV/XML) · Archiv
 |   +-- nur Sperrinhaber: „Check-out zurücknehmen" · „CSV erneut herunterladen" (PROJ-9)
 |   +-- nur Administrator: „Sperre aufheben" (PROJ-9) · „SEND zurückziehen" (PROJ-12)
 +-- Eintragstabelle (wiederverwendbar, nur lesend)

@@ -1,8 +1,10 @@
 # PROJ-13: REPLY-Import
 
-## Status: Approved
+## Status: Architected
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-21
+**Last Updated:** 2026-11-24
+
+> **Refinement 2026-11-24 — Bezeichnung „REPLY“:** Die Schaltfläche in der Aktionsleiste heißt **„REPLY“** statt „REPLY importieren“ (analog zu „SEND“); der Dialogtitel lautet **„REPLY — [System]“** (analog zu „SEND — [System]“). Verhalten, Verfügbarkeit und Ablauf unverändert; der Fachbegriff „REPLY-Import“ (Feature-Name, Beschreibung) bleibt. Betrifft PROJ-7 (Aktionsleiste). Geänderte Stellen sind mit *(Refinement 2026-11-24)* markiert.
 
 > **Refinement 2026-11-21 — Feld `answer_timestamp`:** Jeder Eintrag erhält das zusätzliche Feld `answer_timestamp`: Zeitpunkt, zu dem eine Antwort (`answer`) in die DMRL übernommen wurde — gesetzt beim „Übernehmen“ eines REPLY für jeden Eintrag, dessen Antwort übernommen wird (`y` und `n`). Format ISO 8601 in Ortszeit ohne Zeitzone, z. B. `2026-11-21T14:30:05`. Das Feld ist die **28. CSV-Spalte** (direkt nach `answer_comment`) in Check-out, Export, Freigabestand-CSV und XML-Konvertierung, wird in der DMRL-Ansicht angezeigt, aber **nicht** ins XML geschrieben (kein S1000D-Element). Betrifft PROJ-1 (Datenmodell, Demo-Daten), PROJ-7 (Ansicht), PROJ-8 (Regelwerk), PROJ-9 (Check-out), PROJ-10 (Check-in), PROJ-14 (Freigabestand), PROJ-18 (Export), PROJ-20 (Konvertierung) und `docs/dmrl-mapping.md`. Geänderte Stellen sind mit *(Refinement 2026-11-21)* markiert.
 
@@ -10,7 +12,7 @@
 - Requires: PROJ-12 (SEND-Export) — letzter SEND, Empfänger, Status *gesendet*
 - Requires: PROJ-11 (XSD-Validierung) — Schemaprüfung vor dem Regelwerk
 - Requires: PROJ-8 (Fachliches Regelwerk) — Gruppen A–E, I, G, H
-- Requires: PROJ-7 (DMRL-Ansicht) — Aktion „REPLY importieren", Anzeige von Status, Empfänger-Kommentar, Empfänger-Bemerkung
+- Requires: PROJ-7 (DMRL-Ansicht) — Aktion „REPLY" *(Refinement 2026-11-24)*, Anzeige von Status, Empfänger-Kommentar, Empfänger-Bemerkung
 - Requires: PROJ-17 (Berechtigungen)
 - Wirkt auf: PROJ-14 (Freigabestatus), PROJ-15 (Archiv)
 
@@ -18,7 +20,7 @@
 Der Bearbeiter importiert die Antwort-DMRL (REPLY) des Empfängers als S1000D-XML. Die Datei wird gegen das Schema (PROJ-11) und das fachliche Regelwerk (PROJ-8) geprüft. Nach Sichtung einer Zusammenfassung übernimmt der Bearbeiter die Antworten: Jeder vom Empfänger geprüfte Eintrag wird *freigegeben* oder *zu überarbeiten*. Sind danach alle Einträge freigegeben, ist die DMRL automatisch *freigegeben*. Der REPLY wird byte-genau archiviert.
 
 ## Ablauf
-1. Berechtigter Bearbeiter oder Administrator wählt **„REPLY importieren"** — nur bei DMRL-Status *gesendet*.
+1. Berechtigter Bearbeiter oder Administrator wählt **„REPLY"** — nur bei DMRL-Status *gesendet*. Es öffnet sich der Dialog **„REPLY — [System]"** *(Refinement 2026-11-24)*.
 2. XML-Datei hochladen (`.xml`, max. 5 MB).
 3. XSD-Prüfung (PROJ-11) → bei Fehler: XSD-Prüfbericht, Ende.
 4. Regelwerk (PROJ-8: A–E, I, G, H) → bei Fehler: Prüfbericht, Ende.
@@ -81,9 +83,11 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 **Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
 
 ### Zugriff
-- [ ] Angenommen die DMRL hat Status *gesendet*, wenn ein berechtigter Bearbeiter die Ansicht öffnet, dann ist „REPLY importieren" verfügbar
-- [ ] Angenommen die DMRL hat nicht Status *gesendet*, wenn die Ansicht geöffnet wird, dann ist „REPLY importieren" nicht verfügbar
+- [ ] Angenommen die DMRL hat Status *gesendet*, wenn ein berechtigter Bearbeiter die Ansicht öffnet, dann ist „REPLY" verfügbar *(Refinement 2026-11-24)*
+- [ ] Angenommen die DMRL hat nicht Status *gesendet*, wenn die Ansicht geöffnet wird, dann ist „REPLY" nicht verfügbar *(Refinement 2026-11-24)*
 - [ ] Angenommen ein Bearbeiter ist nicht berechtigt, wenn er den Import direkt aufruft, dann erscheint „Keine Berechtigung"
+- [ ] Angenommen die DMRL-Ansicht ist geöffnet, wenn die Aktionsleiste angezeigt wird, dann heißt die Schaltfläche „REPLY" (nicht „REPLY importieren") *(Refinement 2026-11-24)*
+- [ ] Angenommen die DMRL hat Status *gesendet*, wenn „REPLY" gewählt wird, dann öffnet sich der Dialog mit dem Titel „REPLY — [Systemname]" (z. B. „REPLY — PHUNGUN") *(Refinement 2026-11-24)*
 
 ### Prüfung
 - [ ] Angenommen die Datei besteht die XSD-Prüfung nicht, wenn sie hochgeladen wird, dann erscheint der XSD-Prüfbericht, das Regelwerk läuft nicht und nichts wird übernommen
@@ -151,6 +155,8 @@ Die Freigabe wird durch die Übernahme erteilt — kein zusätzlicher „Freigeb
 | `answer_timestamp` als 28. CSV-Spalte und in der Ansicht, nicht im XML | Sichtbar in Excel; XML bleibt S1000D-/XSD-konform (Variante a) | 2026-11-21 |
 | Format ISO 8601 Ortszeit ohne Zeitzone (`2026-11-21T14:30:05`); Anzeige „21.11.2026 14:30“ | Eindeutig, sortierbar in Excel, für Anwender ohne Zeitverschiebung (Variante a) | 2026-11-21 |
 | Bestehende Einträge erhalten leeres `answer_timestamp`; Demo-Daten aus Archiv-Zeitpunkt des REPLY | Keine geratenen Werte; Demo vollständig | 2026-11-21 |
+| Schaltfläche „REPLY importieren“ heißt „REPLY“ | Vorgabe Product Owner; kurz und gleich aufgebaut wie „SEND“ | 2026-11-24 |
+| Dialogtitel „REPLY — [System]“ statt „REPLY importieren — [System]“; Fachbegriff „REPLY-Import“ bleibt | Schaltfläche und Dialog bei SEND und REPLY einheitlich benannt | 2026-11-24 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
@@ -172,8 +178,8 @@ Der REPLY-Import ist eine Workflow-Aktion nach dem Muster aus PROJ-9. Er kombini
 
 ### A) Komponentenstruktur
 ```
-DMRL-Ansicht (PROJ-7) — Aktion „REPLY importieren" (nur bei Status gesendet)
-+-- REPLY-Dialog (shadcn Dialog, mehrstufig)
+DMRL-Ansicht (PROJ-7) — Aktion „REPLY" (nur bei Status gesendet) *(Refinement 2026-11-24)*
++-- REPLY-Dialog (shadcn Dialog, mehrstufig), Titel „REPLY — [System]"
     +-- Schritt 1: Datei wählen (.xml/.XML, max. 5 MB)
     +-- Schritt 2: Prüfung läuft — „Schemaprüfung…" → „Fachliche Prüfung…"
     +-- Schritt 3a: Fehler
@@ -214,7 +220,7 @@ Abgelehnte Datei: nur Verlaufseintrag „REPLY abgelehnt" (Dateiname, Art/Anzahl
 ### E) Verfügbarkeitsregel
 | Aktion | Verfügbar wenn | sonst |
 |---|---|---|
-| REPLY importieren | berechtigt (PROJ-2) · Status *gesendet* | nicht angezeigt bzw. gesperrt mit Grund |
+| REPLY *(Refinement 2026-11-24)* | berechtigt (PROJ-2) · Status *gesendet* | nicht angezeigt bzw. gesperrt mit Grund |
 
 ### F) Technische Entscheidungen (für PM erklärt)
 | Entscheidung | Warum |
