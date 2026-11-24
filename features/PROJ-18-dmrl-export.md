@@ -1,6 +1,6 @@
 # PROJ-18: DMRL-Export (CSV/XML/Excel)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-24
 
@@ -350,6 +350,89 @@ Keine neuen Bugs in diesem Feature.
 - **Bugs Found:** 0 total (0 critical, 0 high, 0 medium, 0 low)
 - **Security:** Pass (Prototyp-Einschränkung: simulierte Anmeldung)
 - **Production Ready:** YES (keine Critical/High-Bugs)
+
+### QA-Lauf 2026-11-24 — Excel-Export (.xlsx) *(Refinement 2026-11-24)*
+
+**Tested:** 2026-11-24
+**App URL:** http://localhost:3000 (`npm run dev`)
+**Tester:** QA Engineer (AI)
+**Automatisiert:** Vitest 663 Tests ✅ (1 übersprungen, wie bisher) · Playwright 147/147 ✅ in Chrome (`PW_CHANNEL=chrome`). Im Gesamtlauf lief 1 Test in einen Timeout (`PROJ-6-versionsindex`, `page.goto` unter paralleler Last); einzeln wiederholt grün, ohne Bezug zu PROJ-18 · `npm run build` ✅ · Lint ✅ (1 Warnung, schon vorher vorhanden)
+**Unabhängige Gegenprobe:** LibreOffice (headless, .xlsx → CSV): Datei öffnet, Kopfzeile + 32 Einträge, führende Nullen erhalten, `=1+1 & <x> _x000D_ Ümlaut` unverändert als Text
+**Browser:** Chrome (Desktop) getestet · Firefox und Safari **nicht getestet** (Playwright-Browser nicht installiert)
+**Responsive:** Menü „Exportieren" bei 375 px und 1440 px vollständig sichtbar, kein waagerechtes Scrollen
+**Nicht automatisch prüfbar:** Öffnen in **MS Excel** ohne Reparaturmeldung, Filter und fixierte Kopfzeile in Excel → **manuelle Prüfung durch den Product Owner ausstehend**
+
+#### Acceptance Criteria Status (Excel)
+- [x] Menü bietet CSV, XML und Excel (Komponententest, E2E, Screenshot)
+- [x] Dateiname `DML-PHUNGUN-D0815-C-Export-2026-11-24.xlsx` (Unit, E2E); Öffnen ohne Reparaturmeldung: in LibreOffice ✅, **in MS Excel manuell zu bestätigen**
+- [x] Ein Blatt „Einträge", 28 Spalten, gleiche Kopfzeile, Werte und Reihenfolge wie der CSV-Export (Unit gegen die gemeinsame Eintrags-Tabelle, LibreOffice)
+- [x] Führende Nullen und Datums- oder Zahlenähnliches bleiben Text (Unit, LibreOffice: `00`, `01`, `001`, `2026-11-24`)
+- [x] Kopfzeile fixiert, Autofilter vorhanden (Unit, E2E)
+- [x] Werte mit `=`, `+`, `-`, `@` als Text, keine Formel (Unit: keine `<f>`-Zellen, Textformat `@`; E2E)
+- [x] DMRL ohne Einträge → nur Kopfzeile (Unit)
+- [x] Fremde Sperre / Status *gesendet* → Export möglich, Datenbestand unverändert (Unit, Komponententest, E2E)
+- [x] Check-in einer .xlsx → „Bitte eine CSV-Datei auswählen." (Unit, E2E mit der exportierten Datei)
+- [x] Regression: alle bisherigen 13 Kriterien (CSV/XML/Zugriff) weiterhin grün
+
+#### Edge Cases Status (Excel)
+- [x] Sonderzeichen/Umlaute, `& < > "`, Excel-Zeichencodes `_xHHHH_`, Steuerzeichen und einzelne Surrogate (Unit, LibreOffice)
+- [x] Lange Feldinhalte: Spaltenbreite auf 60 begrenzt, voller Inhalt in der Zelle (Unit)
+- [ ] BUG-QA11-1: Feldinhalte über 32 767 Zeichen werden ungekürzt geschrieben (Excel-Grenze); die Annahme im Edge Case „wird nicht erreicht" ist nicht abgesichert
+- [ ] BUG-QA11-2: Wert mit sehr vielen Zeilenumbrüchen → Export bricht ab
+- [ ] BUG-QA11-3: Sehr große DMRL — Excel-Erzeugung blockiert die Seite mehrere Sekunden ohne Rückmeldung
+- [x] Hinweis (kein Bug): Zeilenumbrüche `\r\n` in Feldwerten erscheinen in Excel als `\n`. Das ist XML-Standard, die Anzeige ist gleich, und es gibt keinen Rückweg in die Anwendung.
+
+#### Security Audit Results (Excel)
+- [x] Formel-Injection: nur Textzellen mit Format `@`, keine `<f>`-Elemente. `=HYPERLINK(…)`, `@SUMME(…)`, `+…`, `-…` bleiben Text, auch nach Bearbeiten der Zelle (Format `@`).
+- [x] XML-Injection in der Blatt-Datei: `<`, `>`, `&`, `"` werden maskiert; Steuerzeichen entfernt (Unit, LibreOffice)
+- [x] Zugriff: Menü nur bei Berechtigung (unverändert, `exportBlocked`); kein neuer Einstiegspunkt, keine Server-Route
+- [x] XSS: Dateiname in der Erfolgsmeldung wird als Text angezeigt (sonner, kein HTML)
+- [x] Abhängigkeit `fflate` 0.8.3: MIT, ohne eigene Abhängigkeiten, reines JavaScript (offline/Windows-Paket unkritisch)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend (unverändert)
+
+#### Bugs Found
+
+##### BUG-QA11-1: Zellinhalt über 32 767 Zeichen macht die Excel-Datei ungültig
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. DMRL auschecken, in der CSV bei einem Eintrag `remarks` (oder `techname`) mit 40 000 Zeichen füllen, einchecken. Der Check-in begrenzt die Feldlänge nicht, nur die Datei auf 5 MB.
+  2. „Exportieren" → „Als Excel exportieren"
+  3. Expected: Die Datei öffnet in Excel ohne Reparaturmeldung, z. B. mit gekürztem Wert und Hinweis, oder der Export lehnt mit einer Meldung ab.
+  4. Actual: Die Zelle wird mit allen 40 000 Zeichen geschrieben (Unit-Probe). MS Excel erlaubt höchstens 32 767 Zeichen je Zelle und meldet dann voraussichtlich einen Inhaltsfehler beziehungsweise repariert die Datei. In MS Excel zu bestätigen.
+- **Priority:** Nice to have (realistische DMRL-Felder sind weit kürzer; CSV als Ausweg)
+
+##### BUG-QA11-2: Export bricht bei Wert mit sehr vielen Zeilenumbrüchen ab
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. Einen Feldwert mit rund 300 000 Zeilenumbrüchen einchecken (in einer CSV-Datei unter 5 MB möglich).
+  2. „Als Excel exportieren"
+  3. Expected: Download
+  4. Actual: Meldung „Excel-Export nicht möglich: Maximum call stack size exceeded", kein Download. Ursache: Bei der Berechnung der Spaltenbreite werden alle Zeilen eines Werts auf einmal an `Math.max` übergeben.
+- **Priority:** Nice to have
+
+##### BUG-QA11-3: Große DMRL — Seite reagiert während der Excel-Erzeugung nicht, keine Rückmeldung
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. DMRL mit 10 000 Einträgen
+  2. „Als Excel exportieren"
+  3. Expected: Laut Edge Case erscheint eine Fortschrittsanzeige, falls die Erzeugung spürbar dauert.
+  4. Actual: In der Testumgebung (jsdom) dauerte es rund 7,5 s, davon rund 3,6 s für die Sortierung nach DMC, die der CSV-Export genauso braucht (rund 3 s). In dieser Zeit ist die Seite blockiert, ohne Meldung. In Chrome voraussichtlich schneller, nicht gemessen. 2 000 Einträge: rund 1,7 s.
+- **Priority:** Nice to have (betrifft den CSV-Export gleichermaßen)
+
+##### BUG-QA11-4: Mögliche grüne Fehlerdreiecke „Zahl als Text gespeichert" in Excel
+- **Severity:** Low (zu bestätigen in MS Excel)
+- **Steps to Reproduce:**
+  1. Excel-Export in MS Excel öffnen.
+  2. Expected: Die Tabelle wirkt ruhig, Werte wie `01`, `001`, `2026` sind gewollt Text.
+  3. Actual (erwartet): Die Fehlerprüfung von Excel markiert Textzellen mit Ziffern wahrscheinlich mit grünen Dreiecken, zum Beispiel in `security`, `issno`, `day`, `month` und `year`. Die Datei enthält kein `<ignoredErrors numberStoredAsText="1">`.
+- **Priority:** Nice to have
+
+#### Summary
+- **Acceptance Criteria (Excel):** 9/9 passed, „ohne Reparaturmeldung in MS Excel" manuell zu bestätigen. Bisherige 13/13 weiterhin passed.
+- **Bugs Found:** 4 total (0 critical, 0 high, 0 medium, 4 low)
+- **Security:** Pass
+- **Production Ready:** YES (keine Critical/High-Bugs), vorbehaltlich der manuellen Prüfung in MS Excel
+- **Recommendation:** freigeben; BUG-QA11-4 und BUG-QA11-1 beim nächsten Durchgang mitbeheben, weil beide nur den Excel-Schreiber betreffen
 
 ## Deployment
 _To be added by /deploy_
