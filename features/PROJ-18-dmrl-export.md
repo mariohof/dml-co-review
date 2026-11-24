@@ -1,8 +1,10 @@
-# PROJ-18: DMRL-Export (CSV/XML)
+# PROJ-18: DMRL-Export (CSV/XML/Excel)
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-21
+**Last Updated:** 2026-11-24
+
+> **Refinement 2026-11-24 — Excel-Export (.xlsx):** Der aktuelle Stand einer DMRL kann zusätzlich als MS-Excel-Datei (.xlsx) exportiert werden — ein Tabellenblatt „Einträge“ mit denselben 28 Spalten wie der CSV-Export, alle Zellen als Text, fixierte Kopfzeile, Autofilter, angepasste Spaltenbreiten. Nur zur Information/Weitergabe: **kein Check-in von .xlsx** (PROJ-10 unverändert), **kein Excel-Export des Freigabestands** (PROJ-14 unverändert). Anlass: Vorgabe Product Owner. Geänderte Stellen sind mit *(Refinement 2026-11-24)* markiert.
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Der CSV-Export enthält die 28. Spalte `answer_timestamp`; der XML-Export nicht (kein S1000D-Element, XSD-konform).
 
@@ -15,10 +17,10 @@
 - Wird genutzt von: PROJ-14 (Export des Freigabestands verwendet denselben Aufbau)
 
 ## Beschreibung
-Der aktuelle Stand einer DMRL kann **jederzeit** als CSV oder S1000D-XML exportiert werden — unabhängig von Sperre und Status, ohne Workflow, ohne Versionsindex und ohne Archiveintrag. Der Export dient zur Information und Weitergabe (z. B. Vorführung, interne Abstimmung, TP-Projekt). Ein XML-Export ist als Arbeitsstand gekennzeichnet und kann nicht mit einem offiziellen SEND verwechselt werden.
+Der aktuelle Stand einer DMRL kann **jederzeit** als CSV, S1000D-XML oder MS-Excel (.xlsx) *(Refinement 2026-11-24)* exportiert werden — unabhängig von Sperre und Status, ohne Workflow, ohne Versionsindex und ohne Archiveintrag. Der Export dient zur Information und Weitergabe (z. B. Vorführung, interne Abstimmung, TP-Projekt). Ein XML-Export ist als Arbeitsstand gekennzeichnet und kann nicht mit einem offiziellen SEND verwechselt werden.
 
 ## Export
-Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
+Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV**, **XML** oder **Excel** *(Refinement 2026-11-24)*.
 
 | Punkt | Festlegung |
 |---|---|
@@ -26,12 +28,22 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 | Wann | jederzeit — auch wenn ausgecheckt (auch von anderen), *gesendet* oder *freigegeben* |
 | Inhalt | aktueller Stand der DMRL in der Anwendung (bei Sperre: Stand vor dem Check-in, nicht die Änderungen in der ausgecheckten CSV) |
 | Wirkung | keine: keine Sperre, keine Statusänderung, kein Versionsindex, kein Archiv, kein Verlaufseintrag (PROJ-15) |
-| DMRL ohne Einträge | CSV: nur Kopfzeile. XML: nicht möglich — „Die DMRL hat keine Einträge" (Schema verlangt mindestens einen Eintrag) |
+| DMRL ohne Einträge | CSV und Excel: nur Kopfzeile. XML: nicht möglich — „Die DMRL hat keine Einträge" (Schema verlangt mindestens einen Eintrag) |
 
 ### CSV
 - Aufbau wie Check-out (PROJ-9): 27 Spalten, Semikolon, UTF-8 mit BOM, alle Einträge nach DMC sortiert, inkl. `answer`/`answer_comment`
 - Dateiname: `DML-{MI}-{CAGE Originator}-{DML-Typ}-Export-{JJJJ-MM-TT}.csv`, z. B. `DML-PHUNGUN-D0815-C-Export-2026-11-12.csv`
 - Eine Export-CSV kann bei bestehender eigener Sperre eingecheckt werden (gleicher Aufbau); sie wird wie jede Datei geprüft (PROJ-8/10)
+
+### Excel (.xlsx) *(Refinement 2026-11-24)*
+- **Ein Tabellenblatt „Einträge“** mit genau dem Inhalt des CSV-Exports: dieselben 28 Spalten (inkl. `answer`, `answer_comment`, `answer_timestamp`), Kopfzeile in Zeile 1, alle Einträge nach DMC sortiert
+- **Alle Zellen als Text** — keine Umwandlung durch Excel (führende Nullen bleiben erhalten, z. B. `00A`; keine automatische Datums- oder Zahlenumwandlung)
+- **Komfort:** Kopfzeile fixiert, Autofilter auf der Kopfzeile, Spaltenbreiten an den Inhalt angepasst
+- **Keine Kopfdaten** (System, Originator, Status, Versionsindex) — wie beim CSV-Export
+- **Formel-Injection:** Werte, die mit `=`, `+`, `-` oder `@` beginnen, werden als Text abgelegt und nie als Formel ausgewertet (gleicher Schutz wie BUG-QA2-1, PROJ-9)
+- Dateiname: `DML-{MI}-{CAGE Originator}-{DML-Typ}-Export-{JJJJ-MM-TT}.xlsx`, z. B. `DML-PHUNGUN-D0815-C-Export-2026-11-24.xlsx`
+- **Nur zur Information und Weitergabe:** eine Excel-Datei kann **nicht** eingecheckt werden; Check-in bleibt CSV (PROJ-10)
+- Keine XSD-Prüfung (kein XML)
 
 ### XML
 **Kopf**
@@ -58,11 +70,15 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 - Als **Bearbeiter** möchte ich den aktuellen Stand jederzeit als CSV exportieren, damit ich ihn intern weitergeben kann, ohne die DMRL zu sperren.
 - Als **Bearbeiter** möchte ich den aktuellen Stand als S1000D-XML exportieren, auch während die DMRL auf einen REPLY wartet.
 - Als **Empfänger** einer exportierten XML möchte ich erkennen, dass es sich um einen Arbeitsstand und nicht um einen offiziellen SEND handelt.
-- Als **Product Owner** möchte ich in der Demo jederzeit Stände in beiden Formaten zeigen können.
+- Als **Bearbeiter** möchte ich den aktuellen Stand als Excel-Datei exportieren, damit Empfänger sie direkt in Excel öffnen, filtern und lesen können — ohne CSV-Import und ohne verfälschte Werte. *(Refinement 2026-11-24)*
+- Als **Product Owner** möchte ich in der Demo jederzeit Stände in allen Formaten (CSV, XML, Excel) zeigen können.
 
 ## Out of Scope
 - Export mehrerer DMRLs auf einmal
-- Excel-Format (.xlsx)
+- ~~Excel-Format (.xlsx)~~ → jetzt im Umfang *(Refinement 2026-11-24)*
+- Check-in einer Excel-Datei (.xlsx) — Check-in bleibt CSV (PROJ-10); ggf. späteres Refinement von PROJ-10 *(Refinement 2026-11-24)*
+- Excel-Export des Freigabestands (PROJ-14) — dort weiterhin nur CSV/XML *(Refinement 2026-11-24)*
+- Weitere Tabellenblätter in der Excel-Datei (z. B. Kopfdaten) *(Refinement 2026-11-24)*
 - Export mit Kopfdaten in der CSV
 - Auswahl einzelner Einträge oder Spalten
 - Protokollierung von Exporten (PROJ-15)
@@ -74,7 +90,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 **Format:** Angenommen [Vorbedingung] / Wenn [Aktion] / Dann [Ergebnis]
 
 ### Zugriff
-- [ ] Angenommen ein berechtigter Bearbeiter öffnet die DMRL-Ansicht, wenn er „Exportieren" wählt, dann kann er CSV oder XML auswählen
+- [ ] Angenommen ein berechtigter Bearbeiter öffnet die DMRL-Ansicht, wenn er „Exportieren" wählt, dann kann er CSV, XML oder Excel auswählen *(Refinement 2026-11-24)*
 - [ ] Angenommen ein Bearbeiter ist nicht berechtigt, wenn er den Export direkt aufruft, dann erscheint „Keine Berechtigung"
 - [ ] Angenommen die DMRL ist von einem anderen Benutzer ausgecheckt, wenn exportiert wird, dann ist der Export möglich und enthält den Stand der Anwendung
 - [ ] Angenommen die DMRL hat Status *gesendet*, wenn exportiert wird, dann ist der Export möglich
@@ -92,19 +108,36 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 - [ ] Angenommen eine DMRL hat keine Einträge, wenn als XML exportiert wird, dann erscheint „Die DMRL hat keine Einträge" und nichts wird heruntergeladen
 - [ ] Angenommen ein XML-Export wurde erstellt, wenn das Archiv und der Verlauf betrachtet werden, dann gibt es dafür keinen Eintrag und keinen neuen Versionsindex
 
+### Excel *(Refinement 2026-11-24)*
+- [ ] Angenommen PHUNGUN wird am 24.11.2026 als Excel exportiert, wenn die Datei gespeichert wird, dann heißt sie `DML-PHUNGUN-D0815-C-Export-2026-11-24.xlsx` und lässt sich in MS Excel ohne Reparaturmeldung öffnen
+- [ ] Angenommen eine DMRL wird als Excel exportiert, wenn die Datei geöffnet wird, dann enthält sie genau ein Tabellenblatt „Einträge“ mit denselben 28 Spalten, derselben Kopfzeile, denselben Werten und derselben Reihenfolge (nach DMC) wie der CSV-Export desselben Stands
+- [ ] Angenommen ein Eintrag hat Werte mit führenden Nullen (z. B. `00A`) oder datums-/zahlenähnliche Werte, wenn die Excel-Datei geöffnet wird, dann stehen sie unverändert als Text in den Zellen
+- [ ] Angenommen die Excel-Datei wird geöffnet, dann ist die Kopfzeile fixiert und hat einen Autofilter
+- [ ] Angenommen ein Feld beginnt mit `=`, `+`, `-` oder `@`, wenn die Excel-Datei geöffnet wird, dann wird der Wert als Text angezeigt und keine Formel ausgewertet
+- [ ] Angenommen eine DMRL hat keine Einträge, wenn als Excel exportiert wird, dann enthält die Datei nur die Kopfzeile
+- [ ] Angenommen die DMRL ist von einem anderen Benutzer ausgecheckt oder hat Status *gesendet*, wenn als Excel exportiert wird, dann ist der Export möglich, und danach ist die DMRL unverändert (keine Sperre, kein Status, kein Archiv, kein Verlauf)
+- [ ] Angenommen ein Bearbeiter hat die DMRL ausgecheckt, wenn er beim Check-in eine .xlsx-Datei hochlädt, dann erscheint „Bitte eine CSV-Datei auswählen" und es wird nichts geprüft (PROJ-10 unverändert)
+
 ## Edge Cases
 - **Export während eines laufenden Check-ins (Zusammenfassung offen):** exportiert den Stand vor der Übernahme.
 - **Jahreswechsel:** `dmlc` behält Jahr/seqnum des letzten SEND; Export-Datum ist das aktuelle Datum.
 - **Zurückgezogener letzter SEND:** `dmlc` verwendet den letzten nicht zurückgezogenen SEND (bzw. `00001`).
 - **Gleicher Dateiname bei mehreren Exporten am selben Tag:** Browser vergibt ggf. Zusatz; kein Problem für die Anwendung.
-- **Sehr große DMRL:** Fortschrittsanzeige während XML-Erzeugung und Prüfung.
+- **Sehr große DMRL:** Fortschrittsanzeige während XML-Erzeugung und Prüfung; ebenso während der Excel-Erzeugung, falls sie spürbar dauert. *(Refinement 2026-11-24)*
+- **Sehr lange Feldinhalte (z. B. Titel, Bemerkungen):** Spaltenbreite wird begrenzt; der volle Inhalt bleibt in der Zelle erhalten. Excel-Grenze von 32 767 Zeichen je Zelle wird von DMRL-Feldern nicht erreicht. *(Refinement 2026-11-24)*
+- **Sonderzeichen/Umlaute:** werden in .xlsx ohne BOM-/Kodierungsprobleme korrekt angezeigt (Vorteil gegenüber CSV). *(Refinement 2026-11-24)*
 
 ## Technical Requirements (optional)
 - CSV-Export im Browser; XML-Prüfung serverseitig (PROJ-11)
+- Excel-Export im Browser, offline lauffähig (kein Netzwerkzugriff, Windows-Offline-Paket); benötigt ein Paket zum Schreiben von .xlsx — Auswahl in `/architecture` *(Refinement 2026-11-24)*
+- Excel-Export nutzt dieselbe Zeilen-/Spaltenaufbereitung wie der CSV-Export (eine Quelle für Spalten, Reihenfolge und Werte) *(Refinement 2026-11-24)*
 - Gleiche XML-Erzeugung wie SEND (PROJ-12), nur Kopfwerte abweichend
 
 ## Open Questions
-- (keine)
+- [x] Inhalt der Excel-Datei? → ein Blatt „Einträge“, 28 Spalten wie CSV, alles Text, keine Kopfdaten (2026-11-24)
+- [x] Check-in von .xlsx? → Nein, nur Information/Weitergabe; Check-in bleibt CSV (2026-11-24)
+- [x] Freigabestand auch als Excel? → Nein, vorerst nicht (2026-11-24)
+- [ ] Welches Paket schreibt die .xlsx-Datei (Lizenz, Größe, Offline-Fähigkeit)? → in `/architecture` klären
 
 ## Decision Log
 
@@ -118,6 +151,11 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 | Einträge wie SEND, ohne `answer` | Gleicher Aufbau, keine Sonderlogik | 2026-11-12 |
 | CSV-Export mit Zusatz „Export" und Datum im Dateinamen | Unterscheidbar von der Check-out-Datei | 2026-11-12 |
 | Freigabestand-Export nutzt denselben Aufbau | Konsistenz mit PROJ-14 | 2026-11-12 |
+| Zusätzlicher Export als MS-Excel (.xlsx) | Vorgabe Product Owner; Empfänger öffnen die Datei direkt in Excel ohne CSV-Import, ohne Kodierungsprobleme und ohne verfälschte Werte | 2026-11-24 |
+| Excel = ein Blatt „Einträge“ mit den 28 CSV-Spalten, alle Zellen Text, fixierte Kopfzeile, Autofilter, Spaltenbreiten; keine Kopfdaten | Inhalt identisch zum CSV-Export (keine zweite Datensicht); Text verhindert Umwandlung durch Excel (führende Nullen, Datumswerte) | 2026-11-24 |
+| Kein Check-in von .xlsx | Check-in/Regelprüfung (PROJ-8/10) sind auf CSV ausgelegt und freigegeben; ein Rückweg in die Anwendung genügt; ggf. späteres Refinement von PROJ-10 | 2026-11-24 |
+| Kein Excel-Export des Freigabestands (PROJ-14) | Umfang bleibt bei PROJ-18; Freigabestand ist Nachweis — CSV/XML maßgeblich; Excel-Schreiber später wiederverwendbar | 2026-11-24 |
+| Dateiname `…-Export-{JJJJ-MM-TT}.xlsx`, Wirkung und Berechtigung wie CSV-Export | Konsistenz mit dem CSV-Export | 2026-11-24 |
 
 ### Technical Decisions
 | Decision | Rationale | Date |
@@ -126,6 +164,8 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV** oder **XML**.
 | Kopf-Variante „Export" des DML-Schreibers (PROJ-12), auch für Freigabestand (PROJ-14) | Einträge identisch, nur Kopf abweichend | 2026-11-12 |
 | XSD-Prüfung vor jedem XML-Export (PROJ-11) | Schemakonforme Dateien | 2026-11-12 |
 | Aufklappmenü „Exportieren" mit CSV/XML | Eine Aktion in der Leiste | 2026-11-12 |
+| Dritter Menüeintrag „Als Excel exportieren“ | Erweiterung des bestehenden Aufklappmenüs | 2026-11-24 |
+| Excel-Erzeugung im Browser, Formelschutz wie BUG-QA2-1 | Kein Server nötig, offline; gleicher Sicherheitsstandard wie CSV | 2026-11-24 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
