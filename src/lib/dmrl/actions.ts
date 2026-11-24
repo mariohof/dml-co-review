@@ -40,7 +40,7 @@ export function dmrlActions(data: Dataset, dmrl: Dmrl, user: User | null): DmrlA
     { id: "check_out", label: "Check-out", visible: !holder, blocked: checkOutBlocked(data, dmrl, user) },
     { id: "check_in", label: "Check-in", visible: holder, blocked: checkInBlocked(dmrl, user) },
     { id: "send", label: "SEND", visible: true, blocked: sendBlocked(data, dmrl, user) },
-    { id: "reply_import", label: "REPLY importieren", visible: true, blocked: replyBlocked(dmrl, user) },
+    { id: "reply_import", label: "REPLY", visible: true, blocked: replyBlocked(dmrl, user) },
     { id: "export", label: "Exportieren", visible: true, blocked: exportBlocked(dmrl, user) },
     { id: "archive", label: "Archiv", visible: true, blocked: canAccessDmrl(user, dmrl) ? null : "Keine Berechtigung für diese DMRL." },
     { id: "check_out_zuruecknehmen", label: "Check-out zurücknehmen", visible: holder, blocked: null },

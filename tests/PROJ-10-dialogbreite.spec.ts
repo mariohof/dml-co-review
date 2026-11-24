@@ -94,7 +94,7 @@ test.describe("Dialogbreite Prüfbericht (UI-Fix 2026-11-16)", () => {
     await startAs(page, "Anna Bearbeitung")
     for (const file of ["TEST-1_Pflichtelement-fehlt.XML", "TEST-4_Falscher-Absender.XML"]) {
       await page.goto("/dmrl/dmrl-phungun")
-      await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY importieren" }).click()
+      await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY", exact: true }).click()
       const dialog = page.getByRole("dialog")
       await dialog.getByLabel("XML-Datei für den REPLY-Import").setInputFiles(join(DEMO, file))
       await expect(dialog.getByRole("columnheader", { name: "Meldung" })).toBeVisible()

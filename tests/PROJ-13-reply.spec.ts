@@ -11,7 +11,7 @@ const DEMO_REPLY = "DML-PHUNGUN-C1234-C-2026-00002_001-00.XML"
 
 async function upload(page: Page, file: string | { name: string; buffer: Buffer }) {
   await page.goto("/dmrl/dmrl-phungun")
-  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY importieren" }).click()
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY", exact: true }).click()
   const dialog = page.getByRole("dialog")
   const input = dialog.getByLabel("XML-Datei für den REPLY-Import")
   if (typeof file === "string") await input.setInputFiles(join(DEMO, file))

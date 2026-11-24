@@ -18,7 +18,7 @@ function utf16(text: string, { bigEndian = false, bom = true } = {}) {
 
 async function replyImport(page: Page, buffer: Buffer) {
   await page.goto("/dmrl/dmrl-phungun")
-  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY importieren" }).click()
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY", exact: true }).click()
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("XML-Datei für den REPLY-Import").setInputFiles({ name: DEMO_REPLY, mimeType: "application/xml", buffer })
   return dialog

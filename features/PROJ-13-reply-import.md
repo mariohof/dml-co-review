@@ -1,6 +1,6 @@
 # PROJ-13: REPLY-Import
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-24
 
@@ -278,6 +278,12 @@ _Stand 2026-11-13 — `/frontend PROJ-13`_
 - **CSV** (Check-out, Export, Freigabestand, PROJ-20-Konvertierung): Spalte automatisch über `ENTRY_FIELD_NAMES` im `csv-writer`; Formelschutz gilt. **XML**: Der DML-Schreiber schreibt nur benannte Felder → kein `answer_timestamp` (Test für 2.3/4.2/5.0; XSD-Tests mit xmllint grün).
 - **Ansicht** (PROJ-7): Eintragstabelle mit Spalte „Antwort übernommen“ (`<time>`, „—“ wenn leer; nicht bei archivierten Dateien, die keinen Zeitpunkt haben); Detailfenster zeigt das Feld in der Gruppe „Abstimmung“.
 - **Tests:** `src/lib/dmrl/answer-timestamp.test.ts` (5: Format, CSV-Spalte, nicht im XML, Laden alter Daten), `reply.test.ts` (+3), `check-in.test.ts` (+4: Übernahme, ohne Übernahme, nur Zeitstempel geändert, 27-Spalten-CSV), `dmrl-view.test.tsx` (+2: Spalte, Detailfenster, fileView). E2E: `PROJ-13-reply.spec.ts` prüft Zeitstempel und Anzeige; `PROJ-10-checkin-antworten.spec.ts` auf 28 Spalten angepasst. Vitest 625 ✅ · Playwright 125/125 ✅ (Chrome).
+
+
+### Refinement 2026-11-24 — Bezeichnung „REPLY“ (`/frontend PROJ-13`)
+- `src/lib/dmrl/actions.ts`: Aktion `reply_import` mit der Bezeichnung **„REPLY“** (vorher „REPLY importieren“); ID, Verfügbarkeit und Sperrgrund unverändert.
+- `src/components/workflows/reply-import-dialog.tsx`: Dialogtitel **„REPLY — [System]“** (vorher „REPLY importieren — [System]“). Die Beschriftung des Dateifelds „XML-Datei für den REPLY-Import“ bleibt (Fachbegriff).
+- **Tests:** `reply-import-dialog.test.tsx` (+1: Schaltfläche „REPLY“, alte Bezeichnung nicht mehr vorhanden, Dialogtitel „REPLY — PHUNGUN“), `dmrl-view.test.tsx` angepasst; 7 E2E-Dateien suchen die Schaltfläche jetzt mit `{ name: "REPLY", exact: true }` (sonst würde Playwright Teiltreffer zulassen). Vitest 647 ✅ (1 übersprungen) · betroffene Playwright-Tests 39/39 ✅ (Chrome) · Lint 0 Fehler · Build ✅.
 
 
 ## QA Test Results

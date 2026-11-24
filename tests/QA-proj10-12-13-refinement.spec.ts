@@ -20,7 +20,7 @@ const toolbar = (page: Page) => page.getByRole("toolbar", { name: "Aktionen" })
 
 async function uploadReply(page: Page, xml: string, name = DEMO_REPLY) {
   await page.goto("/dmrl/dmrl-phungun")
-  await toolbar(page).getByRole("button", { name: "REPLY importieren" }).click()
+  await toolbar(page).getByRole("button", { name: "REPLY", exact: true }).click()
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("XML-Datei für den REPLY-Import").setInputFiles({ name, mimeType: "application/xml", buffer: Buffer.from(xml) })
   return dialog

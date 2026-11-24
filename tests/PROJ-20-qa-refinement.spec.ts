@@ -56,7 +56,7 @@ test("REPLY-Import (PROJ-13): Server läuft nicht → neue Meldung, „Erneut ve
   await startAs(page, "Anna Bearbeitung")
   await page.goto("/dmrl/dmrl-phungun")
   await page.route(XSD, (route) => route.abort("connectionrefused"))
-  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY importieren" }).click()
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY", exact: true }).click()
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("XML-Datei für den REPLY-Import").setInputFiles(join(DEMO, REPLY))
   await expect(dialog).toContainText("Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).")

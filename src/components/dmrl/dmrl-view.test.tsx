@@ -90,7 +90,7 @@ describe("DMRL-Ansicht PHUNGUN (Demo)", () => {
 
   it("zeigt die Aktionsleiste mit Gründen für gesperrte Aktionen; Administrator sieht „SEND zurückziehen\"", () => {
     const toolbar = screen.getByRole("toolbar", { name: "Aktionen" })
-    expect(within(toolbar).getByRole("button", { name: "REPLY importieren" })).toBeEnabled()
+    expect(within(toolbar).getByRole("button", { name: "REPLY" })).toBeEnabled()
     expect(within(toolbar).getByRole("button", { name: "Archiv" })).toBeEnabled()
     expect(within(toolbar).getByRole("button", { name: "Exportieren" })).toBeEnabled()
     for (const label of ["Check-out", "SEND"]) {

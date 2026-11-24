@@ -11,7 +11,7 @@ const DEMO_REPLY = join(__dirname, "..", "public", "demo-dateien", "DML-PHUNGUN-
 test("Freigabe, Freigabestand anzeigen und exportieren", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   await page.goto("/dmrl/dmrl-phungun")
-  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY importieren" }).click()
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY", exact: true }).click()
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("XML-Datei für den REPLY-Import").setInputFiles({
     name: "DML-PHUNGUN-C1234-C-2026-00002_001-00.XML",

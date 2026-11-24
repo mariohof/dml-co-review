@@ -49,7 +49,7 @@ const phungun = () => stored().dmrls.find((d) => d.id === DEMO_IDS.dmrlPhungun)!
 const toolbar = () => screen.getByRole("toolbar", { name: "Aktionen" })
 
 async function upload(content: string, name: string) {
-  fireEvent.click(within(toolbar()).getByRole("button", { name: "REPLY importieren" }))
+  fireEvent.click(within(toolbar()).getByRole("button", { name: "REPLY" }))
   const dialog = await screen.findByRole("dialog")
   await act(async () => {
     fireEvent.change(within(dialog).getByLabelText("XML-Datei für den REPLY-Import"), { target: { files: [new File([content], name)] } })
@@ -57,12 +57,20 @@ async function upload(content: string, name: string) {
   return dialog
 }
 
-describe("REPLY importieren", () => {
+describe("REPLY (Import-Dialog)", () => {
   beforeEach(() => {
     window.localStorage.clear()
     saveDataset(buildDemoDataset())
     validate.mockReset()
     validate.mockResolvedValue({ state: "gueltig", issue: "2.3" })
+  })
+
+  it("Schaltfläche „REPLY“ öffnet den Dialog „REPLY — PHUNGUN“ (Refinement 2026-11-24)", async () => {
+    renderAs(DEMO_IDS.editorAnna)
+    expect(within(toolbar()).queryByRole("button", { name: "REPLY importieren" })).toBeNull()
+    fireEvent.click(within(toolbar()).getByRole("button", { name: "REPLY" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByRole("heading", { name: "REPLY — PHUNGUN" })).toBeInTheDocument()
   })
 
   it("Demo-REPLY: Zusammenfassung 30/2 mit abgelehnten Einträgen und Bemerkung → Übernehmen", async () => {
