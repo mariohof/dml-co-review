@@ -1,6 +1,6 @@
 # PROJ-18: DMRL-Export (CSV/XML/Excel)
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-24
 
@@ -137,7 +137,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV**, **XML** oder
 - [x] Inhalt der Excel-Datei? → ein Blatt „Einträge“, 28 Spalten wie CSV, alles Text, keine Kopfdaten (2026-11-24)
 - [x] Check-in von .xlsx? → Nein, nur Information/Weitergabe; Check-in bleibt CSV (2026-11-24)
 - [x] Freigabestand auch als Excel? → Nein, vorerst nicht (2026-11-24)
-- [ ] Welches Paket schreibt die .xlsx-Datei (Lizenz, Größe, Offline-Fähigkeit)? → in `/architecture` klären
+- [x] Welches Paket schreibt die .xlsx-Datei (Lizenz, Größe, Offline-Fähigkeit)? → eigener Excel-Schreiber + `fflate` (MIT) für das ZIP (2026-11-24, `/architecture`)
 
 ## Decision Log
 
@@ -166,6 +166,10 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV**, **XML** oder
 | Aufklappmenü „Exportieren" mit CSV/XML | Eine Aktion in der Leiste | 2026-11-12 |
 | Dritter Menüeintrag „Als Excel exportieren“ | Erweiterung des bestehenden Aufklappmenüs | 2026-11-24 |
 | Excel-Erzeugung im Browser, Formelschutz wie BUG-QA2-1 | Kein Server nötig, offline; gleicher Sicherheitsstandard wie CSV | 2026-11-24 |
+| Eigener Excel-Schreiber + `fflate` (ZIP) statt `exceljs` / `write-excel-file` / `xlsx` | Nur ein Blatt mit Text, Fixierung, Autofilter, Breiten nötig; `exceljs` seit 2023 unverändert mit schweren Abhängigkeiten, `write-excel-file` ohne Autofilter, `xlsx` auf npm veraltet mit Sicherheitslücken; `fflate` winzig, MIT, ohne Abhängigkeiten, offline | 2026-11-24 |
+| Formelschutz in Excel durch Textzellen statt Apostroph | Textzellen werden nie als Formel ausgewertet; Excel zeigt den Originalwert. Apostroph wäre in .xlsx ein sichtbarer, verfälschender Zusatz | 2026-11-24 |
+| Eintrags-Tabelle (Spalten, Sortierung, Werte) als gemeinsame Quelle für CSV und Excel | CSV und Excel können nicht auseinanderlaufen | 2026-11-24 |
+| Unzulässige XML-Steuerzeichen entfernen, Sonderzeichen maskieren | Datei öffnet in Excel ohne Reparaturmeldung | 2026-11-24 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -215,6 +219,54 @@ Keine Änderung, keine Speicherung: kein Versionsindex, kein Archiv, kein Verlau
 - Unit-Tests: Export-Kopf (mit/ohne SEND, nach zurückgezogenem SEND), Dateinamen, keine Datenänderung nach Export.
 - Integration mit xmllint: Export-XML für 2.3/4.2/5.0 schemagültig (inkl. `issno` 000 / `inwork` 01).
 - E2E: Export während Sperre durch anderen Benutzer und bei Status *gesendet*; XML-Export ohne Einträge → Meldung.
+
+### G) Erweiterung Excel-Export (.xlsx) *(Refinement 2026-11-24)*
+
+**Überblick:** Der Excel-Export ist eine dritte Ausgabe derselben Tabelle wie der CSV-Export — gleiche Spalten, gleiche Reihenfolge, gleiche Werte; nur das Dateiformat unterscheidet sich. Er läuft vollständig im Browser, schreibt nichts in den Datenbestand und braucht keinen Server (keine XSD-Prüfung).
+
+**Komponentenstruktur**
+```
+DMRL-Ansicht (PROJ-7) — Aktionsleiste
++-- „Exportieren" (shadcn DropdownMenu)
+    +-- „Als CSV exportieren"   → sofortiger Download (unverändert)
+    +-- „Als XML exportieren"   → Erzeugen + XSD-Prüfung → Download (unverändert)
+    +-- „Als Excel exportieren" → sofortiger Download (neu)
+        +-- Fehler beim Erzeugen (unerwartet) → Fehlermeldung (Toast), kein Download
+```
+
+**Bausteine**
+| Baustein | Herkunft | Aufgabe |
+|---|---|---|
+| Eintrags-Tabelle (Kopfzeile + Zeilen) | **aus dem CSV-Schreiber herausgelöst** | eine Quelle für Spalten (alle Eintragsfelder, derzeit 28), Sortierung nach DMC und Werte — genutzt von CSV und Excel |
+| Excel-Schreiber | **neu**, allgemein (Kopfzeile + Textzeilen → .xlsx-Datei) | ein Blatt mit Namen, alle Zellen als Text, Kopfzeile fett und fixiert, Autofilter über die Kopfzeile, Spaltenbreiten aus dem längsten Inhalt (mit Mindest- und Höchstbreite) |
+| Excel-Export | **neu** im Export-Ablauf (PROJ-18) | Eintrags-Tabelle → Excel-Schreiber; Dateiname `DML-{MI}-{CAGE}-{DML-Typ}-Export-{JJJJ-MM-TT}.xlsx` |
+| Menüeintrag „Als Excel exportieren" | Erweiterung Aufklappmenü | wie CSV: gleiche Verfügbarkeit (nur Berechtigung) |
+| Download-Helfer | PROJ-9 (vorhanden: Binärdatei-Download) | speichert die Datei mit Excel-Dateityp |
+
+**Datenmodell:** keine Änderung, keine Speicherung (wie CSV-Export).
+
+**Wie eine .xlsx-Datei aufgebaut ist (für PM):** Eine .xlsx-Datei ist ein ZIP-Archiv mit wenigen festen XML-Dateien (Blatt, Formatvorlagen, Verzeichnis). Die Anwendung schreibt bereits XML (SEND); neu ist nur das Verpacken als ZIP — dafür wird ein kleines, bewährtes Paket verwendet.
+
+**Technische Entscheidungen**
+| Entscheidung | Warum |
+|---|---|
+| Eigener kleiner Excel-Schreiber + Paket `fflate` (nur zum ZIP-Packen) statt einer großen Excel-Bibliothek | Die Spec braucht nur ein Blatt mit Text, fixierter Kopfzeile, Autofilter und Spaltenbreiten. `exceljs` kann das, ist aber seit 2023 unverändert und zieht schwere Server-Pakete nach sich; `write-excel-file` hat **keinen Autofilter**; `xlsx` (SheetJS) ist auf npm veraltet und hat bekannte Sicherheitslücken. `fflate` ist winzig, MIT-lizenziert, ohne Abhängigkeiten und liegt bereits (indirekt) im Projekt. |
+| Alle Zellen als **Textzellen** | Excel wandelt nichts um (führende Nullen, Datums-/Zahlenähnliches bleiben). |
+| **Kein Apostroph-Schutz** in Excel, stattdessen Textzellen | In einer .xlsx-Datei wird eine Textzelle nie als Formel ausgewertet — der Schutz ist durch das Format gegeben. Excel zeigt deshalb den **Originalwert** (z. B. `=SUMME(1)` als Text), nicht `'=SUMME(1)` wie in der CSV. „Gleiche Werte wie der CSV-Export" bedeutet: gleiche Werte aus der Anwendung, ohne die CSV-spezifische Entschärfung. |
+| Zeichen, die in XML nicht erlaubt sind (Steuerzeichen), werden beim Schreiben entfernt; `&`, `<`, `>`, `"` korrekt maskiert | Sonst meldet Excel „Datei beschädigt / reparieren". |
+| Eintrags-Tabelle aus dem CSV-Schreiber herauslösen | CSV und Excel können nie auseinanderlaufen (Spalten, Reihenfolge, Sortierung). |
+| Excel-Schreiber allgemein (Kopfzeile + Zeilen) | Später ohne Mehraufwand wiederverwendbar (z. B. Freigabestand, Prüfbericht) — derzeit Out of Scope. |
+| Erzeugung synchron im Browser, ohne Ladeanzeige | Auch große DMRLs (tausende Einträge) sind in Sekundenbruchteilen erzeugt; Fortschrittsanzeige nur, falls sich das in Tests als spürbar erweist. |
+| Offline-fähig | Reines JavaScript, keine nativen Teile — läuft im lokalen Start (PROJ-19) und im Windows-Offline-Paket. |
+
+**Abhängigkeiten (Pakete)**
+- `fflate` — ZIP-Archiv erzeugen (bisher nur indirekt über `@vitest/ui` vorhanden; wird direkte Abhängigkeit)
+
+**Testbarkeit**
+- Unit: Excel-Schreiber — Datei entpacken und prüfen: ein Blatt „Einträge", Textzellen, fixierte Kopfzeile, Autofilter über alle Spalten, Spaltenbreiten begrenzt, Sonderzeichen/Umlaute, Werte mit `=`/`+`/`-`/`@` als Text ohne Formel, Steuerzeichen entfernt, nur Kopfzeile bei leerer DMRL.
+- Unit: Excel-Export — Dateiname, gleiche Kopfzeile/Werte/Reihenfolge wie CSV-Export, Datenbestand unverändert.
+- E2E: Download „Als Excel exportieren" (Dateiname, Datei lesbar) bei fremder Sperre und Status *gesendet*; Check-in-Dialog lehnt .xlsx ab.
+- Manuell (QA/Product Owner): Datei in MS Excel öffnen — keine Reparaturmeldung, Filter und fixierte Kopfzeile sichtbar.
 
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend PROJ-18`_
