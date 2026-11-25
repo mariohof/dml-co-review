@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Page } from "@playwright/test"
 
-import { patchDataset, readDataset, startAs } from "./helpers"
+import { checkOutXlsxToCsv, csvName, patchDataset, readDataset, startAs } from "./helpers"
 
 /** PROJ-10 Refinement 2026-11-18: Bestand übernehmen — neue Einträge ohne Eintragstyp werden freigegeben (QA-Lauf 8) */
 
@@ -13,7 +13,7 @@ async function checkOut(page: Page) {
   const downloadPromise = page.waitForEvent("download")
   await page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click()
   const download = await downloadPromise
-  return { name: download.suggestedFilename(), csv: readFileSync((await download.path())!, "utf8") }
+  return { name: csvName(download.suggestedFilename()), csv: checkOutXlsxToCsv(readFileSync((await download.path())!)) }
 }
 
 /** Erste Datenzeile kopieren, Felder setzen und als neue Zeile anhängen */
@@ -32,7 +32,7 @@ function withNewRow(csv: string, values: Record<string, string>) {
 async function upload(page: Page, file: { name: string; csv: string }) {
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("CSV-Datei für den Check-in").setInputFiles({ name: file.name, mimeType: "text/csv", buffer: Buffer.from(file.csv) })
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: file.name, mimeType: "text/csv", buffer: Buffer.from(file.csv) })
   return dialog
 }
 

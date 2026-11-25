@@ -47,7 +47,7 @@ test("Rundlauf: exportierte DMRL-XML (4.2) → CSV → Check-in in die ausgechec
   await checkoutPromise
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("CSV-Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
   await expect(dialog.getByText("Prüfung bestanden")).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Übernehmen" })).toBeEnabled()
 })

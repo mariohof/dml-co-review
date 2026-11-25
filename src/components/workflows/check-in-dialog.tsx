@@ -79,7 +79,7 @@ function CheckInFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
     }
     let result: CheckinResult
     try {
-      result = checkCheckinFile(data, dmrl, read.text)
+      result = checkCheckinFile(data, dmrl, "table" in read ? read.table : read.text)
     } catch (error) {
       // Unerwarteter Fehler in der Prüfung: Meldung statt dauerhaft „Prüfe …“ (BUG-QA7-1)
       console.error(error)
@@ -115,7 +115,7 @@ function CheckInFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
       <DialogHeader>
         <DialogTitle>Check-in — {systemName}</DialogTitle>
         <DialogDescription>
-          Die CSV-Datei wird gegen den Stand beim Check-out geprüft. Nur eine fehlerfreie Datei kann übernommen werden.
+          Die Datei wird gegen den Stand beim Check-out geprüft. Nur eine fehlerfreie Datei kann übernommen werden.
         </DialogDescription>
       </DialogHeader>
 
@@ -143,7 +143,7 @@ function CheckInFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
             )}
           >
             <Upload className="h-8 w-8" aria-hidden />
-            <p>CSV-Datei hierher ziehen oder auswählen (UTF-8, Semikolon, höchstens 5 MB)</p>
+            <p>Excel- (.xlsx) oder CSV-Datei hierher ziehen oder auswählen (höchstens 5 MB)</p>
             <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
               <FileUp className="mr-2 h-4 w-4" aria-hidden />
               Datei auswählen
@@ -151,9 +151,9 @@ function CheckInFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
             <input
               ref={inputRef}
               type="file"
-              accept=".csv,text/csv"
+              accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
               className="sr-only"
-              aria-label="CSV-Datei für den Check-in"
+              aria-label="Datei für den Check-in"
               onChange={(event) => {
                 void handleFile(event.target.files?.[0])
                 event.target.value = ""

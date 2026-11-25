@@ -56,7 +56,9 @@ describe("Datei lesen", () => {
   })
 
   it("lehnt andere Dateitypen, zu große und nicht UTF-8-kodierte Dateien ab", async () => {
-    expect(await readCheckinFile(fileOf("x", "liste.xlsx"))).toEqual({ ok: false, message: "Bitte eine CSV-Datei auswählen." })
+    expect(await readCheckinFile(fileOf("x", "liste.xls"))).toEqual({ ok: false, message: "Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen." })
+    expect(await readCheckinFile(fileOf("x", "liste.ods"))).toEqual({ ok: false, message: "Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen." })
+    expect(await readCheckinFile(fileOf("kein zip", "liste.xlsx"))).toEqual({ ok: false, message: "Excel-Datei kann nicht gelesen werden." })
     const big = fileOf(new Uint8Array(MAX_CHECKIN_BYTES + 1))
     expect(await readCheckinFile(big)).toEqual({ ok: false, message: "Datei zu groß (höchstens 5 MB)." })
     const latin1 = fileOf(new Uint8Array([0x47, 0x65, 0x72, 0xe4, 0x74])) // „Gerät" in ISO-8859-1

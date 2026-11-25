@@ -1,6 +1,6 @@
 # PROJ-9: Check-out (MS-Excel)
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-25
 
@@ -317,6 +317,25 @@ _Stand 2026-11-13 — `/frontend PROJ-9`_
 **Hinweise**
 - Der Sperrinhaber sieht „Check-out" nicht (stattdessen seine Sperr-Aktionen); andere Benutzer sehen es gesperrt mit Grund.
 - Browser-E2E-Tests stehen aus → `/qa`.
+
+### Refinement 2026-11-25 — Check-out als MS-Excel (.xlsx)
+_Stand 2026-11-25 — `/frontend PROJ-9 PROJ-10` (Tech Design I, gemeinsam mit PROJ-10)_
+
+**Umgesetzt**
+- `src/lib/files/entries-xlsx.ts` (neu) — gemeinsamer Baustein „Einträge als Excel“: Blattname „Einträge“ (`ENTRIES_SHEET_NAME`), Spalten und DMC-Sortierung wie der CSV-Schreiber. Genutzt von Excel-Export (PROJ-18, Ergebnis unverändert) und Check-out; der Excel-Leser des Check-ins sucht dasselbe Blatt.
+- `src/lib/workflows/check-out.ts` — Dateiname `DML-{MI}-{CAGE}-{DML-Typ}-{Jahr}.xlsx`; `lockXlsx` erzeugt die Excel-Datei aus der Kopie in der Sperre (ersetzt `lockCsv`). Datenmodell der Sperre unverändert — Check-outs aus der CSV-Zeit liefern beim erneuten Download sofort `.xlsx`.
+- `src/components/workflows/check-out-dialogs.tsx` — Download als Excel (`downloadBytes`, Excel-MIME-Typ), Texte „Excel-Datei“ im Bestätigungs- und Zurücknehmen-Dialog.
+- `src/lib/dmrl/actions.ts`, `dmrl-action-bar.tsx`, `dmrl-view.tsx` — Aktion „Excel-Datei erneut herunterladen“ (interne ID `datei_erneut_herunterladen`, vorher `csv_erneut_herunterladen`).
+- `src/lib/files/xlsx-writer.ts` — Dateiinhalte vor dem Packen als `Uint8Array` dieses Realms: In der Testumgebung (jsdom, Node 26) deutete `zipSync` die Bytes sonst als Verzeichnis — **9 der 11 Writer-Tests schlugen bereits vor dieser Änderung fehl** (Umgebung, nicht Browser). Ausgabe unverändert.
+
+**Tests**
+- Unit: `check-out.test.ts` (Dateiname `.xlsx`, Blatt „Einträge“, 28 Spalten, Kopie unabhängig vom späteren Datenbestand, ZIP-Kennung), `check-out-dialogs.test.tsx` (Download als Excel, „Excel-Datei erneut herunterladen“ mit gleichem Namen und Inhalt), `qa-proj7-10.test.ts` (DMRL ohne Einträge → nur Kopfzeile).
+- E2E: neu `tests/PROJ-9-10-excel.spec.ts` (Check-out-Datei: Blatt, fixierte Kopfzeile, Autofilter A1:AB11, erneuter Download); bestehende Specs, die die Check-out-Datei als Text bearbeiten, wandeln sie über die Testhilfe `checkOutXlsxToCsv` (`tests/helpers.ts`) in CSV und checken diese ein; BUG-QA2-1-Test prüft jetzt die Textzelle in der Excel-Datei und checkt die `.xlsx` direkt ein.
+- Gesamt: 685 Unit-Tests (57 Dateien) und 151 E2E-Tests grün; Lint ohne Fehler.
+
+**Hinweise**
+- Die erneut heruntergeladene Datei ist **inhaltlich** identisch; die Bytes können sich durch den Zeitstempel im ZIP unterscheiden.
+- Manuelle Abnahme in MS Excel (Doppelklick ohne Reparaturmeldung, `01` bleibt `01`, neue Zeile tippen) steht aus → `/qa`.
 
 ## QA Test Results
 

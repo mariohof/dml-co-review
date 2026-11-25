@@ -9,7 +9,9 @@ import { runReplyCheck } from "@/lib/rules/check/reply"
 import { errorCount } from "@/lib/rules/check/types"
 import { isDmrlUsedInWorkflow } from "@/lib/rules/workflow-usage"
 import { checkCheckinFile, executeCheckIn } from "./check-in"
-import { executeCancelCheckOut, executeCheckOut, lockCsv } from "./check-out"
+import { ENTRIES_SHEET_NAME } from "@/lib/files/entries-xlsx"
+import { readXlsxSheet } from "@/lib/files/xlsx-reader"
+import { executeCancelCheckOut, executeCheckOut, lockXlsx } from "./check-out"
 import { replyContext } from "./reply"
 
 /** QA PROJ-7 bis PROJ-10: Akzeptanzkriterien, die bisher nicht ausdrücklich getestet waren */
@@ -67,11 +69,12 @@ describe("PROJ-8 — Regeln", () => {
 })
 
 describe("PROJ-9 — Check-out", () => {
-  it("DMRL ohne Einträge: CSV enthält nur die Kopfzeile", () => {
+  it("DMRL ohne Einträge: Excel-Datei enthält nur die Kopfzeile", () => {
     const demo = buildDemoDataset()
     demo.entries = demo.entries.filter((e) => e.dmrlId !== DEMO_IDS.dmrlVehicle)
     const data = checkedOut(demo, DEMO_IDS.dmrlVehicle, DEMO_IDS.editorBen)
-    expect(lockCsv(dmrl(data, DEMO_IDS.dmrlVehicle))!.trim().split("\r\n")).toHaveLength(1)
+    const sheet = readXlsxSheet(lockXlsx(dmrl(data, DEMO_IDS.dmrlVehicle))!, ENTRIES_SHEET_NAME)
+    expect(sheet.ok && sheet.rows).toHaveLength(1)
   })
 
   it("Check-out und Rücknahme: DMRL gilt weiterhin nicht als im Workflow verwendet", () => {

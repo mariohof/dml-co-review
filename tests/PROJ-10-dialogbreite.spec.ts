@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test, type Locator, type Page } from "@playwright/test"
 
-import { startAs } from "./helpers"
+import { checkOutXlsxToCsv, csvName, startAs } from "./helpers"
 
 /**
  * UI-Fix 2026-11-16 (PROJ-10, PROJ-12, PROJ-13): Dialoge mit Prüfbericht sind breit genug,
@@ -18,7 +18,7 @@ async function faultyCheckinCsv(page: Page) {
   const downloadPromise = page.waitForEvent("download")
   await page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click()
   const download = await downloadPromise
-  const lines = readFileSync((await download.path())!, "utf8").split("\r\n")
+  const lines = checkOutXlsxToCsv(readFileSync((await download.path())!)).split("\r\n")
   const column = lines[0].replace(/^\uFEFF/, "").split(";").indexOf("dmentryType")
   expect(column).toBeGreaterThanOrEqual(0)
   const faulty = lines.map((line, index) => {
@@ -27,14 +27,14 @@ async function faultyCheckinCsv(page: Page) {
     cells[column] = "X"
     return cells.join(";")
   })
-  return { name: download.suggestedFilename(), csv: faulty.join("\r\n") }
+  return { name: csvName(download.suggestedFilename()), csv: faulty.join("\r\n") }
 }
 
 async function openCheckinReport(page: Page) {
   const file = await faultyCheckinCsv(page)
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("CSV-Datei für den Check-in").setInputFiles({ name: file.name, mimeType: "text/csv", buffer: Buffer.from(file.csv) })
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: file.name, mimeType: "text/csv", buffer: Buffer.from(file.csv) })
   await expect(dialog.getByText("Check-in nicht möglich")).toBeVisible()
   await expect(dialog.getByRole("columnheader", { name: "Meldung" })).toBeVisible()
   return dialog

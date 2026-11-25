@@ -62,7 +62,7 @@ const toolbar = () => screen.getByRole("toolbar", { name: "Aktionen" })
 async function openAndUpload(content: string, name = "DML-GTFDEMO-D0815-C-2026.csv") {
   fireEvent.click(within(toolbar()).getByRole("button", { name: "Check-in" }))
   const dialog = await screen.findByRole("dialog")
-  fireEvent.change(within(dialog).getByLabelText("CSV-Datei für den Check-in"), {
+  fireEvent.change(within(dialog).getByLabelText("Datei für den Check-in"), {
     target: { files: [new File([content], name)] },
   })
   return dialog
@@ -125,8 +125,8 @@ describe("Check-in in der DMRL-Ansicht", () => {
   it("falscher Dateityp: Meldung im Auswahlschritt, kein Verlaufseintrag", async () => {
     renderAs(DEMO_IDS.editorBen)
     const historyBefore = stored().history.length
-    const dialog = await openAndUpload("x", "liste.xlsx")
-    expect(await within(dialog).findByText("Bitte eine CSV-Datei auswählen.")).toBeInTheDocument()
+    const dialog = await openAndUpload("x", "liste.xls")
+    expect(await within(dialog).findByText("Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen.")).toBeInTheDocument()
     expect(stored().history).toHaveLength(historyBefore)
   })
 

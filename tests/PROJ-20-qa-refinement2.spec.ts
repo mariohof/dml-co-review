@@ -111,7 +111,7 @@ test("Rundlauf in bestehende DMRL: 4.2-Export ohne Ausgabedaten → CSV → Chec
   await checkoutPromise
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("CSV-Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
   await expect(dialog.getByText("Prüfung bestanden")).toBeVisible()
   await expect(dialog.getByText("Keine Fehler und keine Hinweise.")).toBeVisible()
   // GTFDEMO hat bereits 001/new mit anderem Datum → das Prüfdatum erscheint als Änderung (gewollt laut Tech Design K)

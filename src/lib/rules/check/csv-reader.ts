@@ -3,11 +3,13 @@ import Papa from "papaparse"
 import { emptyEntryFields, ENTRY_FIELD_NAMES, type EntryFieldName, type EntryFields } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { unguardCsvCell } from "@/lib/files/csv-formula"
+import type { SheetRow } from "@/lib/files/xlsx-reader"
 import type { Candidate, Finding } from "./types"
 
 /**
- * CSV-Leser für den Check-in (PROJ-8 Gruppe S, Tech Design B).
- * Semikolon, UTF-8 mit/ohne BOM, Anführungszeichen; Kopfzeile = 27 Feldnamen in fester Reihenfolge.
+ * Leser für den Check-in (PROJ-8 Gruppe S, Tech Design B; PROJ-10 Tech Design J).
+ * CSV: Semikolon, UTF-8 mit/ohne BOM, Anführungszeichen. Excel: Tabelle aus dem Excel-Leser.
+ * Kopfzeile = 28 Feldnamen (bzw. alter Stand 27) in fester Reihenfolge.
  */
 
 export interface CsvReadResult {
@@ -69,15 +71,33 @@ export function padLeadingZeros(fields: EntryFields, line: number): { fields: En
   return { fields: result, hints }
 }
 
-export function readCheckinCsv(text: string): CsvReadResult {
-  const content = text.replace(/^﻿/, "")
+/** Herkunft der Tabelle: CSV (Formelschutz-Apostroph entfernen, feste Spaltenzahl) oder Excel (PROJ-10 Refinement 2026-11-25) */
+export type TableSource = "csv" | "xlsx"
+
+/** CSV zerlegen → Tabelle (Zeilennummer = Datensatz-Nummer, wie bisher) */
+export function csvTable(text: string): SheetRow[] {
+  const content = text.replace(/^\uFEFF/, "")
   const parsed = Papa.parse<string[]>(content, { delimiter: ";", skipEmptyLines: false })
-  const rows = parsed.data
+  return parsed.data.map((cells, index) => ({ line: index + 1, cells }))
+}
+
+/** CSV-Leser für den Check-in (unverändertes Verhalten) */
+export function readCheckinCsv(text: string): CsvReadResult {
+  return readCheckinTable(csvTable(text), "csv")
+}
+
+/**
+ * Gemeinsamer Schritt „Tabelle → Einträge" für CSV und Excel (PROJ-10 Tech Design J):
+ * Kopfzeile (28 bzw. alte 27 Spalten), Spaltenzahl, Trimmen, führende Nullen, leere Zeilen überspringen.
+ * Excel lässt leere Zellen am Zeilenende weg — fehlende Zellen gelten dort als leer.
+ */
+export function readCheckinTable(rows: SheetRow[], source: TableSource): CsvReadResult {
+  const isBlank = (row: SheetRow) => row.cells.every((cell) => cell.trim() === "")
   // Nach dem Kopf nur nicht leere Zeilen (leere Zeilen werden übersprungen)
-  const headerIndex = rows.findIndex((row) => row.some((cell) => cell.trim() !== ""))
+  const headerIndex = rows.findIndex((row) => !isBlank(row))
   if (headerIndex === -1) return { candidates: [], findings: [S("Die Datei enthält keine Einträge.")], aborted: true }
 
-  const header = rows[headerIndex].map((cell) => cell.trim())
+  const header = rows[headerIndex].cells.map((cell) => cell.trim())
   const headerFindings = checkHeader(header)
   if (headerFindings.length > 0) return { candidates: [], findings: headerFindings, aborted: true }
 
@@ -85,16 +105,18 @@ export function readCheckinCsv(text: string): CsvReadResult {
   const findings: Finding[] = []
   const candidates: Candidate[] = []
   rows.forEach((row, index) => {
-    if (index <= headerIndex || row.every((cell) => cell.trim() === "")) return
-    const line = index + 1
-    if (row.length !== columns.length) {
-      findings.push(S(`Zeile hat ${row.length} statt ${columns.length} Spalten.`, line))
+    if (index <= headerIndex || isBlank(row)) return
+    const { line } = row
+    const width = source === "xlsx" ? Math.max(row.cells.length, columns.length) : row.cells.length
+    if (width !== columns.length) {
+      findings.push(S(`Zeile hat ${width} statt ${columns.length} Spalten.`, line))
       return
     }
     const fields = emptyEntryFields()
     columns.forEach((name, column) => {
-      // Entschärfung gegen Formel-Injection aus Check-out/Export rückgängig machen (BUG-QA2-1)
-      fields[name] = unguardCsvCell((row[column] ?? "").trim())
+      const value = (row.cells[column] ?? "").trim()
+      // Entschärfung gegen Formel-Injection aus Check-out/Export rückgängig machen (BUG-QA2-1) — nur CSV
+      fields[name] = source === "csv" ? unguardCsvCell(value) : value
     })
     const padded = padLeadingZeros(fields, line)
     findings.push(...padded.hints)

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 
-import { patchDataset, readDataset, startAs } from "./helpers"
+import { checkOutXlsxToCsv, csvName, patchDataset, readDataset, startAs } from "./helpers"
 
 /**
  * QA 2026-11-21 — Refinements PROJ-12 (Empfänger statt Partner, Bezug SEND ↔ REPLY, 2026-11-20)
@@ -33,7 +33,8 @@ async function download(page: Page, trigger: () => Promise<void>) {
   const promise = page.waitForEvent("download")
   await trigger()
   const file = await promise
-  return { name: file.suggestedFilename(), content: readFileSync((await file.path())!, "utf8") }
+  const bytes = readFileSync((await file.path())!)
+  return { name: file.suggestedFilename(), content: bytes.toString("utf8"), bytes }
 }
 
 async function exportAs(page: Page, format: "CSV" | "XML") {
@@ -163,7 +164,7 @@ test.describe("PROJ-13 — answer_timestamp", () => {
 
     await toolbar(page).getByRole("button", { name: "Check-out" }).click()
     const checkout = await download(page, () => page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click())
-    expect(new Set(csvColumn(checkout.content, "answer_timestamp").values)).toEqual(new Set([stamp]))
+    expect(new Set(csvColumn(checkOutXlsxToCsv(checkout.bytes), "answer_timestamp").values)).toEqual(new Set([stamp]))
   })
 
   test("abgebrochener REPLY setzt keinen Zeitpunkt", async ({ page }) => {
@@ -181,12 +182,13 @@ test.describe("PROJ-10 — answer_timestamp beim Check-in", () => {
   async function checkOutVehicle(page: Page) {
     await page.goto("/dmrl/dmrl-gtfdemo")
     await toolbar(page).getByRole("button", { name: "Check-out" }).click()
-    return download(page, () => page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click())
+    const file = await download(page, () => page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click())
+    return { name: csvName(file.name), content: checkOutXlsxToCsv(file.bytes) }
   }
   async function checkIn(page: Page, name: string, csv: string, takeAnswers: boolean) {
     await toolbar(page).getByRole("button", { name: "Check-in" }).click()
     const dialog = page.getByRole("dialog")
-    await dialog.getByLabel("CSV-Datei für den Check-in").setInputFiles({ name, mimeType: "text/csv", buffer: Buffer.from(csv) })
+    await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name, mimeType: "text/csv", buffer: Buffer.from(csv) })
     if (takeAnswers) await dialog.getByRole("checkbox", { name: "Antworten aus der Datei übernehmen" }).click()
     await dialog.getByRole("button", { name: "Übernehmen" }).click()
     await expect(dialog).toBeHidden()

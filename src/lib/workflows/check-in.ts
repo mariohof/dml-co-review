@@ -9,12 +9,15 @@ import {
   effectiveClassification,
   isReleasedOnTakeover,
   runCheckinCheck,
+  type CheckinInput,
   type CheckinResult,
 } from "@/lib/rules/check/checkin"
 import { errorCount } from "@/lib/rules/check/types"
+import { ENTRIES_SHEET_NAME } from "@/lib/files/entries-xlsx"
+import { readXlsxSheet } from "@/lib/files/xlsx-reader"
 import { isLockHolder, type WorkflowResult } from "./check-out"
 
-/** Workflow „Check-in CSV" (PROJ-10): Verfügbarkeit, Dateiprüfung, Prüfung (PROJ-8) und atomare Übernahme */
+/** Workflow „Check-in" (PROJ-10; Excel und CSV seit Refinement 2026-11-25): Verfügbarkeit, Dateiprüfung, Prüfung (PROJ-8) und atomare Übernahme */
 
 export const MAX_CHECKIN_BYTES = 5 * 1024 * 1024
 
@@ -25,12 +28,26 @@ export function checkInBlocked(dmrl: Dmrl, user: User | null): string | null {
   return null
 }
 
-export type FileReadResult = { ok: true; text: string } | { ok: false; message: string }
+export type FileReadResult = { ok: true; text: string } | { ok: true; table: CheckinInput } | { ok: false; message: string }
 
-/** Dateityp (.csv), Größe (max. 5 MB) und Kodierung (UTF-8) prüfen */
+export const FILE_TYPE_MESSAGE = "Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen."
+export const XLSX_UNREADABLE_MESSAGE = "Excel-Datei kann nicht gelesen werden."
+export const SHEET_MISSING_MESSAGE = `Tabellenblatt ‚${ENTRIES_SHEET_NAME}‘ fehlt.`
+
+/**
+ * Dateityp (.xlsx oder .csv), Größe (max. 5 MB) und Lesbarkeit prüfen.
+ * CSV: UTF-8 streng. Excel: Blatt „Einträge" (bzw. einziges Blatt), Zellen als gespeicherter Wert (Tech Design J).
+ */
 export async function readCheckinFile(file: File): Promise<FileReadResult> {
-  if (!file.name.toLowerCase().endsWith(".csv")) return { ok: false, message: "Bitte eine CSV-Datei auswählen." }
+  const name = file.name.toLowerCase()
+  const isXlsx = name.endsWith(".xlsx")
+  if (!isXlsx && !name.endsWith(".csv")) return { ok: false, message: FILE_TYPE_MESSAGE }
   if (file.size > MAX_CHECKIN_BYTES) return { ok: false, message: "Datei zu groß (höchstens 5 MB)." }
+  if (isXlsx) {
+    const sheet = readXlsxSheet(new Uint8Array(await file.arrayBuffer()), ENTRIES_SHEET_NAME)
+    if (!sheet.ok) return { ok: false, message: sheet.reason === "sheet_missing" ? SHEET_MISSING_MESSAGE : XLSX_UNREADABLE_MESSAGE }
+    return { ok: true, table: { source: "xlsx", rows: sheet.rows } }
+  }
   try {
     const text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer())
     return { ok: true, text }
@@ -40,9 +57,9 @@ export async function readCheckinFile(file: File): Promise<FileReadResult> {
 }
 
 /** Prüfung gegen den Stand beim Check-out (Kopie in der Sperre) */
-export function checkCheckinFile(data: Dataset, dmrl: Dmrl, csvText: string): CheckinResult {
+export function checkCheckinFile(data: Dataset, dmrl: Dmrl, input: CheckinInput): CheckinResult {
   const system = data.systems.find((s) => s.id === dmrl.systemId)
-  return runCheckinCheck(csvText, { systemModelic: system?.modelic ?? "", snapshot: dmrl.lock?.entries ?? [] })
+  return runCheckinCheck(input, { systemModelic: system?.modelic ?? "", snapshot: dmrl.lock?.entries ?? [] })
 }
 
 const historyEntry = (dmrlId: string, userId: string, at: string, action: HistoryEntry["action"], details: string): HistoryEntry => ({

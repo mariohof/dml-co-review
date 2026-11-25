@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test"
+import { strFromU8, unzipSync } from "fflate"
 
 /** Startet mit leerem Browser-Speicher → Demo-Daten werden neu angelegt (PROJ-1) */
 export async function freshStart(page: Page) {
@@ -48,4 +49,21 @@ export async function patchDataset(page: Page, patch: string) {
 /** Zeilen einer Tabelle (ohne Kopfzeile) */
 export function bodyRows(page: Page) {
   return page.locator("table tbody tr")
+}
+
+/** Dateiname der Check-out-Datei für einen CSV-Upload (Check-in nimmt .xlsx und .csv, PROJ-10 Refinement 2026-11-25) */
+export const csvName = (name: string) => name.replace(/\.xlsx$/i, ".csv")
+
+/**
+ * Check-out-Excel (eigener Schreiber: ein Blatt, Inline-Texte) → CSV im Aufbau des Check-ins (Semikolon, UTF-8 mit BOM, CRLF).
+ * So können bestehende Tests die ausgecheckte Datei weiterhin als Text bearbeiten und als CSV einchecken (PROJ-9 Refinement 2026-11-25).
+ */
+export function checkOutXlsxToCsv(bytes: Uint8Array): string {
+  const sheet = strFromU8(unzipSync(new Uint8Array(bytes))["xl/worksheets/sheet1.xml"])
+  const decode = (t: string) => t.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+  const quote = (v: string) => (/[;"\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
+  const rows = [...sheet.matchAll(/<row r="\d+">(.*?)<\/row>/gs)].map(([, row]) =>
+    [...row.matchAll(/<c r="[A-Z]+\d+" s="\d+"(?:\/>| t="inlineStr"><is><t xml:space="preserve">(.*?)<\/t><\/is><\/c>)/gs)].map(([, t]) => quote(decode(t ?? "")))
+  )
+  return "\uFEFF" + rows.map((cells) => cells.join(";")).join("\r\n") + "\r\n"
 }

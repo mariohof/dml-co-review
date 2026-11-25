@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+import { strFromU8, unzipSync } from "fflate"
 import { expect, test, type Page } from "@playwright/test"
 
 import { readDataset, startAs } from "./helpers"
@@ -115,7 +116,7 @@ test("Speicherkapazität des Browsers (Messung für BUG-QA2-2)", async ({ page }
   expect(capacity.freeChars).toBeGreaterThan(1_000_000)
 })
 
-test("BUG-QA2-1: Formel aus REPLY ist in der Check-out-CSV entschärft und übersteht den Check-in unverändert", async ({ page }) => {
+test("BUG-QA2-1: Formel aus REPLY steht in der Check-out-Excel-Datei als Text (keine Formel) und übersteht den Check-in unverändert", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   const formula = '=HYPERLINK("http://angreifer.example";"Details")'
   const xml = readFileSync(join(DEMO, DEMO_REPLY), "utf8").replace("Infocode nicht im beauftragten Leistungsumfang", formula.replace(/"/g, "&quot;"))
@@ -126,14 +127,17 @@ test("BUG-QA2-1: Formel aus REPLY ist in der Check-out-CSV entschärft und über
   const downloadPromise = page.waitForEvent("download")
   await page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click()
   const download = await downloadPromise
-  const csv = readFileSync((await download.path())!, "utf8")
-  expect(csv).toContain(`"'=HYPERLINK(""http://angreifer.example"";""Details"")"`)
-  expect(csv.split("\r\n").slice(1).flatMap((line) => line.split(";")).some((cell) => /^"?[=+@]/.test(cell))).toBe(false)
+  const bytes = readFileSync((await download.path())!)
+  expect(download.suggestedFilename()).toMatch(/\.xlsx$/)
+  const sheet = strFromU8(unzipSync(new Uint8Array(bytes))["xl/worksheets/sheet1.xml"])
+  // Textzelle (inlineStr), keine Formelzelle — Excel wertet sie nicht aus; kein Apostroph nötig (PROJ-9 Refinement 2026-11-25)
+  expect(sheet).toContain('t="inlineStr"><is><t xml:space="preserve">=HYPERLINK(&quot;http://angreifer.example&quot;;&quot;Details&quot;)</t>')
+  expect(sheet).not.toContain("<f>")
 
   // dieselbe Datei unverändert einchecken
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("CSV-Datei für den Check-in").setInputFiles({ name: download.suggestedFilename(), mimeType: "text/csv", buffer: Buffer.from(csv) })
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: download.suggestedFilename(), mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: bytes })
   await expect(dialog.getByText(/Keine Änderungen/)).toBeVisible()
   await dialog.getByRole("button", { name: "Übernehmen" }).click()
   await expect(dialog).toBeHidden()

@@ -89,6 +89,12 @@ const WORKBOOK_RELS =
   '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
   "</Relationships>"
 
+/**
+ * Text → Bytes als Uint8Array dieses Realms: `zipSync` erkennt Dateiinhalte per `instanceof Uint8Array`; in jsdom liefert
+ * der TextEncoder ein Array aus einem anderen Realm, das sonst als Verzeichnis gedeutet würde (Testumgebung, 2026-11-25)
+ */
+const bytesOf = (text: string) => new Uint8Array(strToU8(text))
+
 const cell = (ref: string, value: string, style: number) =>
   value === "" ? `<c r="${ref}" s="${style}"/>` : `<c r="${ref}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${escapeXml(value)}</t></is></c>`
 
@@ -128,11 +134,11 @@ export function writeXlsx(input: { sheetName: string; header: string[]; rows: st
     "</workbook>"
 
   return zipSync({
-    "[Content_Types].xml": strToU8(CONTENT_TYPES),
-    "_rels/.rels": strToU8(ROOT_RELS),
-    "xl/workbook.xml": strToU8(workbook),
-    "xl/_rels/workbook.xml.rels": strToU8(WORKBOOK_RELS),
-    "xl/styles.xml": strToU8(STYLES),
-    "xl/worksheets/sheet1.xml": strToU8(sheet),
+    "[Content_Types].xml": bytesOf(CONTENT_TYPES),
+    "_rels/.rels": bytesOf(ROOT_RELS),
+    "xl/workbook.xml": bytesOf(workbook),
+    "xl/_rels/workbook.xml.rels": bytesOf(WORKBOOK_RELS),
+    "xl/styles.xml": bytesOf(STYLES),
+    "xl/worksheets/sheet1.xml": bytesOf(sheet),
   })
 }

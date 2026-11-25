@@ -7,10 +7,13 @@ import { DmrlView } from "@/components/dmrl/dmrl-view"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
 import { loadDataset, saveDataset, saveSessionUserId } from "@/lib/data/storage"
+import { ENTRIES_SHEET_NAME } from "@/lib/files/entries-xlsx"
+import { readXlsxSheet } from "@/lib/files/xlsx-reader"
+import { XLSX_MIME_TYPE } from "@/lib/files/xlsx-writer"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }))
 const download = vi.fn()
-vi.mock("@/lib/files/download", () => ({ downloadTextFile: (...args: unknown[]) => download(...args) }))
+vi.mock("@/lib/files/download", () => ({ downloadBytes: (...args: unknown[]) => download(...args) }))
 
 function View() {
   const { data } = useDataStore()
@@ -50,20 +53,23 @@ describe("Check-out in der DMRL-Ansicht", () => {
     renderAs(DEMO_IDS.editorBen)
     fireEvent.click(within(toolbar()).getByRole("button", { name: "Check-out" }))
     const dialog = await screen.findByRole("alertdialog")
-    expect(within(dialog).getByText(/^DML-GTFDEMO-D0815-C-\d{4}\.csv$/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/^DML-GTFDEMO-D0815-C-\d{4}\.xlsx$/)).toBeInTheDocument()
     expect(within(dialog).getByText("Die DMRL wird für andere gesperrt, bis Sie sie wieder einchecken.")).toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole("button", { name: "Auschecken" }))
 
     await waitFor(() => expect(vehicleLock()?.userId).toBe(DEMO_IDS.editorBen))
     expect(download).toHaveBeenCalledTimes(1)
-    const [fileName, csv] = download.mock.calls[0]
-    expect(fileName).toMatch(/^DML-GTFDEMO-D0815-C-\d{4}\.csv$/)
-    expect((csv as string).trim().split("\r\n")).toHaveLength(11)
+    const [fileName, bytes, mime] = download.mock.calls[0]
+    expect(fileName).toMatch(/^DML-GTFDEMO-D0815-C-\d{4}\.xlsx$/)
+    expect(mime).toBe(XLSX_MIME_TYPE)
+    const sheet = readXlsxSheet(bytes as Uint8Array, ENTRIES_SHEET_NAME)
+    expect(sheet.ok && sheet.rows).toHaveLength(11)
     expect(screen.getByText(/Ausgecheckt von Ben Bearbeiter seit/)).toBeInTheDocument()
 
-    // CSV erneut herunterladen: identische Datei
-    fireEvent.click(within(toolbar()).getByRole("button", { name: "CSV erneut herunterladen" }))
-    expect(download.mock.calls[1]).toEqual(download.mock.calls[0])
+    // Excel-Datei erneut herunterladen: gleicher Name, gleicher Inhalt
+    fireEvent.click(within(toolbar()).getByRole("button", { name: "Excel-Datei erneut herunterladen" }))
+    expect(download.mock.calls[1][0]).toBe(fileName)
+    expect(readXlsxSheet(download.mock.calls[1][1] as Uint8Array, ENTRIES_SHEET_NAME)).toEqual(sheet)
 
     fireEvent.click(within(toolbar()).getByRole("button", { name: "Check-out zurücknehmen" }))
     fireEvent.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Zurücknehmen" }))

@@ -5,7 +5,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 
 ## Target Users
 - **Administrator** — legt Systeme (mit S1000D-Issue 2.3, 4.2 oder 5.0), Organisationen, DMRLs, Benutzer und Berechtigungen an und verwaltet sie.
-- **Bearbeiter (DMRL-Verantwortlicher)** — pflegt die DMRL, checkt sie als CSV aus und wieder ein, sendet sie als S1000D-XML (SEND), importiert die Empfänger-Antwort (REPLY), verfolgt und erteilt die Freigabe. Braucht Nachvollziehbarkeit aller Austauschstände.
+- **Bearbeiter (DMRL-Verantwortlicher)** — pflegt die DMRL, checkt sie als MS-Excel-Datei aus und wieder ein (Check-in auch als CSV), sendet sie als S1000D-XML (SEND), importiert die Empfänger-Antwort (REPLY), verfolgt und erteilt die Freigabe. Braucht Nachvollziehbarkeit aller Austauschstände.
 - **Externer Empfänger** (kein Systembenutzer) — erhält die DMRL als S1000D-XML, bearbeitet sie und sendet sie als REPLY zurück.
 
 ## Kernabläufe
@@ -24,7 +24,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Benutzer-, Organisations-, System- und DMRL-Verwaltung, DMRL-Berechtigungen (Admin) | Approved (PROJ-3–6, PROJ-17) |
 | P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | Approved (PROJ-7) |
 | P0 (MVP) | Fachliches Regelwerk | Approved (PROJ-8) |
-| P0 (MVP) | Check-out/Check-in MS-Excel (Check-in auch CSV) mit Sperre | Planned (PROJ-9, PROJ-10) |
+| P0 (MVP) | Check-out/Check-in MS-Excel (Check-in auch CSV) mit Sperre | In Progress (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML/Excel (jederzeit, ohne Sperre) | Approved (PROJ-18; Excel-Export ergänzt 2026-11-24) |
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Approved (PROJ-11) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Approved (PROJ-12, PROJ-13) |

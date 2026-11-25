@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useDataStore } from "@/components/data/data-store-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckInDialog } from "@/components/workflows/check-in-dialog"
-import { CheckOutDialogs, downloadLockCsv, type CheckOutDialogKind } from "@/components/workflows/check-out-dialogs"
+import { CheckOutDialogs, downloadLockFile, type CheckOutDialogKind } from "@/components/workflows/check-out-dialogs"
 import { useDmrlExport } from "@/components/workflows/dmrl-export"
 import { ReplyImportDialog } from "@/components/workflows/reply-import-dialog"
 import { SendDialog, WithdrawSendDialog } from "@/components/workflows/send-dialogs"
@@ -51,8 +51,8 @@ export function DmrlView({ dmrl }: { dmrl: Dmrl }) {
       case "reply_import":
         setReplyOpen(true)
         break
-      case "csv_erneut_herunterladen":
-        if (dmrl.lock) downloadLockCsv(dmrl, checkOutFileName(data, dmrl, dmrl.lock.since))
+      case "datei_erneut_herunterladen":
+        if (dmrl.lock) downloadLockFile(dmrl, checkOutFileName(data, dmrl, dmrl.lock.since))
         break
     }
   }

@@ -6,23 +6,22 @@ import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import { useSession } from "@/components/auth/session-provider"
 import { useDataStore } from "@/components/data/data-store-provider"
 import type { Dmrl } from "@/lib/data/schema"
-import { downloadTextFile } from "@/lib/files/download"
+import { downloadBytes } from "@/lib/files/download"
+import { XLSX_MIME_TYPE } from "@/lib/files/xlsx-writer"
 import {
   checkOutFileName,
   executeCancelCheckOut,
   executeCheckOut,
   executeReleaseLock,
-  lockCsv,
+  lockXlsx,
 } from "@/lib/workflows/check-out"
 
 export type CheckOutDialogKind = "check_out" | "check_out_zuruecknehmen" | "sperre_aufheben"
 
-const CSV_MIME = "text/csv;charset=utf-8"
-
-/** CSV aus der gespeicherten Kopie herunterladen (Check-out und „CSV erneut herunterladen") */
-export function downloadLockCsv(dmrl: Dmrl, fileName: string) {
-  const csv = lockCsv(dmrl)
-  if (csv) downloadTextFile(fileName, csv, CSV_MIME)
+/** Excel-Datei aus der gespeicherten Kopie herunterladen (Check-out und „Excel-Datei erneut herunterladen") */
+export function downloadLockFile(dmrl: Dmrl, fileName: string) {
+  const bytes = lockXlsx(dmrl)
+  if (bytes) downloadBytes(fileName, bytes, XLSX_MIME_TYPE)
 }
 
 interface CheckOutDialogsProps {
@@ -31,7 +30,7 @@ interface CheckOutDialogsProps {
   onClose: () => void
 }
 
-/** Dialoge des Workflows „Check-out CSV" (PROJ-9) */
+/** Dialoge des Workflows „Check-out" (PROJ-9) */
 export function CheckOutDialogs({ dmrl, open, onClose }: CheckOutDialogsProps) {
   const { data, update } = useDataStore()
   const { currentUser } = useSession()
@@ -48,7 +47,7 @@ export function CheckOutDialogs({ dmrl, open, onClose }: CheckOutDialogsProps) {
     // Erst speichern, dann herunterladen: ohne gespeicherte Sperre keine Datei
     if (!update(() => result.data)) return
     const locked = result.data.dmrls.find((d) => d.id === dmrl.id)!
-    downloadLockCsv(locked, checkOutFileName(result.data, locked, at))
+    downloadLockFile(locked, checkOutFileName(result.data, locked, at))
     toast.success("Die DMRL ist ausgecheckt und für andere gesperrt.")
   }
 
@@ -75,7 +74,7 @@ export function CheckOutDialogs({ dmrl, open, onClose }: CheckOutDialogsProps) {
         description={
           <div className="space-y-2">
             <p>
-              Die Einträge werden als CSV-Datei <span className="font-mono text-foreground">{previewName}</span> heruntergeladen.
+              Die Einträge werden als Excel-Datei <span className="font-mono text-foreground">{previewName}</span> heruntergeladen.
             </p>
             <p>Die DMRL wird für andere gesperrt, bis Sie sie wieder einchecken.</p>
           </div>
@@ -87,7 +86,7 @@ export function CheckOutDialogs({ dmrl, open, onClose }: CheckOutDialogsProps) {
         open={open === "check_out_zuruecknehmen"}
         onOpenChange={onOpenChange}
         title="Check-out zurücknehmen?"
-        description="Die Sperre wird aufgehoben, die DMRL bleibt unverändert. Änderungen in der ausgecheckten CSV-Datei gehen verloren."
+        description="Die Sperre wird aufgehoben, die DMRL bleibt unverändert. Änderungen in der ausgecheckten Excel-Datei gehen verloren."
         confirmLabel="Zurücknehmen"
         destructive
         onConfirm={cancel}

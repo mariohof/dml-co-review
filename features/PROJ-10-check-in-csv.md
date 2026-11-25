@@ -1,6 +1,6 @@
 # PROJ-10: Check-in (MS-Excel / CSV)
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-25
 
@@ -674,6 +674,25 @@ _Stand 2026-11-16 — `/frontend proj-10`; ohne eigenes Tech Design (kleine Rege
 - `src/lib/workflows/check-in.ts`: Wert aus der Datei wird nie übernommen; mit „Antworten aus der Datei übernehmen“ erhalten Einträge mit abweichender Antwort den Zeitpunkt des Check-ins (leer, wenn die Antwort leer ist), alle übrigen behalten ihren Wert.
 - Tests: `check-in.test.ts` (+4), E2E `PROJ-10-checkin-antworten.spec.ts` (28 Spalten).
 
+
+### Refinement 2026-11-25 — Check-in von MS-Excel (.xlsx) und CSV
+_Stand 2026-11-25 — `/frontend PROJ-9 PROJ-10` (Tech Design J)_
+
+**Umgesetzt**
+- `src/lib/files/xlsx-reader.ts` (neu) — Excel-Leser mit `fflate` (entpacken) und dem XML-Leser des Browsers: Blatt „Einträge“, sonst einziges Blatt, sonst „Blatt fehlt“; Zellen über ihre Adresse; Werte als gespeicherter Wert (gemeinsame Textliste inkl. formatierter Texte ohne Lautschrift, Inline-Text, Zahl wie gespeichert, Formel → gespeichertes Ergebnis bzw. leer, Wahrheitswert, Fehlerwert); nur benötigte Teile werden entpackt, entpackte Größe max. 50 MB (`MAX_XLSX_UNPACKED_BYTES`), sonst „nicht lesbar“.
+- `src/lib/rules/check/csv-reader.ts` — aufgeteilt in `csvTable` (CSV zerlegen) und den gemeinsamen Schritt `readCheckinTable` (Kopfzeile 28/27 Spalten, Spaltenzahl, Trimmen, führende Nullen, leere Zeilen). `readCheckinCsv` verhält sich unverändert. Unterschiede für Excel: fehlende Zellen am Zeilenende gelten als leer; kein Entfernen des Formelschutz-Apostrophs.
+- `src/lib/rules/check/checkin.ts` — `runCheckinCheck` nimmt CSV-Text oder Excel-Tabelle (`CheckinInput`); Regeln unverändert.
+- `src/lib/workflows/check-in.ts` — `readCheckinFile` unterscheidet `.xlsx`/`.csv` (Groß-/Kleinschreibung egal), 5 MB für beide; Meldungen „Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen.“, „Excel-Datei kann nicht gelesen werden.“, „Tabellenblatt ‚Einträge‘ fehlt.“
+- `src/components/workflows/check-in-dialog.tsx` — Dateiauswahl für `.xlsx` und `.csv`, Texte neutral („Die Datei wird … geprüft“, Feld „Datei für den Check-in“).
+
+**Tests**
+- Unit: neu `xlsx-reader.test.ts` (11: Rundlauf, Blattwahl inkl. einziges Blatt/mehrere ohne „Einträge“, beschädigt, Zip-Bombe, Zelladressen, Zellarten, **Testdatei aus MS Excel**) und `check-in-xlsx.test.ts` (9: unverändert, neue Zeile + Änderung inkl. Übernahme, Zahl `1` → `01`, Datumszelle → Fehler A, `'=x` bleibt, leere Zeilen und Zeilennummern des Blatts, Werte außerhalb der 28 Spalten, **Testdatei gegen Demo-Stand PHUNGUN: keine Fehler, 32 unverändert**, 5 MB, Endung in Großbuchstaben); `check-in.test.ts`/`check-in-dialog.test.tsx` an neue Meldungen angepasst.
+- E2E: `tests/PROJ-9-10-excel.spec.ts` (unverändert einchecken → keine Änderungen; ergänzte Zeile → 1 neu, 11 Einträge; `.xls` abgelehnt, beschädigte `.xlsx` nicht lesbar, CSV weiterhin möglich); `PROJ-18-export.spec.ts`: Export-Excel wird bei eigener Sperre angenommen (ersetzt „Check-in lehnt .xlsx ab“).
+- Gesamt: 685 Unit-Tests und 151 E2E-Tests grün.
+
+**Hinweise / Abweichungen**
+- Die Begrenzung der entpackten Größe stützt sich auf die im ZIP angegebenen Größen der benötigten Teile; Teile außerhalb von Mappe, Beziehungen, Textliste und Blättern werden nicht entpackt.
+- Die Seite „XML prüfen“ (PROJ-20) spricht weiter von „CSV im Check-out-Format“ — Spalten sind identisch, der Text ist weiterhin zutreffend genug; Anpassung ggf. mit dem offenen PROJ-20-Refinement.
 
 ## QA Test Results
 

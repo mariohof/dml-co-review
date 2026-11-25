@@ -20,7 +20,7 @@ export type DmrlActionId =
   | "export"
   | "archive"
   | "check_out_zuruecknehmen"
-  | "csv_erneut_herunterladen"
+  | "datei_erneut_herunterladen"
   | "sperre_aufheben"
   | "send_zurueckziehen"
 
@@ -44,7 +44,7 @@ export function dmrlActions(data: Dataset, dmrl: Dmrl, user: User | null): DmrlA
     { id: "export", label: "Exportieren", visible: true, blocked: exportBlocked(dmrl, user) },
     { id: "archive", label: "Archiv", visible: true, blocked: canAccessDmrl(user, dmrl) ? null : "Keine Berechtigung für diese DMRL." },
     { id: "check_out_zuruecknehmen", label: "Check-out zurücknehmen", visible: holder, blocked: null },
-    { id: "csv_erneut_herunterladen", label: "CSV erneut herunterladen", visible: holder, blocked: null },
+    { id: "datei_erneut_herunterladen", label: "Excel-Datei erneut herunterladen", visible: holder, blocked: null },
     { id: "sperre_aufheben", label: "Sperre aufheben", visible: isAdmin && !!dmrl.lock && !holder, blocked: releaseLockBlocked(dmrl, user) },
     { id: "send_zurueckziehen", label: "SEND zurückziehen", visible: isAdmin && dmrl.status === "gesendet", blocked: withdrawSendBlocked(data, dmrl, user) },
   ]

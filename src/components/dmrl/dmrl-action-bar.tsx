@@ -18,7 +18,7 @@ const ICONS: Record<DmrlActionId, React.ComponentType<{ className?: string }>> =
   export: Download,
   archive: Archive,
   check_out_zuruecknehmen: Undo2,
-  csv_erneut_herunterladen: RotateCcw,
+  datei_erneut_herunterladen: RotateCcw,
   sperre_aufheben: LockOpen,
   send_zurueckziehen: Undo2,
 }

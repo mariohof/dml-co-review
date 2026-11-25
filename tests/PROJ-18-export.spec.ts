@@ -45,7 +45,7 @@ test("Export jederzeit: PHUNGUN gesendet (CSV + XML), Fahrzeug bei fremder Sperr
   expect(vehicle.content).toContain('listDirection="send"')
 })
 
-test("Excel-Export (Refinement 2026-11-24): PHUNGUN gesendet, ein Blatt „Einträge“ mit Text; Check-in lehnt die .xlsx ab", async ({ page }) => {
+test("Excel-Export (Refinement 2026-11-24): PHUNGUN gesendet, ein Blatt „Einträge“ mit Text; Export-Excel kann bei eigener Sperre eingecheckt werden (Refinement 2026-11-25)", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   await page.goto("/dmrl/dmrl-phungun")
   const before = await readDataset(page)
@@ -67,14 +67,23 @@ test("Excel-Export (Refinement 2026-11-24): PHUNGUN gesendet, ein Blatt „Eintr
   // keine Wirkung auf den Datenbestand
   expect(await readDataset(page)).toEqual(before)
 
-  // eigene Sperre: die Excel-Datei kann nicht eingecheckt werden
+  // eigene Sperre: die Export-Excel derselben DMRL wird wie jede Datei geprüft und angenommen (PROJ-10 Refinement 2026-11-25)
   await page.goto("/dmrl/dmrl-gtfdemo")
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-out" }).click()
   const checkout = page.waitForEvent("download")
   await page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click()
   await checkout
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Exportieren" }).click()
+  const vehicleExport = page.waitForEvent("download")
+  await page.getByRole("menuitem", { name: "Als Excel exportieren" }).click()
+  const vehicleFile = await vehicleExport
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("CSV-Datei für den Check-in").setInputFiles({ name: fileName, mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer: bytes })
-  await expect(dialog.getByText("Bitte eine CSV-Datei auswählen.")).toBeVisible()
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({
+    name: vehicleFile.suggestedFilename(),
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: readFileSync((await vehicleFile.path())!),
+  })
+  await expect(dialog.getByText("Prüfung bestanden")).toBeVisible()
+  await expect(dialog.getByText(/Keine Änderungen/)).toBeVisible()
 })

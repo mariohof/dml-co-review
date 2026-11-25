@@ -1,7 +1,8 @@
 import { ENTRY_FIELD_NAMES, type EntryFields, type EntrySnapshot } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { allowedIssueTypes, ISSUE_TYPES } from "@/lib/dmrl/issue-type"
-import { readCheckinCsv } from "./csv-reader"
+import type { SheetRow } from "@/lib/files/xlsx-reader"
+import { readCheckinCsv, readCheckinTable } from "./csv-reader"
 import { checkCommon } from "./entry-rules"
 import type { Candidate, Finding, Report } from "./types"
 
@@ -180,8 +181,11 @@ export interface CheckinResult {
   summary: CheckinSummary
 }
 
-export function runCheckinCheck(csvText: string, context: CheckinContext): CheckinResult {
-  const read = readCheckinCsv(csvText)
+/** Eingabe des Check-ins: CSV-Text oder Tabelle aus dem Excel-Leser (PROJ-10 Refinement 2026-11-25) */
+export type CheckinInput = string | { source: "xlsx"; rows: SheetRow[] }
+
+export function runCheckinCheck(input: CheckinInput, context: CheckinContext): CheckinResult {
+  const read = typeof input === "string" ? readCheckinCsv(input) : readCheckinTable(input.rows, "xlsx")
   if (read.aborted) {
     return { report: { lineLabel: "Zeile", findings: read.findings }, candidates: [], comparison: null, summary: checkinSummary([], null) }
   }

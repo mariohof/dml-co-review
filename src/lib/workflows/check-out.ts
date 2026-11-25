@@ -1,11 +1,11 @@
 import { canAccessAdministration, canAccessDmrl } from "@/lib/auth/permissions"
 import { formatDateTime } from "@/lib/data/queries"
 import type { Dataset, Dmrl, HistoryEntry, User } from "@/lib/data/schema"
-import { writeEntriesCsv } from "@/lib/files/csv-writer"
+import { writeEntriesXlsx } from "@/lib/files/entries-xlsx"
 import { newId } from "@/lib/ids"
 
 /**
- * Workflow „Check-out CSV" (PROJ-9): Verfügbarkeitsregel (Grund) + atomare Ausführung inkl. Verlauf.
+ * Workflow „Check-out" (PROJ-9; seit Refinement 2026-11-25 als MS-Excel): Verfügbarkeitsregel (Grund) + atomare Ausführung inkl. Verlauf.
  * Muster für alle Workflow-Aktionen (PROJ-9 Tech Design).
  */
 
@@ -33,17 +33,17 @@ export function releaseLockBlocked(dmrl: Dmrl, user: User | null): string | null
   return null
 }
 
-/** Dateiname: DML-{MI}-{CAGE Originator}-{DML-Typ}-{Jahr}.csv (Jahr des Check-outs) */
+/** Dateiname: DML-{MI}-{CAGE Originator}-{DML-Typ}-{Jahr}.xlsx (Jahr des Check-outs) */
 export function checkOutFileName(data: Dataset, dmrl: Dmrl, at: string): string {
   const system = data.systems.find((s) => s.id === dmrl.systemId)
   const originator = data.organisations.find((o) => o.id === dmrl.originatorOrganisationId)
   const year = new Date(at).getFullYear()
-  return `DML-${system?.modelic ?? "DMRL"}-${originator?.code ?? "XXXXX"}-${dmrl.dmlType.toUpperCase()}-${year}.csv`
+  return `DML-${system?.modelic ?? "DMRL"}-${originator?.code ?? "XXXXX"}-${dmrl.dmlType.toUpperCase()}-${year}.xlsx`
 }
 
-/** CSV aus der Kopie in der Sperre (identisch beim erneuten Download) */
-export function lockCsv(dmrl: Dmrl): string | null {
-  return dmrl.lock ? writeEntriesCsv(dmrl.lock.entries) : null
+/** Excel-Datei aus der Kopie in der Sperre (inhaltlich identisch beim erneuten Download; auch für Check-outs aus der CSV-Zeit) */
+export function lockXlsx(dmrl: Dmrl): Uint8Array | null {
+  return dmrl.lock ? writeEntriesXlsx(dmrl.lock.entries) : null
 }
 
 const history = (dmrlId: string, userId: string, at: string, action: HistoryEntry["action"], details: string): HistoryEntry => ({
