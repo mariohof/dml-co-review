@@ -4,7 +4,7 @@
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-25
 
-> **Refinement 2026-11-25 — Check-in von MS-Excel (.xlsx):** Vorgabe Product Owner; Gegenstück zu PROJ-9 (Check-out liefert jetzt `.xlsx`). Der Check-in nimmt **`.xlsx` und weiterhin `.csv`** an — CSV bleibt für Dateien aus PROJ-20 (XML-Prüfung), dem CSV-Export (PROJ-18) und offene Check-outs aus der CSV-Zeit. Gelesen wird das Tabellenblatt **„Einträge“** (fehlt es → Fehler, weitere Blätter werden ignoriert); Zellen werden mit ihrem **gespeicherten Wert** gelesen (Formel → gespeichertes Ergebnis, Zahl → Text ohne Formatierung). Danach gelten Prüfung (PROJ-8), Zusammenfassung, Antwortübernahme und Übernahme **unverändert** für beide Formate. Auch eine Excel-Datei aus dem Export (PROJ-18) kann bei eigener Sperre eingecheckt werden. Geänderte Stellen sind mit *(Refinement 2026-11-25)* markiert; ältere Abschnitte (Tech Design, QA) beschreiben den CSV-Stand.
+> **Refinement 2026-11-25 — Check-in von MS-Excel (.xlsx):** Vorgabe Product Owner; Gegenstück zu PROJ-9 (Check-out liefert jetzt `.xlsx`). Der Check-in nimmt **`.xlsx` und weiterhin `.csv`** an — CSV bleibt für Dateien aus PROJ-20 (XML-Prüfung), dem CSV-Export (PROJ-18) und offene Check-outs aus der CSV-Zeit. Gelesen wird das Tabellenblatt **„Einträge“**; hat die Mappe kein solches Blatt, aber **genau ein** Blatt, wird dieses gelesen (z. B. CSV in Excel geöffnet und als .xlsx gespeichert — Excel benennt das Blatt nach der Datei); sonst Fehler; Zellen werden mit ihrem **gespeicherten Wert** gelesen (Formel → gespeichertes Ergebnis, Zahl → Text ohne Formatierung). Danach gelten Prüfung (PROJ-8), Zusammenfassung, Antwortübernahme und Übernahme **unverändert** für beide Formate. Auch eine Excel-Datei aus dem Export (PROJ-18) kann bei eigener Sperre eingecheckt werden. Geänderte Stellen sind mit *(Refinement 2026-11-25)* markiert; ältere Abschnitte (Tech Design, QA) beschreiben den CSV-Stand.
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die CSV hat 28 Spalten; neu ist `answer_timestamp` (nach `answer_comment`). Der Wert in der Datei wird **nie** übernommen; Änderungen daran sind kein Fehler und werden ohne Meldung ignoriert. Werden abweichende Empfängerantworten übernommen („Antworten aus der Datei übernehmen“), erhält jeder betroffene Eintrag als `answer_timestamp` den **Zeitpunkt des Check-ins**; ist die Antwort danach leer, ist auch `answer_timestamp` leer. Ohne Übernahme bleibt `answer_timestamp` unverändert. Neue Einträge haben `answer_timestamp` leer, außer bei Übernahme mit Antwort. Eine CSV mit 27 Spalten (alter Stand, ohne `answer_timestamp`) wird weiterhin angenommen; die fehlende Spalte gilt als unverändert.
 > - [ ] Angenommen „Antworten aus der Datei übernehmen“ ist angekreuzt und ein Eintrag erhält `answer` `y`, wenn am 21.11.2026 um 15:00:00 eingecheckt wird, dann hat er `answer_timestamp` `2026-11-21T15:00:00`
@@ -48,7 +48,7 @@ Der Sperrinhaber lädt die bearbeitete **Excel-Datei (.xlsx)** oder eine **CSV-D
 | Punkt | Excel (`.xlsx`) | CSV (`.csv`) |
 |---|---|---|
 | Herkunft | Check-out (PROJ-9), Excel-Export (PROJ-18) | PROJ-20, CSV-Export (PROJ-18), Check-out aus der Zeit vor der Umstellung |
-| Gelesener Bereich | Tabellenblatt **„Einträge“**; weitere Blätter werden ignoriert. Fehlt das Blatt: „Tabellenblatt ‚Einträge‘ fehlt“ (Datei abgelehnt) | ganze Datei |
+| Gelesener Bereich | Tabellenblatt **„Einträge“**; weitere Blätter werden ignoriert. Gibt es kein Blatt „Einträge“, aber **genau ein** Blatt, wird dieses gelesen *(Nachtrag 2026-11-25, Beispieldatei)*. Mehrere Blätter ohne „Einträge“: „Tabellenblatt ‚Einträge‘ fehlt“ (Datei abgelehnt) | ganze Datei |
 | Zeile 1 / ab Zeile 2 | Kopfzeile mit den Feldnamen / je Eintrag eine Zeile — wie CSV (PROJ-8, Gruppe S) | unverändert |
 | Zellwerte | **gespeicherter Wert:** Text unverändert; Formel → das in der Datei gespeicherte Ergebnis; Zahl → als Text ohne Formatierung (`1` → „1“, dann Auffüllen führender Nullen wie bisher); Datumszelle → Excel-Seriennummer als Text (fällt dann durch die Formatprüfung, PROJ-8 A) | unverändert |
 | Vollständig leere Zeilen | werden ignoriert (z. B. nach Löschen von Zellinhalten) | wie bisher |
@@ -59,7 +59,7 @@ Der Sperrinhaber lädt die bearbeitete **Excel-Datei (.xlsx)** oder eine **CSV-D
 
 **Nicht angenommen:** `.xls`, `.xlsm`, `.ods` und alle anderen Endungen — „Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen“.
 
-Nach dem Einlesen sind beide Formate gleichwertig: dieselbe Prüfung (PROJ-8), dieselbe Zusammenfassung, Antwortübernahme und Übernahme. Positionsangaben im Prüfbericht nennen die **Zeilennummer** (wie bisher); bei Excel entspricht sie der Zeile im Blatt „Einträge“. Dateifehler (Typ, Größe, Kodierung, fehlendes Blatt, nicht lesbar) werden wie bisher im Auswahlschritt gemeldet und nicht im Verlauf protokolliert.
+Nach dem Einlesen sind beide Formate gleichwertig: dieselbe Prüfung (PROJ-8), dieselbe Zusammenfassung, Antwortübernahme und Übernahme. Positionsangaben im Prüfbericht nennen die **Zeilennummer** (wie bisher); bei Excel entspricht sie der Zeile im gelesenen Blatt. Dateifehler (Typ, Größe, Kodierung, fehlendes Blatt, nicht lesbar) werden wie bisher im Auswahlschritt gemeldet und nicht im Verlauf protokolliert.
 
 ## Eintragstyp ↔ DM-Ausgabetyp *(Refinement 2026-11-16)*
 Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eintragstyp (`dmentry/@type`, CSV-Spalte `dmentryType`) passen. Geprüft wird **jeder Eintrag der Datei mit Eintragstyp** — neu, geändert und unverändert (auch Altbestand).
@@ -139,7 +139,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - Check-out, Rücknahme, Aufheben der Sperre → PROJ-9
 - ~~Excel-Format (.xlsx) → nur CSV (PROJ-9)~~ → jetzt im Umfang *(Refinement 2026-11-25)*
 - Altes Excel-Format (.xls), Makro-Mappen (.xlsm), OpenDocument (.ods) *(Refinement 2026-11-25)*
-- Lesen anderer Tabellenblätter als „Einträge“, Zusammenführen mehrerer Blätter *(Refinement 2026-11-25)*
+- Lesen anderer Tabellenblätter als „Einträge“ bei Mappen mit mehreren Blättern, Zusammenführen mehrerer Blätter *(Refinement 2026-11-25)*
 - Neuberechnung von Formeln beim Check-in — es zählt das in der Datei gespeicherte Ergebnis *(Refinement 2026-11-25)*
 - Umstellung von PROJ-20 auf Excel — ggf. eigenes Refinement von PROJ-20 *(Refinement 2026-11-25)*
 - Teilweise Übernahme (nur fehlerfreie Einträge) — alles oder nichts (PROJ-8)
@@ -180,7 +180,9 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 ### Excel-Datei *(Refinement 2026-11-25)*
 - [ ] Angenommen die DMRL wurde als Excel ausgecheckt, wenn die Datei unverändert eingecheckt wird, dann ist die Prüfung fehlerfrei und die Zusammenfassung zeigt nur unveränderte Einträge
 - [ ] Angenommen die ausgecheckte Excel-Datei wurde in MS Excel bearbeitet (neue Zeile mit Eintragstyp `n`, ein Tech Name geändert) und gespeichert, wenn sie eingecheckt wird, dann zeigt die Zusammenfassung 1 neu und 1 geändert, wie bei einer CSV
-- [ ] Angenommen eine Excel-Datei enthält kein Tabellenblatt „Einträge“ (z. B. umbenannt), wenn sie hochgeladen wird, dann erscheint „Tabellenblatt ‚Einträge‘ fehlt“, nichts wird geprüft und die Sperre bleibt
+- [ ] Angenommen eine Excel-Datei hat mehrere Tabellenblätter, aber keines heißt „Einträge“, wenn sie hochgeladen wird, dann erscheint „Tabellenblatt ‚Einträge‘ fehlt“, nichts wird geprüft und die Sperre bleibt *(Nachtrag 2026-11-25, Beispieldatei)*
+- [ ] Angenommen eine Excel-Datei hat genau ein Tabellenblatt mit anderem Namen (z. B. Export-CSV in MS Excel geöffnet und als .xlsx gespeichert, Blatt „DML-PHUNGUN-D0815-C-Export-2026“), wenn sie eingecheckt wird, dann wird dieses Blatt gelesen und wie jede Datei geprüft *(Nachtrag 2026-11-25, Beispieldatei)*
+- [ ] Angenommen die Beispieldatei aus MS Excel (Export-CSV als .xlsx gespeichert, Zahlzellen z. B. `section` 0, `subject` 1000, `day` 29) wird gegen den Demo-Stand der PHUNGUN-DMRL als Stand beim Check-out geprüft, wenn die Prüfung endet, dann gibt es keine Fehler und alle 32 Einträge sind fachlich unverändert *(Nachtrag 2026-11-25, Beispieldatei)*
 - [ ] Angenommen die Excel-Datei enthält neben „Einträge“ weitere Blätter (auch vor „Einträge“), wenn eingecheckt wird, dann werden nur die Zeilen aus „Einträge“ gelesen
 - [ ] Angenommen eine Zelle enthält eine Formel (z. B. `=B2`), wenn eingecheckt wird, dann wird das in der Datei gespeicherte Ergebnis als Wert gelesen
 - [ ] Angenommen in der Spalte `security` steht eine Zahlzelle `1`, wenn eingecheckt wird, dann wird sie zu `01` aufgefüllt, gilt als unverändert und ein Hinweis auf das Auffüllen erscheint
@@ -190,7 +192,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - [ ] Angenommen eine Datei mit Endung `.xlsx` ist beschädigt oder keine Excel-Datei, wenn sie hochgeladen wird, dann erscheint „Excel-Datei kann nicht gelesen werden“ und die Sperre bleibt
 - [ ] Angenommen eine Excel-Datei ist größer als 5 MB, wenn sie hochgeladen wird, dann wird sie mit „Datei zu groß" abgelehnt
 - [ ] Angenommen der Bearbeiter hat die DMRL ausgecheckt, wenn er eine Excel-Datei aus dem Export (PROJ-18) derselben DMRL eincheckt, dann wird sie wie jede Datei geprüft (ersetzt das bisherige PROJ-18-Kriterium „.xlsx wird abgelehnt“)
-- [ ] Angenommen eine Excel-Datei enthält Fehler nach PROJ-8, wenn die Prüfung endet, dann nennt der Prüfbericht die Zeilennummer des Blatts „Einträge“
+- [ ] Angenommen eine Excel-Datei enthält Fehler nach PROJ-8, wenn die Prüfung endet, dann nennt der Prüfbericht die Zeilennummer des gelesenen Blatts
 
 ### CSV weiterhin zulässig *(Refinement 2026-11-25)*
 - [ ] Angenommen eine über PROJ-20 konvertierte CSV wird bei eigener Sperre eingecheckt, wenn sie korrekt ist, dann wird sie wie bisher angenommen
@@ -289,7 +291,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - Lesen von `.xlsx` erfordert einen Excel-Leser (entpacken + Blatt auslesen) — Auswahl (eigener Leser mit vorhandenem `fflate` oder Paket) in `/architecture` *(Refinement 2026-11-25)*
 
 ## Open Questions
-- [ ] Testdatei aus echtem MS Excel: Product Owner speichert eine ausgecheckte Datei nach Bearbeitung in MS Excel (Windows) und stellt sie für die Tests bereit — vor `/qa` (2026-11-25)
+- [x] Testdatei aus echtem MS Excel → bereitgestellt: `tests/fixtures/PHUNGUN-ms-excel-aus-csv.xlsx` (Export-CSV in MS Excel als .xlsx gespeichert; Pfad/Autor entfernt). Führte zur Erweiterung der Blattregel (einziges Blatt). Fälle Formel, Hilfsblatt, neue Zeile werden mit selbst erzeugten Testdateien abgedeckt; eine bearbeitete Original-Excel-Datei ist optional (2026-11-25)
 - [ ] Soll PROJ-20 (XML-Prüfung) künftig zusätzlich eine Excel-Datei liefern? → eigenes Refinement von PROJ-20; bis dahin bleibt der CSV-Check-in dafür bestehen (2026-11-25)
 - [x] Soll der Prüfbericht eines abgelehnten Check-ins im Workflow-Verlauf festgehalten werden? → Eintrag „Check-in abgelehnt — n Fehler", Prüfbericht selbst wird nicht gespeichert (PROJ-15)
 
@@ -321,7 +323,8 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 | Neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* (abgestimmter Bestand) | Vorgabe Product Owner; Alternative „*in Bearbeitung*“ verworfen, da solche Einträge nie gesendet würden (Grundsatz BUG-QA4-1) | 2026-11-18 |
 | Sind nach dem Check-in alle Einträge *freigegeben*, wird die DMRL *freigegeben* mit Nachweis „Übernahme Bestand per Check-in“ und Freigabestand | Grundregel PROJ-14 (DMRL *freigegeben* ⇔ alle Einträge *freigegeben*); „DMRL bleibt *in Bearbeitung*“ verworfen — Daten wären beim Laden ungültig und ein SEND nie möglich | 2026-11-18 |
 | Check-in nimmt `.xlsx` **und** `.csv` an | Vorgabe Product Owner; CSV bleibt nötig für PROJ-20, CSV-Export und offene Check-outs aus der CSV-Zeit | 2026-11-25 |
-| Gelesen wird nur das Blatt „Einträge“; fehlt es → Datei abgelehnt; weitere Blätter ignoriert | Eindeutig, auch bei Hilfsblättern des Bearbeiters; „erstes Blatt“ verworfen (falsch bei verschobenen Blättern) | 2026-11-25 |
+| ~~Gelesen wird nur das Blatt „Einträge“; fehlt es → Datei abgelehnt~~ — ersetzt 2026-11-25 (Nachtrag) | Eindeutig, auch bei Hilfsblättern des Bearbeiters; „erstes Blatt“ verworfen (falsch bei verschobenen Blättern) | 2026-11-25 |
+| Blatt „Einträge“; fehlt es und hat die Mappe genau ein Blatt → dieses; sonst abgelehnt; weitere Blätter ignoriert | Beispieldatei des Product Owners: Export-CSV in MS Excel geöffnet und als .xlsx gespeichert — Excel benennt das einzige Blatt nach der Datei; dieser Weg ist realistisch und soll funktionieren | 2026-11-25 |
 | Zellen mit gespeichertem Wert: Formel → Ergebnis, Zahl → Text, Datum → Seriennummer (Formatfehler) | Keine neuen Fehlerarten; „Formeln sind Fehler“ verworfen (zu streng für Hilfsbezüge) | 2026-11-25 |
 | Vollständig leere Zeilen werden in Excel ignoriert | Gelöschte Zellinhalte hinterlassen in Excel leere Zeilen; kein fachlicher Fehler | 2026-11-25 |
 | `.xls`, `.xlsm`, `.ods` nicht angenommen | Nur das Format, das der Check-out erzeugt; keine Makro-Mappen | 2026-11-25 |
@@ -500,7 +503,7 @@ Der Dialogtitel und Texte, die „CSV“ nennen, werden neutral („Datei“). K
 
 **Excel-Leser (was er tut, in Klartext)**
 1. Die `.xlsx`-Datei ist ein ZIP-Archiv mit XML-Dateien. Sie wird im Browser **entpackt** (vorhandenes `fflate`). Nicht entpackbar → „Excel-Datei kann nicht gelesen werden“.
-2. Im Mappen-Verzeichnis wird das Blatt **„Einträge“** gesucht und dessen Tabelle geöffnet. Nicht vorhanden → „Tabellenblatt ‚Einträge‘ fehlt“. Andere Blätter werden nicht gelesen.
+2. Im Mappen-Verzeichnis wird das Blatt **„Einträge“** gesucht und dessen Tabelle geöffnet. Nicht vorhanden, aber genau ein Blatt in der Mappe → dieses Blatt *(Nachtrag 2026-11-25, Beispieldatei)*. Sonst → „Tabellenblatt ‚Einträge‘ fehlt“. Andere Blätter werden nicht gelesen.
 3. Jede Zelle wird über ihre **Zelladresse** (z. B. C5) der richtigen Spalte und Zeile zugeordnet — Excel lässt leere Zellen in der Datei weg; ohne Adressen würden Werte verrutschen.
 4. Zellwerte als Text:
    - Text (direkt oder aus Excels gemeinsamer Textliste, auch mit Formatierung innerhalb der Zelle) → unverändert
@@ -519,7 +522,7 @@ Der Dialogtitel und Texte, die „CSV“ nennen, werden neutral („Datei“). K
 |---|---|---|
 | Endung | `.xlsx` (Groß-/Kleinschreibung egal) | `.csv` |
 | Größe | max. 5 MB | max. 5 MB |
-| Lesen | entpacken, Blatt „Einträge“, Zellen | UTF-8 streng |
+| Lesen | entpacken, Blatt „Einträge“ (bzw. einziges Blatt), Zellen | UTF-8 streng |
 | Andere Endung | „Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen“ | |
 
 Alle Dateifehler werden wie bisher im Auswahlschritt angezeigt und **nicht** im Verlauf protokolliert; der Bearbeiter kann sofort eine andere Datei wählen.
@@ -553,9 +556,10 @@ Gemeinsam mit PROJ-9 in einem `/frontend`-Lauf (PROJ-9 Tech Design I): Excel-Les
 - **Keine neuen Pakete** — `fflate` (bereits installiert, PROJ-18), XML-Leser des Browsers, PapaParse (CSV, wie bisher).
 
 **Testbarkeit**
-- Unit (Excel-Leser): Datei aus dem eigenen Excel-Schreiber (Rundlauf ohne Änderung); Blatt „Einträge“ an zweiter Stelle; Blatt fehlt; keine ZIP-Datei / beschädigt; entpackte Größe zu groß; ausgelassene leere Zellen (Werte bleiben in der richtigen Spalte); gemeinsame Textliste inkl. Formatierung in der Zelle; Zahl `1` in `security` → `01` mit Hinweis; Formel mit gespeichertem Ergebnis bzw. ohne; Datumszelle → Formatfehler; vollständig leere Zeilen; Text `'=…` bleibt unverändert; Zeilennummern im Prüfbericht.
+- Unit (Excel-Leser): Datei aus dem eigenen Excel-Schreiber (Rundlauf ohne Änderung); Blatt „Einträge“ an zweiter Stelle; einziges Blatt mit anderem Namen wird gelesen; mehrere Blätter ohne „Einträge“ → Fehler; keine ZIP-Datei / beschädigt; entpackte Größe zu groß; ausgelassene leere Zellen (Werte bleiben in der richtigen Spalte); gemeinsame Textliste inkl. Formatierung in der Zelle; Zahl `1` in `security` → `01` mit Hinweis; Formel mit gespeichertem Ergebnis bzw. ohne; Datumszelle → Formatfehler; vollständig leere Zeilen; Text `'=…` bleibt unverändert; Zeilennummern im Prüfbericht.
 - Unit (gemeinsamer Schritt): bestehende CSV-Tests laufen unverändert weiter (Kopfzeile, 27/28 Spalten, Apostroph-Entfernung nur CSV).
-- **Testdatei aus echtem MS Excel:** Eine ausgecheckte Datei, in MS Excel geöffnet, bearbeitet (neue Zeile, Änderung, Formel, Hilfsblatt) und gespeichert, wird als feste Testdatei abgelegt — sie deckt Excels eigene Speicherweise ab (gemeinsame Textliste, Formatvorlagen), die der eigene Schreiber nicht erzeugt.
+- **Testdatei aus echtem MS Excel (vorhanden):** `tests/fixtures/PHUNGUN-ms-excel-aus-csv.xlsx` — Export-CSV der Demo-DMRL PHUNGUN, in MS Excel (Windows) geöffnet und als .xlsx gespeichert: ein Blatt mit Dateinamen, gemeinsame Textliste, 151 Zahlzellen, Werte mit führender Null als Text, keine Textformatierung/fixierte Kopfzeile. Gespeicherter Pfad und Autorname wurden entfernt; sonst unverändert. Erwartung: fehlerfrei, 32 Einträge unverändert *(Nachtrag 2026-11-25, Beispieldatei)*.
+- **Weitere Testdatei (optional):** Eine ausgecheckte Datei, in MS Excel geöffnet, bearbeitet (neue Zeile, Änderung, Formel, Hilfsblatt) und gespeichert, wird als feste Testdatei abgelegt — sie deckt Excels eigene Speicherweise ab (gemeinsame Textliste, Formatvorlagen), die der eigene Schreiber nicht erzeugt.
 - Komponente: Dateiauswahl nimmt `.xlsx` und `.csv`, Meldungen für die neuen Fehlerfälle.
 - E2E: Check-out → Excel-Datei herunterladen → per Test bearbeiten (neue Zeile) → einchecken → 1 neu; Check-in einer PROJ-20-CSV weiterhin möglich; `.xls` abgelehnt. Bestehende E2E-Tests, die die Check-out-CSV bearbeiten, werden auf Excel umgestellt.
 
