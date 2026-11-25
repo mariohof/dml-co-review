@@ -1,6 +1,6 @@
 # PROJ-10: Check-in (MS-Excel / CSV)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-25
 
@@ -1052,6 +1052,72 @@ Keine neuen Bugs in diesem Feature.
 - **Bugs Found:** 1 neu (0 critical, 0 high, 0 medium, 1 low); weiterhin offen: BUG-QA8-1 (Low), BUG-QA7-2 (Low, Spec)
 - **Security:** Pass
 - **Production Ready:** YES
+
+### QA-Lauf 12 — Refinement 2026-11-25 (Check-in von MS-Excel und CSV)
+
+**Tested:** 2026-11-25
+**App URL:** http://localhost:3000 (`npm run dev`)
+**Tester:** QA Engineer (AI)
+**Testumfang:** PROJ-9 und PROJ-10 gemeinsam; Red-Team-Prüfung des neuen Excel-Lesers
+**Automatisiert:** Vitest 693 Tests ✅ (58 Dateien) · Playwright 156 Tests ✅ · Startskript-Tests ✅
+**Neue QA-Tests:** `src/lib/workflows/qa-proj9-10-excel.test.ts` (8), `tests/QA-proj9-10.spec.ts` (5)
+**Browser:** Chromium (Desktop). Nur Desktop laut PRD; Firefox/Safari nicht installiert, nicht getestet.
+**Testdatei aus MS Excel:** `tests/fixtures/PHUNGUN-ms-excel-aus-csv.xlsx` ✅
+
+#### Acceptance Criteria Status
+- [x] Prüfung — Dateityp: `.xls`, `.ods`, `.txt` → „Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen“ (Unit, Komponententest, E2E)
+- [x] Excel-Datei (13/13):
+  - [x] unverändert eingecheckt → fehlerfrei, nur unverändert (Unit, E2E)
+  - [x] bearbeitet (neue Zeile `n`, Änderung) → 1 neu, 1 geändert; Übernahme (Unit, E2E: 11 Einträge)
+  - [x] mehrere Blätter ohne „Einträge“ → „Tabellenblatt ‚Einträge‘ fehlt.“ (Unit)
+  - [x] einziges Blatt mit anderem Namen wird gelesen (Unit, MS-Excel-Testdatei)
+  - [x] MS-Excel-Testdatei gegen Demo-PHUNGUN: keine Fehler, 32 unverändert (Unit)
+  - [x] „Einträge“ neben anderen Blättern, auch nicht vorn → nur „Einträge“ gelesen (Unit)
+  - [x] Formel → gespeichertes Ergebnis (Unit)
+  - [x] Zahlzelle `1` in `security` → `01` mit Hinweis (Unit)
+  - [x] Datumszelle in `day` → Formatfehler A (Unit)
+  - [x] Text `'=` bleibt unverändert (Unit)
+  - [x] leere Zeilen ignoriert (Unit)
+  - [x] beschädigte `.xlsx` → „Excel-Datei kann nicht gelesen werden.“, Sperre bleibt (Unit, E2E)
+  - [x] > 5 MB → „Datei zu groß“ (Unit)
+  - [x] Export-Excel (PROJ-18) bei eigener Sperre → geprüft und angenommen (E2E)
+  - [x] Prüfbericht nennt die Zeile des Blatts (Unit, E2E); abgelehnt → Sperre bleibt, „Check-in abgelehnt“ im Verlauf (E2E)
+- [x] CSV weiterhin zulässig (3/3): PROJ-20-CSV (E2E `PROJ-20-qa*`), alte CSV mit 27 Spalten (E2E), Apostroph-Entfernung nur CSV (Unit)
+- [x] Regression: alle bisherigen Kriterien (Zugriff, Prüfung, Typ-Regel, Übernahme, Antworten, DMRL-Status, Bestand, `answer_timestamp`) weiterhin grün — die bestehenden E2E-Tests laufen jetzt über die Excel-Check-out-Datei
+
+#### Edge Cases Status
+- [x] Spalten in Excel umsortiert → Gruppe S (QA-Unit) · ausgeblendete/gefilterte Zeilen werden gelesen (QA-Unit) · Excel-Datei einer anderen DMRL fällt durch (MI, fehlende Einträge; QA-Unit) · Formel ohne Ergebnis → leer (Unit) · Endung in Großbuchstaben (Unit)
+- [x] `.xlsx` mit Endung `.csv` → „nicht UTF-8-kodiert“, keine Fehldeutung (QA-Unit)
+- [x] Leistung: 1.000 Einträge lesen und prüfen in wenigen Sekunden (QA-Unit)
+- [ ] BUG-QA12-2: Zelladressen weit jenseits der Excel-Grenzen (s. u.)
+
+#### Security Audit Results (Red Team gegen den Excel-Leser)
+- [x] Zip-Bombe: entpackte Größe begrenzt (Unit); **gefälschte Größenangaben** im ZIP (98 MB Inhalt, angegeben 10 bzw. 100 Bytes) → „nicht lesbar“, kein Speicherüberlauf (QA-Unit, Sonde)
+- [x] Entity-Bombe („Billion Laughs“, 10⁹ Zeichen) im Blatt-XML: Chrome lehnt in rund 70 ms ab, Seite bleibt bedienbar (E2E)
+- [x] XXE: externe Entity wird nicht nachgeladen (keine Netzwerkanfrage), Datei abgelehnt (E2E)
+- [x] XSS über Zellinhalt: als Text angezeigt (E2E)
+- [x] Nur benötigte ZIP-Teile werden entpackt; keine Server-Route, kein neues Paket
+- [ ] BUG-QA12-2 (Low, Verfügbarkeit): s. u.
+
+#### Bugs Found
+
+##### BUG-QA12-2: Excel-Leser weist Zelladressen jenseits der Excel-Grenzen nicht ab
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. Eine manipulierte `.xlsx` erzeugen, deren Zelle die Adresse `FXSHRXW2` (Spaltenindex ≈ 4 Milliarden) bzw. `ZZZZZZZZ2` hat (MS Excel kann das nicht erzeugen; max. Spalte `XFD`, Zeile 1 048 576).
+  2. Bei eigener Sperre einchecken.
+  3. Expected: sofort „Excel-Datei kann nicht gelesen werden.“
+  4. Actual: `FXSHRXW2` — die Seite ist in Chrome **rund 2,2 s blockiert**, dann „nicht lesbar“ (riesiges Zellen-Array). `ZZZZZZZZ2` — Spaltenindex über 2³² wird **still verworfen** (Wert verschwindet ohne Meldung); hier fiel die Datei nur wegen anderer Fehler durch.
+- **Hinweis zur Behebung:** Spalten > `XFD` (Index 16 383) und Zeilen > 1 048 576 als „nicht lesbar“ behandeln.
+- **Priority:** Nice to have (nur absichtlich manipulierte Dateien; Wirkung auf den eigenen Browser beschränkt)
+
+#### Summary
+- **Acceptance Criteria:** 17/17 neue bzw. geänderte Kriterien passed; Regression aller bisherigen Kriterien grün
+- **Bugs Found:** 1 neu (0 critical, 0 high, 0 medium, 1 low) — dazu BUG-QA12-1 in PROJ-9
+- **Security:** Pass (Zip-Bombe, gefälschte Größen, Entity-Bombe, XXE, XSS geprüft)
+- **Production Ready:** YES (keine Critical/High-Bugs)
+
+- **Entscheidung Product Owner (2026-11-25):** freigegeben (Approved); Low-Bugs bleiben dokumentiert
 
 ## Deployment
 _To be added by /deploy_

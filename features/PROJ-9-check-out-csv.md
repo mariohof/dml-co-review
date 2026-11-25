@@ -1,6 +1,6 @@
 # PROJ-9: Check-out (MS-Excel)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-25
 
@@ -393,6 +393,67 @@ _Stand 2026-11-25 — `/frontend PROJ-9 PROJ-10` (Tech Design I, gemeinsam mit P
 - **Offene Bugs:** keine
 - **Security:** Pass
 - **Production Ready:** YES
+
+### QA-Lauf 12 — Refinement 2026-11-25 (Check-out als MS-Excel)
+
+**Tested:** 2026-11-25
+**App URL:** http://localhost:3000 (`npm run dev`)
+**Tester:** QA Engineer (AI)
+**Testumfang:** PROJ-9 und PROJ-10 gemeinsam (Rundlauf Check-out → Excel → Check-in)
+**Automatisiert:** Vitest 693 Tests ✅ (58 Dateien) · Playwright 156 Tests ✅ · Startskript-Tests ✅
+**Browser:** Chromium (Desktop). Nur Desktop laut PRD; Firefox/Safari nicht installiert, nicht getestet.
+**Nicht möglich in dieser Umgebung:** Öffnen in MS Excel (kein Excel installiert) → manuelle Bestätigung durch den Product Owner
+
+#### Acceptance Criteria Status
+- [x] Check-out (9/9): Bestätigung zeigt `…-{Jahr}.xlsx`, Download als Excel, Sperre, Abbrechen, Administrator, keine Berechtigung, fremde Sperre, Status *gesendet*, freigegeben bleibt, leere DMRL → nur Kopfzeile (Unit, Komponententest, E2E `PROJ-9-10-excel.spec.ts`)
+- [x] Inhalt der Excel-Datei (12/12, davon 3 nur simuliert):
+  - [x] Dateiname `DML-PHUNGUN-D0815-C-2026.xlsx` (Unit) · ⚠️ „ohne Reparaturmeldung in MS Excel“ → manuell zu bestätigen
+  - [x] genau ein Blatt „Einträge“, Kopfzeile mit 28 Feldnamen (Unit, E2E)
+  - [x] alle Einträge, sortiert nach DMC (Unit: 10/11 Zeilen; gemeinsamer Baustein mit Export)
+  - [x] führende Nullen als Text (Unit, E2E)
+  - [x] ⚠️ neue Zeile mit `01` bleibt Text: alle 28 Spalten haben das Textformat (`style="1"`, QA-Unit) → Tippen in Excel manuell zu bestätigen
+  - [x] Kopfzeile fett/fixiert, Autofilter `A1:AB11` (E2E)
+  - [x] Umlaute (Rundlauf-Unit)
+  - [x] `=`, `+`, `-`, `@` als Textzelle, keine `<f>`-Zelle; übersteht den Check-in unverändert (E2E BUG-QA2-1 neu)
+  - [x] `;`, `"`, Zeilenumbruch: Check-out → Check-in unverändert, keine Änderung (QA-Unit)
+  - [x] `answer`, `answer_comment`, `answer_timestamp` enthalten (E2E `QA-proj10-12-13-refinement`)
+  - [x] Demo-PHUNGUN unverändert eingecheckt fehlerfrei (Unit mit Demo-Stand; zusätzlich MS-Excel-Testdatei)
+  - [x] ⚠️ Rundlauf über MS Excel: simuliert mit eigener Datei und mit der MS-Excel-Testdatei (Excels Speicherweise) → echter Rundlauf manuell zu bestätigen
+- [x] Sperre aufheben (6/6): Zurücknehmen, „Excel-Datei erneut herunterladen“ (gleicher Name, gleicher Inhalt; nur für den Sperrinhaber), Admin hebt auf, andere sehen nichts, Freigabe bleibt, Sperre aus der CSV-Zeit → `.xlsx` (Unit: Datei aus jeder Sperr-Kopie)
+- [x] Nachvollziehbarkeit (3/3): Verlauf, „im Workflow verwendet“, Sperre bleibt bei Benutzerwechsel und Neuladen (E2E `QA-proj9-10.spec.ts`)
+- [x] Leistung: Excel-Datei mit 1.000 Einträgen < 1 s (QA-Unit)
+
+#### Edge Cases Status
+- [x] Download blockiert → „Excel-Datei erneut herunterladen“ · offener Check-out aus der CSV-Zeit · lange Feldinhalte (Breite begrenzt) · Rollenwechsel · zwei Tabs (unverändert)
+- [ ] BUG-QA12-1: Excel-Erzeugung schlägt fehl → Sperre gesetzt, kein Download, keine Meldung (s. u.)
+- [ ] Übernommen aus PROJ-18, betrifft jetzt auch den Check-out: BUG-QA11-1 (> 32 767 Zeichen je Zelle), BUG-QA11-3 (große DMRL ohne Rückmeldung), BUG-QA11-4 (grüne Dreiecke „Zahl als Text“). BUG-QA11-4 wird **relevanter**, weil Bearbeiter die Check-out-Datei jetzt tatsächlich in Excel bearbeiten.
+
+#### Security Audit Results
+- [x] Formel-Injection: Textzellen, keine Formeln; kein Apostroph nötig (E2E BUG-QA2-1 neu)
+- [x] XSS: HTML aus einer Excel-Zelle wird in der Check-in-Zusammenfassung als Text angezeigt, kein Skript (E2E)
+- [x] Zugriff: Aktionen unverändert über die Verfügbarkeitsregeln; „Excel-Datei erneut herunterladen“ nur für den Sperrinhaber (E2E)
+- [x] Keine neuen Pakete, keine Server-Route
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend
+
+#### Bugs Found
+
+##### BUG-QA12-1: Check-out — Fehler bei der Excel-Erzeugung hinterlässt eine Sperre ohne Datei und ohne Meldung
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. Einen Eintrag mit einem Feldwert mit rund 300 000 Zeilenumbrüchen einchecken (CSV < 5 MB; Ursache BUG-QA11-2 im Excel-Schreiber)
+  2. „Check-out“ → „Auschecken“
+  3. Expected: Datei wird heruntergeladen, oder eine Fehlermeldung erscheint (und die Sperre wird nicht gesetzt bzw. ist klar erklärt).
+  4. Actual: Sperre wird gespeichert, dann bricht die Excel-Erzeugung mit „Maximum call stack size exceeded“ ab (Unit-Probe) — kein Download, keine Meldung, auch „Excel-Datei erneut herunterladen“ scheitert still. Ausweg: „Check-out zurücknehmen“. Mit CSV lief derselbe Bestand durch.
+- **Hinweis zur Behebung:** Fehler beim Erzeugen/Herunterladen im Dialog abfangen und melden; BUG-QA11-2 (Spaltenbreite ohne `Math.max(...viele)`) beheben.
+- **Priority:** Nice to have (unrealistische Daten)
+
+#### Summary
+- **Acceptance Criteria:** 30/30 passed (3 davon nur simuliert — Bestätigung in MS Excel durch den Product Owner offen)
+- **Bugs Found:** 1 neu (0 critical, 0 high, 0 medium, 1 low) + 3 übernommene Low-Bugs aus PROJ-18 (BUG-QA11-1/-3/-4)
+- **Security:** Pass
+- **Production Ready:** YES (keine Critical/High-Bugs), vorbehaltlich der manuellen Prüfung in MS Excel
+
+- **Entscheidung Product Owner (2026-11-25):** freigegeben (Approved); Low-Bugs bleiben dokumentiert
 
 ## Deployment
 _To be added by /deploy_
