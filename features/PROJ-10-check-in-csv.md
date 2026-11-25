@@ -1,6 +1,6 @@
 # PROJ-10: Check-in (MS-Excel / CSV)
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-25
 
@@ -289,6 +289,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - Lesen von `.xlsx` erfordert einen Excel-Leser (entpacken + Blatt auslesen) — Auswahl (eigener Leser mit vorhandenem `fflate` oder Paket) in `/architecture` *(Refinement 2026-11-25)*
 
 ## Open Questions
+- [ ] Testdatei aus echtem MS Excel: Product Owner speichert eine ausgecheckte Datei nach Bearbeitung in MS Excel (Windows) und stellt sie für die Tests bereit — vor `/qa` (2026-11-25)
 - [ ] Soll PROJ-20 (XML-Prüfung) künftig zusätzlich eine Excel-Datei liefern? → eigenes Refinement von PROJ-20; bis dahin bleibt der CSV-Check-in dafür bestehen (2026-11-25)
 - [x] Soll der Prüfbericht eines abgelehnten Check-ins im Workflow-Verlauf festgehalten werden? → Eintrag „Check-in abgelehnt — n Fehler", Prüfbericht selbst wird nicht gespeichert (PROJ-15)
 
@@ -341,6 +342,11 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 | Regel K liefert eine Liste statt Fehlern; „Eintragstyp bei Antwortübernahme“ als bedingte Sperre statt Fehler im Prüfbericht | Ohne Häkchen bleibt eine korrekte Datei fehlerfrei; die Sperre greift nur, wenn sie wirklich nötig ist | 2026-11-14 |
 | Ohne Übernahme erhalten neue Einträge leere Antwortfelder | „Bisherige Antworten bleiben“ — neue Einträge hatten keine | 2026-11-14 |
 | Kein neues Datenformat; Verlaufstext um Zusatz erweitert | Keine Migration der gespeicherten Daten nötig | 2026-11-14 |
+| Eigener Excel-Leser mit `fflate` + XML-Leser des Browsers statt Paket | Kein neues Paket, offline; SheetJS (npm-Version veraltet, Sicherheitsmeldungen) und ExcelJS (groß, viele Abhängigkeiten) verworfen | 2026-11-25 |
+| CSV-Leser aufgeteilt: Zerlegen je Format + gemeinsamer Schritt „Tabelle → Einträge“ (Kopfzeile, Spaltenzahl, Trimmen, Nullen, leere Zeilen) | Gleiches Verhalten für Excel und CSV, keine doppelte Logik; Apostroph-Entfernung nur im CSV-Zweig | 2026-11-25 |
+| Excel-Zellen über ihre Zelladresse zugeordnet | Excel lässt leere Zellen in der Datei weg | 2026-11-25 |
+| Entpackte Größe der Excel-Datei begrenzt (ca. 50 MB) | Schutz vor Zip-Bomben | 2026-11-25 |
+| Feste Testdatei aus echtem MS Excel | Excels Speicherweise (gemeinsame Textliste, Formatvorlagen) unterscheidet sich vom eigenen Schreiber | 2026-11-25 |
 | Excel und CSV werden zuerst in dieselbe Zeilenstruktur gelesen; Prüfung, Abgleich und Übernahme bleiben unverändert | Ein Regelwerk für beide Formate; keine doppelte Logik | 2026-11-25 |
 
 ---
@@ -461,6 +467,97 @@ Zusammenfassung
 - Unit: Abgleich trennt fachliche Änderung und Antwortabweichung; Zahlen mit/ohne Übernahme; Regel K ohne Fehler; bedingte Prüfung „ohne Eintragstyp“; Übernahme mit/ohne Häkchen (Antwortwerte, Status, DMRL-Status, Verlaufstext); neue Einträge ohne Übernahme → leere Antworten; erneute Prüfung bei der Übernahme.
 - Komponente: Abschnitt nur bei Abweichungen; Häkchen standardmäßig aus; Zahlen schalten um; Sperre von „Übernehmen“ samt Meldung.
 - E2E: Empfängerantworten in der Check-out-CSV ändern → einchecken ohne Häkchen (Antworten bleiben, unverändert) und mit Häkchen (Werte übernommen, *in Bearbeitung*, Verlaufszusatz); freigegebenen Eintrag nur in der Antwort ändern → Sperre bei Häkchen; Durchlauf mit einer über PROJ-20 konvertierten CSV, sobald PROJ-20 umgesetzt ist.
+
+### J) Refinement 2026-11-25 — Check-in von MS-Excel (.xlsx) und CSV
+Ergänzt das bestehende Design; Abgleich, Regelwerk, Zusammenfassung, Antwortübernahme und Übernahme (A–I) bleiben unverändert. Neu ist nur **der Weg von der Datei zur Tabelle**. Weiterhin alles im Browser, kein Backend, offline lauffähig.
+
+**Grundidee: zwei Leser, eine Tabelle**
+```
+Datei wählen
++-- .xlsx → Excel-Leser  ─┐
+|                         ├─→ Tabelle (Zeilennummer + Zellen als Text)
++-- .csv  → CSV-Leser   ─┘           │
+                                     ▼
+              gemeinsamer Schritt „Tabelle → Einträge“ (PROJ-8, Gruppe S)
+              Kopfzeile prüfen (28 bzw. alte 27 Spalten) · Spaltenzahl je Zeile
+              Werte trimmen · führende Nullen auffüllen (Hinweise) · leere Zeilen überspringen
+                                     │
+                                     ▼
+              Prüfung PROJ-8 · Abgleich · Zusammenfassung · Übernahme  (unverändert)
+```
+- Heute erledigt der CSV-Leser Zerlegen **und** Kopfzeilen-/Spaltenprüfung in einem. Der zweite Teil wird zu einem **gemeinsamen Schritt**, den beide Formate durchlaufen — so gelten Kopfzeile, alte 27-Spalten-Dateien, Auffüllen der Nullen und Zeilennummern im Prüfbericht automatisch gleich.
+- Einziger formatabhängiger Unterschied in diesem Schritt: das Entfernen des Formelschutz-Apostrophs (BUG-QA2-1) **nur bei CSV**.
+
+**Komponenten (Check-in-Dialog, Schritt 1 „Datei wählen“)**
+```
+Check-in-Dialog (shadcn Dialog, mehrstufig — unverändert bis auf Schritt 1)
++-- Schritt 1: Datei wählen
+|   +-- Dateiauswahl / Ablagefläche: nimmt .xlsx und .csv (Hinweistext „Excel- (.xlsx) oder CSV-Datei, max. 5 MB“)
+|   +-- Meldungen: falscher Typ · zu groß · nicht UTF-8 (nur CSV) · „Tabellenblatt ‚Einträge‘ fehlt“ · „Excel-Datei kann nicht gelesen werden“
++-- Schritte 2–3 unverändert (Prüfung, Prüfbericht/Zusammenfassung, Übernahme)
+```
+Der Dialogtitel und Texte, die „CSV“ nennen, werden neutral („Datei“). Keine neuen shadcn-Komponenten.
+
+**Excel-Leser (was er tut, in Klartext)**
+1. Die `.xlsx`-Datei ist ein ZIP-Archiv mit XML-Dateien. Sie wird im Browser **entpackt** (vorhandenes `fflate`). Nicht entpackbar → „Excel-Datei kann nicht gelesen werden“.
+2. Im Mappen-Verzeichnis wird das Blatt **„Einträge“** gesucht und dessen Tabelle geöffnet. Nicht vorhanden → „Tabellenblatt ‚Einträge‘ fehlt“. Andere Blätter werden nicht gelesen.
+3. Jede Zelle wird über ihre **Zelladresse** (z. B. C5) der richtigen Spalte und Zeile zugeordnet — Excel lässt leere Zellen in der Datei weg; ohne Adressen würden Werte verrutschen.
+4. Zellwerte als Text:
+   - Text (direkt oder aus Excels gemeinsamer Textliste, auch mit Formatierung innerhalb der Zelle) → unverändert
+   - Zahl → so, wie sie in der Datei steht (`1` → „1“), keine Rundung, keine Tausenderpunkte
+   - Formel → das **gespeicherte Ergebnis** (Text, Zahl, Wahrheitswert); fehlt es → leer
+   - Datumszelle → die gespeicherte Seriennummer (Formatprüfung meldet dann den Fehler)
+   - Fehlerwert (z. B. `#NV`) → als Text, fällt dann durch die Formatprüfung
+5. Ergebnis: Tabelle mit **Zeilennummern des Blatts** — der Prüfbericht nennt dieselbe Zeile, die der Bearbeiter in Excel sieht.
+
+- Gelesen wird die XML mit dem **eingebauten XML-Leser des Browsers** — derselbe, mit dem die DMRL-XML beim REPLY-Import gelesen wird (PROJ-13). Er lädt keine externen Inhalte nach.
+- **Schutz vor „Zip-Bomben“:** Neben der Dateigröße (5 MB) wird auch die entpackte Größe begrenzt (z. B. 50 MB); darüber → „Excel-Datei kann nicht gelesen werden“.
+- Blattname, Spaltenliste und Aufbau stammen aus dem gemeinsamen Baustein „Einträge als Excel“ (PROJ-9 Tech Design I) — Schreiber und Leser nutzen dieselbe Definition.
+
+**Datei wählen (Erweiterung von D, Schritt 1)**
+| Prüfung | Excel | CSV |
+|---|---|---|
+| Endung | `.xlsx` (Groß-/Kleinschreibung egal) | `.csv` |
+| Größe | max. 5 MB | max. 5 MB |
+| Lesen | entpacken, Blatt „Einträge“, Zellen | UTF-8 streng |
+| Andere Endung | „Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen“ | |
+
+Alle Dateifehler werden wie bisher im Auswahlschritt angezeigt und **nicht** im Verlauf protokolliert; der Bearbeiter kann sofort eine andere Datei wählen.
+
+**Datenmodell**
+- **Unverändert.** Keine neuen Objekte, keine Umstellung gespeicherter Daten; die Datei selbst wird nicht gespeichert. Verlaufstexte bleiben gleich („Check-in — x neu, y geändert, z unverändert“).
+
+**Auswirkung auf bestehende Teile**
+| Teil | Änderung |
+|---|---|
+| Datei lesen (Check-in) | unterscheidet `.xlsx`/`.csv`; Ergebnis ist eine Tabelle statt eines Textes |
+| CSV-Leser (PROJ-8) | aufgeteilt in „CSV zerlegen“ und gemeinsamen Schritt „Tabelle → Einträge“; Verhalten für CSV unverändert |
+| Prüfeinstieg (PROJ-8) | nimmt die Tabelle statt des CSV-Textes; Regeln selbst unverändert |
+| Check-in-Dialog | Dateiauswahl für beide Formate, Texte neutral |
+| PROJ-20 (XML-Prüfung) | nicht betroffen — erzeugt weiter CSV, die hier weiterhin angenommen wird |
+
+**Reihenfolge der Umsetzung**
+Gemeinsam mit PROJ-9 in einem `/frontend`-Lauf (PROJ-9 Tech Design I): Excel-Leser und Check-out-Excel werden zusammen gebaut und im Rundlauf getestet.
+
+**Technische Entscheidungen (für PM erklärt)**
+| Entscheidung | Warum |
+|---|---|
+| Eigener, kleiner Excel-Leser statt Fremdpaket | Wir lesen nur ein Blatt mit Text in bekannten Spalten. `fflate` (entpacken) und der XML-Leser des Browsers sind schon da → kein neues Paket, offline, kleiner Umfang. Verworfen: **SheetJS** (`xlsx`) — die Version im npm-Verzeichnis ist veraltet (0.18.5) mit bekannten Sicherheitsmeldungen, neuere nur außerhalb von npm; **ExcelJS** — groß, für Server gedacht, zieht viele weitere Pakete nach. |
+| Zwei Leser, ein gemeinsamer Schritt „Tabelle → Einträge“ | Kopfzeile, alte 27-Spalten-Dateien, Nullen auffüllen und Zeilennummern gelten für beide Formate identisch; keine doppelte Logik. |
+| Zellen über ihre Adresse zuordnen | Excel speichert leere Zellen nicht; nur so landen Werte sicher in der richtigen Spalte. |
+| Formel → gespeichertes Ergebnis | Spec-Vorgabe; der Browser rechnet keine Formeln nach. |
+| Entpackte Größe begrenzen | Schutz vor manipulierten Dateien, die beim Entpacken den Browser lahmlegen. |
+| Prüfbericht mit Zeilennummer des Blatts | Bearbeiter findet die Zeile in Excel sofort. |
+
+**Abhängigkeiten (Pakete)**
+- **Keine neuen Pakete** — `fflate` (bereits installiert, PROJ-18), XML-Leser des Browsers, PapaParse (CSV, wie bisher).
+
+**Testbarkeit**
+- Unit (Excel-Leser): Datei aus dem eigenen Excel-Schreiber (Rundlauf ohne Änderung); Blatt „Einträge“ an zweiter Stelle; Blatt fehlt; keine ZIP-Datei / beschädigt; entpackte Größe zu groß; ausgelassene leere Zellen (Werte bleiben in der richtigen Spalte); gemeinsame Textliste inkl. Formatierung in der Zelle; Zahl `1` in `security` → `01` mit Hinweis; Formel mit gespeichertem Ergebnis bzw. ohne; Datumszelle → Formatfehler; vollständig leere Zeilen; Text `'=…` bleibt unverändert; Zeilennummern im Prüfbericht.
+- Unit (gemeinsamer Schritt): bestehende CSV-Tests laufen unverändert weiter (Kopfzeile, 27/28 Spalten, Apostroph-Entfernung nur CSV).
+- **Testdatei aus echtem MS Excel:** Eine ausgecheckte Datei, in MS Excel geöffnet, bearbeitet (neue Zeile, Änderung, Formel, Hilfsblatt) und gespeichert, wird als feste Testdatei abgelegt — sie deckt Excels eigene Speicherweise ab (gemeinsame Textliste, Formatvorlagen), die der eigene Schreiber nicht erzeugt.
+- Komponente: Dateiauswahl nimmt `.xlsx` und `.csv`, Meldungen für die neuen Fehlerfälle.
+- E2E: Check-out → Excel-Datei herunterladen → per Test bearbeiten (neue Zeile) → einchecken → 1 neu; Check-in einer PROJ-20-CSV weiterhin möglich; `.xls` abgelehnt. Bestehende E2E-Tests, die die Check-out-CSV bearbeiten, werden auf Excel umgestellt.
 
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend` (PROJ-10)_
