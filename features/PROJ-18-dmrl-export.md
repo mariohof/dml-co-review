@@ -42,7 +42,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV**, **XML** oder
 - **Keine Kopfdaten** (System, Originator, Status, Versionsindex) — wie beim CSV-Export
 - **Formel-Injection:** Werte, die mit `=`, `+`, `-` oder `@` beginnen, werden als Text abgelegt und nie als Formel ausgewertet (gleicher Schutz wie BUG-QA2-1, PROJ-9)
 - Dateiname: `DML-{MI}-{CAGE Originator}-{DML-Typ}-Export-{JJJJ-MM-TT}.xlsx`, z. B. `DML-PHUNGUN-D0815-C-Export-2026-11-24.xlsx`
-- **Nur zur Information und Weitergabe:** eine Excel-Datei kann **nicht** eingecheckt werden; Check-in bleibt CSV (PROJ-10)
+- ~~**Nur zur Information und Weitergabe:** eine Excel-Datei kann **nicht** eingecheckt werden; Check-in bleibt CSV (PROJ-10)~~ → überholt durch Refinement PROJ-9/PROJ-10 (2026-11-25): Check-out liefert `.xlsx`, Check-in nimmt `.xlsx` und `.csv` an; eine Export-Excel-Datei kann bei eigener Sperre eingecheckt werden (wie die Export-CSV)
 - Keine XSD-Prüfung (kein XML)
 
 ### XML
@@ -76,7 +76,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV**, **XML** oder
 ## Out of Scope
 - Export mehrerer DMRLs auf einmal
 - ~~Excel-Format (.xlsx)~~ → jetzt im Umfang *(Refinement 2026-11-24)*
-- Check-in einer Excel-Datei (.xlsx) — Check-in bleibt CSV (PROJ-10); ggf. späteres Refinement von PROJ-10 *(Refinement 2026-11-24)*
+- ~~Check-in einer Excel-Datei (.xlsx)~~ → umgesetzt über Refinement PROJ-10 (2026-11-25)
 - Excel-Export des Freigabestands (PROJ-14) — dort weiterhin nur CSV/XML *(Refinement 2026-11-24)*
 - Weitere Tabellenblätter in der Excel-Datei (z. B. Kopfdaten) *(Refinement 2026-11-24)*
 - Export mit Kopfdaten in der CSV
@@ -116,7 +116,7 @@ Aktion **„Exportieren"** in der DMRL-Ansicht mit Auswahl **CSV**, **XML** oder
 - [ ] Angenommen ein Feld beginnt mit `=`, `+`, `-` oder `@`, wenn die Excel-Datei geöffnet wird, dann wird der Wert als Text angezeigt und keine Formel ausgewertet
 - [ ] Angenommen eine DMRL hat keine Einträge, wenn als Excel exportiert wird, dann enthält die Datei nur die Kopfzeile
 - [ ] Angenommen die DMRL ist von einem anderen Benutzer ausgecheckt oder hat Status *gesendet*, wenn als Excel exportiert wird, dann ist der Export möglich, und danach ist die DMRL unverändert (keine Sperre, kein Status, kein Archiv, kein Verlauf)
-- [ ] Angenommen ein Bearbeiter hat die DMRL ausgecheckt, wenn er beim Check-in eine .xlsx-Datei hochlädt, dann erscheint „Bitte eine CSV-Datei auswählen" und es wird nichts geprüft (PROJ-10 unverändert)
+- [ ] ~~Angenommen ein Bearbeiter hat die DMRL ausgecheckt, wenn er beim Check-in eine .xlsx-Datei hochlädt, dann erscheint „Bitte eine CSV-Datei auswählen" und es wird nichts geprüft (PROJ-10 unverändert)~~ → überholt durch Refinement PROJ-10 (2026-11-25): die Excel-Datei wird beim Check-in angenommen und geprüft
 
 ## Edge Cases
 - **Export während eines laufenden Check-ins (Zusammenfassung offen):** exportiert den Stand vor der Übernahme.

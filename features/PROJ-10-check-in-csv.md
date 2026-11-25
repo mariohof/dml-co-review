@@ -1,8 +1,10 @@
-# PROJ-10: Check-in CSV
+# PROJ-10: Check-in (MS-Excel / CSV)
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-21
+**Last Updated:** 2026-11-25
+
+> **Refinement 2026-11-25 — Check-in von MS-Excel (.xlsx):** Vorgabe Product Owner; Gegenstück zu PROJ-9 (Check-out liefert jetzt `.xlsx`). Der Check-in nimmt **`.xlsx` und weiterhin `.csv`** an — CSV bleibt für Dateien aus PROJ-20 (XML-Prüfung), dem CSV-Export (PROJ-18) und offene Check-outs aus der CSV-Zeit. Gelesen wird das Tabellenblatt **„Einträge“** (fehlt es → Fehler, weitere Blätter werden ignoriert); Zellen werden mit ihrem **gespeicherten Wert** gelesen (Formel → gespeichertes Ergebnis, Zahl → Text ohne Formatierung). Danach gelten Prüfung (PROJ-8), Zusammenfassung, Antwortübernahme und Übernahme **unverändert** für beide Formate. Auch eine Excel-Datei aus dem Export (PROJ-18) kann bei eigener Sperre eingecheckt werden. Geänderte Stellen sind mit *(Refinement 2026-11-25)* markiert; ältere Abschnitte (Tech Design, QA) beschreiben den CSV-Stand.
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die CSV hat 28 Spalten; neu ist `answer_timestamp` (nach `answer_comment`). Der Wert in der Datei wird **nie** übernommen; Änderungen daran sind kein Fehler und werden ohne Meldung ignoriert. Werden abweichende Empfängerantworten übernommen („Antworten aus der Datei übernehmen“), erhält jeder betroffene Eintrag als `answer_timestamp` den **Zeitpunkt des Check-ins**; ist die Antwort danach leer, ist auch `answer_timestamp` leer. Ohne Übernahme bleibt `answer_timestamp` unverändert. Neue Einträge haben `answer_timestamp` leer, außer bei Übernahme mit Antwort. Eine CSV mit 27 Spalten (alter Stand, ohne `answer_timestamp`) wird weiterhin angenommen; die fehlende Spalte gilt als unverändert.
 > - [ ] Angenommen „Antworten aus der Datei übernehmen“ ist angekreuzt und ein Eintrag erhält `answer` `y`, wenn am 21.11.2026 um 15:00:00 eingecheckt wird, dann hat er `answer_timestamp` `2026-11-21T15:00:00`
@@ -19,18 +21,19 @@
 
 ## Dependencies
 - Requires: PROJ-8 (Fachliches Regelwerk) — Prüfung, Prüfbericht, Auffüllen führender Nullen
-- Requires: PROJ-9 (Check-out CSV) — Sperre, Stand beim Check-out, CSV-Aufbau
+- Requires: PROJ-9 (Check-out) — Sperre, Stand beim Check-out, Aufbau der Excel-Datei *(Refinement 2026-11-25)*
 - Requires: PROJ-7 (DMRL-Ansicht) — Aktion „Check-in", Anzeige von Status und Sperre
 - Requires: PROJ-17 (DMRL-Berechtigungen) — Berechtigung des Sperrinhabers
-- Wird genutzt von: PROJ-20 (XML-Prüfung & CSV-Konvertierung) — konvertierte CSV, auch mit Empfängerantworten
+- Wird genutzt von: PROJ-20 (XML-Prüfung & CSV-Konvertierung) — konvertierte CSV, auch mit Empfängerantworten (CSV bleibt dafür zulässig)
+- Verwandt: PROJ-18 (DMRL-Export) — exportierte CSV- und Excel-Dateien können bei eigener Sperre eingecheckt werden *(Refinement 2026-11-25)*
 - Wirkt auf: PROJ-14 (Freigabestatus) — Aufhebung der Freigabe bei Änderung; PROJ-4/5/6 — „im Workflow verwendet"
 - Wirkt auf: PROJ-1 (Demo-Daten) — DM-Ausgabetyp der Demo-Einträge wird aus dem Eintragstyp abgeleitet, damit die Demo-DMRLs die Typ-Regel erfüllen *(Refinement 2026-11-16)*
 
 ## Beschreibung
-Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlichen Regelwerk (PROJ-8) gegen den Stand beim Check-out geprüft. Nur eine fehlerfreie Datei kann — nach Sichtung einer Zusammenfassung — übernommen werden; danach ist die Sperre aufgehoben. Eine fehlerhafte Datei wird vollständig abgelehnt, die Sperre bleibt bestehen.
+Der Sperrinhaber lädt die bearbeitete **Excel-Datei (.xlsx)** oder eine **CSV-Datei** hoch *(Refinement 2026-11-25)*. Sie wird nach dem fachlichen Regelwerk (PROJ-8) gegen den Stand beim Check-out geprüft. Nur eine fehlerfreie Datei kann — nach Sichtung einer Zusammenfassung — übernommen werden; danach ist die Sperre aufgehoben. Eine fehlerhafte Datei wird vollständig abgelehnt, die Sperre bleibt bestehen.
 
 ## Ablauf
-1. Sperrinhaber wählt **„Check-in"** in der DMRL-Ansicht und wählt eine CSV-Datei.
+1. Sperrinhaber wählt **„Check-in"** in der DMRL-Ansicht und wählt eine Excel-Datei (`.xlsx`) oder CSV-Datei (`.csv`) *(Refinement 2026-11-25)*.
 2. Prüfung nach PROJ-8 (Gruppen S, A, B, C, D, E, I, F) gegen den Stand beim Check-out. Abweichende Antwortfelder (Gruppe K) sind kein Fehler mehr, sondern werden zur Übernahme angeboten *(Refinement 2026-11-14)*. Zu jedem Eintrag mit Eintragstyp wird geprüft, ob der DM-Ausgabetyp passt (PROJ-8 Regel F, s. „Eintragstyp ↔ DM-Ausgabetyp“) *(Refinement 2026-11-16)*.
 3. **Fehler →** Prüfbericht (mit Download), nichts übernommen, Sperre bleibt. Erneuter Upload möglich.
 4. **Keine Fehler →** Zusammenfassung:
@@ -40,6 +43,23 @@ Der Sperrinhaber lädt die bearbeitete CSV-Datei hoch. Sie wird nach dem fachlic
    - **Abweichende Empfängerantworten (N Einträge)** *(Refinement 2026-11-14)*: nur wenn `answer` oder `answer_comment` in der Datei vom Stand der DMRL abweichen (bei neuen Einträgen: nicht leer). Liste je Eintrag: DMC, Antwort alt → neu, Begründung alt → neu. Darunter das Kästchen **„Antworten aus der Datei übernehmen“**, standardmäßig **nicht** angekreuzt, mit dem Hinweis „Übernommene Antworten sind nur Information — freigegeben wird ein Eintrag weiterhin nur durch einen REPLY.“
 5. **„Übernehmen"** → Daten übernommen, Status gesetzt (s. u.), Sperre aufgehoben, Erfolgsmeldung.
    **„Abbrechen"** → nichts übernommen, Sperre bleibt.
+
+## Dateiformate *(Refinement 2026-11-25)*
+| Punkt | Excel (`.xlsx`) | CSV (`.csv`) |
+|---|---|---|
+| Herkunft | Check-out (PROJ-9), Excel-Export (PROJ-18) | PROJ-20, CSV-Export (PROJ-18), Check-out aus der Zeit vor der Umstellung |
+| Gelesener Bereich | Tabellenblatt **„Einträge“**; weitere Blätter werden ignoriert. Fehlt das Blatt: „Tabellenblatt ‚Einträge‘ fehlt“ (Datei abgelehnt) | ganze Datei |
+| Zeile 1 / ab Zeile 2 | Kopfzeile mit den Feldnamen / je Eintrag eine Zeile — wie CSV (PROJ-8, Gruppe S) | unverändert |
+| Zellwerte | **gespeicherter Wert:** Text unverändert; Formel → das in der Datei gespeicherte Ergebnis; Zahl → als Text ohne Formatierung (`1` → „1“, dann Auffüllen führender Nullen wie bisher); Datumszelle → Excel-Seriennummer als Text (fällt dann durch die Formatprüfung, PROJ-8 A) | unverändert |
+| Vollständig leere Zeilen | werden ignoriert (z. B. nach Löschen von Zellinhalten) | wie bisher |
+| Formelschutz-Apostroph | wird **nicht** entfernt (in Excel-Dateien wird keiner geschrieben) | ein vorangestelltes `'` wird wie bisher entfernt (BUG-QA2-1) |
+| Kodierung | entfällt (keine UTF-8-Prüfung) | UTF-8 streng geprüft |
+| Maximale Größe | 5 MB | 5 MB |
+| Beschädigte / keine echte .xlsx-Datei | „Excel-Datei kann nicht gelesen werden“ (Datei abgelehnt) | — |
+
+**Nicht angenommen:** `.xls`, `.xlsm`, `.ods` und alle anderen Endungen — „Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen“.
+
+Nach dem Einlesen sind beide Formate gleichwertig: dieselbe Prüfung (PROJ-8), dieselbe Zusammenfassung, Antwortübernahme und Übernahme. Positionsangaben im Prüfbericht nennen die **Zeilennummer** (wie bisher); bei Excel entspricht sie der Zeile im Blatt „Einträge“. Dateifehler (Typ, Größe, Kodierung, fehlendes Blatt, nicht lesbar) werden wie bisher im Auswahlschritt gemeldet und nicht im Verlauf protokolliert.
 
 ## Eintragstyp ↔ DM-Ausgabetyp *(Refinement 2026-11-16)*
 Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eintragstyp (`dmentry/@type`, CSV-Spalte `dmentryType`) passen. Geprüft wird **jeder Eintrag der Datei mit Eintragstyp** — neu, geändert und unverändert (auch Altbestand).
@@ -55,8 +75,8 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - Meldung: „Eintragstyp ‚[n|c|d]‘ verlangt DM-Ausgabetyp ‚[zulässige Werte]‘ — gefunden: ‚[Wert]‘“ (z. B. „Eintragstyp ‚c‘ verlangt DM-Ausgabetyp ‚changed‘, ‚revised‘ oder ‚status‘ — gefunden: ‚new‘“).
 - Ein ungültiger Ausgabetyp (z. B. `change`) bleibt ein Formatfehler nach Regel A; dann wird keine zusätzliche Typ-Meldung erzeugt.
 - Gültige DM-Ausgabetypen (Regel A) sind jetzt `new`, `changed`, `revised`, `deleted` und `status` (in allen drei Schemas gültig).
-- Gilt **nur beim CSV-Check-in** — nicht beim REPLY-Import (Regel G verbietet dort ohnehin Änderungen an den Ausgabedaten) und nicht im Prüfwerkzeug PROJ-20.
-- Korrigiert der Bearbeiter den Ausgabetyp in der CSV, ist das eine fachliche Änderung: der Eintrag wird *in Bearbeitung* (wie jede Feldänderung).
+- Gilt **nur beim Check-in** (Excel und CSV) — nicht beim REPLY-Import (Regel G verbietet dort ohnehin Änderungen an den Ausgabedaten) und nicht im Prüfwerkzeug PROJ-20.
+- Korrigiert der Bearbeiter den Ausgabetyp in der Datei, ist das eine fachliche Änderung: der Eintrag wird *in Bearbeitung* (wie jede Feldänderung).
 
 ## Wer darf einchecken
 | Benutzer | Check-in |
@@ -101,10 +121,11 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - Workflow-Verlauf: „Check-in" mit Datum, Benutzer und Anzahl neu/geändert/unverändert (Anzeige → PROJ-15); bei Übernahme zusätzlich „N Antworten aus der Datei übernommen" *(Refinement 2026-11-14)*.
 - Zusammenfassung und Workflow-Verlauf nennen bei neuen Einträgen ohne Eintragstyp zusätzlich „davon N als freigegeben übernommen“; wird die DMRL dadurch *freigegeben*, enthält der Verlauf außerdem „DMRL freigegeben (Übernahme Bestand)“ *(Refinement 2026-11-18)*.
 - Ab dem ersten abgeschlossenen Check-in gelten DMRL, System und Originator-Organisation als **im Workflow verwendet** (PROJ-4/5/6) — auch wenn nichts geändert wurde.
-- Die CSV-Datei wird nicht archiviert.
+- Die eingecheckte Datei (Excel oder CSV) wird nicht archiviert.
 
 ## User Stories
-- Als **Bearbeiter** möchte ich meine bearbeitete CSV einchecken, damit meine Änderungen in die DMRL übernommen werden.
+- Als **Bearbeiter** möchte ich meine bearbeitete Excel-Datei einchecken, damit meine Änderungen in die DMRL übernommen werden *(Refinement 2026-11-25)*.
+- Als **Bearbeiter** möchte ich weiterhin eine CSV einchecken können (z. B. aus der XML-Prüfung PROJ-20 oder einem älteren Check-out), damit diese Wege nicht wegfallen *(Refinement 2026-11-25)*.
 - Als **Bearbeiter** möchte ich vor der Übernahme sehen, welche Einträge neu oder geändert sind, damit ich keine ungewollten Änderungen übernehme.
 - Als **Bearbeiter** möchte ich bei Fehlern einen vollständigen Prüfbericht erhalten und die Datei korrigiert erneut hochladen können, ohne erneut auschecken zu müssen.
 - Als **Bearbeiter** möchte ich nach dem Check-in sehen, welche Einträge *in Bearbeitung* sind, damit ich weiß, was mit dem nächsten SEND an den Empfänger geht.
@@ -116,11 +137,15 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 ## Out of Scope
 - Prüfregeln selbst → PROJ-8
 - Check-out, Rücknahme, Aufheben der Sperre → PROJ-9
-- Excel-Format (.xlsx) → nur CSV (PROJ-9)
+- ~~Excel-Format (.xlsx) → nur CSV (PROJ-9)~~ → jetzt im Umfang *(Refinement 2026-11-25)*
+- Altes Excel-Format (.xls), Makro-Mappen (.xlsm), OpenDocument (.ods) *(Refinement 2026-11-25)*
+- Lesen anderer Tabellenblätter als „Einträge“, Zusammenführen mehrerer Blätter *(Refinement 2026-11-25)*
+- Neuberechnung von Formeln beim Check-in — es zählt das in der Datei gespeicherte Ergebnis *(Refinement 2026-11-25)*
+- Umstellung von PROJ-20 auf Excel — ggf. eigenes Refinement von PROJ-20 *(Refinement 2026-11-25)*
 - Teilweise Übernahme (nur fehlerfreie Einträge) — alles oder nichts (PROJ-8)
 - Bearbeiten einzelner Einträge direkt in der Anwendung
 - Check-in durch Administrator bei fremder Sperre
-- Archivierung der CSV-Datei
+- Archivierung der eingecheckten Datei
 - Anzeige des Workflow-Verlaufs → PROJ-15
 - Rückgängig machen eines Check-ins
 - Übernahme von Empfängerantworten je Eintrag einzeln — nur alle oder keine *(Refinement 2026-11-14)*
@@ -141,7 +166,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - [ ] Angenommen ein Administrator hat die DMRL selbst ausgecheckt, wenn er „Check-in" wählt, dann ist der Check-in wie für einen Bearbeiter möglich
 
 ### Prüfung
-- [ ] Angenommen eine Datei wird hochgeladen, wenn sie keine `.csv`-Datei ist, dann erscheint „Bitte eine CSV-Datei auswählen" und es wird nichts geprüft
+- [ ] Angenommen eine Datei wird hochgeladen, wenn sie weder `.xlsx` noch `.csv` ist (z. B. `.xls`, `.ods`, `.txt`), dann erscheint „Bitte eine Excel- (.xlsx) oder CSV-Datei auswählen" und es wird nichts geprüft *(Refinement 2026-11-25)*
 - [ ] Angenommen eine CSV ist nicht in UTF-8 kodiert, wenn sie geprüft wird, dann wird sie mit „Datei ist nicht UTF-8-kodiert" abgelehnt
 - [ ] Angenommen die Datei enthält Fehler nach PROJ-8, wenn die Prüfung endet, dann erscheint der Prüfbericht mit allen Fehlern, „Übernehmen" ist nicht verfügbar und die Sperre bleibt bestehen
 - [ ] Angenommen ein Prüfbericht mit Fehlern wird angezeigt, wenn der Bearbeiter eine korrigierte Datei hochlädt, dann wird diese erneut geprüft, ohne erneuten Check-out
@@ -151,6 +176,26 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 
 - [ ] Angenommen bei einem Eintrag wurde der Eintragstyp entfernt (mit oder ohne geänderte Antwort) und er wäre nach dem Check-in *in Bearbeitung*, wenn geprüft wird, dann meldet der Prüfbericht „Eintrag in Bearbeitung braucht einen Eintragstyp (n, c oder d) — sonst kann er nicht gesendet werden.“ und der Check-in ist nicht möglich *(Refinement 2026-11-14, BUG-QA4-1)*
 - [ ] Angenommen ein Eintrag ist bereits *in Bearbeitung* ohne Eintragstyp (Altbestand vor der Korrektur), wenn eine Datei eingecheckt wird, in der er unverändert ist, dann wird derselbe Fehler gemeldet, damit der Eintragstyp nachgetragen wird *(Refinement 2026-11-14)*
+
+### Excel-Datei *(Refinement 2026-11-25)*
+- [ ] Angenommen die DMRL wurde als Excel ausgecheckt, wenn die Datei unverändert eingecheckt wird, dann ist die Prüfung fehlerfrei und die Zusammenfassung zeigt nur unveränderte Einträge
+- [ ] Angenommen die ausgecheckte Excel-Datei wurde in MS Excel bearbeitet (neue Zeile mit Eintragstyp `n`, ein Tech Name geändert) und gespeichert, wenn sie eingecheckt wird, dann zeigt die Zusammenfassung 1 neu und 1 geändert, wie bei einer CSV
+- [ ] Angenommen eine Excel-Datei enthält kein Tabellenblatt „Einträge“ (z. B. umbenannt), wenn sie hochgeladen wird, dann erscheint „Tabellenblatt ‚Einträge‘ fehlt“, nichts wird geprüft und die Sperre bleibt
+- [ ] Angenommen die Excel-Datei enthält neben „Einträge“ weitere Blätter (auch vor „Einträge“), wenn eingecheckt wird, dann werden nur die Zeilen aus „Einträge“ gelesen
+- [ ] Angenommen eine Zelle enthält eine Formel (z. B. `=B2`), wenn eingecheckt wird, dann wird das in der Datei gespeicherte Ergebnis als Wert gelesen
+- [ ] Angenommen in der Spalte `security` steht eine Zahlzelle `1`, wenn eingecheckt wird, dann wird sie zu `01` aufgefüllt, gilt als unverändert und ein Hinweis auf das Auffüllen erscheint
+- [ ] Angenommen in der Spalte `day` steht eine Datumszelle, wenn eingecheckt wird, dann meldet der Prüfbericht einen Formatfehler (PROJ-8 A) und der Check-in ist nicht möglich
+- [ ] Angenommen ein Wert in der Excel-Datei beginnt mit `'=` als echter Text, wenn eingecheckt wird, dann bleibt der Wert unverändert (kein Entfernen des Apostrophs wie bei CSV)
+- [ ] Angenommen zwischen den Einträgen stehen vollständig leere Zeilen, wenn eingecheckt wird, dann werden sie ignoriert und erzeugen keinen Fehler
+- [ ] Angenommen eine Datei mit Endung `.xlsx` ist beschädigt oder keine Excel-Datei, wenn sie hochgeladen wird, dann erscheint „Excel-Datei kann nicht gelesen werden“ und die Sperre bleibt
+- [ ] Angenommen eine Excel-Datei ist größer als 5 MB, wenn sie hochgeladen wird, dann wird sie mit „Datei zu groß" abgelehnt
+- [ ] Angenommen der Bearbeiter hat die DMRL ausgecheckt, wenn er eine Excel-Datei aus dem Export (PROJ-18) derselben DMRL eincheckt, dann wird sie wie jede Datei geprüft (ersetzt das bisherige PROJ-18-Kriterium „.xlsx wird abgelehnt“)
+- [ ] Angenommen eine Excel-Datei enthält Fehler nach PROJ-8, wenn die Prüfung endet, dann nennt der Prüfbericht die Zeilennummer des Blatts „Einträge“
+
+### CSV weiterhin zulässig *(Refinement 2026-11-25)*
+- [ ] Angenommen eine über PROJ-20 konvertierte CSV wird bei eigener Sperre eingecheckt, wenn sie korrekt ist, dann wird sie wie bisher angenommen
+- [ ] Angenommen eine DMRL wurde vor der Umstellung als CSV ausgecheckt, wenn die alte CSV eingecheckt wird, dann wird sie wie bisher geprüft und übernommen
+- [ ] Angenommen eine CSV-Datei enthält einen mit `'` entschärften Wert (BUG-QA2-1), wenn eingecheckt wird, dann wird das Apostroph wie bisher entfernt
 
 ### Eintragstyp ↔ DM-Ausgabetyp *(Refinement 2026-11-16)*
 - [ ] Angenommen ein Eintrag hat Eintragstyp `n` und DM-Ausgabetyp `changed`, wenn geprüft wird, dann meldet der Prüfbericht „Eintragstyp ‚n‘ verlangt DM-Ausgabetyp ‚new‘ — gefunden: ‚changed‘“ und der Check-in ist nicht möglich
@@ -214,7 +259,12 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - **Datei aus einem älteren Check-out:** wird gegen den aktuellen Stand beim Check-out geprüft; Abweichungen erscheinen als Änderungen oder Fehler.
 - **Sperre wird während der Prüfung/Zusammenfassung vom Administrator aufgehoben:** „Übernehmen" schlägt fehl mit „Die Sperre wurde aufgehoben — Check-in nicht möglich"; nichts übernommen.
 - **Berechtigung wird während der Sperre entzogen:** nicht möglich (PROJ-17).
-- **Sehr große Datei (z. B. > 5 MB):** wird mit „Datei zu groß" abgelehnt.
+- **Sehr große Datei (z. B. > 5 MB):** wird mit „Datei zu groß" abgelehnt — für Excel und CSV.
+- **Excel-Datei noch in Excel geöffnet:** gelesen wird der zuletzt gespeicherte Stand; ungespeicherte Änderungen fehlen (die Zusammenfassung zeigt den Stand) *(Refinement 2026-11-25)*.
+- **Spalten in Excel umsortiert oder ergänzt:** wie bei CSV — die Kopfzeile muss den festen Feldnamen entsprechen, sonst Fehler nach PROJ-8 Gruppe S *(Refinement 2026-11-25)*.
+- **Autofilter in Excel aktiv (Zeilen ausgeblendet):** ausgeblendete Zeilen werden trotzdem gelesen — ein Filter ändert keine Daten *(Refinement 2026-11-25)*.
+- **Formel ohne gespeichertes Ergebnis** (z. B. von einem Werkzeug erzeugt, das nicht rechnet): Zelle gilt als leer; ggf. Fehler nach PROJ-8 (Pflichtfeld) *(Refinement 2026-11-25)*.
+- **Excel-Datei einer anderen DMRL:** fällt wie bei CSV durch die Prüfung (MI, fehlende Einträge) *(Refinement 2026-11-25)*.
 - **Leere Datei / nur Kopfzeile:** Fehler laut PROJ-8.
 - **Speicher voll (localStorage):** Übernahme schlägt mit Fehlermeldung fehl, Datenbestand und Sperre bleiben unverändert (PROJ-1).
 - **Nur `answer_comment` weicht ab** (Antwort gleich): wird wie jede Antwortabweichung behandelt *(Refinement 2026-11-14)*.
@@ -233,11 +283,13 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 - **Zwei Tabs:** Übernahme im zweiten Tab nach bereits erfolgtem Check-in schlägt fehl, da keine Sperre mehr besteht.
 
 ## Technical Requirements (optional)
-- Prüfung und Übernahme im Browser, ohne Serverfunktion
-- 1.000 Einträge in wenigen Sekunden prüfen und übernehmen
+- Prüfung und Übernahme im Browser, ohne Serverfunktion, offline lauffähig (Windows-Offline-Paket) *(Refinement 2026-11-25)*
+- 1.000 Einträge in wenigen Sekunden prüfen und übernehmen — Excel und CSV
 - Maximale Dateigröße 5 MB
+- Lesen von `.xlsx` erfordert einen Excel-Leser (entpacken + Blatt auslesen) — Auswahl (eigener Leser mit vorhandenem `fflate` oder Paket) in `/architecture` *(Refinement 2026-11-25)*
 
 ## Open Questions
+- [ ] Soll PROJ-20 (XML-Prüfung) künftig zusätzlich eine Excel-Datei liefern? → eigenes Refinement von PROJ-20; bis dahin bleibt der CSV-Check-in dafür bestehen (2026-11-25)
 - [x] Soll der Prüfbericht eines abgelehnten Check-ins im Workflow-Verlauf festgehalten werden? → Eintrag „Check-in abgelehnt — n Fehler", Prüfbericht selbst wird nicht gespeichert (PROJ-15)
 
 ## Decision Log
@@ -267,6 +319,13 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 | Regel „Neuer Eintrag muss Eintragstyp ‚n' haben“ entfällt; neue Einträge dürfen `n`, `c`, `d` oder keinen Eintragstyp haben | Vorgabe Product Owner: Eine DMRL aus einem laufenden Projekt hat einen Bearbeitungsstand erreicht, der übernommen werden soll | 2026-11-18 |
 | Neue Einträge ohne Eintragstyp werden beim Check-in *freigegeben* (abgestimmter Bestand) | Vorgabe Product Owner; Alternative „*in Bearbeitung*“ verworfen, da solche Einträge nie gesendet würden (Grundsatz BUG-QA4-1) | 2026-11-18 |
 | Sind nach dem Check-in alle Einträge *freigegeben*, wird die DMRL *freigegeben* mit Nachweis „Übernahme Bestand per Check-in“ und Freigabestand | Grundregel PROJ-14 (DMRL *freigegeben* ⇔ alle Einträge *freigegeben*); „DMRL bleibt *in Bearbeitung*“ verworfen — Daten wären beim Laden ungültig und ein SEND nie möglich | 2026-11-18 |
+| Check-in nimmt `.xlsx` **und** `.csv` an | Vorgabe Product Owner; CSV bleibt nötig für PROJ-20, CSV-Export und offene Check-outs aus der CSV-Zeit | 2026-11-25 |
+| Gelesen wird nur das Blatt „Einträge“; fehlt es → Datei abgelehnt; weitere Blätter ignoriert | Eindeutig, auch bei Hilfsblättern des Bearbeiters; „erstes Blatt“ verworfen (falsch bei verschobenen Blättern) | 2026-11-25 |
+| Zellen mit gespeichertem Wert: Formel → Ergebnis, Zahl → Text, Datum → Seriennummer (Formatfehler) | Keine neuen Fehlerarten; „Formeln sind Fehler“ verworfen (zu streng für Hilfsbezüge) | 2026-11-25 |
+| Vollständig leere Zeilen werden in Excel ignoriert | Gelöschte Zellinhalte hinterlassen in Excel leere Zeilen; kein fachlicher Fehler | 2026-11-25 |
+| `.xls`, `.xlsm`, `.ods` nicht angenommen | Nur das Format, das der Check-out erzeugt; keine Makro-Mappen | 2026-11-25 |
+| Apostroph-Entfernung (BUG-QA2-1) nur bei CSV | Excel-Dateien enthalten keinen Formelschutz-Apostroph; echter Text `'=…` bleibt erhalten | 2026-11-25 |
+| Excel-Export (PROJ-18) kann bei eigener Sperre eingecheckt werden | Gleicher Aufbau wie der Check-out; konsistent mit dem CSV-Export | 2026-11-25 |
 | Demo-Daten leiten den Ausgabetyp aus dem Eintragstyp ab (`n` → `new`, `c` → `changed`, `d` → `deleted`, leer → `new`) | Sonst scheitert jeder Check-in der PHUNGUN-Demo (11 Einträge `d` + `new`); gleiche Zuordnung wie PROJ-20 | 2026-11-16 |
 
 ### Technical Decisions
@@ -282,6 +341,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 | Regel K liefert eine Liste statt Fehlern; „Eintragstyp bei Antwortübernahme“ als bedingte Sperre statt Fehler im Prüfbericht | Ohne Häkchen bleibt eine korrekte Datei fehlerfrei; die Sperre greift nur, wenn sie wirklich nötig ist | 2026-11-14 |
 | Ohne Übernahme erhalten neue Einträge leere Antwortfelder | „Bisherige Antworten bleiben“ — neue Einträge hatten keine | 2026-11-14 |
 | Kein neues Datenformat; Verlaufstext um Zusatz erweitert | Keine Migration der gespeicherten Daten nötig | 2026-11-14 |
+| Excel und CSV werden zuerst in dieselbe Zeilenstruktur gelesen; Prüfung, Abgleich und Übernahme bleiben unverändert | Ein Regelwerk für beide Formate; keine doppelte Logik | 2026-11-25 |
 
 ---
 <!-- Sections below are added by subsequent skills -->

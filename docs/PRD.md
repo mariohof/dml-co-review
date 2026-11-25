@@ -9,7 +9,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 - **Externer Empfänger** (kein Systembenutzer) — erhält die DMRL als S1000D-XML, bearbeitet sie und sendet sie als REPLY zurück.
 
 ## Kernabläufe
-1. **Check-out/Check-in (CSV, Bearbeitung z. B. in Excel):** Auschecken sperrt die DMRL; beim Einchecken werden die Einträge nach fachlichen Regeln geprüft, erst danach übernommen und die Sperre aufgehoben.
+1. **Check-out/Check-in (MS-Excel .xlsx, Bearbeitung in Excel; Check-in nimmt auch CSV an):** Auschecken sperrt die DMRL; beim Einchecken werden die Einträge nach fachlichen Regeln geprüft, erst danach übernommen und die Sperre aufgehoben.
 2. **SEND:** Export als S1000D-DMRL-XML in der Issue-Version des Systems, mit XSD-Validierung (`dml.xsd`). Jeder SEND erzeugt einen neuen Versionsindex `NNNNN-JJJJ` (5-stellig, führende Nullen, z. B. `00001-2026`); im neuen Jahr beginnt der Zähler wieder bei `00001`.
 3. **REPLY:** Import der Empfänger-XML mit XSD-Validierung und fachlicher Prüfung; jeder Eintrag erhält den Status *freigegeben* oder *zu überarbeiten*.
 4. **Freigabe:** Eine DMRL ist nur freigegeben, wenn alle Einträge vom Empfänger freigegeben sind. Ausnahme: Beim Check-in kann ein bereits abgestimmter Bestand (z. B. aus einem laufenden Projekt) übernommen werden — neue Einträge ohne Eintragstyp gelten dann als freigegeben (PROJ-10). Nicht freigegebene DMRLs dürfen nicht in einem Technische-Publikation-Projekt verwendet werden. Eine freigegebene DMRL ist nicht eingefroren — sie behält ihren Status, bis eine Änderung über Check-out/Check-in erfolgt.
@@ -24,7 +24,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Benutzer-, Organisations-, System- und DMRL-Verwaltung, DMRL-Berechtigungen (Admin) | Approved (PROJ-3–6, PROJ-17) |
 | P0 (MVP) | DMRL-Ansicht mit Einträgen & Status | Approved (PROJ-7) |
 | P0 (MVP) | Fachliches Regelwerk | Approved (PROJ-8) |
-| P0 (MVP) | Check-out/Check-in CSV mit Sperre | Approved (PROJ-9, PROJ-10) |
+| P0 (MVP) | Check-out/Check-in MS-Excel (Check-in auch CSV) mit Sperre | Planned (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML/Excel (jederzeit, ohne Sperre) | Approved (PROJ-18; Excel-Export ergänzt 2026-11-24) |
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Approved (PROJ-11) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Approved (PROJ-12, PROJ-13) |
