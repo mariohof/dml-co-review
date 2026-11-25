@@ -1,6 +1,6 @@
 # PROJ-9: Check-out (MS-Excel)
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-25
 
@@ -178,6 +178,10 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 | Gemeinsamer CSV-Schreiber (PapaParse) und gemeinsame Spaltenliste mit dem CSV-Leser (PROJ-8) | Rundlauf ohne Abweichung; auch PROJ-14/18 | 2026-11-12 |
 | Gemeinsamer Download-Helfer für CSV/XML/Prüfberichte | Einheitliches Herunterladen | 2026-11-12 |
 | Dateiname beim erneuten Download mit Jahr des Check-outs | Identische Datei | 2026-11-12 |
+| Check-out-Excel mit dem vorhandenen Excel-Schreiber aus PROJ-18 (`fflate`), kein neues Paket | Bewährt, offline, gleiches Erscheinungsbild wie der Export | 2026-11-25 |
+| Gemeinsamer Baustein „Einträge als Excel“ (Blattname, Spaltenliste, DMC-Sortierung) für Export, Check-out und als Gegenstück zum Excel-Leser (PROJ-10) | Schreiben und Lesen können nicht auseinanderlaufen | 2026-11-25 |
+| Datenmodell der Sperre unverändert (Kopie der Einträge, keine Datei) | Keine Migration; alte CSV-Check-outs liefern beim erneuten Download sofort `.xlsx` | 2026-11-25 |
+| PROJ-9 und PROJ-10 werden gemeinsam umgesetzt und ausgeliefert | Check-out `.xlsx` ohne Excel-Check-in würde den Rundlauf brechen | 2026-11-25 |
 | Excel-Datei aus der gespeicherten Kopie in der Sperre — wie bisher die CSV | Erneuter Download identisch; Check-in-Vergleich unverändert | 2026-11-25 |
 
 ---
@@ -239,6 +243,65 @@ Keine neuen Objekte — genutzt wird die **Sperre an der DMRL** aus PROJ-1: Benu
 ### H) Testbarkeit
 - Unit-Tests: Verfügbarkeitsregeln (alle Zeilen der Tabelle), CSV-Schreiber (Kopfzeile, Reihenfolge, BOM, Anführungszeichen, führende Nullen, Umlaute), Rundlauf CSV schreiben → CSV lesen (PROJ-8) ohne Änderung, Sperre/Verlauf nach Check-out, Rücknahme, Aufhebung.
 - E2E: Check-out Demo PHUNGUN nicht möglich (gesendet); Check-out Fahrzeug → Datei `DML-GTFDEMO-D0815-C-[Jahr].csv`, Sperre sichtbar; anderer Benutzer sieht Sperre; Rücknahme; Admin hebt Sperre auf.
+
+### I) Refinement 2026-11-25 — Check-out als MS-Excel (.xlsx)
+Ergänzt das bestehende Design; Muster, Verfügbarkeitsregeln, Sperre und Abläufe (A–D) gelten unverändert. Es ändert sich nur, **welche Datei** aus der gespeicherten Kopie entsteht. Weiterhin alles im Browser, kein Backend, offline lauffähig.
+
+**Komponenten (nur Texte und Dateityp ändern sich)**
+```
+DMRL-Ansicht (PROJ-7) — Aktionsleiste
++-- „Check-out" → Bestätigungsdialog
+|   +-- Dateiname jetzt …-{Jahr}.xlsx · Sperrhinweis unverändert
++-- nur Sperrinhaber:
+|   +-- „Excel-Datei erneut herunterladen" (bisher „CSV erneut herunterladen")
+|   +-- „Check-out zurücknehmen" → Hinweis: Änderungen in der Excel-Datei gehen verloren
++-- nur Administrator bei fremder Sperre: „Sperre aufheben" (unverändert)
+```
+Keine neuen Bildschirme, keine neuen shadcn-Komponenten.
+
+**Datenmodell**
+- **Unverändert.** Die Sperre speichert weiterhin Benutzer, Zeitpunkt und die Kopie der Einträge — nicht die Datei. Deshalb ist **keine Umstellung gespeicherter Daten** nötig: Auch eine DMRL, die vor der Umstellung als CSV ausgecheckt wurde, liefert beim erneuten Download sofort eine Excel-Datei aus ihrer Kopie.
+- Workflow-Verlauf unverändert („Check-out (N Einträge)").
+
+**Gemeinsamer Baustein „Einträge als Excel-Datei"**
+- Heute baut der Excel-Export (PROJ-18) die Datei aus Kopfzeile + Einträgen (sortiert nach DMC) mit dem vorhandenen Excel-Schreiber. Genau dieser Teil wird zu **einem gemeinsamen Baustein**, den Export und Check-out nutzen — mit demselben Blattnamen „Einträge" und derselben Spaltenliste wie der CSV-Schreiber/-Leser (PROJ-8).
+- Blattname und Spaltenliste stehen an **einer** Stelle; der Excel-Leser des Check-ins (PROJ-10) nutzt dieselbe Definition, sodass Schreiben und Lesen nicht auseinanderlaufen können.
+- Der Excel-Schreiber selbst bleibt unverändert: alle Zellen und ganzen Spalten als Text, Kopfzeile fett und fixiert, Autofilter, Spaltenbreiten, Entfernen unzulässiger Steuerzeichen, kein Formelschutz-Apostroph (Textzellen werden nie als Formel ausgewertet).
+
+**Abläufe (Änderung gegenüber D)**
+- **Check-out:** wie bisher erst speichern (Sperre + Kopie + Verlauf), dann **Excel-Datei** aus der Kopie erzeugen und herunterladen.
+- **Erneuter Download:** Excel-Datei aus der Kopie; Dateiname mit dem Jahr des Check-outs → inhaltlich identische Datei.
+- Der gemeinsame Download-Helfer (Bytes + Dateityp) existiert bereits aus PROJ-18.
+
+**Auswirkung auf bestehende Teile**
+| Teil | Änderung |
+|---|---|
+| Check-out-Workflow | Dateiname `.xlsx`; Datei aus der Kopie als Excel statt CSV |
+| Aktionsleiste / Dialoge | Beschriftung „Excel-Datei erneut herunterladen", Dateiname im Dialog, Hinweistext beim Zurücknehmen |
+| Excel-Export (PROJ-18) | nutzt den gemeinsamen Baustein — Ergebnis unverändert |
+| CSV-Schreiber | bleibt für CSV-Export (PROJ-18), Freigabestand (PROJ-14), Prüfbericht und PROJ-20 |
+| Check-in (PROJ-10) | muss `.xlsx` lesen können — **Abhängigkeit, s. Reihenfolge** |
+
+**Reihenfolge der Umsetzung**
+PROJ-9 darf **nicht allein** ausgeliefert werden: Sobald der Check-out `.xlsx` liefert, der Check-in aber nur `.csv` annimmt, kann der Bearbeiter seine eigene Datei nicht mehr einchecken (Rundlauf gebrochen). PROJ-9 und PROJ-10 werden deshalb **gemeinsam** umgesetzt (ein `/frontend`-Lauf oder PROJ-10 zuerst) und gemeinsam getestet.
+
+**Technische Entscheidungen (für PM erklärt)**
+| Entscheidung | Warum |
+|---|---|
+| Vorhandenen Excel-Schreiber aus PROJ-18 nutzen | Bewährt (QA bestanden), offline, kein neues Paket; Export und Check-out sehen gleich aus. |
+| Gemeinsamer Baustein „Einträge als Excel" für Export und Check-out | Ein Aufbau an einer Stelle — kein Auseinanderlaufen von Export, Check-out und Check-in. |
+| Datei weiterhin aus der gespeicherten Kopie, nicht gespeichert | Kein Speicherbedarf für Dateien im Browser; erneuter Download identisch; alte CSV-Check-outs funktionieren ohne Umstellung. |
+| PROJ-9 und PROJ-10 gemeinsam ausliefern | Sonst kann eine ausgecheckte Datei nicht wieder eingecheckt werden. |
+
+**Abhängigkeiten (Pakete)**
+- **Keine neuen Pakete** — Excel-Schreiber (mit `fflate`, bereits installiert) aus PROJ-18.
+
+**Testbarkeit**
+- Unit: Dateiname `.xlsx` mit Jahr des Check-outs; Datei aus der Kopie enthält Blatt „Einträge", 28 Spalten in fester Reihenfolge, alle Einträge nach DMC, führende Nullen als Text, Formelwerte als Text; erneuter Download identisch; Check-out einer DMRL ohne Einträge → nur Kopfzeile; Sperre aus der CSV-Zeit → Excel-Datei; Export liefert nach Umbau dasselbe wie vorher.
+- Rundlauf (zusammen mit PROJ-10): Excel aus Check-out → Excel-Leser → Prüfung ohne Änderung.
+- Komponenten: Beschriftung „Excel-Datei erneut herunterladen", Dateiname im Dialog.
+- E2E: Check-out Fahrzeug → Download `DML-GTFDEMO-D0815-C-[Jahr].xlsx`; Datei öffnen (Blatt, Kopfzeile, Werte); bestehende E2E-Tests, die die Check-out-CSV bearbeiten und einchecken, werden auf die Excel-Datei umgestellt (bzw. erzeugen die zu prüfende CSV über den CSV-Export).
+- Manuell (Abnahme): Datei per Doppelklick in MS Excel öffnen — keine Reparaturmeldung, `01` bleibt `01`, neue Zeile tippen und speichern.
 
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend PROJ-9`_
