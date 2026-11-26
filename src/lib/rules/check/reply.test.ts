@@ -98,6 +98,20 @@ describe("REPLY-Prüfung", () => {
     expect(m.some((x) => x.startsWith("G: Feld techname wurde gegenüber dem SEND verändert"))).toBe(true)
   })
 
+  it("Regel G: fehlendes security im REPLY ist keine Änderung, abweichendes security schon (Refinement 2026-11-26)", () => {
+    // Kopf-security (erstes Vorkommen) bleibt, Einträge ohne security
+    let first = true
+    const withoutEntrySecurity = demoReply.replace(/\s*<security class="01"\/>/g, (match) => (first ? ((first = false), match) : ""))
+    expect(withoutEntrySecurity.match(/<security /g)).toHaveLength(1)
+    const result = runReplyCheck(withoutEntrySecurity, context)
+    expect(result.report.findings).toEqual([])
+    expect(result.candidates.every((c) => c.fields.security === "")).toBe(true)
+
+    let count = 0
+    const changed = demoReply.replace(/<security class="01"\/>/g, (match) => (count++ === 1 ? '<security class="02"/>' : match))
+    expect(messages(changed).filter((m) => m.startsWith("G: Feld security wurde gegenüber dem SEND verändert"))).toHaveLength(1)
+  })
+
   it("Gruppe H: Antwort fehlt, Antwort ohne Eintragstyp, Begründung fehlt", () => {
     const withoutAnswer = demoReply.replace(/<answer answer="y">\s*<remarks><\/remarks>\s*<\/answer>/, "")
     expect(messages(withoutAnswer)).toContain("H: Antwort fehlt.")

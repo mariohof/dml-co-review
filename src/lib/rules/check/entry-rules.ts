@@ -45,13 +45,16 @@ export const FORMAT_RULES: Partial<Record<FieldName, FormatRule>> = {
   answer: oneOf(["y", "n"], "leer, y oder n"),
 }
 
+/** `security` je Eintrag ist optional — in allen Schemas `minOccurs="0"` (PROJ-8 Refinement 2026-11-26) */
 export const MANDATORY_CHECKIN: FieldName[] = [
   "modelic", "sdc", "chapnum", "section", "subsect", "subject", "discode", "discodev", "incode", "incodev", "itemloc",
-  "techname", "infoname", "language", "country", "security", "rpc", "issno", "type", "day", "month", "year",
+  "techname", "infoname", "language", "country", "rpc", "issno", "type", "day", "month", "year",
 ]
 /** Im REPLY-XML dürfen Ausgabedaten fehlen (PROJ-8 B, Ausnahme REPLY) */
 export const OPTIONAL_IN_REPLY: FieldName[] = ["issno", "type", "day", "month", "year"]
 export const MANDATORY_REPLY = MANDATORY_CHECKIN.filter((f) => !OPTIONAL_IN_REPLY.includes(f))
+/** Regel G: Diese Felder dürfen im REPLY fehlen, der Wert der Anwendung bleibt (PROJ-8 B/G; `security` seit 2026-11-26) */
+export const MAY_BE_MISSING_IN_REPLY: FieldName[] = [...OPTIONAL_IN_REPLY, "security"]
 
 const finding = (group: Finding["group"], c: Candidate, message: string, field?: string): Finding => ({
   severity: "fehler",

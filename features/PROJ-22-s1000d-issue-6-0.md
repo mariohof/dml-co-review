@@ -60,7 +60,7 @@ Zusätzlich erhält die Demo ein viertes System **„Fahrrad BIKE60"** (Issue 6.
 ### D. REPLY (PROJ-13) und XML-Prüfung (PROJ-20)
 - [ ] Angenommen ein gültiger 6.0-REPLY zu einem SEND einer 6.0-DMRL, wenn der Bearbeiter ihn importiert, dann werden die Antworten (freigegeben / zu überarbeiten, Begründung) wie bei 4.2/5.0 übernommen
 - [ ] Angenommen der Bearbeiter öffnet die XML-Prüfung, wenn er die Issue auswählt, dann steht 6.0 zur Auswahl
-- [ ] Angenommen die Beispiel-DMRL 6.0, wenn sie in der XML-Prüfung gegen Issue 6.0 geprüft wird, dann werden alle 79 Einträge gelesen, die XSD-Prüfung ist bestanden und die Regelverstöße der Datei (leere Sicherheitseinstufung, uneinheitliche Tech/Info Names) werden im Bericht aufgeführt
+- [ ] Angenommen die Beispiel-DMRL 6.0, wenn sie in der XML-Prüfung gegen Issue 6.0 geprüft wird, dann werden alle 79 Einträge gelesen, die XSD-Prüfung ist bestanden und die Regelverstöße der Datei (uneinheitliche Tech/Info Names) werden im Bericht aufgeführt; die fehlende Sicherheitseinstufung je Eintrag ist seit PROJ-8 Refinement 2026-11-26 kein Fehler mehr
 
 ### E. Hinweis bei abweichender Schema-Angabe (alle Issues)
 - [ ] Angenommen ein 6.0-System, wenn eine XSD-gültige Datei mit Schema-Angabe `…/S1000D_5-0/…` als REPLY importiert wird, dann erscheint im Prüfbericht der Hinweis, dass die Schema-Angabe der Datei (Issue 5.0) nicht zur Issue des Systems (6.0) passt — der Import wird dadurch nicht abgewiesen

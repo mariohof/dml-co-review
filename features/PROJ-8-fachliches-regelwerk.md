@@ -1,6 +1,6 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: Approved
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-26
 
@@ -427,6 +427,13 @@ _Stand 2026-11-13 — `/frontend PROJ-8`_
 - Zeilennummern im CSV-Bericht entsprechen den Dateizeilen; bei Werten mit Zeilenumbruch innerhalb von Anführungszeichen können sie abweichen.
 - Paket **papaparse 5.5.3** (+ `@types/papaparse`) hinzugefügt. `npm audit` meldet bestehende Schwachstellen in Paketen der Projektvorlage (nicht in papaparse) — vor einer Weitergabe prüfen.
 - Keine eigene Seite; die Anzeige wird mit PROJ-10/11/13 eingebunden.
+
+**Refinement 2026-11-26 — `security` je Eintrag optional** (umgesetzt am selben Tag)
+- `entry-rules.ts`: `security` aus `MANDATORY_CHECKIN` entfernt; damit gilt es auch für den REPLY (`MANDATORY_REPLY`) und das Werkzeug (PROJ-20). Neu: `MAY_BE_MISSING_IN_REPLY` = Ausgabedaten plus `security`.
+- `reply.ts` (Regel G): Ein leeres Feld aus `MAY_BE_MISSING_IN_REPLY` gilt nicht als Änderung. Ein abweichender Wert bleibt ein Fehler. Die REPLY-Übernahme ändert ohnehin nur die Antwortfelder, der `security`-Wert der Anwendung bleibt also erhalten.
+- Unverändert und schon passend: Format A und das Auffüllen führender Nullen greifen nur bei gefüllten Werten; die XML-Schreiber (2.3 und 4.x) lassen ein leeres `security` weg.
+- `OPTIONAL_IN_REPLY` bleibt auf die Ausgabedaten beschränkt, weil das Werkzeug damit den Hinweis „Ausgabedaten fehlen“ bildet.
+- Tests: Check-in mit leerem `security` ergibt keinen Fehler und zählt als Änderung. REPLY ohne `security` je Eintrag ist ohne Befund, `02` statt `01` ergibt einen G-Fehler. Das 6.0-Beispiel im Werkzeug meldet nur noch E/I-Fehler, Unit- und E2E-Test (PROJ-22) sind angepasst. Ergebnis: Vitest 747 bestanden (1 übersprungen). Playwright: im ersten Lauf 1 von 169 fehlgeschlagen; das hat sich in einem zweiten vollständigen Lauf nicht wiederholt (169 bestanden), vermutlich Timing im Parallelbetrieb.
 
 ## QA Test Results
 

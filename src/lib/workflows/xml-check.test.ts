@@ -94,14 +94,15 @@ describe("checkXmlText — gültige Datei", () => {
     expect(result.report.findings.filter((f) => f.group === "D").every((f) => f.message.includes("S1000DBIKE"))).toBe(true)
   })
 
-  it("Issue 6.0 (Beispiel aus docs/beispiele, PROJ-22): 79 Einträge, XSD bestanden, Regelverstöße der Datei erkannt, kein Schema-Hinweis", () => {
+  it("Issue 6.0 (Beispiel aus docs/beispiele, PROJ-22): 79 Einträge, XSD bestanden, Regelverstöße E/I erkannt, kein Fehler zu security, kein Schema-Hinweis", () => {
     const result = checkXmlText("bike60.XML", "6.0", BIKE_60, { state: "gueltig", issue: "6.0" })
     expect(result.xsd).toBe("bestanden")
     expect(result.candidates).toHaveLength(79)
     expect(result.summary.modelic).toBe("S1000DBIKE")
     const groups = new Set(result.report.findings.filter((f) => f.severity === "fehler").map((f) => f.group))
-    expect([...groups].sort()).toEqual(["B", "E", "I"])
-    expect(result.report.findings.filter((f) => f.group === "B" && f.severity === "fehler").every((f) => f.field === "security")).toBe(true)
+    // security je Eintrag fehlt in der Datei — seit PROJ-8 Refinement 2026-11-26 kein Pflichtfeld
+    expect([...groups].sort()).toEqual(["E", "I"])
+    expect(result.report.findings.filter((f) => f.field === "security")).toEqual([])
     expect(result.report.findings.some((f) => f.group === "XSD")).toBe(false)
   })
 

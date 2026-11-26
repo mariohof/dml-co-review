@@ -57,7 +57,9 @@ test("Werkzeug: 6.0-Beispiel gegen Issue 6.0 — XSD bestanden, 79 Einträge, Re
   const result = page.getByRole("region", { name: "Prüfergebnis" })
   await expect(result).toContainText("DML-S1000DBIKE-B6865-S-2024-00001")
   await expect(result).toContainText("79 ohne Antwort")
-  await expect(result.getByRole("row").filter({ hasText: "Pflichtfeld ist leer." }).first()).toBeVisible()
+  await expect(result.getByRole("row").filter({ hasText: "hat unterschiedliche Tech Names" }).first()).toBeVisible()
+  // security je Eintrag fehlt in der Datei, ist aber kein Pflichtfeld (PROJ-8 Refinement 2026-11-26)
+  await expect(result.getByRole("row").filter({ hasText: "Pflichtfeld ist leer." })).toHaveCount(0)
   await expect(xsdRows(page)).toHaveCount(0)
 })
 

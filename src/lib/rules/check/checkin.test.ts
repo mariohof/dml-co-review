@@ -84,6 +84,18 @@ describe("Gruppe A — Feldformat und führende Nullen", () => {
     expect(result.summary.unveraendert).toBe(10)
   })
 
+  it("leeres security ist kein Fehler — weder Pflichtfeld noch Format (Refinement 2026-11-26)", () => {
+    const csv = vehicleCsv((rows) => {
+      for (const row of rows) row.fields.security = ""
+      return rows
+    })
+    const result = runCheckinCheck(csv, vehicleContext)
+    expect(result.report.findings.filter((f) => f.field === "security")).toEqual([])
+    expect(errorCount(result.report)).toBe(0)
+    // Feldänderung gegenüber dem Stand der Anwendung (Einträge haben Eintragstyp n)
+    expect(result.summary.geaendert).toBe(10)
+  })
+
   it.each([
     ["chapnum", "A5B7", "2–3 Stellen alphanumerisch, gefunden ‚A5B7'"],
     ["security", "A1", "01–20"],
