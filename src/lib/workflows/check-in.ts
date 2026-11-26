@@ -1,4 +1,4 @@
-import type { Dataset, Dmrl, DmrlEntry, DmrlStatus, HistoryEntry, User } from "@/lib/data/schema"
+import { INFO_FIELD_NAMES, type Dataset, type Dmrl, type DmrlEntry, type DmrlStatus, type EntryFields, type HistoryEntry, type User } from "@/lib/data/schema"
 import { toAnswerTimestamp } from "@/lib/dmrl/answer-timestamp"
 import { newId } from "@/lib/ids"
 import {
@@ -111,13 +111,18 @@ export function executeCheckIn(
     // answer_timestamp (Refinement 2026-11-21): Wert aus der Datei nie übernehmen; bei übernommener abweichender Antwort
     // = Zeitpunkt des Check-ins (leer, wenn die Antwort danach leer ist), sonst bisheriger Wert
     const previousTimestamp = previous?.fields.answer_timestamp ?? ""
+    // Informationsfelder (Refinement 2026-11-26): aus der Datei übernehmen; enthält sie keine, bisherige Werte behalten (neu: leer)
+    const info = result.hasInfoFields
+      ? {}
+      : (Object.fromEntries(INFO_FIELD_NAMES.map((name) => [name, previous?.fields[name] ?? ""])) as Partial<EntryFields>)
+    const fileFields = { ...candidate.fields, ...info }
     const fields = takeAnswers
       ? {
-          ...candidate.fields,
+          ...fileFields,
           answer_timestamp: compared.answerChanged ? (candidate.fields.answer ? checkinTimestamp : "") : previousTimestamp,
         }
       : {
-          ...candidate.fields,
+          ...fileFields,
           answer: previous?.fields.answer ?? "",
           answer_comment: previous?.fields.answer_comment ?? "",
           answer_timestamp: previousTimestamp,
@@ -131,7 +136,7 @@ export function executeCheckIn(
     return { id: previous.id, dmrlId, status, fields }
   })
 
-  const { neu, geaendert, unveraendert, alsFreigegeben } = checkinSummary(result.candidates, result.comparison, takeAnswers)
+  const { neu, geaendert, unveraendert, alsFreigegeben, informationsfelder } = checkinSummary(result.candidates, result.comparison, takeAnswers)
   const changed = neu + geaendert > 0
   // Grundregel PROJ-14: DMRL freigegeben ⇔ alle Einträge freigegeben. Durch einen Check-in entsteht eine Freigabe nur,
   // wenn dabei Einträge als freigegeben übernommen wurden (Refinement 2026-11-18).
@@ -139,6 +144,7 @@ export function executeCheckIn(
   const status: DmrlStatus = released ? "freigegeben" : changed ? "in_bearbeitung" : dmrl.status
   const takenAnswers = takeAnswers ? answerDeviations(result.comparison).length : 0
   const answersNote = takenAnswers > 0 ? `; ${takenAnswers} Antworten aus der Datei übernommen` : ""
+  const infoNote = informationsfelder > 0 ? `; Informationsfelder bei ${informationsfelder} Einträgen aktualisiert` : ""
   const releasedNote = alsFreigegeben > 0 ? ` (davon ${alsFreigegeben} als freigegeben übernommen)` : ""
   const dmrlReleasedNote = released ? " — DMRL freigegeben (Übernahme Bestand)" : ""
   return {
@@ -171,7 +177,7 @@ export function executeCheckIn(
           user.id,
           at,
           "check_in",
-          `Check-in — ${neu} neu${releasedNote}, ${geaendert} geändert, ${unveraendert} unverändert${answersNote}${dmrlReleasedNote}`
+          `Check-in — ${neu} neu${releasedNote}, ${geaendert} geändert, ${unveraendert} unverändert${answersNote}${infoNote}${dmrlReleasedNote}`
         ),
       ],
     },

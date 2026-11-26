@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
-import { ENTRY_FIELD_NAMES, type EntrySnapshot } from "@/lib/data/schema"
+import { ENTRY_FILE_COLUMNS, type EntrySnapshot } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { writeEntriesCsv } from "@/lib/files/csv-writer"
 import { answerDeviations, answerTakeoverBlockers, checkinSummary, runCheckinCheck, type CheckinContext } from "./checkin"
@@ -14,7 +14,7 @@ const snapshotOf = (dmrlId: string): EntrySnapshot[] =>
 
 const vehicle = snapshotOf(DEMO_IDS.dmrlVehicle)
 const vehicleContext: CheckinContext = { systemModelic: "GTFDEMO", snapshot: vehicle }
-const HEADER = ENTRY_FIELD_NAMES.join(";")
+const HEADER = ENTRY_FILE_COLUMNS.join(";")
 
 /** CSV der Fahrzeug-DMRL mit Änderung an einem Eintrag */
 function vehicleCsv(change?: (rows: EntrySnapshot[]) => EntrySnapshot[]) {
@@ -29,7 +29,7 @@ describe("Gruppe S — Dateistruktur", () => {
   })
 
   it("meldet fehlende, unbekannte, doppelte und vertauschte Spalten und bricht ab", () => {
-    const names = [...ENTRY_FIELD_NAMES]
+    const names = [...ENTRY_FILE_COLUMNS]
     expect(readCheckinCsv(names.slice(1).join(";")).findings[0].message).toBe("Spalte ‚dmentryType' fehlt.")
     expect(readCheckinCsv([...names, "extra"].join(";")).findings[0].message).toBe("Unbekannte Spalte ‚extra'.")
     expect(readCheckinCsv([...names, "remarks"].join(";")).findings[0].message).toBe("Spalte ‚remarks' kommt mehrfach vor.")

@@ -37,7 +37,7 @@ test("Check-out liefert .xlsx (Blatt „Einträge“, Text, fixierte Kopfzeile);
   expect(strFromU8(files["xl/workbook.xml"])).toContain('<sheet name="Einträge"')
   const sheet = strFromU8(files["xl/worksheets/sheet1.xml"])
   expect(sheet).toContain('state="frozen"')
-  expect(sheet).toMatch(/<autoFilter ref="A1:AB11"\/>/)
+  expect(sheet).toMatch(/<autoFilter ref="A1:AK11"\/>/)
   expect(sheet).toContain(">GTFDEMO<")
   expect(checkOutXlsxToCsv(file.bytes).split("\r\n").filter(Boolean)).toHaveLength(11)
 
@@ -96,4 +96,30 @@ test("Dateitypen: .xls abgelehnt, beschädigte .xlsx nicht lesbar, Sperre bleibt
   await expect(dialog.getByText(/Keine Änderungen/)).toBeVisible()
   const data = await readDataset(page)
   expect(data.dmrls.find((d: { id: string }) => d.id === "dmrl-gtfdemo").lock).not.toBeNull()
+})
+
+test("Informationsfelder (Refinement 2026-11-26): 37 Spalten mit dmc; nur orig geändert → Status bleibt, Wert beim nächsten Check-out da", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  const file = await checkOutVehicle(page)
+  const lines = checkOutXlsxToCsv(file.bytes).split("\r\n")
+  const header = lines[0].replace(/^﻿/, "").split(";")
+  expect(header).toHaveLength(37)
+  expect(header.slice(27)).toEqual(["remarks", "dmc", "orig", "applic_type", "applic_model", "applic_version", "rfu", "dtd-schema", "spec", "io-pm"])
+  const cells = lines[1].split(";")
+  expect(cells[header.indexOf("dmc")]).toMatch(/^GTFDEMO-/)
+  cells[header.indexOf("orig")] = "D0815"
+  lines[1] = cells.join(";")
+  const statusBefore = (await readDataset(page)).dmrls.find((d: { id: string }) => d.id === "dmrl-gtfdemo").status
+
+  const dialog = await upload(page, { name: "DML-GTFDEMO-D0815-C-2026.csv", bytes: Buffer.from(lines.join("\r\n")), mimeType: "text/csv" })
+  await expect(dialog.getByText("Informationsfelder bei 1 Einträgen aktualisiert")).toBeVisible()
+  await dialog.getByRole("button", { name: "Übernehmen" }).click()
+  await expect(dialog).toBeHidden()
+  const data = await readDataset(page)
+  expect(data.dmrls.find((d: { id: string }) => d.id === "dmrl-gtfdemo").status).toBe(statusBefore)
+  expect(data.history.at(-1).details).toBe("Check-in — 0 neu, 0 geändert, 10 unverändert; Informationsfelder bei 1 Einträgen aktualisiert")
+
+  const again = await checkOutVehicle(page)
+  const origValues = checkOutXlsxToCsv(again.bytes).split("\r\n").slice(1).filter(Boolean).map((line) => line.split(";")[header.indexOf("orig")])
+  expect(origValues.filter((v) => v === "D0815")).toHaveLength(1)
 })

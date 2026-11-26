@@ -38,15 +38,55 @@ export const ENTRY_FIELD_NAMES = [
   /** Zeitpunkt der Übernahme der Antwort (ISO 8601 Ortszeit, nur CSV/Anwendung, nicht im XML) — PROJ-13 Refinement 2026-11-21 */
   "answer_timestamp",
   "remarks",
+  // Informationsfelder (PROJ-9 Refinement 2026-11-26) — siehe INFO_FIELD_NAMES
+  "orig",
+  "applic_type",
+  "applic_model",
+  "applic_version",
+  "rfu",
+  "dtd-schema",
+  "spec",
+  "io-pm",
 ] as const
 
 export type EntryFieldName = (typeof ENTRY_FIELD_NAMES)[number]
+
+/**
+ * Informationsfelder (PROJ-9 Refinement 2026-11-26): vom Bearbeiter in Excel gepflegt, je Eintrag gespeichert, ohne Prüfung.
+ * Nicht in SEND/REPLY-XML; beim Check-in getrennt verglichen (keine fachliche Änderung), in der REPLY-Prüfung ausgenommen.
+ */
+export const INFO_FIELD_NAMES = [
+  "orig",
+  "applic_type",
+  "applic_model",
+  "applic_version",
+  "rfu",
+  "dtd-schema",
+  "spec",
+  "io-pm",
+] as const satisfies readonly EntryFieldName[]
+export type InfoFieldName = (typeof INFO_FIELD_NAMES)[number]
+export const isInfoField = (name: string): name is InfoFieldName => (INFO_FIELD_NAMES as readonly string[]).includes(name)
+
+/** Berechnete Spalte mit dem DMC (Schreibweise der Anwendung) — nur in Dateien, nie gespeichert (Refinement 2026-11-26) */
+export const DMC_COLUMN = "dmc"
+
+/** Die 28 Felder vor den Informationsfeldern (Dateiaufbau bis 25.11.2026) */
+export const CORE_FIELD_NAMES = ENTRY_FIELD_NAMES.filter((name) => !isInfoField(name))
+
+/**
+ * Spalten einer Datei mit Eintragstabelle (Check-out, Check-in, Export, Freigabestand, PROJ-20) — 37 Spalten:
+ * 28 bisherige Felder, `dmc`, 8 Informationsfelder (PROJ-9 Refinement 2026-11-26).
+ */
+export const ENTRY_FILE_COLUMNS: readonly (EntryFieldName | typeof DMC_COLUMN)[] = [...CORE_FIELD_NAMES, DMC_COLUMN, ...INFO_FIELD_NAMES]
 
 // Alle Felder als Text, damit führende Nullen erhalten bleiben. Fachliche Prüfung: PROJ-8.
 export const entryFieldsSchema = z.object({
   ...(Object.fromEntries(ENTRY_FIELD_NAMES.map((name) => [name, z.string()])) as Record<EntryFieldName, z.ZodString>),
   // Bestehende Daten ohne answer_timestamp bleiben gültig und erhalten ein leeres Feld (PROJ-13, Refinement 2026-11-21)
   answer_timestamp: z.string().default(""),
+  // Bestehende Daten ohne Informationsfelder bleiben gültig, die Felder sind leer (PROJ-9, Refinement 2026-11-26)
+  ...(Object.fromEntries(INFO_FIELD_NAMES.map((name) => [name, z.string().default("")])) as Record<InfoFieldName, z.ZodDefault<z.ZodString>>),
 })
 export type EntryFields = z.infer<typeof entryFieldsSchema>
 

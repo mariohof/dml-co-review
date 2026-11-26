@@ -112,4 +112,12 @@ export const FIELD_LABEL: Record<keyof EntryFields, string> = {
   answer_comment: "Kommentar des Empfängers",
   answer_timestamp: "Antwort übernommen",
   remarks: "Bemerkung",
+  orig: "Originator (orig)",
+  applic_type: "Applicability-Typ",
+  applic_model: "Applicability-Modell",
+  applic_version: "Applicability-Version",
+  rfu: "rfu",
+  "dtd-schema": "DTD/Schema",
+  spec: "Spezifikation",
+  "io-pm": "IO-PM",
 }

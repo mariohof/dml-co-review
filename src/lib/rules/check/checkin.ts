@@ -1,4 +1,4 @@
-import { ENTRY_FIELD_NAMES, type EntryFields, type EntrySnapshot } from "@/lib/data/schema"
+import { ENTRY_FIELD_NAMES, INFO_FIELD_NAMES, isInfoField, type EntryFields, type EntrySnapshot } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { allowedIssueTypes, ISSUE_TYPES } from "@/lib/dmrl/issue-type"
 import type { SheetRow } from "@/lib/files/xlsx-reader"
@@ -23,6 +23,8 @@ export interface ComparedEntry {
   changedFields: (keyof EntryFields)[]
   /** answer/answer_comment weichen vom Stand beim Check-out ab (bei neuen Einträgen: nicht leer) */
   answerChanged: boolean
+  /** Informationsfelder weichen vom Stand beim Check-out ab — keine fachliche Änderung (Refinement 2026-11-26; bei neuen: false) */
+  infoChanged: boolean
 }
 
 /** Antwortfelder — werden getrennt von den übrigen Feldern abgeglichen (Refinement 2026-11-14) */
@@ -37,8 +39,11 @@ export interface Comparison {
   missing: EntrySnapshot[]
 }
 
-/** Abgleich Datei ↔ Stand beim Check-out; Zuordnung über den DMC (einmal berechnet, PROJ-10 Tech Design C) */
-export function compareWithSnapshot(snapshot: EntrySnapshot[], candidates: Candidate[]): Comparison {
+/**
+ * Abgleich Datei ↔ Stand beim Check-out; Zuordnung über den DMC (einmal berechnet, PROJ-10 Tech Design C).
+ * Informationsfelder werden getrennt bewertet (wie Antwortfelder) — und nur, wenn die Datei sie enthält (Refinement 2026-11-26).
+ */
+export function compareWithSnapshot(snapshot: EntrySnapshot[], candidates: Candidate[], hasInfoFields = true): Comparison {
   const previousByDmc = new Map(snapshot.map((entry) => [formatDmc(entry.fields), entry]))
   const seen = new Set<string>()
   const entries = candidates.map((candidate): ComparedEntry => {
@@ -46,11 +51,21 @@ export function compareWithSnapshot(snapshot: EntrySnapshot[], candidates: Candi
     const previous = seen.has(dmc) ? null : (previousByDmc.get(dmc) ?? null)
     seen.add(dmc)
     if (!previous) {
-      return { candidate, classification: "neu", previous: null, changedFields: [], answerChanged: ANSWER_FIELDS.some((f) => candidate.fields[f] !== "") }
+      return {
+        candidate,
+        classification: "neu",
+        previous: null,
+        changedFields: [],
+        answerChanged: ANSWER_FIELDS.some((f) => candidate.fields[f] !== ""),
+        infoChanged: false,
+      }
     }
-    const changedFields = ENTRY_FIELD_NAMES.filter((name) => !isAnswerField(name) && !isIgnoredField(name) && candidate.fields[name] !== previous.fields[name])
+    const changedFields = ENTRY_FIELD_NAMES.filter(
+      (name) => !isAnswerField(name) && !isIgnoredField(name) && !isInfoField(name) && candidate.fields[name] !== previous.fields[name]
+    )
     const answerChanged = ANSWER_FIELDS.some((f) => candidate.fields[f] !== previous.fields[f])
-    return { candidate, classification: changedFields.length > 0 ? "geaendert" : "unveraendert", previous, changedFields, answerChanged }
+    const infoChanged = hasInfoFields && INFO_FIELD_NAMES.some((f) => candidate.fields[f] !== previous.fields[f])
+    return { candidate, classification: changedFields.length > 0 ? "geaendert" : "unveraendert", previous, changedFields, answerChanged, infoChanged }
   })
   const missing = snapshot.filter((entry) => !seen.has(formatDmc(entry.fields)))
   return { entries, missing }
@@ -150,6 +165,8 @@ export interface CheckinSummary {
   loeschungen: number
   /** davon neue Einträge ohne Eintragstyp, die als *freigegeben* übernommen werden (Refinement 2026-11-18) */
   alsFreigegeben: number
+  /** bestehende Einträge mit aktualisierten Informationsfeldern (Refinement 2026-11-26) */
+  informationsfelder: number
 }
 
 /** Zahlen der Zusammenfassung — ohne bzw. mit Übernahme der Empfängerantworten (aus demselben Abgleich) */
@@ -163,6 +180,7 @@ export function checkinSummary(candidates: Candidate[], comparison: Comparison |
     unveraendert: count("unveraendert"),
     loeschungen: candidates.filter((c) => c.fields.dmentryType === "d").length,
     alsFreigegeben: entries.filter(isReleasedOnTakeover).length,
+    informationsfelder: entries.filter((e) => e.infoChanged).length,
   }
 }
 
@@ -179,6 +197,8 @@ export interface CheckinResult {
   comparison: Comparison | null
   /** Zahlen ohne Übernahme der Empfängerantworten (Standard) */
   summary: CheckinSummary
+  /** Datei enthält die Informationsfelder; sonst behalten bestehende Einträge ihre Werte (Refinement 2026-11-26) */
+  hasInfoFields: boolean
 }
 
 /** Eingabe des Check-ins: CSV-Text oder Tabelle aus dem Excel-Leser (PROJ-10 Refinement 2026-11-25) */
@@ -187,9 +207,15 @@ export type CheckinInput = string | { source: "xlsx"; rows: SheetRow[] }
 export function runCheckinCheck(input: CheckinInput, context: CheckinContext): CheckinResult {
   const read = typeof input === "string" ? readCheckinCsv(input) : readCheckinTable(input.rows, "xlsx")
   if (read.aborted) {
-    return { report: { lineLabel: "Zeile", findings: read.findings }, candidates: [], comparison: null, summary: checkinSummary([], null) }
+    return {
+      report: { lineLabel: "Zeile", findings: read.findings },
+      candidates: [],
+      comparison: null,
+      summary: checkinSummary([], null),
+      hasInfoFields: false,
+    }
   }
-  const comparison = compareWithSnapshot(context.snapshot, read.candidates)
+  const comparison = compareWithSnapshot(context.snapshot, read.candidates, read.hasInfoFields)
   const findings = [
     ...read.findings,
     ...checkCommon(read.candidates, "checkin", context.systemModelic),
@@ -200,5 +226,6 @@ export function runCheckinCheck(input: CheckinInput, context: CheckinContext): C
     candidates: read.candidates,
     comparison,
     summary: checkinSummary(read.candidates, comparison),
+    hasInfoFields: read.hasInfoFields,
   }
 }

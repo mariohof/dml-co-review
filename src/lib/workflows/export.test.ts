@@ -136,7 +136,7 @@ describe("Excel (Refinement 2026-11-24)", () => {
     expect(sheetNames).toEqual(["Einträge"])
     const table = entriesTable(demo.entries.filter((e) => e.dmrlId === DEMO_IDS.dmrlPhungun))
     expect(cells).toEqual([table.header, ...table.rows])
-    expect(cells[0]).toHaveLength(28)
+    expect(cells[0]).toHaveLength(37)
     expect(cells[0]).toContain("answer_timestamp")
     // gleiche Zeilen wie die CSV (Kopfzeile + Einträge)
     expect(cells).toHaveLength(exportCsv(demo, dmrl(demo, DEMO_IDS.dmrlPhungun), AT).content.trim().split("\r\n").length)

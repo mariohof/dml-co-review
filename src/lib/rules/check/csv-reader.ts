@@ -1,6 +1,6 @@
 import Papa from "papaparse"
 
-import { emptyEntryFields, ENTRY_FIELD_NAMES, type EntryFieldName, type EntryFields } from "@/lib/data/schema"
+import { CORE_FIELD_NAMES, DMC_COLUMN, emptyEntryFields, ENTRY_FILE_COLUMNS, INFO_FIELD_NAMES, type EntryFields } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { unguardCsvCell } from "@/lib/files/csv-formula"
 import type { SheetRow } from "@/lib/files/xlsx-reader"
@@ -9,7 +9,7 @@ import type { Candidate, Finding } from "./types"
 /**
  * Leser für den Check-in (PROJ-8 Gruppe S, Tech Design B; PROJ-10 Tech Design J).
  * CSV: Semikolon, UTF-8 mit/ohne BOM, Anführungszeichen. Excel: Tabelle aus dem Excel-Leser.
- * Kopfzeile = 28 Feldnamen (bzw. alter Stand 27) in fester Reihenfolge.
+ * Kopfzeile = 37 Spalten (aktuell), 28 (Stand 21.11.2026) oder 27 (ohne answer_timestamp) in fester Reihenfolge.
  */
 
 export interface CsvReadResult {
@@ -17,21 +17,34 @@ export interface CsvReadResult {
   findings: Finding[]
   /** true = Strukturfehler, Datei wird nicht weiter geprüft */
   aborted: boolean
+  /** Datei enthält die Informationsfelder (37 Spalten); sonst bleiben die gespeicherten Werte erhalten (Refinement 2026-11-26) */
+  hasInfoFields: boolean
 }
 
 const S = (message: string, line?: number): Finding => ({ severity: "fehler", group: "S", line, message })
 
-/** Spalten einer CSV vom Stand vor dem 21.11.2026 (27 Spalten, ohne answer_timestamp) — weiterhin gültig (PROJ-10) */
-export const LEGACY_CSV_COLUMNS = ENTRY_FIELD_NAMES.filter((name) => name !== "answer_timestamp")
+export const NO_INFO_FIELDS_HINT = "Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten."
 
-/** Erwartete Spaltenfolge zur Kopfzeile: aktuell (28) oder alter Stand (27), je nachdem ob answer_timestamp vorkommt */
-export function expectedColumns(header: string[]): readonly EntryFieldName[] {
-  return header.includes("answer_timestamp") ? ENTRY_FIELD_NAMES : LEGACY_CSV_COLUMNS
+/** Spalten einer Datei vom Stand 21.–25.11.2026 (28 Spalten, ohne `dmc` und Informationsfelder) — weiterhin gültig (PROJ-10) */
+export const LEGACY_28_COLUMNS: readonly string[] = CORE_FIELD_NAMES
+
+/** Spalten einer CSV vom Stand vor dem 21.11.2026 (27 Spalten, ohne answer_timestamp) — weiterhin gültig (PROJ-10) */
+export const LEGACY_CSV_COLUMNS: readonly string[] = CORE_FIELD_NAMES.filter((name) => name !== "answer_timestamp")
+
+const NEW_COLUMNS: readonly string[] = [DMC_COLUMN, ...INFO_FIELD_NAMES]
+
+/** true = Kopfzeile nutzt den aktuellen Aufbau (eine der neuen Spalten kommt vor → alle 37 erwartet, Refinement 2026-11-26) */
+export const hasCurrentLayout = (header: string[]) => header.some((name) => NEW_COLUMNS.includes(name))
+
+/** Erwartete Spaltenfolge zur Kopfzeile: aktuell (37), Stand 21.11. (28) oder alter Stand (27) */
+export function expectedColumns(header: string[]): readonly string[] {
+  if (hasCurrentLayout(header)) return ENTRY_FILE_COLUMNS
+  return header.includes("answer_timestamp") ? LEGACY_28_COLUMNS : LEGACY_CSV_COLUMNS
 }
 
 /** Prüft die Kopfzeile; liefert Strukturfehler (leer = in Ordnung) */
 export function checkHeader(header: string[]): Finding[] {
-  const expected = expectedColumns(header) as readonly string[]
+  const expected = expectedColumns(header)
   const findings: Finding[] = []
   const seen = new Set<string>()
   for (const name of header) {
@@ -88,18 +101,18 @@ export function readCheckinCsv(text: string): CsvReadResult {
 
 /**
  * Gemeinsamer Schritt „Tabelle → Einträge" für CSV und Excel (PROJ-10 Tech Design J):
- * Kopfzeile (28 bzw. alte 27 Spalten), Spaltenzahl, Trimmen, führende Nullen, leere Zeilen überspringen.
+ * Kopfzeile (37, 28 bzw. alte 27 Spalten), Spaltenzahl, Trimmen, führende Nullen, leere Zeilen überspringen.
  * Excel lässt leere Zellen am Zeilenende weg — fehlende Zellen gelten dort als leer.
  */
 export function readCheckinTable(rows: SheetRow[], source: TableSource): CsvReadResult {
   const isBlank = (row: SheetRow) => row.cells.every((cell) => cell.trim() === "")
   // Nach dem Kopf nur nicht leere Zeilen (leere Zeilen werden übersprungen)
   const headerIndex = rows.findIndex((row) => !isBlank(row))
-  if (headerIndex === -1) return { candidates: [], findings: [S("Die Datei enthält keine Einträge.")], aborted: true }
+  if (headerIndex === -1) return { candidates: [], findings: [S("Die Datei enthält keine Einträge.")], aborted: true, hasInfoFields: false }
 
   const header = rows[headerIndex].cells.map((cell) => cell.trim())
   const headerFindings = checkHeader(header)
-  if (headerFindings.length > 0) return { candidates: [], findings: headerFindings, aborted: true }
+  if (headerFindings.length > 0) return { candidates: [], findings: headerFindings, aborted: true, hasInfoFields: false }
 
   const columns = expectedColumns(header)
   const findings: Finding[] = []
@@ -114,9 +127,11 @@ export function readCheckinTable(rows: SheetRow[], source: TableSource): CsvRead
     }
     const fields = emptyEntryFields()
     columns.forEach((name, column) => {
+      // `dmc` wird gelesen und verworfen — maßgeblich sind die DMC-Teile (Refinement 2026-11-26)
+      if (name === DMC_COLUMN) return
       const value = (row.cells[column] ?? "").trim()
       // Entschärfung gegen Formel-Injection aus Check-out/Export rückgängig machen (BUG-QA2-1) — nur CSV
-      fields[name] = source === "csv" ? unguardCsvCell(value) : value
+      fields[name as keyof EntryFields] = source === "csv" ? unguardCsvCell(value) : value
     })
     const padded = padLeadingZeros(fields, line)
     findings.push(...padded.hints)
@@ -126,5 +141,7 @@ export function readCheckinTable(rows: SheetRow[], source: TableSource): CsvRead
   if (candidates.length === 0 && !findings.some((f) => f.severity === "fehler")) {
     findings.push(S("Die Datei enthält keine Einträge."))
   }
-  return { candidates, findings, aborted: false }
+  const hasInfoFields = hasCurrentLayout(header)
+  if (!hasInfoFields) findings.push({ severity: "hinweis", group: "S", line: 1, message: NO_INFO_FIELDS_HINT })
+  return { candidates, findings, aborted: false, hasInfoFields }
 }

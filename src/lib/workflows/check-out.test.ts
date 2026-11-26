@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
-import { datasetSchema, ENTRY_FIELD_NAMES, type Dataset, type Dmrl, type User } from "@/lib/data/schema"
+import { datasetSchema, ENTRY_FILE_COLUMNS, type Dataset, type Dmrl, type User } from "@/lib/data/schema"
 import { ENTRIES_SHEET_NAME } from "@/lib/files/entries-xlsx"
 import { readXlsxSheet } from "@/lib/files/xlsx-reader"
 import { readCheckinTable } from "@/lib/rules/check/csv-reader"
@@ -74,12 +74,12 @@ describe("Check-out", () => {
     expect(checkOutFileName(demo, dmrl(demo, DEMO_IDS.dmrlPhungun), "2026-05-01T10:00:00Z")).toBe("DML-PHUNGUN-D0815-C-2026.xlsx")
   })
 
-  it("erzeugt die Excel-Datei aus der Kopie: Blatt „Einträge“, 28 Spalten, alle Einträge, inhaltlich identisch beim erneuten Download", () => {
+  it("erzeugt die Excel-Datei aus der Kopie: Blatt „Einträge“, 37 Spalten, alle Einträge, inhaltlich identisch beim erneuten Download", () => {
     const data = checkedOut()
     const sheet = readXlsxSheet(lockXlsx(dmrl(data, DEMO_IDS.dmrlVehicle))!, ENTRIES_SHEET_NAME)
     if (!sheet.ok) throw new Error("nicht lesbar")
     expect(sheet.sheetName).toBe("Einträge")
-    expect(sheet.rows[0].cells).toEqual([...ENTRY_FIELD_NAMES])
+    expect(sheet.rows[0].cells).toEqual([...ENTRY_FILE_COLUMNS])
     expect(readCheckinTable(sheet.rows, "xlsx").candidates).toHaveLength(10)
     // spätere Änderungen am Datenbestand ändern die Kopie nicht
     const changed: Dataset = { ...data, entries: data.entries.map((e) => ({ ...e, fields: { ...e.fields, techname: "X" } })) }

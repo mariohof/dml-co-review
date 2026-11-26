@@ -4,7 +4,7 @@ import { resolve } from "node:path"
 import { strToU8, zipSync } from "fflate"
 import { describe, expect, it } from "vitest"
 
-import { ENTRY_FIELD_NAMES } from "@/lib/data/schema"
+import { CORE_FIELD_NAMES, ENTRY_FILE_COLUMNS } from "@/lib/data/schema"
 
 import { ENTRIES_SHEET_NAME, writeEntriesXlsx } from "./entries-xlsx"
 import { columnIndex, MAX_XLSX_UNPACKED_BYTES, readXlsxSheet } from "./xlsx-reader"
@@ -59,7 +59,7 @@ describe("Excel-Leser", () => {
   })
 
   it("Check-out-Datei ohne Einträge: nur Kopfzeile", () => {
-    expect(rowsOf(readXlsxSheet(writeEntriesXlsx([]), ENTRIES_SHEET_NAME))).toEqual([{ line: 1, cells: [...ENTRY_FIELD_NAMES] }])
+    expect(rowsOf(readXlsxSheet(writeEntriesXlsx([]), ENTRIES_SHEET_NAME))).toEqual([{ line: 1, cells: [...ENTRY_FILE_COLUMNS] }])
   })
 
   it("liest nur das Blatt „Einträge“, auch wenn es nicht vorn steht", () => {
@@ -131,8 +131,9 @@ describe("Excel-Leser", () => {
     expect(result.ok && result.sheetName).toBe("DML-PHUNGUN-D0815-C-Export-2026")
     const rows = rowsOf(result)
     expect(rows).toHaveLength(33)
-    expect(rows[0].cells).toEqual([...ENTRY_FIELD_NAMES])
-    const field = (row: number, name: string) => rows[row].cells[ENTRY_FIELD_NAMES.indexOf(name as never)]
+    // Testdatei vom Stand 25.11.2026: 28 Spalten (ohne `dmc` und Informationsfelder)
+    expect(rows[0].cells).toEqual([...CORE_FIELD_NAMES])
+    const field = (row: number, name: string) => rows[row].cells[CORE_FIELD_NAMES.indexOf(name as never)]
     // Zahlzellen kommen als Text, Textzellen mit führender Null bleiben erhalten
     expect([field(1, "section"), field(1, "subject"), field(1, "day"), field(1, "year")]).toEqual(["0", "1000", "29", "2026"])
     expect([field(1, "security"), field(1, "issno"), field(1, "month"), field(1, "discode")]).toEqual(["01", "001", "09", "00"])

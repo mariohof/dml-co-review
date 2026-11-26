@@ -347,7 +347,9 @@ describe("answer_timestamp", () => {
     const data = checkedOutWithAnswers()
     const lines = csvOf(data).replace(/^﻿/, "").split("\r\n")
     const column = lines[0].split(";").indexOf("answer_timestamp")
-    const legacy = "﻿" + lines.map((line) => (line === "" ? line : line.split(";").filter((_, i) => i !== column).join(";"))).join("\r\n")
+    // alter Stand: ohne answer_timestamp und ohne die Spalten ab `dmc` (Refinement 2026-11-26)
+    const keep = (i: number) => i !== column && i < 28
+    const legacy = "﻿" + lines.map((line) => (line === "" ? line : line.split(";").filter((_, i) => keep(i)).join(";"))).join("\r\n")
     expect(legacy.split("\r\n")[0].split(";")).toHaveLength(27)
     const checked = check(data, legacy)
     expect(checked.report.findings.filter((f) => f.severity === "fehler")).toEqual([])

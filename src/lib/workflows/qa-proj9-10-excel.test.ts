@@ -43,11 +43,11 @@ describe("PROJ-9 — Inhalt der Excel-Datei", () => {
     expect(result.candidates.every((c) => c.fields.remarks === special)).toBe(true)
   })
 
-  it("alle 28 Spalten sind als Text formatiert — auch leere Zellen neuer Zeilen (Spaltenformat)", () => {
+  it("alle 37 Spalten sind als Text formatiert — auch leere Zellen neuer Zeilen (Spaltenformat)", () => {
     const data = checkedOut()
     const xml = new TextDecoder().decode(unzipSync(lockXlsx(dmrl(data, DEMO_IDS.dmrlVehicle))!)["xl/worksheets/sheet1.xml"])
     const cols = [...xml.matchAll(/<col min="(\d+)" max="\d+" width="[\d.]+" style="1"/g)].map(([, n]) => Number(n))
-    expect(cols).toEqual(Array.from({ length: 28 }, (_, i) => i + 1))
+    expect(cols).toEqual(Array.from({ length: 37 }, (_, i) => i + 1))
   })
 
   it("Check-out von 1.000 Einträgen erzeugt die Excel-Datei in unter einer Sekunde; Lesen + Prüfen in wenigen Sekunden", () => {

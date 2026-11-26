@@ -5,7 +5,7 @@ import { checkOutXlsxToCsv, csvName, readDataset, startAs } from "./helpers"
 
 /** PROJ-10 Refinement 2026-11-14: abweichende Empfängerantworten beim Check-in optional übernehmen */
 
-const COLUMNS = 28 // seit Refinement 2026-11-21 inkl. answer_timestamp
+const COLUMNS = 37 // seit Refinement 2026-11-26 inkl. dmc und Informationsfeldern
 const ANSWER_COMMENT = 25 // Spalte answer_comment (0-basiert)
 
 /** Fahrzeug-DMRL auschecken und die heruntergeladene CSV zurückgeben */

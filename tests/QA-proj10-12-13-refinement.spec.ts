@@ -153,7 +153,7 @@ test.describe("PROJ-13 — answer_timestamp", () => {
 
     const csv = await exportAs(page, "CSV")
     const { header, values } = csvColumn(csv.content, "answer_timestamp")
-    expect(header).toHaveLength(28)
+    expect(header).toHaveLength(37)
     expect(header[header.indexOf("answer_comment") + 1]).toBe("answer_timestamp")
     expect(values).toHaveLength(32)
     expect(new Set(values)).toEqual(new Set([stamp]))
@@ -232,7 +232,8 @@ test.describe("PROJ-10 — answer_timestamp beim Check-in", () => {
     const file = await checkOutVehicle(page)
     const lines = file.content.split("\r\n")
     const column = lines[0].replace(/^﻿/, "").split(";").indexOf("answer_timestamp")
-    const legacy = lines.map((l) => (l === "" ? l : l.split(";").filter((_, i) => i !== column).join(";"))).join("\r\n")
+    // alter Stand: ohne answer_timestamp und ohne die Spalten ab `dmc` (Refinement 2026-11-26)
+    const legacy = lines.map((l) => (l === "" ? l : l.split(";").filter((_, i) => i !== column && i < 28).join(";"))).join("\r\n")
     expect(legacy.split("\r\n")[0].split(";")).toHaveLength(27)
     await checkIn(page, file.name, legacy, false)
     const data = await readDataset(page)

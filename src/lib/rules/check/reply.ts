@@ -1,5 +1,5 @@
 import { DmlParseError, readDml, type ParsedDml } from "@/lib/data/dml-reader"
-import { ENTRY_FIELD_NAMES, type DmlCode, type DmrlStatus, type EntryFields, type S1000dIssue } from "@/lib/data/schema"
+import { ENTRY_FIELD_NAMES, isInfoField, type DmlCode, type DmrlStatus, type EntryFields, type S1000dIssue } from "@/lib/data/schema"
 import { versionIndexOf } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { checkCommon, OPTIONAL_IN_REPLY } from "./entry-rules"
@@ -65,6 +65,8 @@ export function checkReplyAgainstSend(parsed: ParsedDml, candidates: Candidate[]
     }
     for (const name of ENTRY_FIELD_NAMES) {
       if (name === "answer" || name === "answer_comment" || name === "answer_timestamp") continue
+      // Informationsfelder sind nicht in der XML (PROJ-9 Refinement 2026-11-26)
+      if (isInfoField(name)) continue
       if (OPTIONAL_IN_REPLY.includes(name) && c.fields[name] === "") continue
       if (c.fields[name] !== sent[name]) {
         findings.push(G(`Feld ${name} wurde gegenüber dem SEND verändert (SEND ‚${sent[name]}', REPLY ‚${c.fields[name]}').`, { line: c.line, dmc, field: name }))

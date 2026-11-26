@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
 import { writeDml } from "@/lib/data/dml-writer"
-import { datasetSchema, ENTRY_FIELD_NAMES, type DmlHeader } from "@/lib/data/schema"
+import { CORE_FIELD_NAMES, datasetSchema, ENTRY_FILE_COLUMNS, type DmlHeader } from "@/lib/data/schema"
 import { writeEntriesCsv } from "@/lib/files/csv-writer"
 import { formatAnswerTimestamp, toAnswerTimestamp } from "./answer-timestamp"
 
@@ -21,15 +21,15 @@ describe("answer_timestamp", () => {
   })
 
   it("ist die 28. CSV-Spalte direkt nach answer_comment und wird geschrieben", () => {
-    expect(ENTRY_FIELD_NAMES).toHaveLength(28)
-    expect(ENTRY_FIELD_NAMES.indexOf("answer_timestamp")).toBe(ENTRY_FIELD_NAMES.indexOf("answer_comment") + 1)
+    expect(CORE_FIELD_NAMES).toHaveLength(28)
+    expect(ENTRY_FILE_COLUMNS.indexOf("answer_timestamp")).toBe(ENTRY_FILE_COLUMNS.indexOf("answer_comment") + 1)
     const demo = buildDemoDataset()
     const entries = demo.entries
       .filter((e) => e.dmrlId === DEMO_IDS.dmrlVehicle)
       .map((e) => ({ ...e, fields: { ...e.fields, answer: "y", answer_timestamp: "2026-11-21T14:30:05" } }))
     const lines = writeEntriesCsv(entries).replace(/^﻿/, "").split("\r\n")
     const header = lines[0].split(";")
-    expect(header).toHaveLength(28)
+    expect(header).toHaveLength(37)
     expect(lines[1].split(";")[header.indexOf("answer_timestamp")]).toBe("2026-11-21T14:30:05")
   })
 

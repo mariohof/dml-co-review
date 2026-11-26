@@ -1,24 +1,27 @@
 import Papa from "papaparse"
 
-import { ENTRY_FIELD_NAMES, type EntrySnapshot } from "@/lib/data/schema"
-import { compareByDmc } from "@/lib/dmrl/entries"
+import { DMC_COLUMN, ENTRY_FILE_COLUMNS, type EntrySnapshot } from "@/lib/data/schema"
+import { compareByDmc, formatDmc } from "@/lib/dmrl/entries"
 import { guardCsvCell } from "./csv-formula"
 
 /**
  * Gemeinsamer CSV-Schreiber (PROJ-9 Tech Design E; genutzt von PROJ-9/14/18):
- * alle Eintragsfelder (28 Spalten) in fester Reihenfolge, Semikolon, UTF-8 mit BOM, Anführungszeichen nur wo nötig, sortiert nach DMC.
+ * alle Dateispalten (37: 28 Felder, `dmc`, 8 Informationsfelder — Refinement 2026-11-26) in fester Reihenfolge, Semikolon, UTF-8 mit BOM, Anführungszeichen nur wo nötig, sortiert nach DMC.
  * Werte, die Excel als Formel ausführen würde, werden entschärft (BUG-QA2-1, siehe csv-formula.ts).
  */
 export const CSV_BOM = "﻿"
 
 /**
  * Eintrags-Tabelle — gemeinsame Quelle für CSV- und Excel-Export (PROJ-18 Tech Design G):
- * alle Eintragsfelder in fester Reihenfolge, Einträge nach DMC sortiert, Werte unverändert (ohne CSV-Entschärfung).
+ * alle Dateispalten in fester Reihenfolge, Einträge nach DMC sortiert, Werte unverändert (ohne CSV-Entschärfung).
+ * `dmc` wird je Zeile aus den DMC-Teilen gebildet, nie gespeichert (PROJ-9 Refinement 2026-11-26).
  */
 export function entriesTable(entries: Pick<EntrySnapshot, "fields">[]): { header: string[]; rows: string[][] } {
   return {
-    header: [...ENTRY_FIELD_NAMES],
-    rows: [...entries].sort(compareByDmc).map((entry) => ENTRY_FIELD_NAMES.map((name) => entry.fields[name] ?? "")),
+    header: [...ENTRY_FILE_COLUMNS],
+    rows: [...entries]
+      .sort(compareByDmc)
+      .map((entry) => ENTRY_FILE_COLUMNS.map((name) => (name === DMC_COLUMN ? formatDmc(entry.fields) : (entry.fields[name] ?? "")))),
   }
 }
 

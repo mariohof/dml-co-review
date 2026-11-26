@@ -4,7 +4,7 @@ import { resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
-import { ENTRY_FIELD_NAMES, type Dataset, type Dmrl, type EntrySnapshot, type User } from "@/lib/data/schema"
+import { ENTRY_FILE_COLUMNS, type Dataset, type Dmrl, type EntrySnapshot, type User } from "@/lib/data/schema"
 import { entriesTable } from "@/lib/files/csv-writer"
 import { writeEntriesXlsx } from "@/lib/files/entries-xlsx"
 import { writeXlsx, XLSX_MIME_TYPE } from "@/lib/files/xlsx-writer"
@@ -103,12 +103,12 @@ describe("Check-in einer Excel-Datei", () => {
     expect(lined.every((f) => f.line === 5)).toBe(true)
   })
 
-  it("Werte außerhalb der 28 Spalten sind ein Fehler", () => {
+  it("Werte außerhalb der 37 Spalten sind ein Fehler", () => {
     const data = checkedOut()
     const { header, rows } = entriesTable(lockRows(data))
     const sheetRows = [{ line: 1, cells: header }, ...rows.map((cells, i) => ({ line: i + 2, cells: i === 0 ? [...cells, "zu viel"] : cells }))]
     const result = runCheckinCheck({ source: "xlsx", rows: sheetRows }, { systemModelic: "GTFDEMO", snapshot: lockRows(data) })
-    expect(errors(result).filter((f) => f.group === "S").map((f) => [f.line, f.message])).toEqual([[2, `Zeile hat 29 statt ${ENTRY_FIELD_NAMES.length} Spalten.`]])
+    expect(errors(result).filter((f) => f.group === "S").map((f) => [f.line, f.message])).toEqual([[2, `Zeile hat ${ENTRY_FILE_COLUMNS.length + 1} statt ${ENTRY_FILE_COLUMNS.length} Spalten.`]])
   })
 
   it("Testdatei aus MS Excel gegen den Demo-Stand PHUNGUN: keine Fehler, 32 Einträge fachlich unverändert", () => {

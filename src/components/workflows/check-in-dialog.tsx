@@ -99,9 +99,11 @@ function CheckInFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
       return
     }
     if (!update(() => outcome.data)) return
-    const { neu, geaendert, unveraendert, alsFreigegeben } = checkinSummary(result.candidates, result.comparison, takeAnswers)
+    const { neu, geaendert, unveraendert, alsFreigegeben, informationsfelder } = checkinSummary(result.candidates, result.comparison, takeAnswers)
     const answers = takeAnswers && result.comparison ? answerDeviations(result.comparison).length : 0
-    const answersNote = answers > 0 ? `, ${answers} Antworten übernommen` : ""
+    const answersNote =
+      (answers > 0 ? `, ${answers} Antworten übernommen` : "") +
+      (informationsfelder > 0 ? `, Informationsfelder bei ${informationsfelder} Einträgen aktualisiert` : "")
     const releasedNote = alsFreigegeben > 0 ? ` (davon ${alsFreigegeben} als freigegeben übernommen)` : ""
     const dmrlReleased = outcome.data.dmrls.find((d) => d.id === dmrl.id)?.status === "freigegeben" && alsFreigegeben > 0
     toast.success(
@@ -222,7 +224,11 @@ function CheckInSummary({
   const deviations = result.comparison ? answerDeviations(result.comparison) : []
   const blockers = takeAnswers && result.comparison ? answerTakeoverBlockers(result.comparison) : []
   // Zahlen passen sich dem Häkchen sofort an (gleicher Abgleich, keine erneute Prüfung)
-  const { geprueft, neu, geaendert, unveraendert, alsFreigegeben } = checkinSummary(result.candidates, result.comparison, takeAnswers)
+  const { geprueft, neu, geaendert, unveraendert, alsFreigegeben, informationsfelder } = checkinSummary(
+    result.candidates,
+    result.comparison,
+    takeAnswers
+  )
   const tiles = [
     { label: "geprüft", value: geprueft },
     { label: "neu", value: neu },
@@ -335,8 +341,25 @@ function CheckInSummary({
         />
       )}
 
-      {neu + geaendert === 0 && (
+      {informationsfelder > 0 && (
+        <Alert>
+          <Info className="h-4 w-4" aria-hidden />
+          <AlertTitle>Informationsfelder bei {informationsfelder} Einträgen aktualisiert</AlertTitle>
+          <AlertDescription>
+            Die Informationsfelder (z. B. <code>orig</code>, <code>applic_model</code>) werden übernommen. Sie sind rein informativ: Status
+            und Freigabe ändern sich dadurch nicht.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {neu + geaendert === 0 && informationsfelder === 0 && (
         <p className="text-sm text-muted-foreground">Keine Änderungen. Beim Übernehmen wird nur die Sperre aufgehoben; der Status der DMRL bleibt unverändert.</p>
+      )}
+      {neu + geaendert === 0 && informationsfelder > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Keine fachlichen Änderungen. Beim Übernehmen werden die Informationsfelder gespeichert und die Sperre aufgehoben; der Status der DMRL
+          bleibt unverändert.
+        </p>
       )}
 
       <DialogFooter className="gap-2 sm:gap-0">
