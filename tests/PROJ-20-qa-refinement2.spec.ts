@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Page } from "@playwright/test"
 
-import { readDataset, startAs } from "./helpers"
+import { patchDataset, readDataset, startAs } from "./helpers"
 
 /**
  * PROJ-20 QA Refinement 2/3 (2026-11-16): fehlende Ausgabedaten werden in der CSV ergänzt
@@ -113,7 +113,8 @@ test("Rundlauf in bestehende DMRL: 4.2-Export ohne Ausgabedaten → CSV → Chec
   const dialog = page.getByRole("dialog")
   await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
   await expect(dialog.getByText("Prüfung bestanden")).toBeVisible()
-  await expect(dialog.getByText("Keine Fehler und keine Hinweise.")).toBeVisible()
+  // Werkzeug-CSV hat 28 Spalten → einziger Hinweis: Informationsfelder bleiben erhalten (Refinement 2026-11-26 (2), BUG-QA13-1)
+  await expect(dialog.getByText("Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.")).toBeVisible()
   // GTFDEMO hat bereits 001/new mit anderem Datum → das Prüfdatum erscheint als Änderung (gewollt laut Tech Design K)
   await expect(dialog.getByText("Geänderte Einträge (10)")).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Übernehmen" })).toBeEnabled()
@@ -127,4 +128,31 @@ test("Nichts gespeichert: Datenbestand vor und nach Prüfung mit Ergänzung iden
   await expect(page.getByText(/in der CSV ergänzt/).first()).toBeVisible()
   await downloadCsv(page)
   expect(await readDataset(page)).toEqual(before)
+})
+
+test("BUG-QA13-1: Werkzeug-CSV hat 28 Spalten; Check-in erhält gespeicherte Informationsfelder der DMRL", async ({ page }) => {
+  await startAs(page, "Ben Bearbeiter")
+  await patchDataset(page, `for (const e of data.entries) if (e.dmrlId === "dmrl-gtfdemo") e.fields.orig = "ALT01"`)
+  const exported = await exportGtfdemoXml(page)
+  await checkContent(page, exported.name, stripIssueData42(exported.xml), "4.2")
+  const converted = await downloadCsv(page)
+  const header = converted.csv.replace(/^﻿/, "").split("\r\n")[0].split(";")
+  expect(header).toHaveLength(28)
+  expect(header).not.toContain("dmc")
+  expect(header).not.toContain("orig")
+
+  await page.goto("/dmrl/dmrl-gtfdemo")
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-out" }).click()
+  const checkoutPromise = page.waitForEvent("download")
+  await page.getByRole("alertdialog").getByRole("button", { name: "Auschecken" }).click()
+  await checkoutPromise
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
+  const dialog = page.getByRole("dialog")
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
+  await expect(dialog.getByText("Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.")).toBeVisible()
+  await dialog.getByRole("button", { name: "Übernehmen" }).click()
+  await expect(dialog).toBeHidden()
+  const data = await readDataset(page)
+  const entries = data.entries.filter((e: { dmrlId: string }) => e.dmrlId === "dmrl-gtfdemo")
+  expect(entries.every((e: { fields: { orig: string } }) => e.fields.orig === "ALT01")).toBe(true)
 })

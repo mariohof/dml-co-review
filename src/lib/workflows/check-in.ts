@@ -7,6 +7,7 @@ import {
   answerTakeoverBlockers,
   checkinSummary,
   effectiveClassification,
+  infoFieldsUpdatedText,
   isReleasedOnTakeover,
   runCheckinCheck,
   type CheckinInput,
@@ -144,7 +145,7 @@ export function executeCheckIn(
   const status: DmrlStatus = released ? "freigegeben" : changed ? "in_bearbeitung" : dmrl.status
   const takenAnswers = takeAnswers ? answerDeviations(result.comparison).length : 0
   const answersNote = takenAnswers > 0 ? `; ${takenAnswers} Antworten aus der Datei übernommen` : ""
-  const infoNote = informationsfelder > 0 ? `; Informationsfelder bei ${informationsfelder} Einträgen aktualisiert` : ""
+  const infoNote = informationsfelder > 0 ? `; ${infoFieldsUpdatedText(informationsfelder)}` : ""
   const releasedNote = alsFreigegeben > 0 ? ` (davon ${alsFreigegeben} als freigegeben übernommen)` : ""
   const dmrlReleasedNote = released ? " — DMRL freigegeben (Übernahme Bestand)" : ""
   return {

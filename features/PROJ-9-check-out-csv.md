@@ -1,6 +1,6 @@
 # PROJ-9: Check-out (MS-Excel)
 
-## Status: In Review
+## Status: In Progress
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-26
 
@@ -689,6 +689,7 @@ _Stand 2026-11-26 — `/frontend PROJ-9` (Tech Design J, gemeinsam mit PROJ-10)_
 - **Test:** `qa-proj9-10-info.test.ts` › „Explorativ: CSV aus der XML-Prüfung (PROJ-20) einchecken“ (dokumentiert das heutige Verhalten)
 - **Priority:** Fix in next sprint (vor Abnahme klären)
 - **Entscheidung Product Owner (2026-11-26):** PROJ-20 schreibt seine CSV mit 28 Spalten (ohne `dmc` und Informationsfelder) → `/refine PROJ-20`; Behebung per `/frontend`
+- **Status:** Behoben 2026-11-26 (`/frontend`) — CSV-Schreiber mit wählbarer Spaltenliste; das Werkzeug schreibt `COLUMNS_WITHOUT_INFO_FIELDS` (28 Spalten). Tests: `qa-proj9-10-info.test.ts` (Werkzeug-CSV erhält gespeicherte Werte), `xml-check.test.ts` (28 Spalten), E2E „BUG-QA13-1“ in `tests/PROJ-20-qa-refinement2.spec.ts`
 
 ##### BUG-QA13-2: Zähler-Text „bei 1 Einträgen“
 - **Severity:** Low (Grammatik)
@@ -696,6 +697,7 @@ _Stand 2026-11-26 — `/frontend PROJ-9` (Tech Design J, gemeinsam mit PROJ-10)_
 - **Expected:** „bei 1 Eintrag“
 - **Hinweis:** gleiches Muster wie das bestehende „1 Antworten übernommen“
 - **Priority:** Nice to have
+- **Status:** Behoben 2026-11-26 (`/frontend`) — ein Text-Baustein `infoFieldsUpdatedText` für Dialog, Toast und Verlauf („bei 1 Eintrag“ / „bei N Einträgen“); Unit-Test in `info-fields.test.ts`. „1 Antworten übernommen“ unverändert (nicht Teil des Bugs)
 
 #### Beobachtung (kein Bug)
 - Bei Einträgen, die sich nur in Informationsfeldern unterscheiden, zeigt der Dialog nur die Anzahl, nicht welche Einträge/Felder — laut Spec ausreichend; relevant für BUG-QA13-1.

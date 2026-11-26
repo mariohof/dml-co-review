@@ -1,6 +1,6 @@
 import Papa from "papaparse"
 
-import { DMC_COLUMN, ENTRY_FILE_COLUMNS, type EntrySnapshot } from "@/lib/data/schema"
+import { CORE_FIELD_NAMES, DMC_COLUMN, ENTRY_FILE_COLUMNS, type EntryFieldName, type EntrySnapshot } from "@/lib/data/schema"
 import { compareByDmc, formatDmc } from "@/lib/dmrl/entries"
 import { guardCsvCell } from "./csv-formula"
 
@@ -16,17 +16,30 @@ export const CSV_BOM = "﻿"
  * alle Dateispalten in fester Reihenfolge, Einträge nach DMC sortiert, Werte unverändert (ohne CSV-Entschärfung).
  * `dmc` wird je Zeile aus den DMC-Teilen gebildet, nie gespeichert (PROJ-9 Refinement 2026-11-26).
  */
-export function entriesTable(entries: Pick<EntrySnapshot, "fields">[]): { header: string[]; rows: string[][] } {
+export function entriesTable(
+  entries: Pick<EntrySnapshot, "fields">[],
+  columns: readonly (EntryFieldName | typeof DMC_COLUMN)[] = ENTRY_FILE_COLUMNS
+): { header: string[]; rows: string[][] } {
   return {
-    header: [...ENTRY_FILE_COLUMNS],
+    header: [...columns],
     rows: [...entries]
       .sort(compareByDmc)
-      .map((entry) => ENTRY_FILE_COLUMNS.map((name) => (name === DMC_COLUMN ? formatDmc(entry.fields) : (entry.fields[name] ?? "")))),
+      .map((entry) => columns.map((name) => (name === DMC_COLUMN ? formatDmc(entry.fields) : (entry.fields[name] ?? "")))),
   }
 }
 
-export function writeEntriesCsv(entries: Pick<EntrySnapshot, "fields">[]): string {
-  const table = entriesTable(entries)
+/**
+ * Aufbau ohne `dmc` und Informationsfelder (28 Spalten, Stand 21.11.2026) — für die CSV des Werkzeugs (PROJ-20,
+ * Refinement 2026-11-26 (2), BUG-QA13-1): Eine Empfänger-XML hat keine Informationsfelder; beim Check-in bleiben die
+ * gespeicherten Werte so erhalten.
+ */
+export const COLUMNS_WITHOUT_INFO_FIELDS: readonly EntryFieldName[] = CORE_FIELD_NAMES
+
+export function writeEntriesCsv(
+  entries: Pick<EntrySnapshot, "fields">[],
+  columns: readonly (EntryFieldName | typeof DMC_COLUMN)[] = ENTRY_FILE_COLUMNS
+): string {
+  const table = entriesTable(entries, columns)
   const rows = table.rows.map((values) => values.map(guardCsvCell))
   const body = Papa.unparse({ fields: table.header, data: rows }, { delimiter: ";", newline: "\r\n", quotes: false })
   return CSV_BOM + body + "\r\n"

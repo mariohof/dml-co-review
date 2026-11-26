@@ -112,12 +112,12 @@ test("Informationsfelder (Refinement 2026-11-26): 37 Spalten mit dmc; nur orig g
   const statusBefore = (await readDataset(page)).dmrls.find((d: { id: string }) => d.id === "dmrl-gtfdemo").status
 
   const dialog = await upload(page, { name: "DML-GTFDEMO-D0815-C-2026.csv", bytes: Buffer.from(lines.join("\r\n")), mimeType: "text/csv" })
-  await expect(dialog.getByText("Informationsfelder bei 1 Einträgen aktualisiert")).toBeVisible()
+  await expect(dialog.getByText("Informationsfelder bei 1 Eintrag aktualisiert")).toBeVisible()
   await dialog.getByRole("button", { name: "Übernehmen" }).click()
   await expect(dialog).toBeHidden()
   const data = await readDataset(page)
   expect(data.dmrls.find((d: { id: string }) => d.id === "dmrl-gtfdemo").status).toBe(statusBefore)
-  expect(data.history.at(-1).details).toBe("Check-in — 0 neu, 0 geändert, 10 unverändert; Informationsfelder bei 1 Einträgen aktualisiert")
+  expect(data.history.at(-1).details).toBe("Check-in — 0 neu, 0 geändert, 10 unverändert; Informationsfelder bei 1 Eintrag aktualisiert")
 
   const again = await checkOutVehicle(page)
   const origValues = checkOutXlsxToCsv(again.bytes).split("\r\n").slice(1).filter(Boolean).map((line) => line.split(";")[header.indexOf("orig")])

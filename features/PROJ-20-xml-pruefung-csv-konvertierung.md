@@ -553,6 +553,12 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 - E2E-Tests (`PROJ-20-xml-pruefung.spec.ts`, `PROJ-20-qa.spec.ts`, `PROJ-20-qa-refinement.spec.ts`) auf Menüpunkt/Überschrift „Werkzeug“ umgestellt; neuer Test „Benennung ‚Werkzeug‘“ prüft Menüpunkt, Überschrift, Zeile „XML prüfen“, Adresse und dass kein Menüpunkt „XML prüfen“ mehr existiert.
 - Interne Bezeichner, Adresse und Code-Kommentare zur Funktion („Prüfkern ‚XML prüfen‘“) bleiben unverändert.
 
+### Implementierungsnotizen Refinement 2026-11-26 (2) (Frontend) — CSV mit 28 Spalten
+- `src/lib/files/csv-writer.ts` — Spaltenliste wählbar (Standard 37); neu `COLUMNS_WITHOUT_INFO_FIELDS` (die 28 Felder bis `remarks`).
+- `src/lib/workflows/xml-check.ts` — CSV des Werkzeugs mit `COLUMNS_WITHOUT_INFO_FIELDS` → ohne `dmc` und Informationsfelder (BUG-QA13-1).
+- Tests: `xml-check.test.ts` (28 Spalten); `qa-proj9-10-info.test.ts` (Check-in der Werkzeug-CSV erhält gespeicherte Informationsfelder, Hinweis im Prüfbericht); E2E `PROJ-20-qa-refinement2.spec.ts` neu „BUG-QA13-1“ und Rundlauf-Test erwartet jetzt den Hinweis „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.“ statt „Keine Fehler und keine Hinweise.“
+- Gesamt: 714 Unit-Tests und 164 E2E-Tests grün; Lint ohne Fehler.
+
 ### Bugfix BUG-QA1-1 (2026-11-15) — UTF-16-Dateien
 - `declaredEncoding` (`src/lib/workflows/reply.ts`) erkennt UTF-16 jetzt am BOM (`FF FE` / `FE FF`) oder — ohne BOM — am Bytemuster von „<?“ (Little/Big Endian); sonst wie bisher die XML-Deklaration (Standard UTF-8). Gemeinsamer Baustein für REPLY-Import (PROJ-13) und „XML prüfen“ (PROJ-20).
 - Archiv-Download (`archiveFileBytes`, PROJ-15): UTF-16-Stände werden wieder als UTF-16 LE mit BOM ausgegeben (byte-genau für die übliche LE-Datei mit BOM; bei BE oder fehlendem BOM als LE mit BOM).

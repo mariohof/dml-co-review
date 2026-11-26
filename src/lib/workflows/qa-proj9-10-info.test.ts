@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest"
 
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
 import { ENTRY_FILE_COLUMNS, INFO_FIELD_NAMES, type Dataset, type Dmrl, type EntrySnapshot, type User } from "@/lib/data/schema"
-import { writeEntriesCsv } from "@/lib/files/csv-writer"
+import { COLUMNS_WITHOUT_INFO_FIELDS, writeEntriesCsv } from "@/lib/files/csv-writer"
 import { ENTRIES_SHEET_NAME, writeEntriesXlsx } from "@/lib/files/entries-xlsx"
 import { readXlsxSheet } from "@/lib/files/xlsx-reader"
-import { readCheckinCsv } from "@/lib/rules/check/csv-reader"
+import { NO_INFO_FIELDS_HINT, readCheckinCsv } from "@/lib/rules/check/csv-reader"
 import { errorCount } from "@/lib/rules/check/types"
 import { checkCheckinFile, executeCheckIn } from "./check-in"
 import { executeCheckOut } from "./check-out"
@@ -146,16 +146,18 @@ describe("Dateien mit Eintragstabelle", () => {
   })
 })
 
-describe("Explorativ: CSV aus der XML-Prüfung (PROJ-20) einchecken", () => {
-  it("leert gespeicherte Informationsfelder aller Einträge (Datei hat 37 Spalten, Informationsfelder leer)", () => {
+describe("CSV aus der XML-Prüfung (PROJ-20) einchecken — BUG-QA13-1 behoben", () => {
+  it("Werkzeug-CSV (28 Spalten, aus der XML ohne Informationsfelder) erhält die gespeicherten Informationsfelder", () => {
     const data = checkOut(withStoredInfo())
-    // PROJ-20 schreibt dieselbe 37-Spalten-CSV, Informationsfelder leer (Empfänger-XML kennt sie nicht)
-    const proj20Like = lockRows(data).map((e) => ({ ...e, fields: { ...e.fields, ...Object.fromEntries(INFO_FIELD_NAMES.map((n) => [n, ""])) } }))
-    const { checked, result } = checkIn(data, writeEntriesCsv(proj20Like))
+    // Einträge wie aus einer Empfänger-XML (Informationsfelder leer), geschrieben wie im Werkzeug
+    const fromXml = lockRows(data).map((e) => ({ ...e, fields: { ...e.fields, ...Object.fromEntries(INFO_FIELD_NAMES.map((n) => [n, ""])) } }))
+    const csv = writeEntriesCsv(fromXml, COLUMNS_WITHOUT_INFO_FIELDS)
+    expect(csv.replace(/^\uFEFF/, "").split("\r\n")[0].split(";")).toHaveLength(28)
+    const { checked, result } = checkIn(data, csv)
     expect(errorCount(checked.report)).toBe(0)
-    expect(checked.summary.informationsfelder).toBe(10)
+    expect(checked.summary.informationsfelder).toBe(0)
+    expect(checked.report.findings.map((f) => f.message)).toContain(NO_INFO_FIELDS_HINT)
     if (!result.ok) throw new Error(result.message)
-    // Befund: alle gespeicherten Werte sind weg — nur der Zähler im Dialog weist darauf hin (BUG-QA13-1)
-    expect(vehicle(result.data).every((e) => e.fields.orig === "" && e.fields.spec === "")).toBe(true)
+    expect(vehicle(result.data).every((e) => e.fields.orig === "D0815" && e.fields.spec === "S1000D-4.2")).toBe(true)
   })
 })

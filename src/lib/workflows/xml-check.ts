@@ -1,6 +1,6 @@
 import { DmlParseError, readDml, type ParsedDml } from "@/lib/data/dml-reader"
 import type { DmlCode, S1000dIssue } from "@/lib/data/schema"
-import { writeEntriesCsv } from "@/lib/files/csv-writer"
+import { COLUMNS_WITHOUT_INFO_FIELDS, writeEntriesCsv } from "@/lib/files/csv-writer"
 import { checkFormats, checkInfocodeInfoname, checkMandatory, checkSnsTechname, checkUniqueDmc, OPTIONAL_IN_REPLY } from "@/lib/rules/check/entry-rules"
 import type { Candidate, Finding, Report } from "@/lib/rules/check/types"
 import { formatDmc } from "@/lib/dmrl/entries"
@@ -218,7 +218,8 @@ export function checkXmlText(
     candidates,
     report: { lineLabel: "Zeile / Eintrag", findings },
     summary: xmlCheckSummary(candidates, mi.modelic),
-    csv: writeEntriesCsv(filled.candidates),
+    // 28 Spalten ohne `dmc`/Informationsfelder — gespeicherte Informationsfelder bleiben beim Check-in erhalten (BUG-QA13-1)
+    csv: writeEntriesCsv(filled.candidates, COLUMNS_WITHOUT_INFO_FIELDS),
     filledEntries: filled.filled,
   }
 }

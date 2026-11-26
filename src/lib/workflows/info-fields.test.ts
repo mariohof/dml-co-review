@@ -19,6 +19,7 @@ import { entriesTable, writeEntriesCsv } from "@/lib/files/csv-writer"
 import { ENTRIES_SHEET_NAME } from "@/lib/files/entries-xlsx"
 import { readXlsxSheet } from "@/lib/files/xlsx-reader"
 import { NO_INFO_FIELDS_HINT, readCheckinCsv } from "@/lib/rules/check/csv-reader"
+import { infoFieldsUpdatedText } from "@/lib/rules/check/checkin"
 import { errorCount } from "@/lib/rules/check/types"
 import { checkCheckinFile, executeCheckIn } from "./check-in"
 import { executeCheckOut, lockXlsx } from "./check-out"
@@ -98,7 +99,7 @@ describe("Check-in", () => {
     expect(vehicleEntries(result.data).every((e) => e.status === "freigegeben")).toBe(true)
     const changed = vehicleEntries(result.data).find((e) => e.fields.orig === "D0815")!
     expect(changed.fields).toMatchObject({ applic_model: "GTF-A", "io-pm": "=1+1" })
-    expect(result.data.history.at(-1)!.details).toContain("Informationsfelder bei 1 Einträgen aktualisiert")
+    expect(result.data.history.at(-1)!.details).toContain("Informationsfelder bei 1 Eintrag aktualisiert")
     // nächster Check-out enthält die Werte wieder
     const again = checkOut(result.data)
     expect(csvOf(again)).toContain(";D0815;;GTF-A;")
@@ -160,6 +161,13 @@ describe("Check-in", () => {
     const { checked } = checkIn(data, csv)
     expect(checked.report.findings.filter((f) => f.field && (INFO_FIELD_NAMES as readonly string[]).includes(f.field))).toEqual([])
     expect(errorCount(checked.report)).toBe(0)
+  })
+})
+
+describe("Texte", () => {
+  it("Einzahl/Mehrzahl im Zähler (BUG-QA13-2)", () => {
+    expect(infoFieldsUpdatedText(1)).toBe("Informationsfelder bei 1 Eintrag aktualisiert")
+    expect(infoFieldsUpdatedText(2)).toBe("Informationsfelder bei 2 Einträgen aktualisiert")
   })
 })
 

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { DEMO_FILES } from "@/lib/data/demo-data"
 import { DEMO_XML_FILES } from "@/lib/data/demo-xml.generated"
-import { ENTRY_FILE_COLUMNS } from "@/lib/data/schema"
+import { CORE_FIELD_NAMES } from "@/lib/data/schema"
 import { runCheckinCheck } from "@/lib/rules/check/checkin"
 import { readCheckinCsv } from "@/lib/rules/check/csv-reader"
 import { errorCount, hintCount } from "@/lib/rules/check/types"
@@ -59,7 +59,7 @@ describe("checkXmlText — gültige Datei", () => {
     expect(result.summary.ohneAntwort).toBe(result.summary.entries)
     const csv = result.csv!
     expect(csv.startsWith("﻿dmentryType;modelic")).toBe(true)
-    expect(csv.split("\r\n")[0].split(";")).toHaveLength(ENTRY_FILE_COLUMNS.length)
+    expect(csv.split("\r\n")[0].split(";")).toHaveLength(CORE_FIELD_NAMES.length)
     expect(csv.split("\r\n").filter(Boolean)).toHaveLength(result.candidates.length + 1)
   })
 

@@ -30,6 +30,7 @@ import {
   answerDeviations,
   answerTakeoverBlockers,
   checkinSummary,
+  infoFieldsUpdatedText,
   type CheckinResult,
   type ComparedEntry,
 } from "@/lib/rules/check/checkin"
@@ -103,7 +104,7 @@ function CheckInFlow({ dmrl, onClose }: { dmrl: Dmrl; onClose: () => void }) {
     const answers = takeAnswers && result.comparison ? answerDeviations(result.comparison).length : 0
     const answersNote =
       (answers > 0 ? `, ${answers} Antworten übernommen` : "") +
-      (informationsfelder > 0 ? `, Informationsfelder bei ${informationsfelder} Einträgen aktualisiert` : "")
+      (informationsfelder > 0 ? `, ${infoFieldsUpdatedText(informationsfelder)}` : "")
     const releasedNote = alsFreigegeben > 0 ? ` (davon ${alsFreigegeben} als freigegeben übernommen)` : ""
     const dmrlReleased = outcome.data.dmrls.find((d) => d.id === dmrl.id)?.status === "freigegeben" && alsFreigegeben > 0
     toast.success(
@@ -344,7 +345,7 @@ function CheckInSummary({
       {informationsfelder > 0 && (
         <Alert>
           <Info className="h-4 w-4" aria-hidden />
-          <AlertTitle>Informationsfelder bei {informationsfelder} Einträgen aktualisiert</AlertTitle>
+          <AlertTitle>{infoFieldsUpdatedText(informationsfelder)}</AlertTitle>
           <AlertDescription>
             Die Informationsfelder (z. B. <code>orig</code>, <code>applic_model</code>) werden übernommen. Sie sind rein informativ: Status
             und Freigabe ändern sich dadurch nicht.

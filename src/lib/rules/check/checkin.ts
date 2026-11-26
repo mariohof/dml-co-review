@@ -184,6 +184,9 @@ export function checkinSummary(candidates: Candidate[], comparison: Comparison |
   }
 }
 
+/** „Informationsfelder bei 1 Eintrag / N Einträgen aktualisiert" (Dialog, Toast, Verlauf; BUG-QA13-2) */
+export const infoFieldsUpdatedText = (count: number) => `Informationsfelder bei ${count} ${count === 1 ? "Eintrag" : "Einträgen"} aktualisiert`
+
 export interface CheckinContext {
   systemModelic: string
   /** Stand der Einträge beim Check-out (Kopie in der Sperre) */

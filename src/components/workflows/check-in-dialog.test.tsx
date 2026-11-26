@@ -144,7 +144,7 @@ describe("Check-in in der DMRL-Ansicht", () => {
   it("nur Informationsfelder geändert: Hinweis statt „Keine Änderungen“, Übernahme speichert die Werte (Refinement 2026-11-26)", async () => {
     renderAs(DEMO_IDS.editorBen)
     const dialog = await openAndUpload(csvOf(data, (rows) => rows.map((e, i) => (i === 0 ? { ...e, fields: { ...e.fields, orig: "D0815" } } : e))))
-    expect(await within(dialog).findByText("Informationsfelder bei 1 Einträgen aktualisiert")).toBeInTheDocument()
+    expect(await within(dialog).findByText("Informationsfelder bei 1 Eintrag aktualisiert")).toBeInTheDocument()
     expect(within(dialog).queryByText(/^Keine Änderungen/)).toBeNull()
     expect(within(dialog).getByText(/Keine fachlichen Änderungen/)).toBeInTheDocument()
     const statusBefore = vehicle(stored()).status
@@ -152,7 +152,7 @@ describe("Check-in in der DMRL-Ansicht", () => {
     await waitFor(() => expect(vehicle(stored()).lock).toBeNull())
     expect(vehicle(stored()).status).toBe(statusBefore)
     expect(stored().entries.filter((e) => e.fields.orig === "D0815")).toHaveLength(1)
-    expect(stored().history.at(-1)?.details).toContain("Informationsfelder bei 1 Einträgen aktualisiert")
+    expect(stored().history.at(-1)?.details).toContain("Informationsfelder bei 1 Eintrag aktualisiert")
   })
 
   describe("Abweichende Empfängerantworten (Refinement 2026-11-14)", () => {
