@@ -1,6 +1,6 @@
 # PROJ-8: Fachliches Regelwerk
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-26
 
@@ -478,6 +478,17 @@ Keine neuen Bugs in diesem Feature.
 ### QA-Lauf 5 — Bestätigung BUG-QA4-1 (2026-11-14)
 - [x] Regel F erweitert: kein Eintrag *in Bearbeitung* ohne Eintragstyp (entfernter Typ, Altbestand); freigegebene unveränderte Einträge ohne Typ erlaubt (Unit, E2E; Details PROJ-10 QA-Lauf 5)
 - **Offene Bugs:** keine · **Production Ready:** YES
+
+### QA-Lauf 6 — Refinement `security` optional (2026-11-26)
+- [x] Leeres `security` beim Check-in: kein Pflichtfeld- und kein Formatfehler; zählt als Änderung (Unit)
+- [x] Fehlendes `security` in REPLY und Werkzeug: kein Fehler; 6.0-Beispiel und der Fall des Product Owners (echte 6.0-DMRL ohne `security`) liefern nur noch fachliche E/I-Befunde (Unit, E2E)
+- [x] Regel G: SEND `01`, REPLY ohne `security` → kein Fehler, nach Übernahme bleibt `01` (Unit, 6.0-Zyklus)
+- [x] Regel G: SEND `01`, REPLY `02` → „Feld security wurde gegenüber dem SEND verändert“ (Unit)
+- [x] Edge: `security` beim Check-in geleert, Eintrag ohne Eintragstyp → nur Fehler F „Geänderter Eintrag ohne Eintragstyp“
+- [x] Edge: SEND ohne `security`, REPLY mit `security` → Fehler G
+- [x] SEND mit Einträgen ohne `security` (2.3 und 6.0): kein Element je Eintrag, XSD-gültig
+- [x] Regression: Format `01`–`20` und Auffüllen führender Nullen unverändert; `infoname`/`language`/`country` weiterhin Pflicht
+- **Ergebnis:** 8/8 bestanden, keine Bugs. Status **Approved**.
 
 ## Deployment
 _To be added by /deploy_

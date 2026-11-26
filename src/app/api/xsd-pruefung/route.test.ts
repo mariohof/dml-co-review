@@ -29,6 +29,12 @@ describe("POST /api/xsd-pruefung — Eingaben", () => {
     }
   })
 
+  it("QA PROJ-22: unbekannte Issue 7.0 → 400, Meldung nennt alle vier Issues", async () => {
+    const response = await POST(request("?issue=7.0", "<dml/>"))
+    expect(response.status).toBe(400)
+    expect((await response.json()).error).toBe("Unbekanntes S1000D-Issue (erlaubt: 2.3, 4.2, 5.0, 6.0).")
+  })
+
   it("400 bei leerer Datei, 413 über 5 MB", async () => {
     expect((await POST(request("?issue=2.3", ""))).status).toBe(400)
     const big = new Uint8Array(5 * 1024 * 1024 + 1)

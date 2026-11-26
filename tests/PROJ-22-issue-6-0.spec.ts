@@ -71,3 +71,45 @@ test("Werkzeug: 5.0-Beispiel gegen Issue 6.0 — XSD bestanden, Hinweis zur Sche
   await expect(xsdRows(page)).toContainText("Hinweis")
   await expect(xsdRows(page)).toContainText("Die Schema-Angabe der Datei verweist auf S1000D Issue 5.0, gewählt ist Issue 6.0 — bitte Issue prüfen.")
 })
+
+/** QA 2026-11-26: REPLY aus dem heruntergeladenen SEND der DMRL BIKE60 bauen (Schema-Angabe 5.0, alle Einträge y) */
+async function bikeReplyWithSchema50(page: Page) {
+  await startAs(page, "Anna Bearbeitung")
+  await page.goto("/dmrl/dmrl-bike60")
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "SEND" }).click()
+  let dialog = page.getByRole("dialog")
+  await dialog.getByRole("combobox", { name: "Empfänger" }).click()
+  await page.getByRole("option", { name: /C1234/ }).click()
+  const downloadPromise = page.waitForEvent("download")
+  await dialog.getByRole("button", { name: "Senden" }).click()
+  const send = readFileSync((await (await downloadPromise).path())!, "utf8")
+  await expect(dialog).toBeHidden()
+
+  const reply = send
+    .replace('listDirection="send"', 'listDirection="reply"')
+    .replace('senderIdent="B6865"', 'senderIdent="C1234"')
+    .replace("S1000D_6/xml_schema_flat", "S1000D_5-0/xml_schema_flat")
+    .replace(/<\/responsiblePartnerCompany>/g, '</responsiblePartnerCompany>\n         <answer answerToEntry="y"/>')
+  expect(reply.match(/answerToEntry/g)).toHaveLength(12)
+
+  await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY", exact: true }).click()
+  dialog = page.getByRole("dialog")
+  await dialog.getByLabel("XML-Datei für den REPLY-Import").setInputFiles({ name: "DML-S1000DBIKE-C1234-C-reply.XML", mimeType: "application/xml", buffer: Buffer.from(reply) })
+  await expect(dialog.getByText("XSD-Prüfung bestanden (S1000D Issue 6.0)")).toBeVisible()
+  return dialog
+}
+
+test("REPLY mit Schema-Angabe 5.0 bei BIKE60 (6.0): Hinweis blockiert nicht, Übernahme möglich, DMRL freigegeben", async ({ page }) => {
+  const dialog = await bikeReplyWithSchema50(page)
+  await dialog.getByRole("button", { name: "Übernehmen" }).click()
+  await expect(dialog).toBeHidden()
+  const data = await readDataset(page)
+  expect(data.dmrls.find((d: { id: string }) => d.id === "dmrl-bike60").status).toBe("freigegeben")
+})
+
+// BUG-QA22-1: Der Erfolgsschritt des REPLY-Dialogs zeigt keine Hinweise — der Schema-Hinweis bleibt unsichtbar.
+// test.fail: läuft „grün", solange der Bug besteht; nach der Behebung test.fail entfernen.
+test.fail("BUG-QA22-1: REPLY mit Schema-Angabe 5.0 bei BIKE60 (6.0): Hinweis ist im Dialog sichtbar (Kriterium E1)", async ({ page }) => {
+  const dialog = await bikeReplyWithSchema50(page)
+  await expect(dialog.getByText(/Die Schema-Angabe der Datei verweist auf S1000D Issue 5\.0, das System verwendet Issue 6\.0/)).toBeVisible({ timeout: 3000 })
+})

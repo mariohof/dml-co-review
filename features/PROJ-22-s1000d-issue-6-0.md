@@ -1,6 +1,6 @@
 # PROJ-22: S1000D Issue 6.0 Unterstützung
 
-## Status: In Progress
+## Status: In Review
 **Created:** 2026-11-26
 **Last Updated:** 2026-11-26
 
@@ -261,7 +261,99 @@ Kein Backend nötig: Die XSD-Serverfunktion nutzt den neuen Schema-Ordner ohne C
 - Ergebnis 2026-11-26: Vitest 745 bestanden (1 übersprungen); Playwright nach den Anpassungen alle bestanden. Lint: 0 Fehler.
 
 ## QA Test Results
-_To be added by /qa_
+
+**Tested:** 2026-11-26
+**App URL:** http://localhost:3000 (laufender Dev-Server)
+**Tester:** QA Engineer (AI)
+**Umfang:** PROJ-22 und Regression aller Features; Browser nur Chromium, nur Desktop (Vorgabe PO, 2026-11-22)
+
+### Acceptance Criteria Status
+
+#### A. Systemverwaltung
+- [x] A1 Auswahl 2.3/4.2/5.0/6.0 im Systemdialog (E2E)
+- [x] A2 Systemliste zeigt „6.0“ (E2E, BIKE60)
+- [x] A3 Issue-Wechsel ohne Workflow 4.2 → 6.0 → 4.2; PHUNGUN im Workflow gesperrt (Unit `qa-proj22.test.ts`)
+
+#### B. XSD-Prüfung
+- [x] B1 6.0-Beispiel „bestanden“ (xmllint, offline mit lokaler xml.xsd)
+- [x] B2 6.0-Datei ohne `techName` → Schemafehler mit Zeile
+- [x] B3 Issue 7.0 → 400, Meldung nennt 2.3, 4.2, 5.0, 6.0 (Routentest)
+- [x] B4 Schema-Ordner fehlt → „nicht verfügbar / Schema fehlt“ (bestehender xmllint-Test, gilt für alle Issues)
+
+#### C. SEND, Export, Freigabestand
+- [x] C1 SEND BIKE60 mit `…/S1000D_6/…` und BREX `H` (E2E und Unit)
+- [x] C2 SEND gegen 6.0-Schema gültig, archiviert, Status gesendet (E2E mit echter Serverprüfung)
+- [x] C3 XML-Export und Freigabestand-XML einer 6.0-DMRL XSD-gültig mit 6.0-Schema-Angabe (Unit, voller Zyklus bis „freigegeben“)
+- [x] C4 2.3/4.2/5.0 unverändert (bestehende Writer- und SEND-Tests grün)
+
+#### D. REPLY und XML-Prüfung
+- [x] D1 6.0-REPLY wird übernommen (1 n / 11 y bzw. alle y → freigegeben)
+- [x] D2 Werkzeug bietet 6.0
+- [x] D3 6.0-Beispiel im Werkzeug: 79 Einträge, XSD ohne Befund, E/I-Fehler; nach PROJ-8-Refinement kein Fehler zu `security`
+
+#### E. Hinweis bei abweichender Schema-Angabe
+- [ ] **E1 BUG-QA22-1:** Beim REPLY-Import mit Schema-Angabe 5.0 in einem 6.0-System steht der Hinweis im Prüfergebnis, der Dialog zeigt ihn aber nicht an. Der Erfolgsschritt zeigt nur „Fachliche Prüfung bestanden“. Der Import selbst klappt wie gefordert.
+- [x] E2 Werkzeug: Hinweis „…verweist auf S1000D Issue 5.0, gewählt ist Issue 6.0…“ sichtbar (E2E)
+- [x] E3 ohne bzw. mit unbekannter Angabe kein Hinweis
+- [x] E4 passende Angabe ergibt keinen Hinweis (auch PHUNGUN mit NSG-Pfad `S1000D2.3`)
+- [x] E5 gilt für alle Issues (z. B. 6.0-Datei bei gewählter 4.2)
+
+#### F. Demo BIKE60
+- [x] F1–F3 System, Organisation B6865, DMRL-Kopf, 12 Einträge laut Tabelle
+- [x] F4 Check-out und unveränderter Check-in fehlerfrei (12 unverändert)
+- [x] F5 erster SEND mit `00001-<Jahr>`, 6.0-gültig
+- [x] F6 Stand vor PROJ-22 bleibt gültig (keine Umstellung, keine neue Formatversion)
+- [x] F7 Dashboard: vierte DMRL, Kacheln 4 / 1 / 32 / 0
+
+#### G. Betrieb und Dokumentation
+- [ ] G1 **nicht getestet:** Rauchtest des Windows-Offline-Pakets mit 6.0. Das Skript ist angepasst, aber kein Paket gebaut: ein Build bei laufendem Dev-Server zerstört dessen `.next`.
+- [x] G3 `docs/dmrl-mapping.md` beschreibt 6.0
+
+### Edge Cases Status
+- [x] 5.0 ↔ 6.0 akzeptieren sich gegenseitig (xmllint, nachgewiesen); deshalb der Hinweis
+- [x] Datei ohne Schema-Angabe: kein Hinweis
+- [x] Schreibweisen `https`, `S1000D_6-0`, lokaler Pfad, Kleinschreibung
+- [x] Beispiel-DMRL als Statusliste bleibt Prüf-Testfall (Werkzeug), kein REPLY-Testfall
+- [x] Issue-Wechsel nach SEND gesperrt (PROJ-5-Regeln)
+- [x] Archivierte Stände unverändert (PHUNGUN-Archiv byte-genau, bestehender Test)
+- [x] Zusätzlich: nicht wohlgeformte Datei → kein Schema-Hinweis
+- [x] Zusätzlich: B6865 als Empfänger anderer DMRLs wählbar; Löschen gesperrt, solange Originator von BIKE60
+
+### Security Audit Results
+- [x] Prüf-Schnittstelle: Issue nur aus fester Liste, kein Pfad aus der Eingabe (`?issue=../../etc` → 400)
+- [x] xmllint offline (`--nonet`); das 6.0-Schema lädt nichts mehr aus dem Netz
+- [x] XSS: Der Hinweistext enthält nur Issue-Nummern aus der festen Liste; die Schema-Angabe der Datei wird nicht ausgegeben
+- [x] Berechtigung: BIKE60 nur für Anna und Administratoren sichtbar (Rechte-Tests)
+- [ ] **BUG-QA22-2 (Denial of Service im eigenen Browser):** Das Lesen der Schema-Angabe braucht quadratische Laufzeit bei vielen nicht geschlossenen `<!--` oder `<?`. Das ist auch in **XSD-gültigen** Dateien möglich, über einen CDATA-Abschnitt in einer Bemerkung.
+
+### Bugs Found
+
+#### BUG-QA22-1: Schema-Hinweis im REPLY-Dialog nicht sichtbar
+- **Severity:** High (Kriterium E1 bzw. User Story „Hinweis bei abweichender Schema-Angabe“ ist für den REPLY-Import wirkungslos, und zwar ohne Rückmeldung)
+- **Steps to Reproduce:**
+  1. Als Anna die DMRL „Fahrrad BIKE60“ an C1234 senden.
+  2. Aus dem SEND einen REPLY bauen (Richtung `reply`, Absender `C1234`, alle Einträge `answerToEntry="y"`, Schema-Angabe auf `…/S1000D_5-0/…` ändern) und importieren.
+  3. Erwartet: Im Dialog steht der Hinweis „Die Schema-Angabe der Datei verweist auf S1000D Issue 5.0, das System verwendet Issue 6.0 …“.
+  4. Tatsächlich: Es erscheinen nur „XSD-Prüfung bestanden“ und „Fachliche Prüfung bestanden“. Der Hinweis ist im Prüfergebnis enthalten, wird im Erfolgsschritt (`reply-import-dialog.tsx`, Schritt „zusammenfassung“) aber nicht angezeigt. Vor PROJ-22 erzeugte die REPLY-Prüfung nie Hinweise.
+- **Nachweis:** `tests/PROJ-22-issue-6-0.spec.ts`, Test „BUG-QA22-1 …“ als `test.fail`. Nach der Behebung `test.fail` entfernen.
+- **Priority:** Fix before deployment
+
+#### BUG-QA22-2: Quadratische Laufzeit beim Lesen der Schema-Angabe
+- **Severity:** Medium (der Tab friert ein, ohne Datenverlust; Auslöser ist eine präparierte Datei, etwa ein REPLY eines Empfängers oder eine im Werkzeug geprüfte Fremddatei)
+- **Steps to Reproduce:**
+  1. In die 6.0-Beispiel-DMRL hinter `</responsiblePartnerCompany>` des ersten Eintrags `<remarks><simplePara><![CDATA[` + 80.000 × `<!--` + `]]></simplePara></remarks>` einfügen (420 KB, laut xmllint gültig).
+  2. Im Werkzeug gegen Issue 6.0 prüfen.
+  3. Erwartet: Prüfung in Sekundenbruchteilen.
+  4. Tatsächlich: 6,2 s (gemessen mit `checkXmlText`). Allein `readSchemaLocation`: 80 KB 0,3 s, 320 KB 4,4 s. Hochgerechnet auf 5 MB (zulässige Obergrenze) mehrere Minuten mit eingefrorenem Tab. Ursache: `readSchemaLocation` entfernt PIs/Kommentare mit nicht-gierigen Mustern über die **ganze** Datei; jede Startposition ohne Abschluss sucht bis zum Dateiende.
+- **Priority:** Fix before deployment (Hinweis: Es reicht, nur den Anfang der Datei bis zum Wurzelelement zu betrachten)
+
+### Summary
+- **Acceptance Criteria:** 26/28 passed, 1 failed (E1), 1 not tested (G1)
+- **Bugs Found:** 2 total (0 critical, 1 high, 1 medium, 0 low)
+- **Security:** 1 Befund (BUG-QA22-2, Medium)
+- **Tests:** Vitest 760 bestanden (1 übersprungen), davon neu `qa-proj22.test.ts` (12) und Routentest (1). Playwright 171 bestanden, davon neu PROJ-22 (6, einer davon als `test.fail` für BUG-QA22-1).
+- **Production Ready:** NO
+- **Recommendation:** BUG-QA22-1 und BUG-QA22-2 beheben, dann erneut `/qa`. Vor dem Ausliefern das Windows-Offline-Paket bauen (G1).
 
 ## Deployment
 _To be added by /deploy_

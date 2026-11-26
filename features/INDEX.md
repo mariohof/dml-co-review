@@ -22,7 +22,7 @@
 | PROJ-5 | Systemverwaltung — Admin verwaltet Systeme inkl. S1000D-Issue (2.3/4.2/5.0) · P0 · Deps: PROJ-2 | Approved | [PROJ-5](PROJ-5-systemverwaltung.md) | 2026-11-11 |
 | PROJ-6 | DMRL anlegen — Admin legt DMRL zu einem System an (Originator, DML-Typ, Sicherheitseinstufung, Versionsindex erster SEND) · P0 · Deps: PROJ-4, PROJ-5 | Approved | [PROJ-6](PROJ-6-dmrl-anlegen.md) | 2026-11-11 |
 | PROJ-7 | DMRL-Ansicht — Anzeige der DMRL mit Einträgen und Eintragsstatus · P0 · Deps: PROJ-6, PROJ-17 | Approved | [PROJ-7](PROJ-7-dmrl-ansicht.md) | 2026-11-11 |
-| PROJ-8 | Fachliches Regelwerk — gemeinsame Prüfregeln für Check-in und REPLY · P0 · Deps: PROJ-7 | In Progress | [PROJ-8](PROJ-8-fachliches-regelwerk.md) | 2026-11-11 |
+| PROJ-8 | Fachliches Regelwerk — gemeinsame Prüfregeln für Check-in und REPLY · P0 · Deps: PROJ-7 | Approved | [PROJ-8](PROJ-8-fachliches-regelwerk.md) | 2026-11-11 |
 | PROJ-9 | Check-out (MS-Excel) — Export als .xlsx zur Bearbeitung in Excel, sperrt die DMRL · P0 · Deps: PROJ-7, PROJ-18 | Approved | [PROJ-9](PROJ-9-check-out-csv.md) | 2026-11-11 |
 | PROJ-10 | Check-in (MS-Excel / CSV) — Import .xlsx oder .csv mit Regelprüfung, Übernahme, Entsperren · P0 · Deps: PROJ-8, PROJ-9 | Approved | [PROJ-10](PROJ-10-check-in-csv.md) | 2026-11-11 |
 | PROJ-11 | XSD-Validierung — Prüfung gegen dml.xsd (2.3/4.2/5.0) via xmllint · P0 · Deps: PROJ-5 | Approved | [PROJ-11](PROJ-11-xsd-validierung.md) | 2026-11-11 |
@@ -35,6 +35,6 @@
 | PROJ-18 | DMRL-Export (CSV/XML/Excel) — jederzeit exportieren, ohne Sperre und ohne Workflow · P0 · Deps: PROJ-7, PROJ-9, PROJ-11, PROJ-12 | Approved | [PROJ-18](PROJ-18-dmrl-export.md) | 2026-11-12 |
 | PROJ-19 | Lokaler Start (Python-Startskript) — Voraussetzungen prüfen, App bauen, lokal starten, Browser öffnen · P0 · Deps: PROJ-11 | Approved | [PROJ-19](PROJ-19-lokaler-start.md) | 2026-11-12 |
 | PROJ-20 | XML-Prüfung & CSV-Konvertierung — beliebige DMRL-XML prüfen (XSD + Regelwerk) und als CSV herunterladen, ohne Speichern · P1 · Deps: PROJ-8, PROJ-10, PROJ-11 | Approved | [PROJ-20](PROJ-20-xml-pruefung-csv-konvertierung.md) | 2026-11-14 |
-| PROJ-22 | S1000D Issue 6.0 Unterstützung — Issue 6.0 als vierte S1000D-Version (System, XSD-Prüfung, SEND, REPLY, Export) · P0 · Deps: PROJ-5, PROJ-11, PROJ-12, PROJ-13 | In Progress | [PROJ-22](PROJ-22-s1000d-issue-6-0.md) | 2026-11-26 |
+| PROJ-22 | S1000D Issue 6.0 Unterstützung — Issue 6.0 als vierte S1000D-Version (System, XSD-Prüfung, SEND, REPLY, Export) · P0 · Deps: PROJ-5, PROJ-11, PROJ-12, PROJ-13 | In Review | [PROJ-22](PROJ-22-s1000d-issue-6-0.md) | 2026-11-26 |
 
 ## Next Available ID: PROJ-23
