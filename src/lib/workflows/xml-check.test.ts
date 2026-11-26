@@ -59,7 +59,8 @@ describe("checkXmlText — gültige Datei", () => {
     expect(result.summary.ohneAntwort).toBe(result.summary.entries)
     const csv = result.csv!
     expect(csv.startsWith("﻿dmentryType;modelic")).toBe(true)
-    expect(csv.split("\r\n")[0].split(";")).toHaveLength(CORE_FIELD_NAMES.length)
+    // 28 Spalten ohne `dmc` und Informationsfelder (PROJ-20 Refinement 2026-11-26 (2), BUG-QA13-1)
+    expect(csv.replace(/^\uFEFF/, "").split("\r\n")[0].split(";")).toEqual([...CORE_FIELD_NAMES])
     expect(csv.split("\r\n").filter(Boolean)).toHaveLength(result.candidates.length + 1)
   })
 

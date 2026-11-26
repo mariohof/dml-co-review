@@ -1,6 +1,6 @@
 # PROJ-9: Check-out (MS-Excel)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-26
 
@@ -707,6 +707,20 @@ _Stand 2026-11-26 — `/frontend PROJ-9` (Tech Design J, gemeinsam mit PROJ-10)_
 - **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
 - **Security:** Pass
 - **Production Ready:** YES (keine Critical/High-Bugs), vorbehaltlich Entscheidung zu BUG-QA13-1 und manueller Prüfung in MS Excel
+
+### Re-Test QA-Lauf 13 (2026-11-26) — Bestätigung der Bugfixes und Abnahme in MS Excel
+**Automatisiert:** Vitest 714 Tests ✅ (60 Dateien) · Playwright 164 Tests ✅ (Chromium) · Startskript-Tests ✅ · Typprüfung und Lint ohne Fehler
+- [x] **BUG-QA13-1 bestätigt behoben:** Die CSV des Werkzeugs (PROJ-20) hat genau die 28 Felder bis `remarks` (ohne `dmc` und Informationsfelder; `xml-check.test.ts` prüft die Kopfzeile jetzt vollständig); Check-in dieser CSV erhält gespeicherte Informationsfelder und nennt den Hinweis „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.“ (QA-Unit, E2E „BUG-QA13-1“ mit echter XSD-Prüfung)
+- [x] **BUG-QA13-2 bestätigt behoben:** „Informationsfelder bei 1 Eintrag aktualisiert“ / „bei 2 Einträgen“ in Dialog, Toast und Verlauf (Unit, Komponententest, E2E)
+- [x] **Manuelle Abnahme in MS Excel (Product Owner, Windows, 2026-11-26):** Datei öffnet ohne Reparaturmeldung, Bearbeitung und Rundlauf funktionieren — damit sind die bisher nur simulierten Kriterien (Doppelklick ohne Reparaturmeldung, `01` bleibt `01`, Rundlauf über Excel) bestätigt
+- [x] Regression: alle bisherigen Kriterien von PROJ-9/10 grün; keine neuen Befunde
+- Nicht getestet: Firefox und Safari (nicht installiert; nur Desktop laut PRD)
+
+**Ergebnis Re-Test**
+- **Acceptance Criteria:** 16/16 (Refinement 2026-11-26) + alle bisherigen bestanden
+- **Offene Bugs aus QA-Lauf 13:** keine (BUG-QA13-1/-2 behoben); weiterhin dokumentierte Low-Bugs aus früheren Läufen (BUG-QA12-1, BUG-QA11-1/-3/-4)
+- **Security:** Pass
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

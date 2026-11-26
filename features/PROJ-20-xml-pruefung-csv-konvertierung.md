@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & CSV-Konvertierung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-26
 
@@ -744,6 +744,30 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 
 **Bugs Found:** keine
 **Production Ready:** YES (B-1 zur Entscheidung durch den Product Owner)
+
+### QA Refinement 2026-11-26 (2) — CSV mit 28 Spalten; Bestätigung Refinement 3 und „Werkzeug“
+**Tested:** 2026-11-26 · **Tester:** QA Engineer (AI) · **Browser:** Chromium (Desktop; Firefox/Safari nicht installiert)
+**Automatisiert:** Vitest 714 Tests ✅ · Playwright 164 Tests ✅ (PROJ-20: 33 E2E mit echter XSD-Serverfunktion) · Lint/Typprüfung ohne Fehler
+
+#### Acceptance Criteria Status
+- [x] „CSV herunterladen“ liefert genau 28 Spalten (bis `remarks`, ohne `dmc` und Informationsfelder), Semikolon, UTF-8 mit BOM, nach DMC sortiert, Name der XML mit `.csv` (Unit: vollständige Kopfzeile; E2E)
+- [x] Werkzeug-CSV in eine DMRL mit gespeicherten Informationsfeldern einchecken → Werte bleiben, Hinweis „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.“ (QA-Unit, E2E „BUG-QA13-1“)
+- [x] Rundlauf 4.2-Export ohne Ausgabedaten → CSV → Check-in in GTFDEMO besteht; einziger Hinweis ist jetzt der zu den Informationsfeldern (E2E angepasst, gewollt)
+- [x] Refinement 3 (Ausgabetyp aus dem Eintragstyp ableiten, 2026-11-16): Ableitungstabelle, je Eintragstyp, vorhandene Nummer/Datum bleiben, Issue 2.3/4.2/5.0, Rundlauf c/changed und d/deleted in den Check-in — durch Unit- und E2E-Tests abgedeckt, alle grün (bisher ohne eigenen QA-Abschnitt)
+- [x] Benennung „Werkzeug“ (2026-11-22): Menüpunkt „Werkzeug“, kein Menüpunkt „XML prüfen“, Überschrift „Werkzeug.“, Zeile „XML prüfen“, Adresse `/xml-pruefung` (E2E „Benennung ‚Werkzeug‘“)
+- [x] Alle bisherigen Kriterien (Zugang, Prüfung, Ergebnis, keine Wirkung auf den Datenbestand, Darstellung) — Regression grün
+
+#### Security Audit Results
+- [x] Keine neue Angriffsfläche: Änderung nur an der Spaltenauswahl der CSV; Formelschutz, Host-/Origin-Schutz der XSD-Funktion, Entities unverändert (bestehende Tests grün)
+
+#### Bugs Found
+- keine
+
+#### Summary
+- **Acceptance Criteria:** alle bestanden
+- **Bugs Found:** 0
+- **Security:** Pass
+- **Production Ready:** YES
 
 ## Deployment
 _To be added by /deploy_

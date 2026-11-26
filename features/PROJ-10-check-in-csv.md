@@ -1,6 +1,6 @@
 # PROJ-10: Check-in (MS-Excel / CSV)
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-26
 
@@ -1140,7 +1140,7 @@ Keine neuen Bugs in diesem Feature.
 - **Entscheidung Product Owner (2026-11-25):** freigegeben (Approved); Low-Bugs bleiben dokumentiert
 
 ### QA-Lauf 13 — Refinement 2026-11-26 (`dmc` und Informationsfelder)
-Gemeinsam mit PROJ-9 getestet → **PROJ-9, QA-Lauf 13** (6/6 Check-in-Kriterien bestanden; BUG-QA13-1 Medium: CSV aus PROJ-20 leert gespeicherte Informationsfelder; BUG-QA13-2 Low: „bei 1 Einträgen“). Beide behoben 2026-11-26 (`/frontend`), Details in PROJ-9.
+Gemeinsam mit PROJ-9 getestet → **PROJ-9, QA-Lauf 13** (6/6 Check-in-Kriterien bestanden; BUG-QA13-1 Medium: CSV aus PROJ-20 leert gespeicherte Informationsfelder; BUG-QA13-2 Low: „bei 1 Einträgen“). Beide behoben 2026-11-26 (`/frontend`), Details in PROJ-9. **Re-Test 2026-11-26:** Fixes bestätigt, MS-Excel-Abnahme durch den Product Owner bestanden, 714 Unit- und 164 E2E-Tests grün → Approved (Details PROJ-9, „Re-Test QA-Lauf 13“).
 
 ## Deployment
 _To be added by /deploy_
