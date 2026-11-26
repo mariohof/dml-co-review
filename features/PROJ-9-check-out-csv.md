@@ -1,6 +1,6 @@
 # PROJ-9: Check-out (MS-Excel)
 
-## Status: Planned
+## Status: In Review
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-26
 
@@ -480,6 +480,30 @@ _Stand 2026-11-25 — `/frontend PROJ-9 PROJ-10` (Tech Design I, gemeinsam mit P
 - Die erneut heruntergeladene Datei ist **inhaltlich** identisch; die Bytes können sich durch den Zeitstempel im ZIP unterscheiden.
 - Manuelle Abnahme in MS Excel (Doppelklick ohne Reparaturmeldung, `01` bleibt `01`, neue Zeile tippen) steht aus → `/qa`.
 
+### Refinement 2026-11-26 — `dmc` und Informationsfelder (37 Spalten)
+_Stand 2026-11-26 — `/frontend PROJ-9` (Tech Design J, gemeinsam mit PROJ-10)_
+
+**Umgesetzt**
+- `src/lib/data/schema.ts` — 8 Informationsfelder am Ende der gespeicherten Felder (`ENTRY_FIELD_NAMES`, jetzt 36); `INFO_FIELD_NAMES`/`isInfoField`; `CORE_FIELD_NAMES` (die 28 bisherigen); `ENTRY_FILE_COLUMNS` (37 Dateispalten: 28 · `dmc` · 8). Fehlende Informationsfelder in gespeicherten Daten werden beim Laden leer ergänzt (Default) — keine Umstellung, Datenformat-Version unverändert.
+- `src/lib/files/csv-writer.ts` — Eintrags-Tabelle (CSV und Excel) mit 37 Spalten; `dmc` je Zeile über `formatDmc`. Damit liefern Check-out, Export (CSV/Excel), Freigabestand-CSV und PROJ-20 automatisch den neuen Aufbau.
+- `src/lib/rules/check/csv-reader.ts` — Gruppe S: 37/28/27 Spalten; kommt `dmc` oder ein Informationsfeld vor, wird die volle 37er-Fassung erwartet; `dmc` wird verworfen; Merker `hasInfoFields`, ohne Informationsfelder Hinweis „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.“
+- `src/lib/rules/check/checkin.ts` — Vergleich: Informationsfelder nicht in `changedFields`, eigene Markierung `infoChanged` (nur bei Dateien mit Informationsfeldern); Zusammenfassung mit `informationsfelder`.
+- `src/lib/workflows/check-in.ts` — Übernahme: Werte aus der Datei; bei Dateien ohne Informationsfelder bisherige Werte (neue Einträge leer); Verlauf „…; Informationsfelder bei N Einträgen aktualisiert“. Status-Logik unverändert.
+- `src/lib/rules/check/reply.ts` — Gruppe G nimmt Informationsfelder aus.
+- `src/lib/dmrl/entries.ts` — Feldbezeichnungen für die 8 Felder (Prüfberichte).
+- `src/components/workflows/check-in-dialog.tsx` — Hinweis (shadcn `Alert`) „Informationsfelder bei N Einträgen aktualisiert“; „Keine Änderungen“ nur ohne solche Abweichungen, sonst „Keine fachlichen Änderungen …“; Toast mit Zähler.
+- Unverändert: Check-out-Workflow, Dialoge, Sperre, SEND-/XML-Schreiber, Detailfenster/DMRL-Ansicht.
+
+**Tests**
+- Neu: `src/lib/workflows/info-fields.test.ts` (11) — Dateiaufbau, `dmc`-Schreibweise, alte Daten → leer, nur Informationsfelder geändert (freigegeben bleibt, Rundlauf zum nächsten Check-out), fachlich + Informationsfelder, `dmc` ignoriert, 28-Spalten-Datei erhält Werte + Hinweis, Teilmenge → Fehler, beliebige Werte ohne Meldung, REPLY ohne G-Fehler und mit erhaltenen Werten, SEND-XML ohne die Felder.
+- Neu: Komponententest im Check-in-Dialog (Hinweis, Übernahme); E2E in `tests/PROJ-9-10-excel.spec.ts` (37 Spalten, `dmc`, nur `orig` geändert → Status bleibt, Wert beim nächsten Check-out).
+- Angepasst auf 37 Spalten: Unit-Tests zu CSV-Schreiber, Excel-Leser, Check-out, Export, Check-in (27er-Datei jetzt ohne die neuen Spalten), XML-Prüfung; E2E Autofilter `A1:AK11`, `PROJ-10-checkin-antworten`, `QA-proj10-12-13-refinement`.
+- Gesamt: 705 Unit-Tests (59 Dateien) und 157 E2E-Tests grün; Lint ohne Fehler.
+
+**Hinweise**
+- Die MS-Excel-Testdatei (`tests/fixtures/PHUNGUN-ms-excel-aus-csv.xlsx`) hat weiterhin 28 Spalten und prüft damit den alten Aufbau.
+- Manuelle Abnahme in MS Excel (37 Spalten, Informationsfelder eintippen, Rundlauf) → `/qa`.
+
 ## QA Test Results
 
 **Tested:** 2026-11-13
@@ -597,6 +621,89 @@ _Stand 2026-11-25 — `/frontend PROJ-9 PROJ-10` (Tech Design I, gemeinsam mit P
 - **Production Ready:** YES (keine Critical/High-Bugs), vorbehaltlich der manuellen Prüfung in MS Excel
 
 - **Entscheidung Product Owner (2026-11-25):** freigegeben (Approved); Low-Bugs bleiben dokumentiert
+
+### QA-Lauf 13 — Refinement 2026-11-26 (`dmc` und Informationsfelder)
+
+**Tested:** 2026-11-26
+**App URL:** http://localhost:3000 (`npm run dev`, über Playwright)
+**Tester:** QA Engineer (AI)
+**Testumfang:** PROJ-9 und PROJ-10 gemeinsam (37 Spalten, Check-in-Vergleich, REPLY/SEND-Schutz, Export/Freigabestand/PROJ-20); Stand im Arbeitsverzeichnis (Frontend noch nicht committet)
+**Automatisiert:** Vitest 713 Tests ✅ (60 Dateien) · Playwright 163 Tests ✅ · Startskript-Tests ✅ · Lint ohne Fehler
+**Neu in diesem Lauf:** `src/lib/workflows/qa-proj9-10-info.test.ts` (8), `tests/QA-proj9-10-info.spec.ts` (6)
+**Browser:** Chromium (Desktop). Nur Desktop laut PRD; Firefox/Safari nicht installiert, nicht getestet.
+**Nicht möglich in dieser Umgebung:** MS Excel (Datei per Doppelklick öffnen, Werte in den neuen Spalten eintippen) → manuelle Bestätigung durch den Product Owner
+
+#### Acceptance Criteria Status — `dmc` und Informationsfelder (10)
+- [x] Zeile 1 mit genau 37 Feldnamen, Spalten 1–28 unverändert, danach `dmc` … `io-pm` (Unit, E2E)
+- [x] `dmc` in der Schreibweise der Anwendung (`PHUNGUN-A-A05-40-0000-01A-000A-A`-Muster); E2E: DMC aus der Datei steht so in der DMRL-Ansicht
+- [x] bestehende Einträge: Informationsfelder leer; gespeicherte Daten ohne die Felder bleiben gültig (Unit)
+- [x] eingetragene Werte kommen beim nächsten Check-out wieder (Unit, E2E)
+- [x] freigegebene DMRL, nur Informationsfelder geändert → übernommen, Einträge unverändert, kein Eintragstyp verlangt, DMRL bleibt *freigegeben* (Unit, E2E)
+- [x] geänderte `dmc`-Spalte wird ignoriert → kein Fehler, „Keine Änderungen“ (Unit, E2E)
+- [x] beliebige Werte ohne Fehler und ohne Hinweis (Unit)
+- [x] Formelwerte `=`, `+`, `-`, `@` und `'=` als Text, Rundlauf CSV **und** Excel unverändert; ebenso `;`, `"`, Zeilenumbruch, Umlaute (QA-Unit)
+- [x] SEND-XML ohne die Felder (Unit); XSD-Prüfung des SEND unverändert grün (bestehende XSD-Tests)
+- [x] 1.000 Einträge mit 37 Spalten < 1 s (bestehender QA-Leistungstest)
+
+#### Acceptance Criteria Status — PROJ-10 (Check-in, 6)
+- [x] nur `orig` eines freigegebenen Eintrags geändert → Eintrag und DMRL bleiben *freigegeben*
+- [x] Zusammenfassung „Informationsfelder bei N Einträgen aktualisiert“, kein Eintragstyp verlangt (Komponententest, E2E)
+- [x] fachlich + Informationsfelder geändert → „geändert“, beide übernommen
+- [x] `dmc` geändert → kein Fehler, keine Änderung
+- [x] Datei mit 28 Spalten → gespeicherte Werte bleiben, Hinweis im Prüfbericht (Unit, E2E)
+- [x] nur `spec` fehlt → Fehler Gruppe S, Sperre bleibt (Unit, E2E)
+
+#### Bestehende Kriterien (Regression)
+- [x] Check-out, Inhalt der Excel-Datei, Sperre aufheben, Nachvollziehbarkeit — alle bisherigen Unit- und E2E-Tests grün (Erwartungen auf 37 Spalten bzw. Autofilter `A1:AK11` umgestellt)
+- [x] REPLY: keine G-Abweichungen wegen Informationsfeldern, Werte bleiben nach der Übernahme erhalten (Unit)
+- [x] Export CSV/Excel und Freigabestand-CSV mit `dmc` und gespeicherten Informationsfeldern; CSV der XML-Prüfung (PROJ-20) mit 37 Spalten, Informationsfelder leer (QA-Unit, bestehende Tests)
+
+#### Edge Cases Status
+- [x] offener Check-out aus der Zeit vor den Informationsfeldern (Sperr-Kopie ohne Felder → leer; 28er-Datei angenommen)
+- [x] Informationsspalte gelöscht / vertauscht → Fehler „fehlt“ bzw. „falscher Reihenfolge“; nur `dmc` ohne Informationsfelder → Fehler; `DMC` großgeschrieben → unbekannte Spalte (QA-Unit)
+- [x] Informationsfeld geleert → leerer Wert übernommen
+- [x] Excel lässt leere Zellen am Zeilenende weg → Informationsfelder leer, kein Spaltenfehler (QA-Unit)
+- [x] neuer Eintrag: Informationsfelder aus 37er-Datei übernommen, aus 28er-Datei leer (QA-Unit)
+- [x] Eintrag *zu überarbeiten* mit nur Informationsfeld-Änderung behält seinen Status (QA-Unit)
+- [x] Antwortübernahme und Informationsfelder gleichzeitig (QA-Unit)
+- [ ] BUG-QA13-1: CSV aus der XML-Prüfung (PROJ-20) einchecken leert alle gespeicherten Informationsfelder (s. u.)
+
+#### Security Audit Results
+- [x] XSS: HTML in einem Informationsfeld wird nirgends ausgeführt; die Werte erscheinen in der Oberfläche nicht (E2E)
+- [x] Formel-Injection: Textzellen in Excel, Apostroph-Entschärfung in CSV gilt auch für die neuen Spalten (QA-Unit)
+- [x] Keine neuen Pakete, keine Server-Route, keine neuen Berechtigungswege (Check-in weiter nur für den Sperrinhaber)
+- [ ] Hinweis (kein Bug, PRD-Non-Goal): simulierte Anmeldung ohne Backend
+
+#### Bugs Found
+
+##### BUG-QA13-1: CSV aus der XML-Prüfung (PROJ-20) einchecken leert alle gespeicherten Informationsfelder
+- **Severity:** Medium (Datenverlust der Informationsfelder; Workaround vorhanden)
+- **Steps to Reproduce:**
+  1. DMRL mit gespeicherten Informationsfeldern (z. B. `orig` = `D0815` bei allen Einträgen) auschecken
+  2. Die Empfänger-XML im Werkzeug „XML prüfen“ (PROJ-20) in CSV umwandeln — diese CSV hat 37 Spalten, Informationsfelder **leer**
+  3. Diese CSV einchecken (dokumentierter Weg: „CSV bleibt für Dateien aus PROJ-20“)
+  4. Expected: gespeicherte Informationsfelder bleiben erhalten (die Datei sagt zu ihnen nichts aus — wie bei 28-Spalten-Dateien)
+  5. Actual: alle Informationsfelder werden geleert; einziger Hinweis ist „Informationsfelder bei 10 Einträgen aktualisiert“ — der Dialog zeigt nicht, welche Werte sich ändern (kein alt → neu)
+- **Ursache:** spec-konform umgesetzt („Werte aus der Datei, leer erlaubt“); die Kombination mit der PROJ-20-CSV wurde im Refinement nicht betrachtet → Spec-Lücke
+- **Hinweis zur Behebung (Entscheidung Product Owner):** z. B. PROJ-20-CSV ohne Informationsspalten (28 Spalten) schreiben, oder leere Informationsfelder beim Check-in nicht übernehmen, oder im Dialog die Abweichungen mit alt → neu zeigen
+- **Test:** `qa-proj9-10-info.test.ts` › „Explorativ: CSV aus der XML-Prüfung (PROJ-20) einchecken“ (dokumentiert das heutige Verhalten)
+- **Priority:** Fix in next sprint (vor Abnahme klären)
+
+##### BUG-QA13-2: Zähler-Text „bei 1 Einträgen“
+- **Severity:** Low (Grammatik)
+- **Steps to Reproduce:** nur ein Informationsfeld eines Eintrags ändern und einchecken → „Informationsfelder bei 1 Einträgen aktualisiert“ (Dialog, Toast, Verlauf)
+- **Expected:** „bei 1 Eintrag“
+- **Hinweis:** gleiches Muster wie das bestehende „1 Antworten übernommen“
+- **Priority:** Nice to have
+
+#### Beobachtung (kein Bug)
+- Bei Einträgen, die sich nur in Informationsfeldern unterscheiden, zeigt der Dialog nur die Anzahl, nicht welche Einträge/Felder — laut Spec ausreichend; relevant für BUG-QA13-1.
+
+#### Summary
+- **Acceptance Criteria:** 16/16 passed (neu) + Regression grün
+- **Bugs Found:** 2 total (0 critical, 0 high, 1 medium, 1 low)
+- **Security:** Pass
+- **Production Ready:** YES (keine Critical/High-Bugs), vorbehaltlich Entscheidung zu BUG-QA13-1 und manueller Prüfung in MS Excel
 
 ## Deployment
 _To be added by /deploy_

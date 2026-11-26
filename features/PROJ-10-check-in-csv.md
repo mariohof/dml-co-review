@@ -1,6 +1,6 @@
 # PROJ-10: Check-in (MS-Excel / CSV)
 
-## Status: Planned
+## Status: In Review
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-26
 
@@ -711,6 +711,9 @@ _Stand 2026-11-25 — `/frontend PROJ-9 PROJ-10` (Tech Design J)_
 - Die Begrenzung der entpackten Größe stützt sich auf die im ZIP angegebenen Größen der benötigten Teile; Teile außerhalb von Mappe, Beziehungen, Textliste und Blättern werden nicht entpackt.
 - Die Seite „XML prüfen“ (PROJ-20) spricht weiter von „CSV im Check-out-Format“ — Spalten sind identisch, der Text ist weiterhin zutreffend genug; Anpassung ggf. mit dem offenen PROJ-20-Refinement.
 
+### Refinement 2026-11-26 — `dmc` und Informationsfelder
+_Stand 2026-11-26 — gemeinsam mit PROJ-9 umgesetzt; Details → PROJ-9, Implementation Notes „Refinement 2026-11-26“ (Leser Gruppe S, Vergleich `infoChanged`, Übernahme/Erhalt der Informationsfelder, Hinweis im Dialog)._
+
 ## QA Test Results
 
 **Tested:** 2026-11-13
@@ -1135,6 +1138,9 @@ Keine neuen Bugs in diesem Feature.
 - **Production Ready:** YES (keine Critical/High-Bugs)
 
 - **Entscheidung Product Owner (2026-11-25):** freigegeben (Approved); Low-Bugs bleiben dokumentiert
+
+### QA-Lauf 13 — Refinement 2026-11-26 (`dmc` und Informationsfelder)
+Gemeinsam mit PROJ-9 getestet → **PROJ-9, QA-Lauf 13** (6/6 Check-in-Kriterien bestanden; BUG-QA13-1 Medium: CSV aus PROJ-20 leert gespeicherte Informationsfelder; BUG-QA13-2 Low: „bei 1 Einträgen“).
 
 ## Deployment
 _To be added by /deploy_
