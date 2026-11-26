@@ -306,7 +306,7 @@ Beim Check-in muss der DM-Ausgabetyp (`issno/@type`, CSV-Spalte `type`) zum Eint
 
 ## Open Questions
 - [x] Testdatei aus echtem MS Excel → bereitgestellt: `tests/fixtures/PHUNGUN-ms-excel-aus-csv.xlsx` (Export-CSV in MS Excel als .xlsx gespeichert; Pfad/Autor entfernt). Führte zur Erweiterung der Blattregel (einziges Blatt). Fälle Formel, Hilfsblatt, neue Zeile werden mit selbst erzeugten Testdateien abgedeckt; eine bearbeitete Original-Excel-Datei ist optional (2026-11-25)
-- [ ] Soll PROJ-20 (XML-Prüfung) künftig zusätzlich eine Excel-Datei liefern? → eigenes Refinement von PROJ-20; bis dahin bleibt der CSV-Check-in dafür bestehen (2026-11-25)
+- [x] Soll PROJ-20 (XML-Prüfung) künftig zusätzlich eine Excel-Datei liefern? → Ja, statt der CSV: Excel mit 37 Spalten wie beim Check-out; am Check-in ändert sich nichts. Die CSV-Annahme bleibt für CSV-Export und ältere Dateien (2026-11-26, Refinement 3 von PROJ-20)
 - [x] Soll der Prüfbericht eines abgelehnten Check-ins im Workflow-Verlauf festgehalten werden? → Eintrag „Check-in abgelehnt — n Fehler", Prüfbericht selbst wird nicht gespeichert (PROJ-15)
 
 ## Decision Log

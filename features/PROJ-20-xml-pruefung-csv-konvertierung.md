@@ -1,11 +1,13 @@
-# PROJ-20: XML-Prüfung & CSV-Konvertierung
+# PROJ-20: XML-Prüfung & Excel-Konvertierung
 
 ## Status: Approved
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-26
 
 
-> **Refinement 2026-11-26 (2) — CSV mit 28 Spalten (Anlass BUG-QA13-1):** Die konvertierte CSV hat **28 Spalten** (Aufbau vom 21.11.2026: bis `remarks`, inkl. `answer_timestamp`) — **ohne** `dmc` und **ohne** die Informationsfelder `orig` bis `io-pm`. Grund: Eine Empfänger-XML enthält keine Informationsfelder; eine 37-Spalten-CSV mit leeren Informationsfeldern würde beim Check-in alle gespeicherten Werte der DMRL leeren. Mit 28 Spalten greift die Check-in-Regel „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten“ (PROJ-10); am Check-in ändert sich nichts. Ersetzt den Stand des ersten Refinements vom selben Tag (37 Spalten, Informationsfelder leer). Check-out, Export und Freigabestand behalten 37 Spalten (PROJ-9).
+> **Refinement 2026-11-26 (3) — MS-Excel mit 37 Spalten statt CSV:** Vorgabe Product Owner. Das Werkzeug liefert die konvertierte DMRL nur noch als **MS-Excel-Datei (.xlsx)**, keine CSV mehr. Aufbau **genau wie der Check-out (PROJ-9)**: ein Tabellenblatt „Einträge“, **37 Spalten** (inkl. `dmc` und Informationsfelder `orig` bis `io-pm`), alle Zellen als Text, Kopfzeile fett und fixiert, Autofilter, nach DMC sortiert. `dmc` ist gefüllt; die Informationsfelder sind **leer**, weil keine DMRL-XML sie enthält. Damit lässt sich die Datei unverändert als Check-in-Datei verwenden. **Bewusste Folge** (ersetzt die Lösung von BUG-QA13-1): Beim Check-in in eine DMRL mit gespeicherten Informationsfeldern werden diese **geleert**, denn das ist das normale Check-in-Verhalten (PROJ-10). Darauf weist ein Hinweis an der Download-Schaltfläche hin. Der **Prüfbericht bleibt CSV** (wie bei Check-in und REPLY). Dateiname: Name der XML-Datei mit `.xlsx`. Geänderte Stellen sind mit *(Refinement 2026-11-26 (3))* markiert. Tech Design und QA-Abschnitte weiter unten beschreiben den CSV-Stand.
+
+> ~~**Refinement 2026-11-26 (2) — CSV mit 28 Spalten (Anlass BUG-QA13-1):** Die konvertierte CSV hat **28 Spalten** (Aufbau vom 21.11.2026: bis `remarks`, inkl. `answer_timestamp`) — **ohne** `dmc` und **ohne** die Informationsfelder `orig` bis `io-pm`. Grund: Eine Empfänger-XML enthält keine Informationsfelder; eine 37-Spalten-CSV mit leeren Informationsfeldern würde beim Check-in alle gespeicherten Werte der DMRL leeren. Mit 28 Spalten greift die Check-in-Regel „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten“ (PROJ-10); am Check-in ändert sich nichts. Ersetzt den Stand des ersten Refinements vom selben Tag (37 Spalten, Informationsfelder leer). Check-out, Export und Freigabestand behalten 37 Spalten (PROJ-9).~~ — ersetzt durch Refinement 2026-11-26 (3)
 
 > ~~**Refinement 2026-11-26 (über `/refine PROJ-9`) — 37 Spalten:** Die konvertierte CSV hat 37 Spalten (wie Check-out); `dmc` ist gefüllt, die Informationsfelder `orig` bis `io-pm` sind leer (nicht in der Empfänger-XML).~~ — ersetzt durch Refinement 2026-11-26 (2)
 
@@ -17,13 +19,13 @@
 - Requires: PROJ-2 (Simulierte Anmeldung) — nur angemeldete Benutzer
 - Requires: PROJ-8 (Fachliches Regelwerk) — Regeln für die Einträge
 - Requires: PROJ-11 (XSD-Validierung) — Schema-Prüfung je Issue
-- Nutzt: PROJ-9 (Check-out CSV) — CSV-Aufbau; PROJ-10 (Check-in CSV) — Prüfbericht und Zielverwendung der CSV
+- Nutzt: PROJ-9 (Check-out MS-Excel) — Excel-Aufbau und Excel-Schreiber *(Refinement 2026-11-26 (3))*; PROJ-10 (Check-in) — Prüfbericht und Zielverwendung der Excel-Datei
 - **Erfordert Anpassung von PROJ-10 und PROJ-8 (per `/refine PROJ-10`):** Weichen `answer`/`answer_comment` in der eingecheckten CSV vom Stand der DMRL ab, wird das nicht mehr als Fehler abgewiesen (heute Regel K). Stattdessen fragt der Check-in, ob die Antworten übernommen werden. Übernommene Antworten sind **nur Information**: Der Eintragsstatus bleibt *in Bearbeitung*, freigegeben wird weiterhin nur durch einen REPLY; die Übernahme steht im Verlauf.
 - Betrifft PROJ-11 (XSD-Validierung, Refinement 2026-11-16): genauere Meldung, warum die XSD-Prüfung nicht erreichbar ist (Server beendet / fremde Adresse) — gilt überall, wo die XSD-Prüfung genutzt wird
 - ~~Wird genutzt von: PROJ-21 (XML gegen DMRL prüfen)~~ — PROJ-21 entfällt (2026-11-16): Der Bedarf ist mit PROJ-20 abgedeckt
 
 ## Beschreibung
-Ein **eigenständiges Werkzeug** (Menüpunkt und Seite „Werkzeug“, Funktion „XML prüfen“): Der Benutzer lädt eine beliebige DMRL-XML hoch (z. B. von einem Empfänger, aus einem Altprojekt oder einem anderen System), wählt die S1000D-Issue, und die Datei wird gegen das Schema (XSD) und das fachliche Regelwerk geprüft. Das Ergebnis ist eine Zusammenfassung der Datei mit Prüfbericht und eine **CSV im Check-out-Format**, die sich in Excel bearbeiten und über den normalen Check-in in eine DMRL im System übernehmen lässt.
+Ein **eigenständiges Werkzeug** (Menüpunkt und Seite „Werkzeug“, Funktion „XML prüfen“): Der Benutzer lädt eine beliebige DMRL-XML hoch (z. B. von einem Empfänger, aus einem Altprojekt oder einem anderen System), wählt die S1000D-Issue, und die Datei wird gegen das Schema (XSD) und das fachliche Regelwerk geprüft. Das Ergebnis ist eine Zusammenfassung der Datei mit Prüfbericht und eine **MS-Excel-Datei im Check-out-Format** *(Refinement 2026-11-26 (3))*, die sich in Excel bearbeiten und über den normalen Check-in in eine DMRL im System übernehmen lässt.
 
 Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine Sperre.
 
@@ -32,20 +34,20 @@ Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine 
 2. **S1000D-Issue wählen** (2.3, 4.2 oder 5.0); ohne Auswahl ist keine Prüfung möglich
 3. **XML-Datei auswählen** (höchstens 5 MB, wie PROJ-11) und „Prüfen“
 4. Prüfung: Wohlgeformtheit und XSD (PROJ-11), dann Einlesen der Einträge und Regelprüfung
-5. Ergebnis: **Zusammenfassung**, **Prüfbericht**, Schaltfläche **„CSV herunterladen“** (und „Prüfbericht herunterladen“)
+5. Ergebnis: **Zusammenfassung**, **Prüfbericht**, Schaltfläche **„Excel-Datei herunterladen“** *(Refinement 2026-11-26 (3))* (und „Prüfbericht herunterladen“, weiterhin CSV)
 6. Neue Datei prüfen → vorheriges Ergebnis wird ersetzt
 
 ## Prüfung
 | Stufe | Inhalt | Bei Fehler |
 |---|---|---|
-| Wohlgeformtheit | gültiges XML | Prüfbericht, **keine CSV** |
-| XSD | `dml.xsd` der gewählten Issue (PROJ-11) | Prüfbericht, CSV mit Warnung |
-| Einlesen | Kopf und Einträge mit dem Leser der gewählten Issue | nicht lesbar (z. B. falsche Issue gewählt): Meldung, **keine CSV** |
-| Regelwerk | Regeln wie beim **Check-in** (PROJ-8): Format (A), Pflichtfelder (B), eindeutiger DMC (C), SNS ↔ Benennung (E), Infocode ↔ Infoname (I). **Ausnahme Pflichtfelder:** Die Ausgabedaten des Datenmoduls (`addresdm/issno` mit `@issno`/`@type` und `addresdm/issdate` mit Tag/Monat/Jahr) sind wie beim REPLY-Import **optional** — in einer DMRL-XML fehlen sie oft. Ein angefangenes Datum muss vollständig sein. | Prüfbericht, CSV mit Warnung |
-| MI | statt Regel D: **alle Einträge haben denselben MI**; der MI wird in der Zusammenfassung angezeigt | Prüfbericht, CSV mit Warnung |
+| Wohlgeformtheit | gültiges XML | Prüfbericht, **keine Excel-Datei** |
+| XSD | `dml.xsd` der gewählten Issue (PROJ-11) | Prüfbericht, Excel-Datei mit Warnung |
+| Einlesen | Kopf und Einträge mit dem Leser der gewählten Issue | nicht lesbar (z. B. falsche Issue gewählt): Meldung, **keine Excel-Datei** |
+| Regelwerk | Regeln wie beim **Check-in** (PROJ-8): Format (A), Pflichtfelder (B), eindeutiger DMC (C), SNS ↔ Benennung (E), Infocode ↔ Infoname (I). **Ausnahme Pflichtfelder:** Die Ausgabedaten des Datenmoduls (`addresdm/issno` mit `@issno`/`@type` und `addresdm/issdate` mit Tag/Monat/Jahr) sind wie beim REPLY-Import **optional** — in einer DMRL-XML fehlen sie oft. Ein angefangenes Datum muss vollständig sein. | Prüfbericht, Excel-Datei mit Warnung |
+| MI | statt Regel D: **alle Einträge haben denselben MI**; der MI wird in der Zusammenfassung angezeigt | Prüfbericht, Excel-Datei mit Warnung |
 
-**Fehlende Ausgabedaten in der CSV ergänzen** (Refinement 2 und 3, 2026-11-16): **Auslöser** ist ein leerer Ausgabetyp `addresdm/issno/@type` — egal ob die Ausgabenummer `@issno` vorhanden ist oder `issno` ganz fehlt. Dann werden in der **CSV** gesetzt:
-| CSV-Feld | XPath (Issue 2.3; 4.2/5.0 entsprechend) | Wert | Bedingung |
+**Fehlende Ausgabedaten in der Excel-Datei ergänzen** (Refinement 2 und 3, 2026-11-16; bis 2026-11-26 in der CSV): **Auslöser** ist ein leerer Ausgabetyp `addresdm/issno/@type` — egal ob die Ausgabenummer `@issno` vorhanden ist oder `issno` ganz fehlt. Dann werden in der **Excel-Datei** gesetzt:
+| Feld (Spalte) | XPath (Issue 2.3; 4.2/5.0 entsprechend) | Wert | Bedingung |
 |---|---|---|---|
 | `type` | `/dml/dmentry/addresdm/issno/@type` | aus dem Eintragstyp abgeleitet: `n` → `new`, `c` → `changed`, `d` → `deleted`; ist der Eintragstyp leer → `new` | immer (Auslöser) |
 | `dmentryType` | `/dml/dmentry/@type` | `n` | nur wenn leer; vorhandenes `c`/`d` bleibt |
@@ -53,12 +55,12 @@ Das Werkzeug **speichert nichts**: keine DMRL, kein Archiv, kein Verlauf, keine 
 | `day`/`month`/`year` | `/dml/dmentry/addresdm/issdate` | Datum der Prüfung | nur wenn `issdate` fehlt (alle drei leer); ein vorhandenes Datum bleibt |
 
 - Bei Issue 4.2/5.0 entsprechen die Felder `dmlEntry/@issueType` (Ausgabetyp) und `dmlEntry/@dmlEntryType` (Eintragstyp); die Ableitung gilt für alle drei Issues gleich. `new`, `changed` und `deleted` sind in allen drei Schemas und in Regel A gültig.
-- Die **Prüfung** (XSD, Regelwerk) läuft auf den **Originaldaten** der XML; die Ergänzung betrifft nur die heruntergeladene CSV. Die XML-Datei wird nicht verändert, gespeichert wird nichts.
-- Statt des Sammelhinweises erscheint **ein Hinweis** (kein Fehler): „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer 001 und Datum TT.MM.JJJJ (nur wo leer).“
+- Die **Prüfung** (XSD, Regelwerk) läuft auf den **Originaldaten** der XML; die Ergänzung betrifft nur die heruntergeladene Excel-Datei. Die XML-Datei wird nicht verändert, gespeichert wird nichts.
+- Statt des Sammelhinweises erscheint **ein Hinweis** (kein Fehler): „Bei N Einträgen fehlten Ausgabedaten — in der Excel-Datei ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer 001 und Datum TT.MM.JJJJ (nur wo leer).“
 - **Ausgabetyp vorhanden, aber Ausgabenummer und/oder Datum fehlen:** keine Ergänzung (bei `changed`/`deleted` wäre `001` meist falsch — die Nummer klärt der Bearbeiter); es bleibt der Sammelhinweis „Bei N Einträgen fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.“
 - Check-in (PROJ-10) und REPLY-Import (PROJ-13) bleiben unverändert — dort wird nichts ergänzt.
 
-Ist die XSD-Prüfung **nicht verfügbar**, wird trotzdem eingelesen und nach Regelwerk geprüft. Der Bericht weist deutlich auf „XSD-Prüfung nicht durchgeführt“ hin, die CSV ist mit Warnung herunterladbar. Die Meldung nennt die **Ursache mit Handlungsanweisung** (Refinement 2026-11-16):
+Ist die XSD-Prüfung **nicht verfügbar**, wird trotzdem eingelesen und nach Regelwerk geprüft. Der Bericht weist deutlich auf „XSD-Prüfung nicht durchgeführt“ hin, die Excel-Datei ist mit Warnung herunterladbar. Die Meldung nennt die **Ursache mit Handlungsanweisung** (Refinement 2026-11-16):
 - **Server läuft nicht** (Anfrage kommt nicht an): „Der Server der Anwendung läuft nicht — bitte die Anwendung neu starten (siehe START-HIER.md).“
 - **Zugriff abgelehnt** (App über eine andere Adresse als `localhost`/`127.0.0.1` geöffnet): „Zugriff abgelehnt — bitte die Anwendung über http://localhost:<Port> öffnen.“
 - xmllint fehlt, Schema fehlt, Zeitlimit: Meldungen wie bisher (PROJ-11).
@@ -75,26 +77,32 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 
 **Prüfbericht:** gleiche Darstellung und gleicher Download wie beim Check-in (PROJ-10), gruppiert nach XSD und Regeln.
 
-**CSV**
-- Aufbau: **28 Spalten** wie die Check-out-CSV vom 21.11.2026 — ohne `dmc` und ohne Informationsfelder *(Refinement 2026-11-26 (2))*; Semikolon, UTF-8 mit BOM, nach DMC sortiert, inkl. `answer`/`answer_comment`, Formelschutz (BUG-QA2-1)
-- Dateiname: Name der XML-Datei mit Endung `.csv`, z. B. `DML-PHUNGUN-C1234-C-2026-00002_001-00.csv`
+**Excel-Datei** *(Refinement 2026-11-26 (3))*
+- Format: nur **MS-Excel (.xlsx)**; eine CSV der Einträge wird nicht mehr angeboten
+- Aufbau: **genau wie der Check-out (PROJ-9)**: ein Tabellenblatt „Einträge“, **37 Spalten** in der Reihenfolge des Check-outs (bis `remarks`, dann `dmc`, `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm`), alle Zellen (auch ganze Spalten) als Text, Kopfzeile fett und fixiert, Autofilter, keine Kopfdaten, nach DMC sortiert, inkl. `answer`/`answer_comment`
+- `dmc`: aus den DMC-Teilen gebildet (Schreibweise wie in der Anwendung). Informationsfelder `orig` bis `io-pm`: **leer** (nicht in der DMRL-XML); `answer_timestamp`: leer
+- Dateiname: Name der XML-Datei mit Endung `.xlsx`, z. B. `DML-PHUNGUN-C1234-C-2026-00002_001-00.xlsx`
 - Fehlende Ausgabedaten mit Standardwerten ergänzt (siehe „Prüfung“); alle übrigen Werte unverändert aus der XML
-- Bei Fehlern: Hinweis direkt an der Schaltfläche: „Die CSV enthält Fehler aus der Prüfung — ein Check-in wird abgewiesen, bis sie behoben sind.“
+- Hinweis an der Schaltfläche (immer): „Die Informationsfelder (orig bis io-pm) sind leer — beim Check-in werden gespeicherte Werte der DMRL dadurch geleert.“
+- Bei Fehlern zusätzlich: „Die Excel-Datei enthält Fehler aus der Prüfung — ein Check-in wird abgewiesen, bis sie behoben sind.“
 
 ## User Stories
 - Als **Bearbeiter** möchte ich eine DMRL-XML eines Empfängers prüfen, ohne sie in eine DMRL im System zu übernehmen, damit ich Fehler früh erkenne und zurückmelden kann.
-- Als **Bearbeiter** möchte ich eine fremde oder alte DMRL-XML in eine CSV im Check-out-Format umwandeln, damit ich sie in Excel bearbeiten und per Check-in in eine DMRL im System übernehmen kann.
-- Als **Bearbeiter** möchte ich auch bei Fehlern eine CSV erhalten, damit ich die Fehler in Excel korrigieren kann.
+- Als **Bearbeiter** möchte ich eine fremde oder alte DMRL-XML in eine MS-Excel-Datei im Check-out-Format umwandeln *(Refinement 2026-11-26 (3))*, damit ich sie in Excel bearbeiten und unverändert per Check-in in eine DMRL im System übernehmen kann.
+- Als **Bearbeiter** möchte ich auch bei Fehlern eine Excel-Datei erhalten, damit ich die Fehler in Excel korrigieren kann.
 - Als **Bearbeiter** möchte ich auf einen Blick sehen, was in der Datei steht (DML-Code, MI, Anzahl Einträge, Antworten), ohne sie in einem XML-Editor zu öffnen.
 - Als **Administrator** möchte ich das Werkzeug ebenfalls nutzen können, z. B. zur Vorbereitung einer neuen DMRL.
 - Als **Product Owner** möchte ich in der Demo zeigen, dass fehlerhafte XML-Dateien zuverlässig erkannt werden — auch außerhalb des SEND/REPLY-Workflows.
 
 ## Out of Scope
-- Prüfung gegen eine DMRL im System (Abgleich mit Einträgen, SEND-Bezug, MI des Systems) — **entfällt** (ehemals PROJ-21, verworfen 2026-11-16); der Abgleich mit einer DMRL erfolgt beim Check-in der konvertierten CSV (PROJ-10)
-- Automatische Übernahme in eine DMRL; die Übernahme läuft nur über Check-out → CSV ersetzen → Check-in (PROJ-9/10)
+- Prüfung gegen eine DMRL im System (Abgleich mit Einträgen, SEND-Bezug, MI des Systems) — **entfällt** (ehemals PROJ-21, verworfen 2026-11-16); der Abgleich mit einer DMRL erfolgt beim Check-in der konvertierten Excel-Datei (PROJ-10)
+- Automatische Übernahme in eine DMRL; die Übernahme läuft nur über Check-out → Datei ersetzen → Check-in (PROJ-9/10)
 - Automatische Erkennung der Issue (bewusst manuelle Auswahl)
 - Eintragsvorschau als Tabelle
-- Konvertierung in andere Richtungen (CSV → XML, Issue → andere Issue)
+- Konvertierung in andere Richtungen (CSV/Excel → XML, Issue → andere Issue)
+- CSV der konvertierten Einträge (zusätzlich oder wahlweise zur Excel-Datei) *(Refinement 2026-11-26 (3))*
+- Informationsfelder aus einer bestehenden DMRL übernehmen oder beim Check-in einer Werkzeug-Datei schützen *(Refinement 2026-11-26 (3))*
+- Prüfbericht als Excel *(Refinement 2026-11-26 (3))*
 - Speichern von Prüfergebnissen, Archiv- oder Verlaufseinträge
 - Mehrere Dateien auf einmal
 - Andere Datentypen als DMRL/DML (z. B. Datenmodule, PM, BREX)
@@ -112,35 +120,39 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 ### Auswahl und Prüfung
 - [ ] Angenommen das Werkzeug ist geöffnet, wenn keine Issue gewählt ist, dann ist „Prüfen“ nicht möglich und ein Hinweis fordert zur Auswahl der Issue auf
 - [ ] Angenommen eine Issue ist gewählt, wenn eine Datei über 5 MB oder eine Datei, die keine XML ist, ausgewählt wird, dann wird sie mit verständlicher Meldung abgewiesen
-- [ ] Angenommen eine gültige DMRL-XML und die passende Issue, wenn „Prüfen“ gewählt wird, dann erscheinen Zusammenfassung, Prüfbericht „Keine Fehler“ und „CSV herunterladen“
-- [ ] Angenommen eine nicht wohlgeformte XML, wenn geprüft wird, dann zeigt der Bericht den Fehler mit Zeile, und es gibt keine CSV
-- [ ] Angenommen eine XML mit Schemafehlern, wenn geprüft wird, dann listet der Bericht die XSD-Fehler mit Zeile, und die CSV ist mit Warnung herunterladbar
-- [ ] Angenommen eine XML einer anderen Issue als der gewählten, wenn geprüft wird, dann meldet der Bericht Schemafehler bzw. „Datei passt nicht zur gewählten Issue“; ist sie nicht lesbar, gibt es keine CSV
-- [ ] Angenommen eine XML mit Regelverstößen (z. B. doppelter DMC, fehlendes Pflichtfeld, unterschiedliche Benennung zum selben SNS), wenn geprüft wird, dann listet der Bericht die Verstöße je Eintrag wie beim Check-in, und die CSV ist mit Warnung herunterladbar
+- [ ] Angenommen eine gültige DMRL-XML und die passende Issue, wenn „Prüfen“ gewählt wird, dann erscheinen Zusammenfassung, Prüfbericht „Keine Fehler“ und „Excel-Datei herunterladen“ *(Refinement 2026-11-26 (3))*
+- [ ] Angenommen eine nicht wohlgeformte XML, wenn geprüft wird, dann zeigt der Bericht den Fehler mit Zeile, und es gibt keine Excel-Datei
+- [ ] Angenommen eine XML mit Schemafehlern, wenn geprüft wird, dann listet der Bericht die XSD-Fehler mit Zeile, und die Excel-Datei ist mit Warnung herunterladbar
+- [ ] Angenommen eine XML einer anderen Issue als der gewählten, wenn geprüft wird, dann meldet der Bericht Schemafehler bzw. „Datei passt nicht zur gewählten Issue“; ist sie nicht lesbar, gibt es keine Excel-Datei
+- [ ] Angenommen eine XML mit Regelverstößen (z. B. doppelter DMC, fehlendes Pflichtfeld, unterschiedliche Benennung zum selben SNS), wenn geprüft wird, dann listet der Bericht die Verstöße je Eintrag wie beim Check-in, und die Excel-Datei ist mit Warnung herunterladbar
 - [ ] Angenommen die Einträge haben unterschiedliche MI, wenn geprüft wird, dann meldet der Bericht „MI uneinheitlich“ mit den betroffenen Einträgen, und die Zusammenfassung zeigt „uneinheitlich“
-- [ ] Angenommen die XSD-Prüfung ist nicht verfügbar, wenn geprüft wird, dann wird nach Regelwerk geprüft, der Bericht weist auf „XSD-Prüfung nicht durchgeführt“ hin, und die CSV ist mit Warnung herunterladbar
-- [ ] Angenommen eine DMRL-XML, deren Einträge keine Ausgabedaten (`issno`, `type`, `issdate`) enthalten, wenn geprüft wird, dann erscheinen dafür keine Pflichtfeld-Fehler, sondern ein einziger Hinweis „Bei N Einträgen fehlten Ausgabedaten — in der CSV ergänzt …“ *(geändert Refinement 2)*
-- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz und der Eintragstyp ist `n`, wenn die CSV heruntergeladen wird, dann stehen dort `issno` = `001`, `type` = `new` und — falls `issdate` fehlt — das Datum der Prüfung (TT/MM/JJJJ in `day`/`month`/`year`)
-- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist `c`, wenn die CSV heruntergeladen wird, dann steht in `type` der Wert `changed` und der Eintragstyp bleibt `c` *(neu Refinement 3)*
-- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist `d`, wenn die CSV heruntergeladen wird, dann steht in `type` der Wert `deleted` und der Eintragstyp bleibt `d` *(neu Refinement 3)*
-- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist leer, wenn die CSV heruntergeladen wird, dann stehen in `type` der Wert `new` und in `dmentryType` der Wert `n`
-- [ ] Angenommen bei einem Eintrag ist `@issno` vorhanden (z. B. `002`), aber `@type` und `issdate` fehlen, wenn die CSV heruntergeladen wird, dann bleibt `issno` = `002`, `type` wird aus dem Eintragstyp abgeleitet und das Datum der Prüfung wird ergänzt *(neu Refinement 3)*
-- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer, aber `issdate` ist vollständig vorhanden, wenn die CSV heruntergeladen wird, dann bleibt das vorhandene Datum erhalten
+- [ ] Angenommen die XSD-Prüfung ist nicht verfügbar, wenn geprüft wird, dann wird nach Regelwerk geprüft, der Bericht weist auf „XSD-Prüfung nicht durchgeführt“ hin, und die Excel-Datei ist mit Warnung herunterladbar
+- [ ] Angenommen eine DMRL-XML, deren Einträge keine Ausgabedaten (`issno`, `type`, `issdate`) enthalten, wenn geprüft wird, dann erscheinen dafür keine Pflichtfeld-Fehler, sondern ein einziger Hinweis „Bei N Einträgen fehlten Ausgabedaten — in der Excel-Datei ergänzt …“ *(geändert Refinement 2)*
+- [ ] Angenommen bei einem Eintrag fehlt `addresdm/issno` ganz und der Eintragstyp ist `n`, wenn die Excel-Datei heruntergeladen wird, dann stehen dort `issno` = `001`, `type` = `new` und — falls `issdate` fehlt — das Datum der Prüfung (TT/MM/JJJJ in `day`/`month`/`year`)
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist `c`, wenn die Excel-Datei heruntergeladen wird, dann steht in `type` der Wert `changed` und der Eintragstyp bleibt `c` *(neu Refinement 3)*
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist `d`, wenn die Excel-Datei heruntergeladen wird, dann steht in `type` der Wert `deleted` und der Eintragstyp bleibt `d` *(neu Refinement 3)*
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer und der Eintragstyp ist leer, wenn die Excel-Datei heruntergeladen wird, dann stehen in `type` der Wert `new` und in `dmentryType` der Wert `n`
+- [ ] Angenommen bei einem Eintrag ist `@issno` vorhanden (z. B. `002`), aber `@type` und `issdate` fehlen, wenn die Excel-Datei heruntergeladen wird, dann bleibt `issno` = `002`, `type` wird aus dem Eintragstyp abgeleitet und das Datum der Prüfung wird ergänzt *(neu Refinement 3)*
+- [ ] Angenommen bei einem Eintrag ist `issno/@type` leer, aber `issdate` ist vollständig vorhanden, wenn die Excel-Datei heruntergeladen wird, dann bleibt das vorhandene Datum erhalten
 - [ ] Angenommen bei einem Eintrag ist `issno/@type` vorhanden, aber `@issno` oder `issdate` fehlt, wenn geprüft wird, dann wird nichts ergänzt und der Hinweis „… fehlen Ausgabedaten … beim Check-in sind sie Pflicht“ zählt diesen Eintrag *(geändert Refinement 3)*
-- [ ] Angenommen eine DMRL-XML ohne Ausgabedaten und sonst ohne Fehler wurde konvertiert, wenn die CSV unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann gibt es keine Pflichtfeld-Fehler zu den Ausgabedaten
+- [ ] Angenommen eine DMRL-XML ohne Ausgabedaten und sonst ohne Fehler wurde konvertiert, wenn die Excel-Datei unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann gibt es keine Pflichtfeld-Fehler zu den Ausgabedaten
 - [ ] Angenommen ein Eintrag hat ein unvollständiges Ausgabedatum (z. B. nur das Jahr), wenn geprüft wird, dann meldet der Bericht wie beim REPLY-Import einen Fehler „Ausgabedatum ist unvollständig“
 - [ ] Angenommen der Server der Anwendung läuft nicht mehr (Seite noch offen), wenn geprüft wird, dann nennt der Hinweis „XSD-Prüfung nicht durchgeführt“ die Ursache „Server läuft nicht“ mit der Anweisung, die Anwendung neu zu starten
 - [ ] Angenommen die Anwendung wurde über eine andere Adresse als `localhost`/`127.0.0.1` geöffnet, wenn geprüft wird, dann nennt der Hinweis die Ursache „Zugriff abgelehnt“ mit der Anweisung, die Anwendung über http://localhost:<Port> zu öffnen
 - [ ] Angenommen die XSD-Prüfung war nicht verfügbar, wenn „Erneut prüfen“ gewählt wird und die Prüffunktion wieder erreichbar ist, dann wird dieselbe Datei mit derselben Issue vollständig geprüft und das Ergebnis ersetzt
 
-### Ergebnis und CSV
+### Ergebnis und Excel-Datei *(Refinement 2026-11-26 (3))*
 - [ ] Angenommen eine Prüfung ist abgeschlossen, wenn die Zusammenfassung angezeigt wird, dann enthält sie Dateiname, Issue, DML-Code, Ausgabestand, Datum, Sicherheitseinstufung, MI, Anzahl Einträge und Anzahl Antworten je Art
-- [ ] Angenommen eine lesbare Datei, wenn „CSV herunterladen“ gewählt wird, dann wird eine CSV mit **28 Spalten** (Aufbau vom 21.11.2026, ohne `dmc` und Informationsfelder; Semikolon, UTF-8 mit BOM, nach DMC sortiert) mit dem Namen der XML-Datei und Endung `.csv` heruntergeladen *(Refinement 2026-11-26 (2) — bisher 27 bzw. Check-out-Format)*
-- [ ] Angenommen eine DMRL hat gespeicherte Informationsfelder (z. B. `orig`), wenn die CSV des Werkzeugs in die ausgecheckte DMRL eingecheckt wird, dann bleiben die gespeicherten Informationsfelder unverändert und der Prüfbericht nennt „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.“ *(Refinement 2026-11-26 (2), BUG-QA13-1)*
+- [ ] Angenommen eine lesbare Datei, wenn „Excel-Datei herunterladen“ gewählt wird, dann wird eine MS-Excel-Datei (.xlsx) mit dem Namen der XML-Datei und Endung `.xlsx` heruntergeladen, die sich per Doppelklick in MS Excel ohne Reparaturmeldung öffnen lässt *(Refinement 2026-11-26 (3))*
+- [ ] Angenommen die Excel-Datei des Werkzeugs wird geöffnet, dann enthält sie genau ein Tabellenblatt „Einträge“, dessen Zeile 1 genau die **37 Feldnamen** in derselben Reihenfolge wie beim Check-out enthält; die Kopfzeile ist fett und fixiert und hat einen Autofilter; alle Zellen sind als Text formatiert; die Einträge sind nach DMC sortiert *(Refinement 2026-11-26 (3))*
+- [ ] Angenommen eine Datei wurde konvertiert, wenn die Excel-Datei geöffnet wird, dann ist `dmc` je Zeile gefüllt (Schreibweise wie in der Anwendung) und die Spalten `orig` bis `io-pm` sowie `answer_timestamp` sind leer *(Refinement 2026-11-26 (3))*
+- [ ] Angenommen ein Eintrag hat `security` = `01` und `issno` = `001`, wenn die Excel-Datei geöffnet wird, dann stehen die Werte mit führenden Nullen als Text in den Zellen *(Refinement 2026-11-26 (3))*
+- [ ] Angenommen eine Prüfung ist abgeschlossen, wenn das Ergebnis angezeigt wird, dann gibt es keine Schaltfläche „CSV herunterladen“ mehr, und an „Excel-Datei herunterladen“ steht der Hinweis, dass die Informationsfelder leer sind und beim Check-in gespeicherte Werte geleert werden *(Refinement 2026-11-26 (3))*
+- [ ] Angenommen eine DMRL hat gespeicherte Informationsfelder (z. B. `orig`), wenn die Excel-Datei des Werkzeugs unverändert in die ausgecheckte DMRL eingecheckt wird, dann werden die Informationsfelder wie bei jedem Check-in aus der Datei übernommen, also geleert, und die Check-in-Zusammenfassung nennt „Informationsfelder bei N Einträgen aktualisiert“ *(Refinement 2026-11-26 (3))* — ersetzt das Kriterium zu BUG-QA13-1 aus Refinement (2)
 - [ ] Angenommen eine Empfänger-XML mit Antworten, wenn sie konvertiert wird, dann stehen Antwort und Begründung je Eintrag in den Spalten `answer` und `answer_comment`
-- [ ] Angenommen ein Eintrag enthält einen Wert, der mit `=`, `+`, `-` oder `@` beginnt, wenn die CSV erzeugt wird, dann ist der Wert wie bei allen CSV-Dateien gegen Formelausführung geschützt
-- [ ] Angenommen eine fehlerfreie Datei wurde konvertiert, wenn die CSV unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann besteht sie die Regelprüfung des Check-ins (Abweichungen nur aus dem Abgleich mit der DMRL, z. B. MI des Systems); enthält sie Empfängerantworten, fragt der Check-in, ob sie übernommen werden (nach Anpassung PROJ-10)
-- [ ] Angenommen eine Prüfung ist abgeschlossen, wenn „Prüfbericht herunterladen“ gewählt wird, dann wird der Bericht wie beim Check-in als CSV heruntergeladen
+- [ ] Angenommen ein Eintrag enthält einen Wert, der mit `=`, `+`, `-` oder `@` beginnt, wenn die Excel-Datei in Excel geöffnet wird, dann wird er als Text angezeigt, keine Formel ausgewertet, und beim Check-in unverändert gelesen (wie beim Check-out) *(Refinement 2026-11-26 (3))*
+- [ ] Angenommen eine fehlerfreie Datei wurde konvertiert, wenn die Excel-Datei unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann besteht sie die Regelprüfung des Check-ins (Abweichungen nur aus dem Abgleich mit der DMRL, z. B. MI des Systems); enthält sie Empfängerantworten, fragt der Check-in, ob sie übernommen werden (nach Anpassung PROJ-10)
+- [ ] Angenommen eine Prüfung ist abgeschlossen, wenn „Prüfbericht herunterladen“ gewählt wird, dann wird der Bericht wie beim Check-in als CSV heruntergeladen — unverändert *(Refinement 2026-11-26 (3))*
 
 ### Keine Wirkung auf den Datenbestand
 - [ ] Angenommen eine Datei wurde geprüft und konvertiert, wenn danach Dashboard, DMRLs, Archiv und Verlauf angesehen werden, dann ist nichts verändert, gesperrt oder protokolliert
@@ -151,24 +163,25 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - [ ] Angenommen ein langer DML-Code oder Dateiname passt nicht in eine Zeile der Zusammenfassung, wenn sie angezeigt wird, dann bricht er nach einem Bindestrich um, nicht mitten in einer Codegruppe; es werden keine Zeichen eingefügt
 
 ## Edge Cases
-- **XML einer anderen Issue gewählt** (z. B. 4.2-Datei, Issue 2.3 gewählt): XSD meldet Fehler; ist die Datei mit dem Leser der gewählten Issue nicht lesbar, Meldung „Datei passt nicht zur gewählten Issue — bitte Issue prüfen“ und keine CSV.
-- **XML ohne Einträge:** schemagültig nicht möglich (mind. ein Eintrag); bei Schemafehler Bericht und CSV nur mit Kopfzeile plus Warnung.
-- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Empfänger-REPLY): keine Pflichtfeld-Fehler; in der CSV werden `001`, der aus dem Eintragstyp abgeleitete Ausgabetyp und das Datum der Prüfung (und `n` bei leerem Eintragstyp) ergänzt, ein Hinweis nennt die Anzahl. Die CSV wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen; beim Check-in sind die Ausgabedaten damit vorhanden (PROJ-10 unverändert streng). *(geändert Refinement 2 und 3; vorher nur Sammelhinweis, davor Pflichtfeld-Fehler)*
+- **XML einer anderen Issue gewählt** (z. B. 4.2-Datei, Issue 2.3 gewählt): XSD meldet Fehler; ist die Datei mit dem Leser der gewählten Issue nicht lesbar, Meldung „Datei passt nicht zur gewählten Issue — bitte Issue prüfen“ und keine Excel-Datei.
+- **XML ohne Einträge:** schemagültig nicht möglich (mind. ein Eintrag); bei Schemafehler Bericht und Excel-Datei nur mit Kopfzeile plus Warnung.
+- **DMRL-XML ohne Ausgabedaten** (`issno`, `type`, Datum fehlen — im Schema optional, z. B. SEND einer neuen DMRL oder Empfänger-REPLY): keine Pflichtfeld-Fehler; in der Excel-Datei werden `001`, der aus dem Eintragstyp abgeleitete Ausgabetyp und das Datum der Prüfung (und `n` bei leerem Eintragstyp) ergänzt, ein Hinweis nennt die Anzahl. Die Excel-Datei wird ohne Warnung angeboten, sofern keine anderen Fehler vorliegen; beim Check-in sind die Ausgabedaten damit vorhanden (PROJ-10 unverändert streng). *(geändert Refinement 2 und 3; vorher nur Sammelhinweis, davor Pflichtfeld-Fehler)*
 - **Nur ein Teil der Ausgabedaten:** kein Fehler, da jedes Feld einzeln optional ist; nur ein angefangenes Datum muss vollständig sein. Ist der **Ausgabetyp leer** (z. B. `@issno` ohne `@type`), wird ergänzt (Ausgabetyp abgeleitet, Datum nur wenn leer, vorhandene Ausgabenummer bleibt). Ist der **Ausgabetyp vorhanden** und fehlen Ausgabenummer oder Datum: **keine Ergänzung** — Sammelhinweis „beim Check-in sind sie Pflicht“. *(geändert Refinement 3)*
 - **Eintrag mit Eintragstyp `c` oder `d`, aber ohne Ausgabetyp:** Ausgabetyp `changed` bzw. `deleted`; fehlt auch `@issno`, wird `001` ergänzt; der Eintragstyp bleibt `c`/`d` (vorhandene Werte nie überschreiben). *(geändert Refinement 3; vorher immer `new`)*
-- **Eintragstyp mit unbekanntem Wert** (nicht `n`/`c`/`d`, z. B. Tippfehler): Regel A meldet den Fehler wie bisher; ist der Ausgabetyp leer, wird `new` gesetzt und der Eintragstyp bleibt unverändert — die CSV hat ohnehin eine Fehlerwarnung.
+- **Eintragstyp mit unbekanntem Wert** (nicht `n`/`c`/`d`, z. B. Tippfehler): Regel A meldet den Fehler wie bisher; ist der Ausgabetyp leer, wird `new` gesetzt und der Eintragstyp bleibt unverändert — die Excel-Datei hat ohnehin eine Fehlerwarnung.
 - **Prüfung kurz vor Mitternacht, Download danach:** Es gilt das Datum der Prüfung (Ergebnis wird beim Prüfen erzeugt).
-- **Unvollständiges Datum ohne `issno`** (z. B. nur Jahr): Fehler „Ausgabedatum ist unvollständig“ wie bisher; `issno`/`type` werden ergänzt, das Datum nicht (es ist nicht ganz leer) — die CSV hat ohnehin eine Fehlerwarnung.
-- **Keine DMRL-XML** (wohlgeformt, aber z. B. ein Datenmodul): Schemafehler am Wurzelelement; nicht lesbar → keine CSV.
-- **Kodierung:** XML in UTF-8, UTF-16 oder ISO-8859-1 laut Deklaration wird korrekt gelesen (wie REPLY, PROJ-13); die CSV ist immer UTF-8.
+- **Unvollständiges Datum ohne `issno`** (z. B. nur Jahr): Fehler „Ausgabedatum ist unvollständig“ wie bisher; `issno`/`type` werden ergänzt, das Datum nicht (es ist nicht ganz leer) — die Excel-Datei hat ohnehin eine Fehlerwarnung.
+- **Keine DMRL-XML** (wohlgeformt, aber z. B. ein Datenmodul): Schemafehler am Wurzelelement; nicht lesbar → keine Excel-Datei.
+- **Kodierung:** XML in UTF-8, UTF-16 oder ISO-8859-1 laut Deklaration wird korrekt gelesen (wie REPLY, PROJ-13); Umlaute erscheinen in der Excel-Datei korrekt.
 - **Externe Verweise / Entities** in der XML werden nicht nachgeladen (wie PROJ-11).
 - **Sehr viele Einträge** (bis 5 MB): Prüfung und Konvertierung funktionieren; da nichts gespeichert wird, ist der Browser-Speicher (BUG-QA2-2) nicht betroffen.
 - **Prüfung läuft, Benutzer wählt neue Datei oder verlässt die Seite:** laufende Prüfung wird verworfen, kein veraltetes Ergebnis.
 - **Benutzerwechsel in der Kopfzeile** während ein Ergebnis angezeigt wird: Werkzeug bleibt nutzbar (keine Berechtigung nötig).
 - **XSD-Prüfung nicht erreichbar, weil der Server beendet wurde** (Browser-Tab noch offen): Regelprüfung läuft im Browser weiter; Hinweis „Server läuft nicht“ mit „Erneut prüfen“. *(Ursache des Falls TWLBORFLOS vom 2026-11-16; xmllint selbst prüft die Datei fehlerfrei.)*
 - **App über Rechnername oder Netzwerkadresse geöffnet:** Serverfunktion lehnt ab (Schutz aus BUG-QA2-3); Hinweis „Zugriff abgelehnt — bitte über http://localhost:<Port> öffnen“.
-- **Doppelte DMC:** Bericht meldet Regel C; die CSV enthält beide Einträge (Check-in würde sie abweisen).
-- **Werkzeug-CSV in eine DMRL mit gespeicherten Informationsfeldern einchecken:** Informationsfelder bleiben erhalten (28-Spalten-Datei); neue Einträge aus der CSV haben leere Informationsfelder. Wer Informationsfelder pflegen will, checkt danach normal aus (37 Spalten) *(Refinement 2026-11-26 (2))*.
+- **Doppelte DMC:** Bericht meldet Regel C; die Excel-Datei enthält beide Einträge (Check-in würde sie abweisen).
+- **Werkzeug-Excel in eine DMRL mit gespeicherten Informationsfeldern einchecken:** Die Informationsfelder werden geleert (37-Spalten-Datei mit leeren Feldern, normales Check-in-Verhalten); die Check-in-Zusammenfassung nennt die Anzahl. Wer die Werte behalten will, trägt sie vor dem Check-in in die Werkzeug-Datei ein (z. B. aus einem aktuellen Check-out kopiert). Hauptfall ist ein Altbestand in eine neue DMRL; dort ist nichts gespeichert *(Refinement 2026-11-26 (3))*. *(ersetzt Refinement 2026-11-26 (2): 28-Spalten-CSV, Werte blieben erhalten)*
+- **Ältere Werkzeug-CSV (28 Spalten) vom 26.11.2026:** wird beim Check-in weiter angenommen (PROJ-10, CSV und 28 Spalten zulässig); gespeicherte Informationsfelder bleiben dann erhalten *(Refinement 2026-11-26 (3))*.
 
 ## Technical Requirements (optional)
 - Prüfung einer 5-MB-Datei in wenigen Sekunden
@@ -184,6 +197,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - [x] Ausgabetyp immer `new` oder aus dem Eintragstyp ableiten? → Ableiten: n → new, c → changed, d → deleted; ohne Eintragstyp new + n (2026-11-16, Refinement 3)
 - [x] Ergänzung auch bei vorhandener Ausgabenummer und leerem Ausgabetyp? → Ja; Datum dann ebenfalls ergänzen, wenn leer; vorhandene Ausgabenummer bleibt (2026-11-16, Refinement 3)
 - [x] `001` ergänzen, wenn nur die Ausgabenummer fehlt (Ausgabetyp vorhanden)? → Nein, Sammelhinweis wie bisher (2026-11-16, Refinement 3)
+- [x] Soll das Werkzeug eine Excel-Datei statt/neben der CSV liefern (offene Frage aus PROJ-9/PROJ-10, 2026-11-25)? → Ja, nur Excel mit 37 Spalten wie beim Check-out, keine CSV mehr; Prüfbericht bleibt CSV (2026-11-26, Refinement 3)
 - [x] `/refine PROJ-10` (und Regel K in PROJ-8) durchgeführt (2026-11-14): eine Abfrage für alle abweichenden Antworten, standardmäßig aus; übernommene Antwortänderung zählt als Änderung. Umsetzung von PROJ-10/PROJ-8 muss vor der Gesamtabnahme von PROJ-20 erfolgen
 
 ## Decision Log
@@ -215,10 +229,15 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Ausgabetyp aus dem Eintragstyp ableiten (n → new, c → changed, d → deleted) statt immer `new`; ohne Eintragstyp `new` + `n` | Wunsch Product Owner: ein geänderter/gelöschter Eintrag mit Ausgabetyp `new` wäre fachlich widersprüchlich. Ersetzt den festen Wert `new` aus Refinement 2 | 2026-11-16 |
 | Auslöser der Ergänzung ist ein leerer Ausgabetyp (nicht mehr nur ein ganz fehlendes `issno`); Ausgabenummer `001` und Datum nur, wenn leer | Wunsch Product Owner; der Ausgabetyp ist aus dem Eintragstyp eindeutig ableitbar. Lockert die Regel „bei Teildaten keine Ergänzung“ aus Refinement 2 | 2026-11-16 |
 | Fehlt nur die Ausgabenummer (Ausgabetyp vorhanden), wird nichts ergänzt | Bei `changed`/`deleted` wäre `001` meist falsch; die Nummer klärt der Bearbeiter | 2026-11-16 |
+| Werkzeug liefert die konvertierte DMRL nur noch als MS-Excel (.xlsx), keine CSV mehr | Vorgabe Product Owner; gleiches Format wie Check-out (PROJ-9), direkt in Excel bearbeitbar, keine CSV-Importprobleme (führende Nullen, Kodierung) | 2026-11-26 |
+| Excel mit 37 Spalten genau wie beim Check-out (`dmc` gefüllt, Informationsfelder leer) | Vorgabe Product Owner: Die heruntergeladene Datei soll ohne Umbau als Check-in-Datei dienen. Ersetzt die 28-Spalten-Lösung zu BUG-QA13-1 | 2026-11-26 |
+| Leere Informationsfelder werden beim Check-in übernommen, also gespeicherte Werte geleert; Hinweis an der Download-Schaltfläche. PROJ-10 bleibt unverändert | Entscheidung Product Owner: normales Check-in-Verhalten, im Hauptfall (Altbestand in eine neue DMRL) unschädlich. Verworfen: leere Felder beim Check-in schützen (bewusstes Löschen unmöglich), Werkzeug-Datei per Kennung erkennen (mehr Aufwand in PROJ-10 und Excel-Schreiber) | 2026-11-26 |
+| Prüfbericht des Werkzeugs bleibt CSV | Einheitlich mit den Prüfberichten von Check-in und REPLY | 2026-11-26 |
+| Feature-Titel „XML-Prüfung & Excel-Konvertierung“; Dateiname der Spec und Adresse `/xml-pruefung` bleiben | Titel beschreibt das neue Ergebnis; Verweise bleiben gültig | 2026-11-26 |
 | Lange Codes in der Zusammenfassung nach Bindestrichen umbrechen, rein per CSS (kein eingefügtes Zeichen) — bereits umgesetzt | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar; Wunsch Product Owner: nur CSS | 2026-11-16 |
 | Menüpunkt und Seitenüberschrift heißen „Werkzeug“ statt „XML prüfen“ | Wunsch Product Owner | 2026-11-22 |
-| CSV des Werkzeugs mit 28 Spalten (ohne `dmc` und Informationsfelder) statt 37 | BUG-QA13-1: leere Informationsfelder einer Empfänger-XML würden beim Check-in gespeicherte Werte leeren; mit 28 Spalten bleiben sie über die bestehende Check-in-Regel erhalten, ohne Änderung am Check-in. Alternativen verworfen: leere Werte beim Check-in nicht übernehmen (bewusstes Leeren unmöglich), eigener 29-Spalten-Aufbau mit `dmc` (vierte Dateifassung) | 2026-11-26 |
-| Kein zusätzlicher Hinweis im Werkzeug zur fehlenden `dmc`-Spalte | Der Check-in meldet „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten“; die Werkzeug-CSV ist Zwischenstand für den Check-in | 2026-11-26 |
+| ~~CSV des Werkzeugs mit 28 Spalten (ohne `dmc` und Informationsfelder) statt 37~~ — überholt durch Refinement 3 (2026-11-26) | BUG-QA13-1: leere Informationsfelder einer Empfänger-XML würden beim Check-in gespeicherte Werte leeren; mit 28 Spalten bleiben sie über die bestehende Check-in-Regel erhalten, ohne Änderung am Check-in. Alternativen verworfen: leere Werte beim Check-in nicht übernehmen (bewusstes Leeren unmöglich), eigener 29-Spalten-Aufbau mit `dmc` (vierte Dateifassung) | 2026-11-26 |
+| ~~Kein zusätzlicher Hinweis im Werkzeug zur fehlenden `dmc`-Spalte~~ — überholt durch Refinement 3 | Der Check-in meldet „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten“; die Werkzeug-CSV ist Zwischenstand für den Check-in | 2026-11-26 |
 | Adresse `/xml-pruefung` bleibt | Lesezeichen und Verweise bleiben gültig; die Adresse beschreibt weiterhin die Funktion | 2026-11-22 |
 | Zeile über der Überschrift wechselt von „Werkzeug“ zu „XML prüfen“ | Vermeidet „Werkzeug“ doppelt; die Funktion bleibt auf der Seite benannt | 2026-11-22 |
 
