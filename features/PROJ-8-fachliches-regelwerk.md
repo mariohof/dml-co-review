@@ -4,6 +4,8 @@
 **Created:** 2026-11-12
 **Last Updated:** 2026-11-26
 
+> **Refinement 2026-11-26 (`/refine PROJ-8`) — `security` je Eintrag optional:** Anlass ist eine echte DMRL in Issue 6.0 ohne `dmlEntry/security`. Sie ist XSD-gültig, das Regelwerk meldete aber für jeden Eintrag „Pflichtfeld ist leer“. In allen vier Schemas (2.3, 4.2, 5.0, 6.0) ist `security` je Eintrag optional (`minOccurs="0"`). Neu: `security` ist in Gruppe B **kein Pflichtfeld** mehr, weder beim Check-in noch beim REPLY oder im Werkzeug (PROJ-20). Ist es gefüllt, gelten weiter Format `01`–`20` (A) und das Auffüllen führender Nullen beim Check-in. Regel G: Fehlt `security` im REPLY, ist das keine Änderung, und der Wert der Anwendung bleibt erhalten (wie bei `issno`/`type`/Datum). Ein **abweichender** Wert bleibt ein Fehler. `infoname` und `language`/`country` bleiben Pflicht. Die Sicherheitseinstufung im DMRL-Kopf ist nicht betroffen.
+
 
 > **Refinement 2026-11-26 (über `/refine PROJ-9`) — 37 Spalten:** Gruppe S erwartet nach `remarks` die Spalten `dmc`, `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm`. Gültig sind 37 Spalten (aktuell), 28 Spalten (Stand 2026-11-21) und 27 Spalten (ohne `answer_timestamp`); andere Kombinationen sind Fehler. Für die neuen Felder gibt es **keine** Prüfregeln (keine Gruppe A/B/F/G/K); `dmc` und die Informationsfelder zählen nicht als fachliche Felder. REPLY unverändert (Felder nicht in der XML). Details PROJ-9, PROJ-10.
 
@@ -83,8 +85,8 @@ Alle Regelverstöße sind **Fehler**; es gibt keine Warnungen. Einzige Ausnahme 
 **Führende Nullen (nur Check-in):** Bei `security`, `issno`, `day`, `month` werden fehlende führende Nullen vor der Prüfung aufgefüllt (`1` → `01` bzw. `001`), da Excel sie beim Öffnen der CSV entfernt (PROJ-9). Der Prüfbericht nennt jede Auffüllung als Hinweis; Hinweise sind keine Fehler. DMC-Teile werden nicht aufgefüllt.
 
 ### B — Pflichtfelder
-- **Pflicht:** alle DMC-Teile (`modelic` … `itemloc`), `techname`, `infoname`, `language`, `country`, `security`, `rpc`, `issno`, `type`, `day`, `month`, `year`
-- **Optional:** `dmentryType` (leer = abgestimmt), `rpcname`, `remarks`, `answer`, `answer_comment` (beide werden nur aus dem REPLY übernommen: `/dml/dmentry/answer/@answer` bzw. `/dml/dmentry/answer/remarks`)
+- **Pflicht:** alle DMC-Teile (`modelic` … `itemloc`), `techname`, `infoname`, `language`, `country`, `rpc`, `issno`, `type`, `day`, `month`, `year`
+- **Optional:** `dmentryType` (leer = abgestimmt), `security` *(Refinement 2026-11-26: im Schema je Eintrag optional; wenn gefüllt, gilt Format A)*, `rpcname`, `remarks`, `answer`, `answer_comment` (beide werden nur aus dem REPLY übernommen: `/dml/dmentry/answer/@answer` bzw. `/dml/dmentry/answer/remarks`)
 - **Ausnahme REPLY:** `issno`, `type`, `day`, `month`, `year` dürfen im REPLY-XML fehlen (NSG: `addresdm/issno` in der DMRL nicht verwenden; Beispieldateien enthalten sie nicht). Fehlen sie, bleiben die Werte aus der Anwendung erhalten. Sind sie vorhanden, gelten Formatregeln (A) und Unverändert-Regel (G).
 
 ### C — DMC eindeutig
@@ -145,7 +147,7 @@ Weichen `answer` oder `answer_comment` vom Stand der Anwendung ab (bei neuen Ein
 | Prüfung | Fehler, wenn … |
 |---|---|
 | Vollständigkeit | DMC aus dem SEND fehlt im REPLY oder REPLY enthält DMC, der nicht im SEND war |
-| Unverändert | außer `answer` und `answer/remarks` wurde ein Feld gegenüber dem SEND geändert (`issno`, `type`, Datum dürfen fehlen, s. B) |
+| Unverändert | außer `answer` und `answer/remarks` wurde ein Feld gegenüber dem SEND geändert (`issno`, `type`, Datum und `security` dürfen fehlen, der Wert der Anwendung bleibt dann erhalten, s. B; `security` ergänzt 2026-11-26) |
 
 Die Gesamtbemerkung `dml/remarks` des Empfängers ist erlaubt.
 
@@ -200,6 +202,8 @@ Die Gesamtbemerkung `dml/remarks` des Empfängers ist erlaubt.
 - [ ] Angenommen `security` ist `A1`, `123`, `00` oder `21`, wenn geprüft wird, dann wird ein Formatfehler gemeldet; `01` ist gültig
 - [ ] Angenommen in einer Check-in-Datei ist `security` = `1`, `issno` = `1`, `month` = `9`, wenn geprüft wird, dann werden die Werte zu `01`, `001`, `09` aufgefüllt, als Hinweis gemeldet und kein Fehler erzeugt
 - [ ] Angenommen ein REPLY enthält `security` = `1`, wenn geprüft wird, dann wird ein Formatfehler gemeldet (kein Auffüllen beim REPLY)
+- [ ] Angenommen bei einem Eintrag ist `security` leer (Check-in-Datei) bzw. fehlt `dmlEntry/security` / `dmentry/security` (REPLY, Werkzeug), wenn geprüft wird, dann wird dafür weder ein Pflichtfeld- noch ein Formatfehler gemeldet *(Refinement 2026-11-26)*
+- [ ] Angenommen eine DMRL-XML in Issue 6.0 ohne `security` je Eintrag, sonst regelkonform, wenn sie im Werkzeug (PROJ-20) geprüft wird, dann meldet der Bericht keinen Fehler zu `security` *(Refinement 2026-11-26)*
 - [ ] Angenommen `dmentryType` ist `x`, wenn geprüft wird, dann wird ein Fehler gemeldet; leer, `n`, `c`, `d` sind gültig
 - [ ] Angenommen der DM-Ausgabetyp ist `change`, wenn geprüft wird, dann wird ein Fehler gemeldet; `new`, `changed`, `revised`, `deleted`, `status` sind gültig *(`status` ergänzt 2026-11-16)*
 - [ ] Angenommen das Datum ist 31.02.2026, wenn geprüft wird, dann wird ein Fehler „ungültiges Datum" gemeldet
@@ -241,6 +245,8 @@ Die Gesamtbemerkung `dml/remarks` des Empfängers ist erlaubt.
 - [ ] Angenommen ein REPLY mit gleichem `dmlc` ist bereits archiviert, wenn er erneut geprüft wird, dann wird „REPLY wurde bereits importiert" gemeldet
 - [ ] Angenommen im REPLY fehlt ein DMC aus dem SEND oder es gibt einen zusätzlichen DMC, wenn geprüft wird, dann wird jeder betroffene DMC gemeldet
 - [ ] Angenommen der Empfänger hat den Tech Name eines Eintrags geändert, wenn geprüft wird, dann wird „Feld techname wurde gegenüber dem SEND verändert" gemeldet
+- [ ] Angenommen der SEND enthielt bei einem Eintrag `security` = `01` und im REPLY fehlt das Element, wenn geprüft wird, dann wird kein Fehler gemeldet, und nach der Übernahme hat der Eintrag weiterhin `security` = `01` *(Refinement 2026-11-26)*
+- [ ] Angenommen der SEND enthielt `security` = `01` und der REPLY enthält `02`, wenn geprüft wird, dann wird „Feld security wurde gegenüber dem SEND verändert" gemeldet *(Refinement 2026-11-26)*
 - [ ] Angenommen der REPLY enthält `dml/remarks`, wenn geprüft wird, dann wird kein Fehler gemeldet
 
 ### Antworten vollständig (REPLY)
@@ -266,6 +272,8 @@ Die Gesamtbemerkung `dml/remarks` des Empfängers ist erlaubt.
 - **Erster REPLY auf den ersten SEND:** `dmlref` des REPLY = `dmlc` des initialen SEND.
 - **REPLY mit Werten in `issno`/`issdate`, die von der Anwendung abweichen:** Fehler „verändert" (Regel G).
 - **Datei einer anderen DMRL eingecheckt:** fällt durch Regel D (MI) und F (fehlende Einträge) auf.
+- **`security` beim Check-in geleert** (vorher `01`): kein Pflichtfeldfehler. Es ist eine Feldänderung wie jede andere, braucht also einen Eintragstyp (Regel F). Ab dem nächsten SEND enthält der Eintrag kein `security`-Element mehr (zulässig laut Schema). *(Refinement 2026-11-26)*
+- **SEND ohne `security` und REPLY mit `security`:** Abweichung vom SEND, also Fehler in Regel G, wie bei jedem anderen Feld. *(Refinement 2026-11-26)*
 
 ## Technical Requirements (optional)
 - Prüfung von 1.000 Einträgen in wenigen Sekunden
@@ -293,6 +301,9 @@ Die Gesamtbemerkung `dml/remarks` des Empfängers ist erlaubt.
 | Eintragstyp ↔ DM-Ausgabetyp beim Check-in: `n` → `new`, `c` → `changed`/`revised`/`status`, `d` → `deleted`, leer → keine Prüfung; für alle Einträge mit Eintragstyp; ersetzt „unabhängig, erlaubt“ | Vorgabe Product Owner (`/refine PROJ-10`) | 2026-11-16 |
 | DM-Ausgabetyp `status` gültig; `rinstate-*` weiterhin ungültig | In allen drei Schemas gültig; für `c` vorgesehen | 2026-11-16 |
 | Pflichtfelder inkl. `infoname`, `rpc`, `issno`, `type`, Datum | Vorgabe Product Owner | 2026-11-12 |
+| `security` je Eintrag nicht mehr Pflicht (Check-in, REPLY, Werkzeug); Format `01`–`20` nur, wenn gefüllt | In allen vier Schemas optional; echte 6.0-DMRLs ohne das Element sind XSD-gültig und wurden vom Regelwerk zu Unrecht abgewiesen. Vorgabe Product Owner (`/refine PROJ-8`) | 2026-11-26 |
+| Regel G: fehlendes `security` im REPLY ist keine Änderung, der Wert der Anwendung bleibt; abweichender Wert bleibt ein Fehler | Gleiche Behandlung wie `issno`/`type`/Datum; Empfänger-Werkzeuge lassen optionale Elemente weg | 2026-11-26 |
+| `infoname` und `language`/`country` bleiben Pflicht, obwohl im Schema optional | Kleinster Eingriff; Regel I setzt einen Info Name voraus. Bei Bedarf eigenes Refinement | 2026-11-26 |
 | `issno`/`type`/Datum im REPLY-XML optional, in der Anwendung Pflicht | NSG und Beispieldateien enthalten sie nicht; Demo-Einträge werden ergänzt | 2026-11-12 |
 | REPLY: Empfänger, `dmlref` auf letzten SEND, gleiche DMCs, keine Feldänderungen | Nachvollziehbarer Zyklus (NSG 1.2.3, PROJ-6) | 2026-11-12 |
 | `language` nach ISO 639-1, `country` nach ISO 3166 (2-stelliger Ländercode) | Vorgabe Product Owner; S1000D verwendet den 2-stelligen Ländercode | 2026-11-12 |
