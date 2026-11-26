@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & Excel-Konvertierung
 
-## Status: In Progress
+## Status: Approved
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-26
 
@@ -868,6 +868,68 @@ Die Excel-Datei wird wie bisher die CSV **beim Prüfen** erzeugt, nicht erst bei
 - **Bugs Found:** 0
 - **Security:** Pass
 - **Production Ready:** YES
+
+### QA Refinement 2026-11-26 (3) — MS-Excel mit 37 Spalten statt CSV
+**Tested:** 2026-11-26 · **Tester:** QA Engineer (AI) · **Browser:** Chromium (Desktop; laut Vorgabe nur Desktop/Chromium)
+**Automatisiert:** Vitest 776 Tests ✅ (neu: `qa-proj20-excel.test.ts`, 12 Tests) · Playwright 172 + 2 neue Tests ✅ (`PROJ-20-qa-refinement3.spec.ts`; PROJ-20 gesamt 35 E2E mit echter XSD-Serverfunktion) · Lint ohne Fehler; Typprüfung nur mit den vorbestehenden Meldungen in `tests/helpers.ts`
+**Nicht geprüft:** Öffnen in echtem MS Excel („ohne Reparaturmeldung“). Die Datei kommt aus demselben Excel-Schreiber wie Check-out und Export; dort ist das bereits abgenommen (PROJ-9/PROJ-18).
+
+#### Acceptance Criteria Status (Ergebnis und Excel-Datei)
+- [x] „Excel-Datei herunterladen“ liefert `.xlsx` mit dem Namen der XML-Datei (Unit, Komponente, E2E). Öffnen in MS Excel nicht geprüft (s. o.)
+- [x] Genau ein Blatt „Einträge“, 37 Feldnamen in Check-out-Reihenfolge, Kopfzeile fett und fixiert, Autofilter, alle Spalten als Text, nach DMC sortiert (QA-Unit prüft das Blatt-XML direkt; E2E Issue 6.0)
+- [x] `dmc` je Zeile wie in der Anwendung (Issue 2.3, 4.2, 6.0); `orig` bis `io-pm` und `answer_timestamp` leer
+- [x] Führende Nullen (`issno` 001, `day` 05, `month` 03) stehen als Text in den Zellen und kommen beim Check-in unverändert an
+- [x] Keine Schaltfläche „CSV herunterladen“ mehr. Der Dauerhinweis zu leeren Informationsfeldern ist immer sichtbar, bei nicht lesbarer Datei nicht. Die Fehlerwarnung hat den neuen Text (E2E Schemafehler)
+- [x] Werkzeug-Excel in eine DMRL mit gespeicherten Informationsfeldern einchecken → Felder geleert, Zusammenfassung „Informationsfelder bei N Einträgen aktualisiert“, kein Hinweis „Datei ohne Informationsfelder“ (QA-Unit über den echten Weg XML-Export → Werkzeug → Check-in; E2E)
+- [x] Werte mit `=`, `+`, `-`, `@` stehen als Text, keine Formelzellen im Blatt, beim Check-in unverändert gelesen
+- [x] Fehlerfreie Datei → Check-in besteht die Regelprüfung; Datei mit Regelfehler (doppelter DMC) → Check-in weist ab (QA-Unit)
+- [x] Prüfbericht weiterhin als CSV (E2E prüft die Endung)
+- [x] Fehlende Ausgabedaten werden in der Excel-Datei ergänzt, Hinweistext „… in der Excel-Datei ergänzt …“ (Unit, E2E)
+- [x] Regression: alle übrigen Kriterien von PROJ-20 sowie Check-in/Check-out, Export, REPLY und Issue 6.0 grün (komplette Suiten)
+
+#### Edge Cases Status
+- [x] DML ohne Einträge: Excel-Datei nur mit Kopfzeile (37 Spalten)
+- [x] UTF-16-Datei: Umlaute stehen korrekt in der Excel-Datei
+- [x] Ältere Werkzeug-CSV (28 Spalten) wird weiter eingecheckt; gespeicherte Informationsfelder bleiben (QA-Unit)
+- [x] Große Datei (4,8 MB, 5400 Einträge): Prüfung und Excel-Erzeugung 1,2 s
+- [x] Sonderzeichen `< > & "` und Umlaute überstehen den Rundlauf Werkzeug → Check-in
+- [ ] Sehr lange Werte (über 32 767 Zeichen) → BUG-QA14-1
+- [ ] Text im Muster `_xHHHH_` → BUG-QA14-2 (vorbestehend)
+
+#### Security Audit Results
+- [x] XML-Injektion ins Tabellenblatt: Werte aus der fremden XML werden für XML maskiert, unzulässige Steuerzeichen entfernt
+- [x] Formelausführung: nur Textzellen (Inline-Strings), keine Formeln im Blatt (Test prüft das entpackte Blatt)
+- [x] Keine neue Serverfunktion, kein Speichern; Host-/Origin-Schutz und Entity-Schutz der XSD-Prüfung unverändert (bestehende Tests grün)
+
+#### Bugs Found
+
+##### BUG-QA14-1: Werte über 32 767 Zeichen landen ungekürzt in einer Excel-Zelle
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. DMRL-XML mit einem Feld (z. B. `techname`) von 40 000 Zeichen im Werkzeug prüfen
+  2. Ergebnis: kein Befund im Prüfbericht, die Excel-Datei enthält die Zelle ungekürzt
+  3. Erwartet: MS Excel erlaubt höchstens 32 767 Zeichen je Zelle. Beim Öffnen ist eine Reparaturmeldung bzw. eine Kürzung wahrscheinlich (in echtem Excel nicht geprüft)
+- **Ursache:** Der Excel-Schreiber begrenzt die Zelllänge nicht, das Regelwerk prüft Freitextlängen nicht. Mit der CSV kürzte Excel stillschweigend; das Werkzeug macht den Fall jetzt sichtbarer, weil es fremde XML annimmt
+- **Hinweis zur Behebung (Entscheidung Product Owner):** z. B. Befund im Prüfbericht „Wert länger als 32 767 Zeichen — Excel kann ihn nicht vollständig speichern“, oder Kürzung mit Hinweis. Fachlich kaum realistisch (S1000D-Benennungen sind kurz)
+- **Test:** `qa-proj20-excel.test.ts` › „dokumentiert BUG-QA14-1“
+- **Priority:** Nice to have
+
+##### BUG-QA14-2: Text im Muster `_xHHHH_` kommt nach Excel → Check-in verändert an (vorbestehend PROJ-9/PROJ-10)
+- **Severity:** Low
+- **Steps to Reproduce:**
+  1. DMRL-XML mit `techname` = `Teil_x0041_` im Werkzeug in Excel umwandeln
+  2. Die Datei einlesen wie beim Check-in
+  3. Erwartet: `Teil_x0041_`; tatsächlich: `Teil_x005F_x0041_`
+- **Ursache:** Der Excel-Schreiber maskiert `_xHHHH_` korrekt als `_x005F_xHHHH_`, damit Excel den Text nicht als Zeichencode liest. Der Excel-Leser des Check-ins hebt die Maskierung aber nicht auf. Das betrifft genauso Check-out → Check-in (PROJ-9/10), ist also nicht durch dieses Refinement entstanden
+- **Hinweis zur Behebung:** Der Leser dekodiert `_xHHHH_`-Codes (inkl. `_x005F_`) wie Excel → Fix in PROJ-10 (`xlsx-reader.ts`)
+- **Test:** `qa-proj20-excel.test.ts` › „dokumentiert BUG-QA14-2“
+- **Priority:** Nice to have
+
+#### Summary
+- **Acceptance Criteria:** 11/11 bestanden (Öffnen in echtem MS Excel nicht geprüft)
+- **Bugs Found:** 2 (0 Critical, 0 High, 0 Medium, 2 Low, davon 1 vorbestehend)
+- **Security:** Pass
+- **Production Ready:** YES (keine Critical/High-Bugs)
 
 ## Deployment
 _To be added by /deploy_
