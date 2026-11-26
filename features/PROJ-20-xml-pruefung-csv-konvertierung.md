@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & Excel-Konvertierung
 
-## Status: Approved
+## Status: Architected
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-26
 
@@ -264,6 +264,10 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Ableitung als eine feste Zuordnungstabelle im Schritt „Ausgabedaten ergänzen“, nicht in Lesern oder Regelwerk | Eine Stelle für alle drei Issues (Leser liefern schon einheitliche Felder); Check-in und REPLY bleiben unberührt (Spec Refinement 3) | 2026-11-16 |
 | Unbekannter Eintragstyp → Ausgabetyp `new`, Eintragstyp unverändert | Vorhandene Werte nie überschreiben; der Tippfehler wird über Regel A ohnehin als Fehler gemeldet | 2026-11-16 |
 | Kennzeichen „DM gelöscht“ bei abgeleitetem `deleted` nach dem Check-in bleibt unverändert | Fachlich konsistent (Eintragstyp `d`); kein Sonderfall in der DMRL-Ansicht nötig | 2026-11-16 |
+| Werkzeug-Excel über den bestehenden Baustein „Einträge als Excel“ (Check-out/Export) statt eigenem Schreiber | Aufbau ist dadurch garantiert identisch mit dem Check-out (Spalten, Text-Zellen, Blattname, Sortierung); kein doppelter Code | 2026-11-26 |
+| Excel-Datei beim Prüfen erzeugen, nicht erst beim Klick | Gleicher Ablauf wie bisher mit der CSV; fester Inhalt und Prüfdatum; Tests lesen die Datei direkt aus dem Ergebnis | 2026-11-26 |
+| Spaltenauswahl „ohne Informationsfelder“ im CSV-Schreiber entfernen | Einziger Nutzer war das Werkzeug (Refinement 2); kein toter Code | 2026-11-26 |
+| Check-in (PROJ-10) bleibt unverändert | Die Werkzeug-Excel entspricht einer Check-out-Datei; das Leeren der Informationsfelder ist gewollt (Product Decision 2026-11-26) | 2026-11-26 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -533,6 +537,62 @@ Einzahl/Mehrzahl wie bisher. Beides bleiben Hinweise, das Gesamtergebnis und die
 - Rundlauf: konvertierte CSV mit `c`/`changed` und `d`/`deleted` → Check-in-Regelprüfung ohne Fehler zu den Ausgabedaten.
 
 **Abhängigkeiten:** keine neuen Pakete.
+
+### M) Ergänzung Refinement 2026-11-26 (3): MS-Excel mit 37 Spalten statt CSV
+
+**Überblick:** Das Werkzeug tauscht nur das **Dateiformat** der konvertierten DMRL aus. Prüfung, Regelwerk, Ergänzung der Ausgabedaten, Zusammenfassung und Prüfbericht bleiben gleich. Es gibt keine neue Seite, keine Serverfunktion, keinen Speicher und keine neuen Pakete. Für die Excel-Datei nutzt das Werkzeug **denselben Baustein wie Check-out und Excel-Export**, „Einträge als Excel“ (PROJ-9/PROJ-18). Damit ist der Aufbau automatisch identisch mit dem Check-out: Blatt „Einträge“, 37 Spalten, Text-Zellen, fixierte Kopfzeile, Autofilter, DMC-Sortierung, `dmc` je Zeile gebildet.
+
+**Seitenstruktur (Änderungen gegenüber B):**
+```
+Ergebnisbereich
++-- Zusammenfassung ............................ unverändert
++-- Hinweisbox(en) an der Download-Schaltfläche
+|   +-- NEU immer: „Die Informationsfelder (orig bis io-pm) sind leer —
+|   |              beim Check-in werden gespeicherte Werte der DMRL dadurch geleert.“
+|   +-- bei Fehlern: „Die Excel-Datei enthält Fehler aus der Prüfung — …“  (Text angepasst)
+|   +-- ohne XSD:   „Die XSD-Prüfung wurde nicht durchgeführt — …“         (unverändert)
++-- [Excel-Datei herunterladen] ................ ersetzt „CSV herunterladen“ (.xlsx)
++-- [Prüfbericht herunterladen] ................ unverändert (CSV)
++-- Prüfbericht ................................ Hinweistexte: „in der Excel-Datei“ statt „in der CSV“
+```
+Nicht lesbare Datei: „Keine Excel-Datei — die Datei kann nicht gelesen werden.“ (statt „Keine CSV …“).
+
+**Ablauf (Änderung gegenüber C/K):**
+```
+… 5a. Ausgabedaten ergänzen (ergänzte Kopie)   unverändert
+  6.  Ergebnis:
+      - Excel-Datei aus der ergänzten Kopie        NEU (statt CSV mit 28 Spalten)
+        über „Einträge als Excel“ mit allen 37 Spalten
+      - Zusammenfassung + Bericht aus den Originaldaten   unverändert
+```
+Die Excel-Datei wird wie bisher die CSV **beim Prüfen** erzeugt, nicht erst beim Klick. Datum der Ergänzung und Inhalt stehen damit fest, und Tests können die Datei direkt aus dem Prüfergebnis lesen.
+
+**Datenmodell (Prüfergebnis, nur im Arbeitsspeicher):**
+- statt „CSV-Text“ nun „Excel-Datei (Bytes)“; leer, wenn die Datei nicht lesbar ist
+- alles andere unverändert (Originaleinträge, Bericht, Anzahl ergänzter Einträge, Prüfdatum)
+- Informationsfelder: Der XML-Leser liefert sie nicht, deshalb schreibt der Baustein sie leer. `dmc` wird aus den DMC-Teilen gebildet, `answer_timestamp` bleibt leer.
+
+**Bausteine:**
+
+| Baustein | Status | Änderung |
+|---|---|---|
+| „Einträge als Excel“ (PROJ-9/PROJ-18) | bestehend, unverändert | wird zusätzlich vom Werkzeug genutzt |
+| Download unveränderter Bytes (PROJ-15) | bestehend, unverändert | Download der .xlsx mit Excel-Dateityp |
+| Prüfkern „XML prüfen“ | bestehend | liefert Excel statt CSV; Dateiname `<XML-Name>.xlsx`; Texte „in der Excel-Datei“ |
+| Werkzeug-Oberfläche | bestehend | Schaltfläche, Hinweistexte, neuer Dauerhinweis zu Informationsfeldern |
+| Spaltenauswahl „ohne Informationsfelder“ im CSV-Schreiber (Refinement 2) | **entfällt** | einziger Nutzer war das Werkzeug; der Standard (37 Spalten) bleibt für alle anderen |
+| Prüfbericht-CSV, Leser, Regelwerk, Check-in, REPLY, Check-out, Export | bestehend | keine |
+
+**Check-in (PROJ-10):** Es ändert sich nichts. Der Check-in liest die Werkzeug-Excel wie eine Check-out-Datei: Die 37 Spalten werden erkannt, `dmc` wird verworfen, die leeren Informationsfelder werden übernommen. Die Zusammenfassung meldet „Informationsfelder bei N Einträgen aktualisiert“, sobald vorher Werte gespeichert waren. Ältere 28-Spalten-CSVs aus dem Werkzeug werden weiter angenommen.
+
+**Tests (für /frontend und /qa):**
+- Unit Prüfkern: Das Ergebnis enthält eine Excel-Datei. Sie wird mit dem Excel-Leser des Check-ins zurückgelesen und muss genau die 37 Spalten in Check-out-Reihenfolge haben, `dmc` gefüllt, Informationsfelder und `answer_timestamp` leer, ergänzte Ausgabedaten enthalten. Bei nicht lesbarer Datei gibt es keine Excel-Datei. Dateiname endet auf `.xlsx`.
+- Rundlauf: Werkzeug-Excel → Check-in-Regelprüfung ohne Fehler (wie bisher mit der CSV), auch mit `c`/`changed`, `d`/`deleted` und ohne Ausgabedaten.
+- BUG-QA13-1-Test umdrehen: Eine Werkzeug-Excel in eine DMRL mit gespeicherten Informationsfeldern einchecken → die Felder sind leer, und der Hinweis „Informationsfelder … aktualisiert“ erscheint.
+- Komponente: Schaltfläche „Excel-Datei herunterladen“ vorhanden, keine „CSV herunterladen“ mehr; Dauerhinweis zu den Informationsfeldern sichtbar; Fehlerhinweis mit neuem Text.
+- E2E (bestehende PROJ-20-Tests anpassen): Download heißt `<XML-Name>.xlsx`; Inhalt über den Excel-Leser prüfen statt als CSV-Text; Prüfbericht weiter als CSV. Issue-6.0-Test (PROJ-22) und UTF-16-Test (BUG-QA1-1) entsprechend.
+
+**Abhängigkeiten (Pakete):** keine neuen.
 
 ### Implementierungsnotizen (Frontend, 2026-11-14)
 - **Prüfkern** `src/lib/workflows/xml-check.ts` (ohne Bildschirmbezug, für PROJ-21 wiederverwendbar): Dateiannahme → XSD (bestehende Serverfunktion) → Lesen in deklarierter Kodierung → DML-Leser der gewählten Issue → Regeln A, B (Check-in), C, E, I + neue Prüfung „MI einheitlich“ (Gruppe „Model Ident Code“, häufigster MI gilt) → CSV mit dem bestehenden Check-out-Schreiber.
