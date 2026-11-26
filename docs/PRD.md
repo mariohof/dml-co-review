@@ -4,7 +4,7 @@
 Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) für mehrere Systeme (Fahrzeuge, Fluggeräte, Schiffe, Geräte). Er bildet den Abstimmungsprozess mit externen Empfängern nach S1000D (SEND/REPLY) inklusive Prüfungen und Freigabe vollständig ab — und ersetzt damit die heutige Excel-/E-Mail-Abstimmung, bei der unklar ist, welche Version gilt, Änderungen schwer nachvollziehbar sind und der Freigabestatus einzelner Datenmodule intransparent ist.
 
 ## Target Users
-- **Administrator** — legt Systeme (mit S1000D-Issue 2.3, 4.2 oder 5.0), Organisationen, DMRLs, Benutzer und Berechtigungen an und verwaltet sie.
+- **Administrator** — legt Systeme (mit S1000D-Issue 2.3, 4.2, 5.0 oder 6.0), Organisationen, DMRLs, Benutzer und Berechtigungen an und verwaltet sie.
 - **Bearbeiter (DMRL-Verantwortlicher)** — pflegt die DMRL, checkt sie als MS-Excel-Datei aus und wieder ein (Check-in auch als CSV), sendet sie als S1000D-XML (SEND), importiert die Empfänger-Antwort (REPLY), verfolgt und erteilt die Freigabe. Braucht Nachvollziehbarkeit aller Austauschstände.
 - **Externer Empfänger** (kein Systembenutzer) — erhält die DMRL als S1000D-XML, bearbeitet sie und sendet sie als REPLY zurück.
 
@@ -27,6 +27,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Check-out/Check-in MS-Excel (Check-in auch CSV) mit Sperre; Informationsfelder je Eintrag (2026-11-26) | Approved (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML/Excel (jederzeit, ohne Sperre) | Approved (PROJ-18; Excel-Export ergänzt 2026-11-24) |
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Approved (PROJ-11) |
+| P0 (MVP) | S1000D Issue 6.0 Unterstützung (System, XSD, SEND, REPLY, Export, Demo-System BIKE60) | Planned (PROJ-22) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Approved (PROJ-12, PROJ-13) |
 | P0 (MVP) | Freigabestatus & Archiv | Approved (PROJ-14, PROJ-15) |
 | P0 (MVP) | Lokaler Start (Python-Startskript) | Approved (PROJ-19) |
@@ -36,14 +37,14 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 Details und Abhängigkeiten: siehe `features/INDEX.md`.
 
 ## Success Metrics
-- Der Product Owner kann alle Workflows (Stammdatenpflege, Check-out/Check-in, SEND, REPLY, Freigabe, Archiv) inklusive aller Prüfungen an Demo-Systemen mit allen drei S1000D-Versionen (2.3, 4.2, 5.0) durchgängig demonstrieren.
+- Der Product Owner kann alle Workflows (Stammdatenpflege, Check-out/Check-in, SEND, REPLY, Freigabe, Archiv) inklusive aller Prüfungen an Demo-Systemen mit allen vier S1000D-Versionen (2.3, 4.2, 5.0, 6.0) durchgängig demonstrieren.
 - Fehlerhafte CSV- oder XML-Dateien werden von den Prüfungen zuverlässig erkannt und nicht übernommen.
 
 ## Constraints
 - **No backend — localStorage only:** Datenhaltung und Benutzer werden über JSON-Strukturen in localStorage simuliert; keine echte Authentifizierung.
 - **Betrieb:** vorerst nur lokal auf einem Rechner mit macOS, Windows 11 oder Linux (kein Cloud-Hosting/Vercel). Start über ein **Python-Startskript**, das Voraussetzungen (Node.js, xmllint) prüft, die App baut, lokal startet und den Browser öffnet; xmllint muss installiert sein.
-- **XSD-Validierung:** Pflicht-Validierung gegen `dml.xsd` mit `xmllint` (MacOS/Windows/Linux). Da xmllint nicht im Browser läuft, wird dafür eine serverseitige Next.js-Funktion benötigt. Die Schemas für Issue 2.3, 4.2 und 5.0 werden vom Product Owner bereitgestellt.
-- **S1000D-Version:** wird pro System festgelegt; alle drei Versionen sind im MVP enthalten.
+- **XSD-Validierung:** Pflicht-Validierung gegen `dml.xsd` mit `xmllint` (MacOS/Windows/Linux). Da xmllint nicht im Browser läuft, wird dafür eine serverseitige Next.js-Funktion benötigt. Die Schemas für Issue 2.3, 4.2, 5.0 und 6.0 werden vom Product Owner bereitgestellt (6.0 seit 2026-11-26, PROJ-22).
+- **S1000D-Version:** wird pro System festgelegt; alle vier Versionen (2.3, 4.2, 5.0, 6.0) sind im MVP enthalten.
 - **Design system:** see `docs/design-system.md`
 - UI-Sprache: Deutsch.
 - **Nur Desktop:** Die Anwendung wird ausschließlich auf Desktop-Rechnern genutzt; Smartphones und Tablets (iPhone, iPad usw.) werden weder unterstützt noch getestet (Vorgabe Product Owner, 2026-11-22).
