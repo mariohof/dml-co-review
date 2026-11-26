@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { CircleCheck, FileUp, Loader2, MessageSquareQuote, RotateCw, Upload } from "lucide-react"
+import { CircleCheck, FileUp, Info, Loader2, MessageSquareQuote, RotateCw, Upload } from "lucide-react"
 import { toast } from "sonner"
 
 import { useSession } from "@/components/auth/session-provider"
@@ -250,6 +250,8 @@ function ReplySummary({
   const header = input.result.parsed!.header
   const sender = data.organisations.find((o) => o.code === header.dmlc.sendid)
   const send = data.archive.find((a) => a.id === input.sendArchiveId)
+  // Hinweise blockieren nicht, müssen aber sichtbar sein — z. B. abweichende Schema-Angabe (PROJ-22 E, BUG-QA22-1)
+  const hints = input.result.report.findings.filter((f) => f.severity === "hinweis")
   const tiles = [
     { label: "freigegeben", value: outcome.approved },
     { label: "zu überarbeiten", value: outcome.rework },
@@ -265,6 +267,20 @@ function ReplySummary({
           Fachliche Prüfung bestanden
         </p>
       </div>
+
+      {hints.length > 0 && (
+        <Alert className="border-amber-300 bg-amber-50 text-amber-950 [&>svg]:text-amber-700">
+          <Info className="h-4 w-4" aria-hidden />
+          <AlertTitle>{hints.length === 1 ? "Hinweis" : `${hints.length} Hinweise`} — die Übernahme ist trotzdem möglich</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc space-y-1 pl-4">
+              {hints.map((hint, index) => (
+                <li key={index}>{hint.message}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <dl className="grid gap-x-4 gap-y-2 rounded-md border bg-muted/40 p-4 text-sm sm:grid-cols-[auto_1fr]" aria-label="REPLY">
         <dt className="text-muted-foreground">Absender</dt>

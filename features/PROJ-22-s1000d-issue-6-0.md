@@ -1,6 +1,6 @@
 # PROJ-22: S1000D Issue 6.0 Unterstützung
 
-## Status: In Review
+## Status: Approved
 **Created:** 2026-11-26
 **Last Updated:** 2026-11-26
 
@@ -292,7 +292,7 @@ Kein Backend nötig: Die XSD-Serverfunktion nutzt den neuen Schema-Ordner ohne C
 - [x] D3 6.0-Beispiel im Werkzeug: 79 Einträge, XSD ohne Befund, E/I-Fehler; nach PROJ-8-Refinement kein Fehler zu `security`
 
 #### E. Hinweis bei abweichender Schema-Angabe
-- [ ] **E1 BUG-QA22-1:** Beim REPLY-Import mit Schema-Angabe 5.0 in einem 6.0-System steht der Hinweis im Prüfergebnis, der Dialog zeigt ihn aber nicht an. Der Erfolgsschritt zeigt nur „Fachliche Prüfung bestanden“. Der Import selbst klappt wie gefordert.
+- [x] **E1** (nach Fix, siehe Re-Test) — ursprünglich BUG-QA22-1: Beim REPLY-Import mit Schema-Angabe 5.0 in einem 6.0-System steht der Hinweis im Prüfergebnis, der Dialog zeigt ihn aber nicht an. Der Erfolgsschritt zeigt nur „Fachliche Prüfung bestanden“. Der Import selbst klappt wie gefordert.
 - [x] E2 Werkzeug: Hinweis „…verweist auf S1000D Issue 5.0, gewählt ist Issue 6.0…“ sichtbar (E2E)
 - [x] E3 ohne bzw. mit unbekannter Angabe kein Hinweis
 - [x] E4 passende Angabe ergibt keinen Hinweis (auch PHUNGUN mit NSG-Pfad `S1000D2.3`)
@@ -324,7 +324,7 @@ Kein Backend nötig: Die XSD-Serverfunktion nutzt den neuen Schema-Ordner ohne C
 - [x] xmllint offline (`--nonet`); das 6.0-Schema lädt nichts mehr aus dem Netz
 - [x] XSS: Der Hinweistext enthält nur Issue-Nummern aus der festen Liste; die Schema-Angabe der Datei wird nicht ausgegeben
 - [x] Berechtigung: BIKE60 nur für Anna und Administratoren sichtbar (Rechte-Tests)
-- [ ] **BUG-QA22-2 (Denial of Service im eigenen Browser):** Das Lesen der Schema-Angabe braucht quadratische Laufzeit bei vielen nicht geschlossenen `<!--` oder `<?`. Das ist auch in **XSD-gültigen** Dateien möglich, über einen CDATA-Abschnitt in einer Bemerkung.
+- [x] **BUG-QA22-2 behoben (siehe Re-Test)** — Denial of Service im eigenen Browser: Das Lesen der Schema-Angabe braucht quadratische Laufzeit bei vielen nicht geschlossenen `<!--` oder `<?`. Das ist auch in **XSD-gültigen** Dateien möglich, über einen CDATA-Abschnitt in einer Bemerkung.
 
 ### Bugs Found
 
@@ -354,6 +354,22 @@ Kein Backend nötig: Die XSD-Serverfunktion nutzt den neuen Schema-Ordner ohne C
 - **Tests:** Vitest 760 bestanden (1 übersprungen), davon neu `qa-proj22.test.ts` (12) und Routentest (1). Playwright 171 bestanden, davon neu PROJ-22 (6, einer davon als `test.fail` für BUG-QA22-1).
 - **Production Ready:** NO
 - **Recommendation:** BUG-QA22-1 und BUG-QA22-2 beheben, dann erneut `/qa`. Vor dem Ausliefern das Windows-Offline-Paket bauen (G1).
+
+### Re-Test nach Bugfixes (2026-11-26)
+**Fixes**
+- **BUG-QA22-1 behoben:** `reply-import-dialog.tsx` zeigt im Erfolgsschritt einen Hinweiskasten („Hinweis — die Übernahme ist trotzdem möglich“) mit allen Hinweisen des Prüfergebnisses. Ohne Hinweise erscheint nichts.
+- **BUG-QA22-2 behoben:** `schema-location.ts` sucht das Wurzelelement jetzt linear mit `indexOf` vom Dateianfang. XML-Deklaration, PIs, Kommentare und DOCTYPE (auch mit interner Teilmenge) werden übersprungen, danach endet die Suche am ersten Start-Tag. Der Rest der Datei wird nicht mehr durchsucht.
+
+**Nachweise**
+- E2E: REPLY mit Schema-Angabe 5.0 zeigt den Hinweis, „Übernehmen“ ist aktiv (vorher `test.fail`, jetzt regulärer Test). REPLY mit passender Angabe zeigt keinen Hinweis (neu).
+- Unit: Prolog mit Kommentar (darin ein falsches Wurzelelement), PI und DOCTYPE mit interner Teilmenge; nicht geschlossener Prolog ergibt `null`; sechs präparierte 5-MB-Eingaben jeweils unter 1 s.
+- Messung der gesamten Werkzeug-Prüfung (`checkXmlText`) mit der präparierten, XSD-gültigen CDATA-Datei: 420 KB 6,2 s → 32 ms; 4,9 MB (xmllint: gültig) 104 ms.
+- Regression: Vitest 763 bestanden (1 übersprungen), Playwright 172 bestanden, Lint 0 Fehler.
+
+**Ergebnis**
+- Acceptance Criteria: 27/28 bestanden, 1 nicht getestet (G1, Windows-Offline-Paket: Skript angepasst, Paket nicht gebaut).
+- Bugs: 0 offen.
+- **Production Ready: YES.** Vor dem Ausliefern das Windows-Offline-Paket bauen; dabei läuft der 6.0-Rauchtest (G1). Dafür vorher den Dev-Server beenden.
 
 ## Deployment
 _To be added by /deploy_

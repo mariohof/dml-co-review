@@ -7,15 +7,50 @@ import type { Finding } from "./types"
  * auf eine Verwechslung. Ergebnis ist höchstens ein Hinweis, nie ein Fehler.
  */
 
+/**
+ * Attribute des Wurzelelements. Läuft einmal linear vom Dateianfang: Prolog-Bestandteile (XML-Deklaration,
+ * Processing Instructions, Kommentare, DOCTYPE) werden mit indexOf übersprungen, danach endet die Suche am
+ * ersten Start-Tag. Der Rest der Datei (z. B. CDATA mit `<!--`) wird nie betrachtet (BUG-QA22-2).
+ */
+function rootStartTagAttributes(xml: string): string | null {
+  let pos = 0
+  for (;;) {
+    const lt = xml.indexOf("<", pos)
+    if (lt === -1) return null
+    if (xml.startsWith("<?", lt)) {
+      const end = xml.indexOf("?>", lt + 2)
+      if (end === -1) return null
+      pos = end + 2
+    } else if (xml.startsWith("<!--", lt)) {
+      const end = xml.indexOf("-->", lt + 4)
+      if (end === -1) return null
+      pos = end + 3
+    } else if (xml.startsWith("<!", lt)) {
+      // DOCTYPE, ggf. mit interner Teilmenge [ … ]
+      const bracket = xml.indexOf("[", lt)
+      const close = xml.indexOf(">", lt)
+      if (close === -1) return null
+      if (bracket !== -1 && bracket < close) {
+        const subsetEnd = xml.indexOf("]", bracket)
+        if (subsetEnd === -1) return null
+        const end = xml.indexOf(">", subsetEnd)
+        if (end === -1) return null
+        pos = end + 1
+      } else pos = close + 1
+    } else {
+      const match = /^<[A-Za-z_][^\s/>]*/.exec(xml.slice(lt, lt + 256))
+      if (!match) return null
+      const end = xml.indexOf(">", lt)
+      if (end === -1) return null
+      return xml.slice(lt + match[0].length, end)
+    }
+  }
+}
+
 /** Wert von `noNamespaceSchemaLocation` (beliebiges Präfix) bzw. letzte URL von `schemaLocation` im Wurzelelement */
 export function readSchemaLocation(xml: string): string | null {
-  const root = xml
-    .replace(/<\?[\s\S]*?\?>/g, "")
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<!DOCTYPE[^>[]*(\[[\s\S]*?\])?\s*>/i, "")
-    .match(/<[A-Za-z_][^\s/>]*([^>]*)>/)
-  if (!root) return null
-  const attrs = root[1]
+  const attrs = rootStartTagAttributes(xml)
+  if (attrs === null) return null
   const noNs = attrs.match(/(?:^|\s)(?:[\w.-]+:)?noNamespaceSchemaLocation\s*=\s*(["'])([\s\S]*?)\1/)
   if (noNs) return noNs[2].trim() || null
   const withNs = attrs.match(/(?:^|\s)(?:[\w.-]+:)?schemaLocation\s*=\s*(["'])([\s\S]*?)\1/)

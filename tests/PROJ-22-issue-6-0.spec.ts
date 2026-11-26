@@ -107,9 +107,35 @@ test("REPLY mit Schema-Angabe 5.0 bei BIKE60 (6.0): Hinweis blockiert nicht, Üb
   expect(data.dmrls.find((d: { id: string }) => d.id === "dmrl-bike60").status).toBe("freigegeben")
 })
 
-// BUG-QA22-1: Der Erfolgsschritt des REPLY-Dialogs zeigt keine Hinweise — der Schema-Hinweis bleibt unsichtbar.
-// test.fail: läuft „grün", solange der Bug besteht; nach der Behebung test.fail entfernen.
-test.fail("BUG-QA22-1: REPLY mit Schema-Angabe 5.0 bei BIKE60 (6.0): Hinweis ist im Dialog sichtbar (Kriterium E1)", async ({ page }) => {
+// BUG-QA22-1 (behoben 2026-11-26): Hinweise erscheinen im Erfolgsschritt des REPLY-Dialogs
+test("REPLY mit Schema-Angabe 5.0 bei BIKE60 (6.0): Hinweis ist im Dialog sichtbar (Kriterium E1)", async ({ page }) => {
   const dialog = await bikeReplyWithSchema50(page)
-  await expect(dialog.getByText(/Die Schema-Angabe der Datei verweist auf S1000D Issue 5\.0, das System verwendet Issue 6\.0/)).toBeVisible({ timeout: 3000 })
+  await expect(dialog.getByText("Hinweis — die Übernahme ist trotzdem möglich")).toBeVisible()
+  await expect(dialog.getByText(/Die Schema-Angabe der Datei verweist auf S1000D Issue 5\.0, das System verwendet Issue 6\.0/)).toBeVisible()
+  await expect(dialog.getByRole("button", { name: "Übernehmen" })).toBeEnabled()
+})
+
+test("REPLY mit passender Schema-Angabe: kein Hinweis im Dialog", async ({ page }) => {
+  await startAs(page, "Anna Bearbeitung")
+  const dialog = await (async () => {
+    await page.goto("/dmrl/dmrl-bike60")
+    await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "SEND" }).click()
+    const d = page.getByRole("dialog")
+    await d.getByRole("combobox", { name: "Empfänger" }).click()
+    await page.getByRole("option", { name: /C1234/ }).click()
+    const downloadPromise = page.waitForEvent("download")
+    await d.getByRole("button", { name: "Senden" }).click()
+    const send = readFileSync((await (await downloadPromise).path())!, "utf8")
+    await expect(d).toBeHidden()
+    const reply = send
+      .replace('listDirection="send"', 'listDirection="reply"')
+      .replace('senderIdent="B6865"', 'senderIdent="C1234"')
+      .replace(/<\/responsiblePartnerCompany>/g, '</responsiblePartnerCompany>\n         <answer answerToEntry="y"/>')
+    await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "REPLY", exact: true }).click()
+    const r = page.getByRole("dialog")
+    await r.getByLabel("XML-Datei für den REPLY-Import").setInputFiles({ name: "reply.XML", mimeType: "application/xml", buffer: Buffer.from(reply) })
+    await expect(r.getByText("Fachliche Prüfung bestanden")).toBeVisible()
+    return r
+  })()
+  await expect(dialog.getByText(/Hinweis/)).toHaveCount(0)
 })

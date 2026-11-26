@@ -27,7 +27,7 @@ Ein Prototyp zur zentralen Verwaltung von Datenmodul-Anforderungslisten (DMRL) f
 | P0 (MVP) | Check-out/Check-in MS-Excel (Check-in auch CSV) mit Sperre; Informationsfelder je Eintrag (2026-11-26) | Approved (PROJ-9, PROJ-10) |
 | P0 (MVP) | DMRL-Export CSV/XML/Excel (jederzeit, ohne Sperre) | Approved (PROJ-18; Excel-Export ergänzt 2026-11-24) |
 | P0 (MVP) | XSD-Validierung via xmllint (2.3 / 4.2 / 5.0) | Approved (PROJ-11) |
-| P0 (MVP) | S1000D Issue 6.0 Unterstützung (System, XSD, SEND, REPLY, Export, Demo-System BIKE60) | Planned (PROJ-22) |
+| P0 (MVP) | S1000D Issue 6.0 Unterstützung (System, XSD, SEND, REPLY, Export, Demo-System BIKE60) | Approved (PROJ-22) |
 | P0 (MVP) | SEND-Export & REPLY-Import | Approved (PROJ-12, PROJ-13) |
 | P0 (MVP) | Freigabestatus & Archiv | Approved (PROJ-14, PROJ-15) |
 | P0 (MVP) | Lokaler Start (Python-Startskript) | Approved (PROJ-19) |

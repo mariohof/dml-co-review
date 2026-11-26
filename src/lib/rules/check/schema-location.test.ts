@@ -21,6 +21,40 @@ describe("Schema-Angabe lesen (PROJ-22 E)", () => {
     expect(readSchemaLocation("kein xml")).toBeNull()
   })
 
+  it("überspringt Kommentare, Processing Instructions und DOCTYPE (auch mit interner Teilmenge) vor dem Wurzelelement", () => {
+    const prolog =
+      '<?xml version="1.0"?>\n<!-- <dml xsi:noNamespaceSchemaLocation="S1000D_4-2/x.xsd"> -->\n<?pi daten?>\n' +
+      '<!DOCTYPE dml [<!ENTITY x "y">]>\n<dml xsi:noNamespaceSchemaLocation="http://www.s1000d.org/S1000D_6/xml_schema_flat/dml.xsd">'
+    expect(readSchemaLocation(prolog)).toBe("http://www.s1000d.org/S1000D_6/xml_schema_flat/dml.xsd")
+    expect(readSchemaLocation('<!DOCTYPE dml SYSTEM "dml.dtd"><dml noNamespaceSchemaLocation="S1000D_5-0/dml.xsd"/>')).toBe("S1000D_5-0/dml.xsd")
+  })
+
+  it("nicht geschlossener Prolog oder Start-Tag → null", () => {
+    expect(readSchemaLocation("<?xml version")).toBeNull()
+    expect(readSchemaLocation("<!-- offen")).toBeNull()
+    expect(readSchemaLocation("<!DOCTYPE dml [ offen")).toBeNull()
+    expect(readSchemaLocation('<dml xsi:noNamespaceSchemaLocation="S1000D_6/dml.xsd"')).toBeNull()
+  })
+
+  it("BUG-QA22-2: präparierte 5-MB-Eingaben werden in linearer Zeit gelesen (< 1 s)", () => {
+    const size = 5 * 1024 * 1024
+    const root = '<?xml version="1.0"?><dml xsi:noNamespaceSchemaLocation="S1000D_6/dml.xsd"><x><![CDATA['
+    const inputs = [
+      "<!--".repeat(size / 4),
+      "<?x".repeat(size / 3),
+      "<!DOCTYPE a [" + "x".repeat(size),
+      "<".repeat(size),
+      "<dml " + "a ".repeat(size / 2),
+      root + "<!--<?".repeat(size / 6) + "]]></x></dml>",
+    ]
+    for (const input of inputs) {
+      const start = performance.now()
+      readSchemaLocation(input)
+      expect(performance.now() - start, input.slice(0, 20)).toBeLessThan(1000)
+    }
+    expect(readSchemaLocation(inputs[5])).toBe("S1000D_6/dml.xsd")
+  })
+
   it("ignoriert Angaben außerhalb des Wurzelelements", () => {
     expect(readSchemaLocation('<dml><x xsi:noNamespaceSchemaLocation="S1000D_5-0/dml.xsd"/></dml>')).toBeNull()
   })
