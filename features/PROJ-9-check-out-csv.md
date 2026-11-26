@@ -236,6 +236,13 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 | Datenmodell der Sperre unverändert (Kopie der Einträge, keine Datei) | Keine Migration; alte CSV-Check-outs liefern beim erneuten Download sofort `.xlsx` | 2026-11-25 |
 | PROJ-9 und PROJ-10 werden gemeinsam umgesetzt und ausgeliefert | Check-out `.xlsx` ohne Excel-Check-in würde den Rundlauf brechen | 2026-11-25 |
 | Excel-Datei aus der gespeicherten Kopie in der Sperre — wie bisher die CSV | Erneuter Download identisch; Check-in-Vergleich unverändert | 2026-11-25 |
+| Informationsfelder als zusätzliche Felder des Eintrags (36 gespeicherte Felder), fehlende Werte = leer, keine Datenumstellung | Wandern automatisch durch Sperre, Freigabestand, REPLY-Übernahme; bestehende Daten sofort gültig | 2026-11-26 |
+| `dmc` nur beim Schreiben einer Datei aus der vorhandenen DMC-Formatierung berechnet | Eine Quelle für den DMC | 2026-11-26 |
+| Getrennte Listen: gespeicherte Felder, Dateispalten (37), Gruppe Informationsfelder — an einer Stelle | Schreiben, Lesen, Vergleichen laufen nicht auseinander | 2026-11-26 |
+| Check-in-Vergleich bewertet Informationsfelder getrennt (wie Antwortfelder); eigener Zähler | Status-/Freigabe-Logik unberührt; Übernahme nachvollziehbar | 2026-11-26 |
+| REPLY-Prüfung Gruppe G nimmt Informationsfelder aus | Empfänger-XML enthält die Felder nicht — sonst Fehler bei jedem REPLY | 2026-11-26 |
+| Gruppe S: 37/28/27 Spalten gültig; sobald eine neue Spalte vorkommt, volle 37er-Fassung erwartet | Klare Regel, unvollständige Dateien werden erkannt | 2026-11-26 |
+| PROJ-9 und PROJ-10 gemeinsam umsetzen (ein `/frontend`-Lauf) | Gemeinsame Spaltenliste; Check-out mit 37 Spalten braucht den angepassten Check-in | 2026-11-26 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -355,6 +362,89 @@ PROJ-9 darf **nicht allein** ausgeliefert werden: Sobald der Check-out `.xlsx` l
 - Komponenten: Beschriftung „Excel-Datei erneut herunterladen", Dateiname im Dialog.
 - E2E: Check-out Fahrzeug → Download `DML-GTFDEMO-D0815-C-[Jahr].xlsx`; Datei öffnen (Blatt, Kopfzeile, Werte); bestehende E2E-Tests, die die Check-out-CSV bearbeiten und einchecken, werden auf die Excel-Datei umgestellt (bzw. erzeugen die zu prüfende CSV über den CSV-Export).
 - Manuell (Abnahme): Datei per Doppelklick in MS Excel öffnen — keine Reparaturmeldung, `01` bleibt `01`, neue Zeile tippen und speichern.
+
+### J) Refinement 2026-11-26 — `dmc` und Informationsfelder (37 Spalten)
+Ergänzt A–I; Sperre, Verfügbarkeitsregeln, Dialoge und Abläufe bleiben unverändert. Weiterhin alles im Browser, kein Backend, offline lauffähig. Das Design deckt Check-out **und** Check-in ab (PROJ-10), da beide dieselbe Spaltenliste nutzen.
+
+**Komponenten**
+```
+Keine neuen Bildschirme, Dialoge oder shadcn-Komponenten.
+Check-in-Dialog (PROJ-10) — Zusammenfassung
++-- neuer Hinweis „Informationsfelder bei N Einträgen aktualisiert"
++-- „Keine Änderungen"-Text nur noch, wenn auch keine Informationsfelder abweichen
++-- Prüfbericht: Hinweis „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten" (28/27 Spalten)
+DMRL-Ansicht / Detailfenster: unverändert (Felder werden nicht angezeigt)
+```
+
+**Datenmodell (in Klartext)**
+- Jeder Eintrag erhält **acht zusätzliche Textfelder** neben den bisherigen 28: `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm`. Sie liegen bei den übrigen Feldern des Eintrags und wandern deshalb automatisch überall mit, wo heute Einträge kopiert werden: Sperre (Stand beim Check-out), Freigabestand, REPLY-Übernahme.
+- **Keine Umstellung gespeicherter Daten:** Fehlt ein Feld in vorhandenen Daten (alle bisherigen Einträge, Demo-Daten, offene Sperren, Freigabestände), gilt es als leer — gleiches Vorgehen wie bei `answer_timestamp` (2026-11-21). Die Version des Datenformats bleibt.
+- **`dmc` wird nicht gespeichert.** Es entsteht nur beim Schreiben einer Datei aus der vorhandenen DMC-Formatierung der Anwendung (dieselbe wie in Ansicht, Prüfbericht und Sortierung).
+
+**Zwei Listen an einer Stelle**
+| Liste | Inhalt | Verwendet von |
+|---|---|---|
+| Gespeicherte Felder eines Eintrags | 28 bisherige + 8 Informationsfelder | Datenhaltung, Kopien, Check-in-Übernahme |
+| Spalten einer Datei | 28 bisherige · `dmc` · 8 Informationsfelder (= 37) | CSV-Schreiber, Excel-Baustein „Einträge", CSV-/Excel-Leser (Gruppe S) |
+| Gruppe „Informationsfelder" | die 8 Felder | Vergleich beim Check-in, Ausnahme in der REPLY-Prüfung |
+
+Alle drei stehen in der gemeinsamen Definition neben der bisherigen Spaltenliste — Schreiben, Lesen und Vergleichen können nicht auseinanderlaufen.
+
+**Dateien schreiben (Check-out, Export, Freigabestand, PROJ-20)**
+- CSV-Schreiber und Excel-Baustein schreiben die 37 Spalten; `dmc` je Zeile berechnet, Informationsfelder wie gespeichert. Der Excel-Schreiber selbst bleibt unverändert (Textzellen, Spaltenbreite, Autofilter jetzt bis Spalte AK).
+- PROJ-20 nutzt denselben CSV-Schreiber → `dmc` gefüllt, Informationsfelder leer (der XML-Leser kennt sie nicht).
+- Freigabestand-CSV aus dem gespeicherten Freigabestand → Informationsfelder zum Zeitpunkt der Freigabe; ältere Freigabestände leer.
+
+**Dateien lesen (Check-in, PROJ-10)**
+- Der Spaltenaufbau (Gruppe S) kennt drei gültige Fassungen: **37** (aktuell), **28** (Stand 21.11.) und **27** (ohne `answer_timestamp`). Kommt irgendeine der neuen Spalten vor, wird die volle 37er-Fassung erwartet; fehlt dann eine → Fehler „Spalte … fehlt" wie bisher.
+- `dmc` wird gelesen und verworfen. Die Zuordnung der Einträge bleibt bei den DMC-Teilen.
+- Das Leseergebnis merkt sich, ob die Datei Informationsfelder hatte; ohne sie → Hinweis im Prüfbericht.
+- Formelschutz-Apostroph (nur CSV), Trimmen und Entfernen von Steuerzeichen gelten für alle Spalten. **Kein** Auffüllen führender Nullen und keine sonstige Prüfung für die Informationsfelder.
+
+**Vergleich und Übernahme beim Check-in**
+- Der Vergleich Datei ↔ Stand beim Check-out bewertet die Informationsfelder **getrennt** — analog zu den Antwortfeldern: Abweichungen dort machen einen Eintrag nicht „geändert", sondern setzen nur eine Markierung „Informationsfelder abweichend".
+- Übernahme:
+  - Datei **mit** Informationsfeldern: Werte aus der Datei werden für alle Einträge übernommen (auch für neue und für fachlich geänderte).
+  - Datei **ohne** Informationsfelder: bestehende Einträge behalten ihre gespeicherten Werte, neue Einträge erhalten leere.
+- Status-Logik unverändert: nur Abweichungen nur in Informationsfeldern → Eintragsstatus, DMRL-Status und Freigabe bleiben; kein Eintragstyp verlangt (Gruppe F sieht die Felder nicht).
+- Zusammenfassung und Verlauf: zusätzlicher Zähler „Informationsfelder bei N Einträgen aktualisiert"; ein Check-in mit nur solchen Abweichungen gilt nicht als „Keine Änderungen", sondern übernimmt die Werte und hebt die Sperre auf.
+
+**REPLY und SEND (PROJ-12/13) — nur Schutz, keine Funktionsänderung**
+- SEND-/XML-Schreiber nutzen nur die S1000D-Felder → Informationsfelder nie in der XML; XSD-Gültigkeit unverändert.
+- REPLY-Prüfung Gruppe G (Feldvergleich REPLY ↔ SEND) **nimmt die Informationsfelder aus** — sonst meldete jeder REPLY Abweichungen, weil die Empfänger-XML die Felder nicht enthält (der Vergleich läuft heute über alle Felder).
+- REPLY-Übernahme ändert nur Antwortfelder und Eintragstyp → Informationsfelder bleiben erhalten.
+
+**Auswirkung auf bestehende Teile**
+| Teil | Änderung |
+|---|---|
+| Gemeinsame Felddefinition | 8 Felder + Dateispaltenliste + Gruppe „Informationsfelder"; fehlende Werte = leer |
+| CSV-Schreiber, Excel-Baustein „Einträge" | 37 Spalten, `dmc` berechnet |
+| CSV-/Excel-Leser (Gruppe S) | drei gültige Fassungen, `dmc` verworfen, Merker „mit Informationsfeldern" |
+| Check-in-Vergleich und -Übernahme | Informationsfelder getrennt bewertet, Übernahme/Erhalt laut oben, Zähler |
+| Check-in-Dialog | Hinweis in der Zusammenfassung, „Keine Änderungen" angepasst |
+| REPLY-Prüfung Gruppe G | Informationsfelder ausgenommen |
+| Check-out-Workflow, Dialoge, Sperre | **unverändert** (Datei entsteht über den gemeinsamen Baustein) |
+| Detailfenster / DMRL-Ansicht | unverändert |
+
+**Technische Entscheidungen (für PM erklärt)**
+| Entscheidung | Warum |
+|---|---|
+| Informationsfelder bei den übrigen Feldern des Eintrags speichern | Sie wandern ohne weitere Arbeit durch Sperre, Freigabestand und REPLY-Übernahme mit; keine zweite Datenstruktur, die vergessen werden kann. |
+| Fehlende Werte gelten als leer, keine Datenumstellung | Bestehende Daten, offene Check-outs und Demo-Daten funktionieren sofort — bewährt bei `answer_timestamp`. |
+| `dmc` nur beim Schreiben berechnen | Eine Quelle für den DMC (die DMC-Teile); keine Widersprüche zwischen Spalte und Teilen. |
+| Dateispalten getrennt von gespeicherten Feldern definieren | `dmc` steht in der Datei, aber nicht im Speicher — beide Listen klar benannt. |
+| Informationsfelder im Vergleich wie Antwortfelder getrennt bewerten | Gleiches Muster wie 2026-11-14; Status- und Freigabe-Logik bleibt unberührt. |
+| Ausnahme in der REPLY-Prüfung | Verhindert falsche Fehler bei jedem REPLY. |
+| Volle 37er-Fassung, sobald eine neue Spalte vorkommt | Klare Regel: entweder alter Aufbau oder vollständiger neuer; halbe Dateien werden erkannt. |
+
+**Abhängigkeiten (Pakete)**
+- **Keine neuen Pakete.**
+
+**Testbarkeit**
+- Unit: Dateispalten (37, Reihenfolge, `dmc` in Schreibweise der Anwendung); fehlende Informationsfelder in alten Daten → leer; CSV-/Excel-Schreiber mit Informationsfeldern und Formelwerten; Leser: 37/28/27 gültig, Teilmenge der neuen Spalten → Fehler, `dmc` verworfen; Vergleich: nur Informationsfelder abweichend → unverändert + Markierung; Übernahme mit/ohne Informationsspalten (Erhalt der gespeicherten Werte); freigegebene DMRL bleibt freigegeben; REPLY mit gespeicherten Informationsfeldern ohne G-Fehler und mit erhaltenen Werten; SEND-XML ohne die Felder, XSD-gültig (2.3/4.2/5.0); 1.000 Einträge < 1 s.
+- Rundlauf: Check-out → Excel-Leser → Prüfung ohne Änderung; Informationsfelder eintragen → Check-in → erneuter Check-out enthält sie.
+- Komponenten: Zusammenfassung mit Hinweis; „Keine Änderungen" nur ohne Abweichungen.
+- E2E: Check-out-Datei mit 37 Spalten (Autofilter `A1:AK…`); Informationsfelder in der Datei ändern und einchecken → Status bleibt, Werte beim nächsten Check-out vorhanden; bestehende E2E-Tests, die Spaltenzahl oder Kopfzeile prüfen, werden auf 37 umgestellt.
 
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend PROJ-9`_

@@ -577,6 +577,9 @@ Gemeinsam mit PROJ-9 in einem `/frontend`-Lauf (PROJ-9 Tech Design I): Excel-Les
 - Komponente: Dateiauswahl nimmt `.xlsx` und `.csv`, Meldungen für die neuen Fehlerfälle.
 - E2E: Check-out → Excel-Datei herunterladen → per Test bearbeiten (neue Zeile) → einchecken → 1 neu; Check-in einer PROJ-20-CSV weiterhin möglich; `.xls` abgelehnt. Bestehende E2E-Tests, die die Check-out-CSV bearbeiten, werden auf Excel umgestellt.
 
+### K) Refinement 2026-11-26 — `dmc` und Informationsfelder
+Gemeinsames Design mit dem Check-out → **PROJ-9, Tech Design J** (Abschnitte „Dateien lesen" und „Vergleich und Übernahme beim Check-in"). Kurzfassung für den Check-in: Gruppe S akzeptiert 37/28/27 Spalten; `dmc` wird verworfen; Informationsfelder werden getrennt verglichen (wie Antwortfelder), ohne Prüfung übernommen bzw. bei Dateien ohne diese Spalten erhalten; Abweichungen nur dort ändern weder Eintrags- noch DMRL-Status; Zusammenfassung/Verlauf mit Zähler „Informationsfelder bei N Einträgen aktualisiert". Umsetzung gemeinsam mit PROJ-9.
+
 ## Implementation Notes (Frontend)
 _Stand 2026-11-13 — `/frontend` (PROJ-10)_
 
