@@ -1,8 +1,22 @@
 # PROJ-10: Check-in (MS-Excel / CSV)
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-25
+**Last Updated:** 2026-11-26
+
+
+> **Refinement 2026-11-26 (über `/refine PROJ-9`) — `dmc` und Informationsfelder (37 Spalten):** Vorgabe Product Owner. Excel und CSV haben nach `remarks` neun neue Spalten: `dmc`, `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm` (Aufbau → PROJ-9).
+> - `dmc` aus der Datei wird **nie** übernommen und nie verglichen (wie `answer_timestamp`); Zuordnung der Einträge weiter über die DMC-Teile.
+> - Die acht Informationsfelder werden **ohne Prüfung** übernommen und je Eintrag gespeichert (auch leer; auch bei neuen Einträgen).
+> - Eine Abweichung **nur** in Informationsfeldern macht einen Eintrag **nicht** „geändert“: kein Eintragstyp nötig, Status und Freigabe der DMRL bleiben, der Eintrag geht nicht in den nächsten SEND. Bei gleichzeitiger fachlicher Änderung gelten die bisherigen Regeln.
+> - Die Check-in-Zusammenfassung nennt einen Hinweis „Informationsfelder bei N Einträgen aktualisiert“; ein Check-in mit nur solchen Abweichungen ist kein „Keine Änderungen“-Fall, sondern übernimmt die Werte.
+> - Dateien mit **28 oder 27 Spalten** (ohne die neuen Felder) bleiben gültig; gespeicherte Informationsfelder bleiben dann **unverändert**; Hinweis im Prüfbericht „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten“. Andere Spaltenkombinationen (z. B. nur einige der neuen Spalten) → Fehler Gruppe S.
+> - [ ] Angenommen nur `orig` eines freigegebenen Eintrags wurde geändert, wenn eingecheckt wird, dann wird der Wert gespeichert, der Eintrag bleibt *freigegeben*, und die DMRL bleibt *freigegeben*
+> - [ ] Angenommen nur Informationsfelder wurden geändert, wenn eingecheckt wird, dann zeigt die Zusammenfassung „Informationsfelder bei N Einträgen aktualisiert“ und es wird kein Eintragstyp verlangt
+> - [ ] Angenommen ein Eintrag wurde fachlich und in Informationsfeldern geändert, wenn eingecheckt wird, dann gilt er als „geändert“ wie bisher und beide Änderungen werden übernommen
+> - [ ] Angenommen `dmc` wurde in der Datei geändert, wenn eingecheckt wird, dann gibt es keinen Fehler und keine Änderung
+> - [ ] Angenommen eine Datei mit 28 Spalten wird eingecheckt, wenn gespeicherte Informationsfelder vorhanden sind, dann bleiben sie unverändert und der Prüfbericht nennt den Hinweis
+> - [ ] Angenommen in einer Datei fehlt nur die Spalte `spec`, wenn eingecheckt wird, dann meldet Gruppe S einen Fehler im Spaltenaufbau
 
 > **Refinement 2026-11-25 — Check-in von MS-Excel (.xlsx):** Vorgabe Product Owner; Gegenstück zu PROJ-9 (Check-out liefert jetzt `.xlsx`). Der Check-in nimmt **`.xlsx` und weiterhin `.csv`** an — CSV bleibt für Dateien aus PROJ-20 (XML-Prüfung), dem CSV-Export (PROJ-18) und offene Check-outs aus der CSV-Zeit. Gelesen wird das Tabellenblatt **„Einträge“**; hat die Mappe kein solches Blatt, aber **genau ein** Blatt, wird dieses gelesen (z. B. CSV in Excel geöffnet und als .xlsx gespeichert — Excel benennt das Blatt nach der Datei); sonst Fehler; Zellen werden mit ihrem **gespeicherten Wert** gelesen (Formel → gespeichertes Ergebnis, Zahl → Text ohne Formatierung). Danach gelten Prüfung (PROJ-8), Zusammenfassung, Antwortübernahme und Übernahme **unverändert** für beide Formate. Auch eine Excel-Datei aus dem Export (PROJ-18) kann bei eigener Sperre eingecheckt werden. Geänderte Stellen sind mit *(Refinement 2026-11-25)* markiert; ältere Abschnitte (Tech Design, QA) beschreiben den CSV-Stand.
 

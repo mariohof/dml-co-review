@@ -2,7 +2,10 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-21
+**Last Updated:** 2026-11-26
+
+
+> **Refinement 2026-11-26 (über `/refine PROJ-9`) — 37 Spalten:** Gruppe S erwartet nach `remarks` die Spalten `dmc`, `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm`. Gültig sind 37 Spalten (aktuell), 28 Spalten (Stand 2026-11-21) und 27 Spalten (ohne `answer_timestamp`); andere Kombinationen sind Fehler. Für die neuen Felder gibt es **keine** Prüfregeln (keine Gruppe A/B/F/G/K); `dmc` und die Informationsfelder zählen nicht als fachliche Felder. REPLY unverändert (Felder nicht in der XML). Details PROJ-9, PROJ-10.
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Neues Feld `answer_timestamp` (28. CSV-Spalte). Es wird **nicht** geprüft: beim Check-in ignoriert (kein Fehler, keine abweichende Antwort in Regel K), beim REPLY nicht vorhanden und von Gruppe G (Feldvergleich mit dem SEND) ausgenommen. Eine CSV mit 27 Spalten ohne `answer_timestamp` ist in Gruppe S weiterhin gültig.
 

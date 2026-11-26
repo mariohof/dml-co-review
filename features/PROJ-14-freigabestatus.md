@@ -2,7 +2,10 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-21
+**Last Updated:** 2026-11-26
+
+
+> **Refinement 2026-11-26 (über `/refine PROJ-9`) — 37 Spalten:** Die Freigabestand-CSV enthält nach `remarks` die neuen Spalten `dmc` und die Informationsfelder (Aufbau PROJ-9); das Freigabestand-XML nicht. Eine Änderung nur an Informationsfeldern hebt die Freigabe **nicht** auf (PROJ-10).
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die Freigabestand-CSV enthält die 28. Spalte `answer_timestamp`; das Freigabestand-XML nicht (kein S1000D-Element).
 

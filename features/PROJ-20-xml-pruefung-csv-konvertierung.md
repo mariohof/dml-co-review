@@ -2,7 +2,10 @@
 
 ## Status: In Progress
 **Created:** 2026-11-14
-**Last Updated:** 2026-11-22
+**Last Updated:** 2026-11-26
+
+
+> **Refinement 2026-11-26 (über `/refine PROJ-9`) — 37 Spalten:** Die konvertierte CSV hat 37 Spalten (wie Check-out); `dmc` ist gefüllt, die Informationsfelder `orig` bis `io-pm` sind leer (nicht in der Empfänger-XML).
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die konvertierte CSV hat 28 Spalten (wie Check-out); `answer_timestamp` ist leer, da eine Empfänger-XML keinen Übernahme-Zeitpunkt enthält.
 

@@ -1,8 +1,10 @@
 # PROJ-9: Check-out (MS-Excel)
 
-## Status: Approved
+## Status: Planned
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-25
+**Last Updated:** 2026-11-26
+
+> **Refinement 2026-11-26 — `dmc` und Informationsfelder (37 Spalten):** Vorgabe Product Owner. Nach `remarks` kommen neun Spalten hinzu: `dmc`, `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm`. `dmc` wird beim Erzeugen der Datei aus den DMC-Teilen gebildet (Schreibweise wie in der Anwendung, z. B. `PHUNGUN-A-A05-40-0000-01A-000A-A`), nie gespeichert und beim Check-in ignoriert. Die acht übrigen Felder sind **rein informativ**: vom Bearbeiter in Excel gepflegt, je Eintrag gespeichert, beim nächsten Check-out wieder ausgegeben, **ohne Prüfung**; eine Änderung nur an ihnen ist keine fachliche Änderung (Status, Eintragstyp, Freigabe bleiben). Gilt für alle Dateien mit Eintragstabelle (Check-out, Check-in, Export CSV/Excel PROJ-18, Freigabestand-CSV PROJ-14, CSV aus PROJ-20); nicht für SEND/REPLY-XML. Dateien mit 28/27 Spalten bleiben beim Check-in gültig. Keine Anzeige in der DMRL-Ansicht. Details zum Check-in → PROJ-10, Spaltenaufbau → PROJ-8 (Gruppe S). Geänderte Stellen sind mit *(Refinement 2026-11-26)* markiert.
 
 > **Refinement 2026-11-25 — Check-out als MS-Excel (.xlsx) statt CSV:** Vorgabe Product Owner. Der Check-out liefert nur noch eine **MS-Excel-Datei (.xlsx)** — Aufbau wie der Excel-Export aus PROJ-18: ein Tabellenblatt „Einträge“, dieselben 28 Spalten, Kopfzeile in Zeile 1, alle Zellen (auch ganze Spalten) als Text, Kopfzeile fixiert, Autofilter, keine Kopfdaten. Dateiname wie bisher, nur mit `.xlsx`: `DML-PHUNGUN-D0815-C-2026.xlsx`. „CSV erneut herunterladen“ heißt jetzt „Excel-Datei erneut herunterladen“. Eine CSV wird beim Check-out nicht mehr erzeugt; beim Check-in werden `.xlsx` **und** weiterhin `.csv` angenommen (PROJ-10). Geänderte Stellen sind mit *(Refinement 2026-11-25)* markiert; ältere Abschnitte (Tech Design, QA) beschreiben den CSV-Stand.
 
@@ -27,16 +29,33 @@ Der Bearbeiter checkt die DMRL als **MS-Excel-Datei (.xlsx)** aus, um die Eintr�
 | Dateiname | `DML-{MI}-{CAGE Originator}-{DML-Typ}-{Jahr}.xlsx`, z. B. `DML-PHUNGUN-D0815-C-2026.xlsx` (DML-Typ in Großbuchstaben, Jahr = Jahr des Check-outs) |
 | Tabellenblätter | genau eines: **„Einträge“** *(Refinement 2026-11-25)* |
 | Kopfdaten | **keine** — nur die Eintragstabelle |
-| Zeile 1 | die 28 Feldnamen in fester Reihenfolge (PROJ-8, Gruppe S), je Feld eine Spalte: `dmentryType`, `modelic`, `sdc`, `chapnum`, `section`, `subsect`, `subject`, `discode`, `discodev`, `incode`, `incodev`, `itemloc`, `techname`, `infoname`, `language`, `country`, `security`, `rpc`, `rpcname`, `issno`, `type`, `day`, `month`, `year`, `answer`, `answer_comment`, `answer_timestamp`, `remarks` |
+| Zeile 1 | die **37** Feldnamen in fester Reihenfolge (PROJ-8, Gruppe S), je Feld eine Spalte: `dmentryType`, `modelic`, `sdc`, `chapnum`, `section`, `subsect`, `subject`, `discode`, `discodev`, `incode`, `incodev`, `itemloc`, `techname`, `infoname`, `language`, `country`, `security`, `rpc`, `rpcname`, `issno`, `type`, `day`, `month`, `year`, `answer`, `answer_comment`, `answer_timestamp`, `remarks`, `dmc`, `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm` *(Refinement 2026-11-26 — bisher 28, neu ab `dmc`)* |
 | ab Zeile 2 | je Eintrag eine Zeile, **alle** Einträge (auch Eintragstyp `d` und DM-Ausgabetyp `deleted`), sortiert nach DMC |
-| Werte | wie in der Anwendung gespeichert, mit führenden Nullen; `answer`/`answer_comment`/`answer_timestamp` zur Information enthalten |
-| Zellformat | **alle Zellen als Text** — auch die leeren Zellen der 28 Spalten, sodass neu eingetippte Werte ebenfalls Text bleiben (`01` bleibt `01`, keine Datums-/Zahlenumwandlung) *(Refinement 2026-11-25)* |
+| Werte | wie in der Anwendung gespeichert, mit führenden Nullen; `answer`/`answer_comment`/`answer_timestamp` zur Information enthalten; `dmc` berechnet, Informationsfelder wie gespeichert (anfangs leer) *(Refinement 2026-11-26)* |
+| Zellformat | **alle Zellen als Text** — auch die leeren Zellen der 37 Spalten *(Refinement 2026-11-26)*, sodass neu eingetippte Werte ebenfalls Text bleiben (`01` bleibt `01`, keine Datums-/Zahlenumwandlung) *(Refinement 2026-11-25)* |
 | Komfort | Kopfzeile fett und fixiert, Autofilter auf der Kopfzeile, Spaltenbreiten an den Inhalt angepasst (wie PROJ-18) *(Refinement 2026-11-25)* |
 | Formelschutz | Werte, die mit `=`, `+`, `-` oder `@` beginnen, sind Textzellen und werden nie als Formel ausgewertet — **kein** vorangestelltes `'` wie in der CSV (BUG-QA2-1) *(Refinement 2026-11-25)* |
 | Umlaute/Sonderzeichen | ohne Kodierungsfragen korrekt (kein BOM nötig) *(Refinement 2026-11-25)* |
 | DMRL ohne Einträge | nur Kopfzeile |
 
 **Führende Nullen / Excel:** Da alle Zellen Text sind, bleiben führende Nullen in Excel erhalten *(Refinement 2026-11-25)*. Gehen sie trotzdem verloren (z. B. Werte aus einem anders formatierten Blatt hineinkopiert oder eine CSV eingecheckt), werden beim Check-in bei `security`, `issno`, `day`, `month` fehlende führende Nullen weiterhin **aufgefüllt** und im Prüfbericht als Hinweis genannt (PROJ-8, Gruppe A). DMC-Teile werden nicht aufgefüllt.
+
+## Neue Spalten `dmc` und Informationsfelder *(Refinement 2026-11-26)*
+| Spalte | Inhalt | Gepflegt von | Gespeichert | Prüfung |
+|---|---|---|---|---|
+| `dmc` | aus `modelic`, `sdc`, `chapnum`, `section`, `subsect`, `subject`, `discode`, `discodev`, `incode`, `incodev`, `itemloc` — Schreibweise wie in der Anwendung (DMRL-Ansicht, Prüfberichte): `{modelic}-{sdc}-{chapnum}-{section}{subsect}-{subject}-{discode}{discodev}-{incode}{incodev}-{itemloc}`, z. B. `PHUNGUN-A-A05-40-0000-01A-000A-A` | Anwendung (beim Erzeugen jeder Datei neu gebildet) | nein — Wert aus einer eingecheckten Datei wird ignoriert (wie `answer_timestamp`) | keine |
+| `orig` | erwarteter Inhalt: CAGE-Code (5 Zeichen, alphanumerisch, wie PROJ-4) | Bearbeiter | ja, je Eintrag | **keine** |
+| `applic_type`, `applic_model`, `applic_version` | alphanumerisch | Bearbeiter | ja, je Eintrag | **keine** |
+| `rfu` | alphanumerisch | Bearbeiter | ja, je Eintrag | **keine** |
+| `dtd-schema` | alphanumerisch | Bearbeiter | ja, je Eintrag | **keine** |
+| `spec` | alphanumerisch | Bearbeiter | ja, je Eintrag | **keine** |
+| `io-pm` | alphanumerisch | Bearbeiter | ja, je Eintrag | **keine** |
+
+- „CAGE-Code“ und „alphanumerisch“ beschreiben nur den erwarteten Inhalt: Werte werden so übernommen, wie sie in der Datei stehen — leer erlaubt, keine Fehler, keine Hinweise, keine automatische Korrektur (z. B. keine Großschreibung). Unzulässige Steuerzeichen werden wie bei allen Feldern entfernt; Textzellen/Formelschutz gelten auch hier.
+- Die Informationsfelder sind **rein informativ**: Eine Änderung nur an ihnen macht einen Eintrag nicht „geändert“ — Status, Eintragstyp und Freigabe der DMRL bleiben; die Werte werden trotzdem übernommen (Details PROJ-10).
+- Bestehende Einträge und Demo-Daten haben die Informationsfelder anfangs **leer**.
+- Die Felder erscheinen **nicht** in der SEND-XML und werden vom REPLY-Import nicht verändert.
+- Die Felder werden **nicht** in der DMRL-Ansicht angezeigt (s. Open Questions).
 
 ## Regeln
 | Situation | Check-out |
@@ -68,6 +87,8 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 - Als **Bearbeiter** möchte ich, dass die DMRL während meiner Bearbeitung gesperrt ist, damit niemand parallel ändert und meine Änderungen nicht überschrieben werden.
 - Als **Bearbeiter** möchte ich meinen Check-out zurücknehmen, wenn ich mich vertan habe, damit die DMRL wieder für andere frei ist.
 - Als **Bearbeiter** möchte ich die ausgecheckte Excel-Datei erneut herunterladen, falls ich die Datei verloren habe.
+- Als **Bearbeiter** möchte ich zu jedem Eintrag Informationen wie Originator (`orig`), Applicability, `rfu`, DTD/Schema, Spezifikation und IO-PM in der Excel-Datei pflegen, damit sie beim nächsten Check-out wieder da sind — ohne dass sich dadurch Status oder Freigabe ändern *(Refinement 2026-11-26)*.
+- Als **Bearbeiter** möchte ich den vollständigen DMC je Zeile in einer Spalte sehen, damit ich in Excel danach suchen und filtern kann *(Refinement 2026-11-26)*.
 - Als **Administrator** möchte ich eine verwaiste Sperre aufheben, damit die Arbeit weitergehen kann, wenn der Sperrinhaber ausfällt.
 - Als **Bearbeiter** möchte ich sehen, wer die DMRL seit wann ausgecheckt hat, damit ich mich mit ihm abstimmen kann.
 
@@ -83,6 +104,10 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 - Teil-Check-out (einzelne Einträge oder Kapitel)
 - Check-out während die DMRL auf einen REPLY wartet (inkl. „Fehler ignorieren"-Ausnahme aus Anforderung 02)
 - Automatischer Ablauf der Sperre nach Zeit
+- Prüfung der Informationsfelder (Format CAGE-Code, alphanumerisch) beim Check-out oder Check-in *(Refinement 2026-11-26)*
+- Bearbeiten von `dmc` — Änderungen an der Spalte werden ignoriert; der DMC ändert sich nur über die DMC-Teile *(Refinement 2026-11-26)*
+- Anzeige/Bearbeitung der Informationsfelder in der Anwendung (DMRL-Ansicht PROJ-7) *(Refinement 2026-11-26)*
+- Informationsfelder in SEND-/REPLY-XML und XML-Export *(Refinement 2026-11-26)*
 
 ## Acceptance Criteria
 
@@ -113,6 +138,18 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 - [ ] Angenommen die Demo-DMRL PHUNGUN wird ausgecheckt und unverändert eingecheckt, wenn geprüft wird, dann ist die Datei fehlerfrei (PROJ-8)
 - [ ] Angenommen die ausgecheckte Excel-Datei wird in Excel geöffnet, bearbeitet und gespeichert, wenn eingecheckt wird, dann wird sie angenommen (Rundlauf Check-out → Excel → Check-in)
 
+### `dmc` und Informationsfelder *(Refinement 2026-11-26)*
+- [ ] Angenommen eine DMRL wird ausgecheckt, wenn die Datei geöffnet wird, dann enthält Zeile 1 genau 37 Feldnamen; Spalten 1–28 wie bisher, danach `dmc`, `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm`
+- [ ] Angenommen ein Eintrag hat die DMC-Teile `modelic` `PHUNGUN`, `sdc` `A`, `chapnum` `A05`, `section` `4`, `subsect` `0`, `subject` `0000`, `discode` `01`, `discodev` `A`, `incode` `000`, `incodev` `A`, `itemloc` `A`, wenn ausgecheckt wird, dann steht in `dmc` `PHUNGUN-A-A05-40-0000-01A-000A-A` — derselbe DMC wie in der DMRL-Ansicht
+- [ ] Angenommen eine bestehende DMRL wurde noch nie mit Informationsfeldern eingecheckt, wenn sie ausgecheckt wird, dann sind `orig` bis `io-pm` leer
+- [ ] Angenommen der Bearbeiter trägt in Excel `orig` = `D0815` und `applic_model` = `GTF-A` ein und checkt ein, wenn danach erneut ausgecheckt wird, dann stehen diese Werte wieder in der Datei
+- [ ] Angenommen eine freigegebene DMRL wird ausgecheckt und **nur** Informationsfelder werden geändert, wenn eingecheckt wird, dann werden die Werte übernommen, die betroffenen Einträge gelten als unverändert (kein Eintragstyp nötig), und die DMRL bleibt „freigegeben“ (Details PROJ-10)
+- [ ] Angenommen der Bearbeiter ändert in Excel den Wert in `dmc`, wenn eingecheckt wird, dann wird der Wert ignoriert (kein Fehler, keine Änderung); beim nächsten Check-out steht wieder der aus den DMC-Teilen gebildete DMC
+- [ ] Angenommen ein Informationsfeld enthält einen beliebigen Wert (z. B. `orig` = `abc`, `rfu` = `x/1 ä`), wenn eingecheckt wird, dann gibt es keinen Fehler und keinen Hinweis, und der Wert wird unverändert gespeichert
+- [ ] Angenommen ein Informationsfeld beginnt mit `=`, wenn die Datei in Excel geöffnet wird, dann wird er als Text angezeigt und beim Check-in unverändert gelesen
+- [ ] Angenommen ein Eintrag hat Informationsfelder, wenn ein SEND erzeugt wird, dann enthält die XML diese Felder nicht und ist XSD-gültig (PROJ-12 unverändert)
+- [ ] Angenommen eine DMRL hat 1.000 Einträge, wenn ausgecheckt wird, dann wird die Excel-Datei mit 37 Spalten weiterhin in unter einer Sekunde erzeugt
+
 ### Sperre aufheben
 - [ ] Angenommen der Sperrinhaber öffnet die DMRL, wenn er „Check-out zurücknehmen" wählt und bestätigt, dann ist die Sperre aufgehoben und die DMRL unverändert
 - [ ] Angenommen der Sperrinhaber öffnet die DMRL, wenn er „Excel-Datei erneut herunterladen" wählt, dann erhält er die `.xlsx`-Datei mit dem Stand beim Check-out
@@ -134,6 +171,10 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 - **Offener Check-out aus der Zeit vor der Umstellung (CSV):** Sperre und Kopie bleiben gültig; erneuter Download liefert `.xlsx`, Check-in nimmt die alte CSV oder die neue Excel-Datei an *(Refinement 2026-11-25)*.
 - **Sehr lange Feldinhalte:** Spaltenbreite begrenzt, voller Inhalt bleibt in der Zelle (Excel-Grenze 32 767 Zeichen je Zelle wird von DMRL-Werten nicht erreicht) *(Refinement 2026-11-25)*.
 - **Datei wird in LibreOffice/Numbers statt MS Excel geöffnet:** nicht Ziel der Abnahme; Aufbau ist Standard-.xlsx *(Refinement 2026-11-25)*.
+- **Offener Check-out aus der Zeit vor den Informationsfeldern:** erneuter Download liefert die Datei mit 37 Spalten (Informationsfelder leer, `dmc` gefüllt); eine bereits heruntergeladene Datei mit 28 Spalten wird beim Check-in weiter angenommen, gespeicherte Informationsfelder bleiben dann unverändert (PROJ-10) *(Refinement 2026-11-26)*.
+- **Bearbeiter löscht eine Informationsspalte in Excel oder stellt Spalten um:** Spaltenaufbau stimmt nicht → Fehler beim Check-in wie bisher (PROJ-8, Gruppe S) *(Refinement 2026-11-26)*.
+- **Bearbeiter leert ein Informationsfeld:** leerer Wert wird übernommen *(Refinement 2026-11-26)*.
+- **`dmc` passt nicht zu den DMC-Teilen (z. B. DMC-Teil in Excel geändert, `dmc` nicht):** maßgeblich sind allein die DMC-Teile — Zuordnung und Prüfung wie bisher (PROJ-8/10); `dmc` wird nicht ausgewertet *(Refinement 2026-11-26)*.
 - **Admin ändert DMRL-Kopfdaten (Sicherheitseinstufung) während der Sperre:** erlaubt; betrifft nicht die Einträge.
 - **Demo-Daten neu laden während einer Sperre:** Sperren der Demo-Daten gelten (PROJ-1); offene Check-outs gehen verloren.
 - **Zwei Tabs gleichzeitig „Check-out":** der zweite Versuch erkennt die bestehende Sperre (Prototyp, letzter Speicherstand gilt, PROJ-1).
@@ -145,6 +186,9 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 
 ## Open Questions
 - [ ] Soll PROJ-20 (XML-Prüfung) künftig ebenfalls eine Excel-Datei statt/neben der CSV liefern? → eigenes Refinement von PROJ-20; bis dahin wird die CSV aus PROJ-20 beim Check-in weiter angenommen (2026-11-25)
+- [ ] Sollen die Informationsfelder (und `dmc`) künftig in der DMRL-Ansicht angezeigt oder dort bearbeitet werden? → bei Bedarf eigenes Refinement von PROJ-7 (2026-11-26)
+- [x] Welche Schreibweise hat `dmc`? → wie in der Anwendung (S1000D), nicht jedes Feld einzeln getrennt (2026-11-26)
+- [x] Werden die Informationsfelder geprüft? → Nein, weder beim Check-out noch beim Check-in (2026-11-26)
 - [x] Werden im Workflow-Verlauf auch Admin-Änderungen an den DMRL-Kopfdaten protokolliert? → Ja, „Kopfdaten geändert: Feld alt → neu" (PROJ-15)
 
 ## Decision Log
@@ -157,6 +201,15 @@ Zurücknehmen/Aufheben ist keine Änderung der DMRL: Freigabestatus bleibt erhal
 | Aufbau wie Excel-Export PROJ-18: ein Blatt „Einträge“, 28 Spalten, alle Zellen Text, fixierte Kopfzeile, Autofilter, keine Kopfdaten | Ein Aufbau für Export und Check-out; Kopfdaten-Blatt verworfen (nicht nötig für den Check-in) | 2026-11-25 |
 | Dateiname bleibt `DML-{MI}-{CAGE}-{DML-Typ}-{Jahr}`, Endung `.xlsx` | Kontinuität; unterscheidet sich vom Export (`…-Export-{Datum}`) | 2026-11-25 |
 | Erneuter Download liefert immer `.xlsx`, auch bei Check-outs aus der CSV-Zeit | Ein Format; die alte CSV bleibt beim Check-in gültig | 2026-11-25 |
+| Neue Spalten `dmc`, `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm` (37 statt 28 Spalten) | Vorgabe Product Owner | 2026-11-26 |
+| Alle neuen Spalten ans Ende nach `remarks`, beginnend mit `dmc`; Spalten 1–28 unverändert | Vorgabe Product Owner; bestehender Aufbau bleibt stabil | 2026-11-26 |
+| `dmc` in der Schreibweise der Anwendung (S1000D), berechnet, nie gespeichert, beim Check-in ignoriert | Bearbeiter sieht denselben DMC wie in der Anwendung; keine zweite Quelle für den DMC | 2026-11-26 |
+| Informationsfelder je Eintrag gespeichert und beim nächsten Check-out wieder ausgegeben | Sonst gingen die Eingaben nach jedem Zyklus verloren | 2026-11-26 |
+| Keine Prüfung der Informationsfelder („CAGE-Code“, „alphanumerisch“ nur beschreibend) | Vorgabe Product Owner — rein informativ | 2026-11-26 |
+| Änderung nur an Informationsfeldern = keine fachliche Änderung (Status, Eintragstyp, Freigabe bleiben); Hinweis in der Check-in-Zusammenfassung | Rein informativ; Freigabe soll nicht an Zusatzinformationen hängen; Übernahme bleibt nachvollziehbar | 2026-11-26 |
+| Gleicher 37-Spalten-Aufbau für Check-out, Check-in, Export CSV/Excel, Freigabestand-CSV, PROJ-20; nicht in XML | Ein Aufbau für alle Dateien; exportierte CSV bleibt eincheckbar; S1000D-XML unverändert | 2026-11-26 |
+| Dateien mit 28/27 Spalten beim Check-in weiter gültig; Informationsfelder bleiben dann unverändert | Offene Check-outs und ältere Exporte; Datei sagt zu den Feldern nichts aus | 2026-11-26 |
+| Keine Anzeige der Informationsfelder in der DMRL-Ansicht | Minimaler Umfang; Pflege über Excel | 2026-11-26 |
 | Keine Kopfdaten in der CSV | Vorgabe Product Owner; eindeutige Prüfung beim Check-in | 2026-11-12 |
 | Dateiname `DML-{MI}-{CAGE}-{DML-Typ}-{Jahr}.csv` | Vorgabe Product Owner, angelehnt an XML-Dateinamen | 2026-11-12 |
 | Kein Check-out bei Status „gesendet" | NSG: kein neuer Zyklus vor Abschluss des laufenden | 2026-11-12 |

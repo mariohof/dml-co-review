@@ -2,7 +2,10 @@
 
 ## Status: Approved
 **Created:** 2026-11-12
-**Last Updated:** 2026-11-24
+**Last Updated:** 2026-11-26
+
+
+> **Refinement 2026-11-26 (über `/refine PROJ-9`) — 37 Spalten:** CSV- und Excel-Export enthalten nach `remarks` die neuen Spalten `dmc` (berechnet, Schreibweise der Anwendung) und die Informationsfelder `orig`, `applic_type`, `applic_model`, `applic_version`, `rfu`, `dtd-schema`, `spec`, `io-pm` (gespeicherte Werte). Der XML-Export bleibt unverändert. Details PROJ-9.
 
 > **Refinement 2026-11-24 — Excel-Export (.xlsx):** Der aktuelle Stand einer DMRL kann zusätzlich als MS-Excel-Datei (.xlsx) exportiert werden — ein Tabellenblatt „Einträge“ mit denselben 28 Spalten wie der CSV-Export, alle Zellen als Text, fixierte Kopfzeile, Autofilter, angepasste Spaltenbreiten. Nur zur Information/Weitergabe: **kein Check-in von .xlsx** (PROJ-10 unverändert), **kein Excel-Export des Freigabestands** (PROJ-14 unverändert). Anlass: Vorgabe Product Owner. Geänderte Stellen sind mit *(Refinement 2026-11-24)* markiert.
 
