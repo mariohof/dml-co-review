@@ -1,6 +1,6 @@
 # PROJ-22: S1000D Issue 6.0 Unterstützung
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-26
 **Last Updated:** 2026-11-26
 
@@ -100,7 +100,6 @@ Fehlende Pflichtwerte (Sicherheitseinstufung je Eintrag `01`, Eintragstyp, Ausga
 
 ### G. Betrieb und Dokumentation
 - [ ] Angenommen das Windows-Offline-Paket wird gebaut, wenn der Rauchtest läuft, dann prüft er die XSD-Prüfung auch mit der 6.0-Beispiel-DMRL
-- [ ] Angenommen die Anwendung wird per Startskript (PROJ-19) gestartet, wenn die Schemas geprüft werden, dann gehört `issue-6.0` zu den erwarteten Schema-Ordnern (sofern das Startskript Schema-Ordner prüft)
 - [ ] Angenommen `docs/dmrl-mapping.md`, wenn ein Entwickler das Mapping nachschlägt, dann ist Issue 6.0 dort beschrieben (gemeinsames Mapping mit 4.2/5.0 plus Abweichungen)
 
 ## Edge Cases
@@ -118,8 +117,8 @@ Fehlende Pflichtwerte (Sicherheitseinstufung je Eintrag `01`, Eintragstyp, Ausga
 - Bestehende Tests für 2.3/4.2/5.0 bleiben unverändert grün.
 
 ## Open Questions
-- [ ] BREX-Verweis für Issue 6.0: Annahme `S1000D-H-04-10-0301-00A-022A-D` (Fortschreibung F = 4.2, G = 5.0) — bitte vom Product Owner bestätigen. Die Beispiel-DMRL verweist auf eine projekteigene BREX (`S1000DBIKE-AAA-D00-…-022A-D`) und hilft hier nicht weiter.
-- [ ] Prüft das Startskript (PROJ-19) die Schema-Ordner einzeln? Falls ja, `issue-6.0` ergänzen — wird in `/architecture` geklärt.
+- [x] BREX-Verweis für Issue 6.0 → `S1000D-H-04-10-0301-00A-022A-D`, Fortschreibung von F (4.2) und G (5.0); vom Product Owner bestätigt (2026-11-26)
+- [x] Prüft das Startskript (PROJ-19) die Schema-Ordner einzeln? → Nein, es prüft nur den Ordner `schemas` als Ganzes; keine Änderung nötig (/architecture, 2026-11-26)
 
 ## Decision Log
 
@@ -141,12 +140,94 @@ Fehlende Pflichtwerte (Sicherheitseinstufung je Eintrag `01`, Eintragstyp, Ausga
 <!-- Added by /architecture -->
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| 6.0 als Eintrag in der zentralen Issue-Liste | Auswahlfelder, Prüf-Schnittstelle, Dashboard-Filter und Ladeprüfung leiten sich schon heute davon ab; eine Stelle statt vieler | 2026-11-26 |
+| 6.0 nutzt Leser und Schreiber von 4.2/5.0 | Für die Felder der Anwendung identische Struktur, mit den Beispieldateien belegt; kein doppelter Code | 2026-11-26 |
+| Schema-Angabe und BREX je Issue als Tabelleneintrag | Einziger Unterschied beim Erzeugen; folgt dem bestehenden Muster für 4.2/5.0 | 2026-11-26 |
+| Keine neue Formatversion der Datenhaltung | Die Werteliste wird nur erweitert; alte Stände bleiben gültig, also kein Datenverlust | 2026-11-26 |
+| Erkennung der Schema-Angabe als gemeinsamer Baustein für REPLY-Import und XML-Prüfung | Gleiche Regel an beiden Stellen und für alle Issues; einzeln testbar | 2026-11-26 |
+| Zuordnung über die Versionskennung im Pfad statt über die exakte URL | Toleriert `http`/`https`, lokale Pfade und die Schreibweisen `S1000D_6` und `S1000D_6-0` | 2026-11-26 |
+| Hinweis in Gruppe „XSD" | Inhaltlich eine Ergänzung der Schemaprüfung; keine neue Regelgruppe im Regelwerk PROJ-8 | 2026-11-26 |
+| BREX-Verweis 6.0: `S1000D-H-04-10-0301-00A-022A-D` | Fortschreibung des Musters F (4.2) / G (5.0); vom Product Owner bestätigt | 2026-11-26 |
+| Startskript unverändert | Es prüft den Ordner `schemas` als Ganzes; der neue Unterordner ist automatisch enthalten | 2026-11-26 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Grundidee
+Issue 6.0 wird als **vierte Version in die zentrale Issue-Liste** aufgenommen. Diese Liste steuert schon heute alle Auswahlfelder (Systemformular, XML-Prüfung, Dashboard-Filter), die Prüf-Schnittstelle und die Gültigkeitsprüfung beim Laden der Daten. Für Lesen und Schreiben der XML nutzt 6.0 den **bestehenden gemeinsamen Weg von 4.2/5.0**, denn die Struktur ist für die Felder der Anwendung identisch. Neu sind nur drei Dinge: die Schema-Angabe und der BREX-Verweis beim Erzeugen, der Hinweis bei abweichender Schema-Angabe (für alle Issues) und das Demo-System BIKE60.
+
+Kein Backend und kein neuer Speicher: Alles bleibt im Browser-Speicher (localStorage). Serverseitig nutzt nur die vorhandene XSD-Prüfung (xmllint) den zusätzlichen Schema-Ordner.
+
+### A) Betroffene Oberflächen (keine neuen Komponenten)
+```
+Verwaltung → Systeme
++-- System-Dialog
+    +-- Auswahl „S1000D-Issue": 2.3 · 4.2 · 5.0 · 6.0   ← automatisch aus der Issue-Liste
+
+DMRL-Ansicht (System mit Issue 6.0)
++-- SEND-Dialog            → 6.0-XML, XSD-Prüfung gegen issue-6.0
++-- REPLY-Import-Dialog    → Prüfbericht ggf. mit neuem Hinweis „Schema-Angabe passt nicht"
++-- Export XML / Freigabestand XML → 6.0-XML
+
+XML-Prüfung (Werkzeug)
++-- Auswahl „Issue": 2.3 · 4.2 · 5.0 · 6.0          ← automatisch
++-- Prüfbericht            → ggf. neuer Hinweis „Schema-Angabe passt nicht"
+
+Dashboard
++-- Filter „Issue": um 6.0 ergänzt                   ← automatisch
++-- vierte DMRL „Fahrrad BIKE60" (nach Demo-Reset)
+```
+
+### B) Bausteine und was sich ändert
+| Baustein | Änderung |
+|---|---|
+| Zentrale Issue-Liste (Datenmodell) | „6.0" ergänzt; alle Auswahllisten, die Prüf-Schnittstelle und die Ladeprüfung übernehmen das automatisch |
+| XML-Leser | 6.0 nutzt den Leser für 4.2/5.0 |
+| XML-Schreiber (SEND, Export, Freigabestand) | 6.0 nutzt den Schreiber für 4.2/5.0; dazu je ein Tabelleneintrag für Schema-Angabe (`…/S1000D_6/xml_schema_flat/dml.xsd`) und BREX-Verweis |
+| XSD-Prüfung (Server, xmllint) | findet das Schema über den Ordnernamen `issue-6.0`, also kein eigener Code; die Fehlermeldung für unbekannte Issues nennt alle vier |
+| **Neu:** Erkennung der Schema-Angabe | kleiner gemeinsamer Baustein: liest `xsi:noNamespaceSchemaLocation` (bei 2.3 auch die gleichwertige Angabe) und ordnet sie über die Versionskennung im Pfad (`S1000D_2-3`, `S1000D_4-2`, `S1000D_5-0`, `S1000D_6` bzw. `S1000D_6-0`) einer Issue zu; nicht zuordenbar ergibt „unbekannt" |
+| REPLY-Prüfung und XML-Prüfung | rufen die Erkennung auf; weicht die erkannte Issue von der gewählten ab, kommt **ein** Hinweis (kein Fehler) in den Prüfbericht, Gruppe „XSD" |
+| Demo-Daten | zusätzliche Organisation B6865, System „Fahrrad BIKE60", DMRL mit 12 festen Einträgen nach dem Muster der 4.2/5.0-Demos |
+| Mapping-Dokument `docs/dmrl-mapping.md` | Abschnitt „Mapping Issue 4.2 / 5.0" wird zu „4.2 / 5.0 / 6.0" mit den Abweichungen (Schema-Angabe, BREX) und der Zuordnung der Schema-Angaben |
+| Windows-Offline-Paket (Rauchtest) | XSD-Rauchtest läuft zusätzlich mit der 6.0-Beispiel-DMRL |
+| Startskript (PROJ-19) | keine Änderung: Es prüft den Ordner `schemas` als Ganzes, nicht einzelne Issues |
+
+### C) Datenmodell
+- **System:** Feld „S1000D-Issue" hat jetzt vier erlaubte Werte (2.3, 4.2, 5.0, 6.0). Sonst ändert sich nichts.
+- **Keine neue Formatversion:** Bereits gespeicherte Daten enthalten nur 2.3/4.2/5.0 und bleiben gültig. Gespeicherte Stände werden nicht umgestellt, BIKE60 erscheint erst nach „Demo-Daten zurücksetzen".
+- **Demo-Bestand (Ausgangszustand) zusätzlich:**
+  - Organisation: B6865 „Aerospace, Security and Defence Industries Association of Europe"
+  - System: „Fahrrad BIKE60", Code S1000DBIKE, Issue 6.0, Beschreibung „Fiktives Demo-Fahrrad (S1000D Issue 6.0)"
+  - DMRL: Originator B6865, Typ c, Sicherheitseinstufung 01, Bearbeiterin Anna, Status „in Bearbeitung", erster Versionsindex `00001-<aktuelles Jahr>`, kein Archiv, kein Verlauf
+  - 12 Einträge laut Tabelle in Abschnitt F, mit SDC AAA, Sprache en/US, RPC B6865 samt Name, Sicherheitseinstufung 01; Eintragstyp, Ausgabenummer, Ausgabetyp und Ausgabedatum wie bei den 4.2/5.0-Demos
+- **Prüfbericht:** Der neue Hinweis nutzt die bestehende Form eines Befunds (Schwere „Hinweis", Gruppe „XSD", Text). Am Speicherformat ändert sich nichts.
+
+### D) Ablauf der Hinweis-Prüfung
+```
+Datei hochgeladen (REPLY-Import oder XML-Prüfung)
+  1. XSD-Prüfung gegen die gewählte Issue        (wie bisher)
+  2. Schema-Angabe aus der Datei lesen → Issue erkennen
+       - erkannt und ≠ gewählte Issue → Hinweis:
+         „Die Schema-Angabe der Datei verweist auf S1000D Issue 5.0, das System verwendet Issue 6.0."
+       - erkannt und = gewählte Issue → nichts
+       - fehlt / unbekannt            → nichts
+  3. Regelwerk                                     (wie bisher)
+```
+Der Hinweis verhindert weder Import noch CSV-Download. Bei nicht wohlgeformten Dateien entfällt er, weil die Datei nicht gelesen werden kann.
+
+### E) Qualitätssicherung (automatische Tests)
+- Die 6.0-Beispiel-DMRL ist gegen das 6.0-Schema gültig (xmllint).
+- SEND, Export und Freigabestand einer 6.0-DMRL sind gegen das 6.0-Schema gültig, mit 6.0-Schema-Angabe und 6.0-BREX.
+- Ausgaben für 2.3/4.2/5.0 bleiben unverändert; die bestehenden Tests bleiben grün.
+- Erkennung der Schema-Angabe: alle vier Kennungen, Varianten (`S1000D_6-0`, `https`), keine bzw. fremde Angabe.
+- Hinweis: 5.0-Beispiel in einem 6.0-Kontext ergibt einen Hinweis, das 6.0-Beispiel in einem 6.0-Kontext keinen.
+- Demo-Bestand: BIKE60 ist vorhanden, und ein Check-in des unveränderten Check-outs ergibt keine Regelfehler.
+- XML-Prüfung des 6.0-Beispiels: 79 Einträge, XSD bestanden, Regelverstöße erkannt.
+
+### F) Abhängigkeiten (Pakete)
+Keine neuen Pakete.
 
 ## QA Test Results
 _To be added by /qa_
