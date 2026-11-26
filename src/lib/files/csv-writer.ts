@@ -1,6 +1,6 @@
 import Papa from "papaparse"
 
-import { CORE_FIELD_NAMES, DMC_COLUMN, ENTRY_FILE_COLUMNS, type EntryFieldName, type EntrySnapshot } from "@/lib/data/schema"
+import { DMC_COLUMN, ENTRY_FILE_COLUMNS, type EntryFieldName, type EntrySnapshot } from "@/lib/data/schema"
 import { compareByDmc, formatDmc } from "@/lib/dmrl/entries"
 import { guardCsvCell } from "./csv-formula"
 
@@ -27,13 +27,6 @@ export function entriesTable(
       .map((entry) => columns.map((name) => (name === DMC_COLUMN ? formatDmc(entry.fields) : (entry.fields[name] ?? "")))),
   }
 }
-
-/**
- * Aufbau ohne `dmc` und Informationsfelder (28 Spalten, Stand 21.11.2026) — für die CSV des Werkzeugs (PROJ-20,
- * Refinement 2026-11-26 (2), BUG-QA13-1): Eine Empfänger-XML hat keine Informationsfelder; beim Check-in bleiben die
- * gespeicherten Werte so erhalten.
- */
-export const COLUMNS_WITHOUT_INFO_FIELDS: readonly EntryFieldName[] = CORE_FIELD_NAMES
 
 export function writeEntriesCsv(
   entries: Pick<EntrySnapshot, "fields">[],

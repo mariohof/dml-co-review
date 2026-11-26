@@ -4,9 +4,8 @@ import { describe, expect, it, vi } from "vitest"
 
 import { DEMO_FILES } from "@/lib/data/demo-data"
 import { DEMO_XML_FILES } from "@/lib/data/demo-xml.generated"
-import { CORE_FIELD_NAMES } from "@/lib/data/schema"
+import { ENTRY_FILE_COLUMNS } from "@/lib/data/schema"
 import { runCheckinCheck } from "@/lib/rules/check/checkin"
-import { readCheckinCsv } from "@/lib/rules/check/csv-reader"
 import { errorCount, hintCount } from "@/lib/rules/check/types"
 import type { XsdResult } from "@/lib/xsd/types"
 import {
@@ -22,8 +21,9 @@ import {
   MI_NOT_UNIFORM,
   runXmlCheck,
   XSD_NOT_PERFORMED,
-  xmlCsvFileName,
+  xmlXlsxFileName,
 } from "./xml-check"
+import { readToolXlsx, toolXlsxHeader, toolXlsxInput, toolXlsxRows } from "./xml-check-xlsx.testutil"
 
 /**
  * Demo-Dateien enthalten keine Ausgabedaten (issno/type/Datum) — für fehlerfreie Fälle ergänzt;
@@ -50,7 +50,7 @@ const NOW = new Date(2027, 2, 5, 10, 0)
 const xmlFile = (content: BlobPart, name = "partner.xml") => new File([content], name, { type: "application/xml" })
 
 describe("checkXmlText — gültige Datei", () => {
-  it("SEND 2.3: keine Fehler, Kopfdaten, MI, CSV im Check-out-Format", () => {
+  it("SEND 2.3: keine Fehler, Kopfdaten, MI, Excel-Datei im Check-out-Format", () => {
     const result = checkXmlText("send.XML", "2.3", SEND, VALID)
     expect(errorCount(result.report)).toBe(0)
     expect(result.xsd).toBe("bestanden")
@@ -59,11 +59,18 @@ describe("checkXmlText — gültige Datei", () => {
     expect(result.summary.modelic).toBe("PHUNGUN")
     expect(result.summary.entries).toBe(result.candidates.length)
     expect(result.summary.ohneAntwort).toBe(result.summary.entries)
-    const csv = result.csv!
-    expect(csv.startsWith("﻿dmentryType;modelic")).toBe(true)
-    // 28 Spalten ohne `dmc` und Informationsfelder (PROJ-20 Refinement 2026-11-26 (2), BUG-QA13-1)
-    expect(csv.replace(/^\uFEFF/, "").split("\r\n")[0].split(";")).toEqual([...CORE_FIELD_NAMES])
-    expect(csv.split("\r\n").filter(Boolean)).toHaveLength(result.candidates.length + 1)
+    const xlsx = result.xlsx!
+    // ZIP-Container (.xlsx) mit 37 Spalten wie beim Check-out (PROJ-20 Refinement 2026-11-26 (3))
+    expect([xlsx[0], xlsx[1]]).toEqual([0x50, 0x4b])
+    expect(toolXlsxHeader(xlsx)).toEqual([...ENTRY_FILE_COLUMNS])
+    expect(toolXlsxRows(xlsx)).toHaveLength(result.candidates.length + 1)
+    const read = readToolXlsx(xlsx)
+    expect(read.hasInfoFields).toBe(true)
+    // dmc gefüllt, Informationsfelder und answer_timestamp leer
+    const dmcColumn = ENTRY_FILE_COLUMNS.indexOf("dmc")
+    expect(toolXlsxRows(xlsx).slice(1).every((row) => /^PHUNGUN-/.test(row.cells[dmcColumn] ?? ""))).toBe(true)
+    const infoFields = ["orig", "applic_type", "applic_model", "applic_version", "rfu", "dtd-schema", "spec", "io-pm", "answer_timestamp"] as const
+    expect(read.candidates.every((c) => infoFields.every((name) => c.fields[name] === ""))).toBe(true)
   })
 
   it("REPLY: Antworten gezählt und in answer/answer_comment der CSV", () => {
@@ -73,7 +80,7 @@ describe("checkXmlText — gültige Datei", () => {
     expect(freigegeben).toBeGreaterThan(0)
     expect(zuUeberarbeiten).toBeGreaterThan(0)
     expect(freigegeben + zuUeberarbeiten + ohneAntwort).toBe(entries)
-    const read = readCheckinCsv(result.csv!)
+    const read = readToolXlsx(result.xlsx!)
     expect(read.aborted).toBe(false)
     expect(read.candidates.filter((c) => c.fields.answer === "n").length).toBe(zuUeberarbeiten)
     expect(read.candidates.find((c) => c.fields.answer === "n")?.fields.answer_comment).toBe("Bitte Infocode prüfen")
@@ -82,13 +89,13 @@ describe("checkXmlText — gültige Datei", () => {
   it("Rundlauf: CSV einer fehlerfreien Datei besteht die Check-in-Regelprüfung", () => {
     const result = checkXmlText("send.XML", "2.3", SEND, VALID)
     const snapshot = result.candidates.map((c, i) => ({ id: `e${i}`, status: "gesendet" as const, fields: c.fields }))
-    const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot })
+    const checkin = runCheckinCheck(toolXlsxInput(result.xlsx!), { systemModelic: "PHUNGUN", snapshot })
     expect(checkin.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
   })
 
   it("Issue 4.2 (Beispiel aus docs/beispiele) wird mit dem 4.x-Leser gelesen; MI uneinheitlich wird erkannt", () => {
     const result = checkXmlText("bike.XML", "4.2", BIKE_42, { state: "gueltig", issue: "4.2" })
-    expect(result.csv).not.toBeNull()
+    expect(result.xlsx).not.toBeNull()
     expect(result.candidates.length).toBeGreaterThan(50)
     expect(result.summary.modelic).toBe(MI_NOT_UNIFORM)
     expect(result.report.findings.filter((f) => f.group === "D").every((f) => f.message.includes("S1000DBIKE"))).toBe(true)
@@ -111,7 +118,7 @@ describe("checkXmlText — gültige Datei", () => {
     expect(result.report.findings.filter((f) => f.group === "XSD")).toEqual([
       { severity: "hinweis", group: "XSD", message: "Die Schema-Angabe der Datei verweist auf S1000D Issue 5.0, gewählt ist Issue 6.0 — bitte Issue prüfen." },
     ])
-    expect(result.csv).not.toBeNull()
+    expect(result.xlsx).not.toBeNull()
   })
 
   it("SEND ohne Ausgabedaten: keine Pflichtfeld-Fehler, ein Hinweis „ergänzt“, CSV mit allen Einträgen (Refinement 2)", () => {
@@ -119,7 +126,7 @@ describe("checkXmlText — gültige Datei", () => {
     expect(errorCount(result.report)).toBe(0)
     expect(result.report.findings).toEqual([{ severity: "hinweis", group: "B", message: issueDataFilled(result.candidates.length, toCheckDate(NOW)) }])
     expect(result.filledEntries).toBe(result.candidates.length)
-    expect(result.csv!.split("\r\n").filter(Boolean)).toHaveLength(result.candidates.length + 1)
+    expect(toolXlsxRows(result.xlsx!)).toHaveLength(result.candidates.length + 1)
   })
 
   it("Ausgabedaten teilweise: kein Fehler für fehlende Ausgabenummer, aber unvollständiges Datum ist ein Fehler", () => {
@@ -138,13 +145,13 @@ describe("checkXmlText — gültige Datei", () => {
   it("Sammelhinweis: Einzahl", () => {
     expect(issueDataMissing(1)).toBe("Bei 1 Eintrag fehlen Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.")
     expect(issueDataFilled(1, { day: "05", month: "03", year: "2027" })).toBe(
-      "Bei 1 Eintrag fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer 001 und Datum 05.03.2027 (nur wo leer)."
+      "Bei 1 Eintrag fehlten Ausgabedaten — in der Excel-Datei ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer 001 und Datum 05.03.2027 (nur wo leer)."
     )
   })
 })
 
 describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
-  const csvRows = (csv: string) => readCheckinCsv(csv).candidates
+  const csvRows = (xlsx: Uint8Array) => readToolXlsx(xlsx).candidates
   const date = toCheckDate(NOW)
 
   it("Prüfdatum: lokales Datum mit führenden Nullen", () => {
@@ -155,7 +162,7 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
     const xml = DEMO_SEND.replace(/<dmentry type="[nd]">/g, '<dmentry type="">')
     const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
     expect(result.candidates.every((c) => c.fields.issno === "" && c.fields.dmentryType === "")).toBe(true)
-    const rows = csvRows(result.csv!)
+    const rows = csvRows(result.xlsx!)
     expect(rows).toHaveLength(result.candidates.length)
     for (const row of rows) {
       expect(row.fields).toMatchObject({ issno: "001", type: "new", day: date.day, month: date.month, year: date.year, dmentryType: "n" })
@@ -169,7 +176,7 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
       '</dmtitle><issdate day="01" month="02" year="2025"></issdate>'
     )
     const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
-    const rows = csvRows(result.csv!)
+    const rows = csvRows(result.xlsx!)
     expect(rows.every((r) => r.fields.issno === "001" && r.fields.year === "2025" && r.fields.day === "01")).toBe(true)
     expect(rows.filter((r) => r.fields.dmentryType === "c").map((r) => r.fields.type)).toEqual(["changed"])
     expect(rows.filter((r) => r.fields.dmentryType === "d").map((r) => r.fields.type)).toEqual(["deleted"])
@@ -188,7 +195,7 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
       { severity: "hinweis", group: "B", message: issueDataFilled(total - 1, date) },
       { severity: "hinweis", group: "B", message: issueDataMissing(1) },
     ])
-    const rows = csvRows(result.csv!)
+    const rows = csvRows(result.xlsx!)
     const kept = rows.find((r) => r.fields.issno === "002")!.fields
     expect(kept).toMatchObject({ type: deriveIssueType(kept.dmentryType), day: date.day, month: date.month, year: date.year })
     expect(rows.find((r) => r.fields.issno === "003")!.fields).toMatchObject({ type: "changed", day: "" })
@@ -198,7 +205,7 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
     const xml = DEMO_SEND.replace(/<\/dmtitle>/, '</dmtitle><issdate day="" month="" year="2027"></issdate>')
     const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
     expect(result.report.findings.filter((f) => f.severity === "fehler").map((f) => f.message)).toEqual([expect.stringContaining("Ausgabedatum ist unvollständig")])
-    const row = csvRows(result.csv!).find((r) => r.fields.year === "2027" && r.fields.day === "")!
+    const row = csvRows(result.xlsx!).find((r) => r.fields.year === "2027" && r.fields.day === "")!
     expect(row.fields).toMatchObject({ issno: "001", type: deriveIssueType(row.fields.dmentryType), month: "" })
   })
 
@@ -225,10 +232,10 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
       /<\/dmtitle>/,
       '</dmtitle><issno issno="002" type=""></issno>'
     )
-    const rows = csvRows(checkXmlText("send.XML", "2.3", xml, VALID, NOW).csv!)
+    const rows = csvRows(checkXmlText("send.XML", "2.3", xml, VALID, NOW).xlsx!)
     expect(rows.find((r) => r.fields.issno === "002")!.fields).toMatchObject({ dmentryType: "c", type: "changed", ...date })
     const withDate = xml.replace('type=""></issno>', 'type=""></issno><issdate day="09" month="09" year="2024"></issdate>')
-    const row = csvRows(checkXmlText("send.XML", "2.3", withDate, VALID, NOW).csv!).find((r) => r.fields.issno === "002")!
+    const row = csvRows(checkXmlText("send.XML", "2.3", withDate, VALID, NOW).xlsx!).find((r) => r.fields.issno === "002")!
     expect(row.fields).toMatchObject({ type: "changed", day: "09", month: "09", year: "2024" })
   })
 
@@ -240,7 +247,7 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
     const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
     expect(result.filledEntries).toBe(result.candidates.length - 2)
     expect(result.report.findings.map((f) => f.message)).toContain(issueDataMissing(2))
-    const rows = csvRows(result.csv!)
+    const rows = csvRows(result.xlsx!)
     expect(rows.find((r) => r.fields.type === "deleted" && r.fields.year === "2026")!.fields.issno).toBe("")
     expect(rows.find((r) => r.fields.issno === "004")!.fields).toMatchObject({ type: "changed", day: "" })
   })
@@ -257,11 +264,11 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
 
   it("Rundlauf: CSV mit c/changed und d/deleted besteht die Check-in-Regelprüfung ohne Fehler zu Ausgabedaten", () => {
     const result = checkXmlText("send.XML", "2.3", DEMO_SEND, VALID, NOW)
-    const rows = csvRows(result.csv!)
+    const rows = csvRows(result.xlsx!)
     expect(rows.some((r) => r.fields.dmentryType === "d" && r.fields.type === "deleted")).toBe(true)
     // bestehende DMRL mit allen Einträgen → c/d-Einträge sind vorhanden
     const snapshot = result.candidates.map((c, i) => ({ id: `e${i}`, status: "gesendet" as const, fields: c.fields }))
-    const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot })
+    const checkin = runCheckinCheck(toolXlsxInput(result.xlsx!), { systemModelic: "PHUNGUN", snapshot })
     const issueFields = ["issno", "type", "day", "month", "year"]
     expect(checkin.report.findings.filter((f) => f.severity === "fehler" && issueFields.includes(f.field ?? ""))).toEqual([])
   })
@@ -277,7 +284,7 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
     // neue DMRL: alle Einträge neu, Eintragstyp leer → ergänztes ‚n' erfüllt Regel F
     const xml = DEMO_SEND.replace(/<dmentry type="[nd]">/g, '<dmentry type="">')
     const result = checkXmlText("send.XML", "2.3", xml, VALID, NOW)
-    const checkin = runCheckinCheck(result.csv!, { systemModelic: "PHUNGUN", snapshot: [] })
+    const checkin = runCheckinCheck(toolXlsxInput(result.xlsx!), { systemModelic: "PHUNGUN", snapshot: [] })
     expect(checkin.report.findings.filter((f) => f.severity === "fehler")).toEqual([])
   })
 })
@@ -285,7 +292,7 @@ describe("Ausgabedaten ergänzen (Refinement 2, 2026-11-16)", () => {
 describe("checkXmlText — Fehlerfälle", () => {
   it("nicht wohlgeformt: Bericht laut xmllint, keine CSV", () => {
     const result = checkXmlText("x.xml", "2.3", "", { state: "nicht_wohlgeformt", issue: "2.3", findings: [{ line: 3, message: "Opening and ending tag mismatch" }] })
-    expect(result.csv).toBeNull()
+    expect(result.xlsx).toBeNull()
     expect(result.parsed).toBeNull()
     expect(result.report.findings[0]).toMatchObject({ severity: "fehler", group: "XSD", line: 3 })
   })
@@ -294,19 +301,19 @@ describe("checkXmlText — Fehlerfälle", () => {
     const result = checkXmlText("x.xml", "2.3", SEND, { state: "schemafehler", issue: "2.3", findings: [{ line: 12, message: "Element 'foo': This element is not expected." }] })
     expect(result.xsd).toBe("schemafehler")
     expect(result.report.findings.filter((f) => f.group === "XSD")).toHaveLength(1)
-    expect(result.csv).not.toBeNull()
+    expect(result.xlsx).not.toBeNull()
   })
 
   it("falsche Issue (2.3-Datei als 4.2): „passt nicht zur gewählten Issue“, keine CSV", () => {
     const result = checkXmlText("x.xml", "4.2", SEND, { state: "schemafehler", issue: "4.2", findings: [{ line: 2, message: "No matching global declaration" }] })
-    expect(result.csv).toBeNull()
+    expect(result.xlsx).toBeNull()
     const s = result.report.findings.find((f) => f.group === "S")
     expect(s?.message).toContain(ISSUE_MISMATCH)
   })
 
   it("falsche Issue (4.2-Datei als 2.3): ebenfalls nicht lesbar", () => {
     const result = checkXmlText("x.xml", "2.3", BIKE_42, { state: "schemafehler", issue: "2.3", findings: [{ message: "x" }] })
-    expect(result.csv).toBeNull()
+    expect(result.xlsx).toBeNull()
   })
 
   it("XSD nicht verfügbar: Hinweis „XSD-Prüfung nicht durchgeführt“, Regelprüfung läuft, CSV vorhanden", () => {
@@ -316,12 +323,12 @@ describe("checkXmlText — Fehlerfälle", () => {
     expect(hintCount(result.report)).toBe(1)
     expect(result.report.findings[0].message).toContain(XSD_NOT_PERFORMED)
     expect(errorCount(result.report)).toBe(0)
-    expect(result.csv).not.toBeNull()
+    expect(result.xlsx).not.toBeNull()
   })
 
   it("XSD nicht verfügbar und kein gültiges XML: nicht lesbar, keine CSV", () => {
     const result = checkXmlText("x.xml", "2.3", "<dml><kaputt></dml>", { state: "nicht_verfuegbar", reason: "programm_fehlt" })
-    expect(result.csv).toBeNull()
+    expect(result.xlsx).toBeNull()
     expect(result.report.findings.some((f) => f.group === "S" && f.message.includes("kein gültiges XML"))).toBe(true)
   })
 
@@ -332,7 +339,7 @@ describe("checkXmlText — Fehlerfälle", () => {
     const result = checkXmlText("x.xml", "2.3", dup, VALID)
     expect(result.report.findings.some((f) => f.group === "C")).toBe(true)
     expect(result.candidates).toHaveLength(parsedOnce.candidates.length + 1)
-    expect(result.csv!.split("\r\n").filter(Boolean)).toHaveLength(result.candidates.length + 1)
+    expect(toolXlsxRows(result.xlsx!)).toHaveLength(result.candidates.length + 1)
   })
 })
 
@@ -368,7 +375,7 @@ describe("runXmlCheck", () => {
     const validate = vi.fn().mockResolvedValue(VALID)
     const outcome = await runXmlCheck(xmlFile(SEND, "DML-PHUNGUN-D0815-C-2026-00002_001-00.XML"), "2.3", validate)
     expect(validate).toHaveBeenCalledWith(expect.any(File), "2.3")
-    expect(outcome.ok && outcome.result.csv).toBeTruthy()
+    expect(outcome.ok && outcome.result.xlsx).toBeTruthy()
   })
 
   it("liest ISO-8859-1 laut XML-Deklaration korrekt", async () => {
@@ -379,9 +386,9 @@ describe("runXmlCheck", () => {
   })
 })
 
-describe("xmlCsvFileName", () => {
-  it("ersetzt die Endung .xml/.XML durch .csv", () => {
-    expect(xmlCsvFileName("DML-PHUNGUN-C1234-C-2026-00002_001-00.XML")).toBe("DML-PHUNGUN-C1234-C-2026-00002_001-00.csv")
-    expect(xmlCsvFileName("partner.xml")).toBe("partner.csv")
+describe("xmlXlsxFileName", () => {
+  it("ersetzt die Endung .xml/.XML durch .xlsx", () => {
+    expect(xmlXlsxFileName("DML-PHUNGUN-C1234-C-2026-00002_001-00.XML")).toBe("DML-PHUNGUN-C1234-C-2026-00002_001-00.xlsx")
+    expect(xmlXlsxFileName("partner.xml")).toBe("partner.xlsx")
   })
 })

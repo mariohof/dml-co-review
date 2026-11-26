@@ -1,6 +1,6 @@
 import { DmlParseError, readDml, type ParsedDml } from "@/lib/data/dml-reader"
 import type { DmlCode, S1000dIssue } from "@/lib/data/schema"
-import { COLUMNS_WITHOUT_INFO_FIELDS, writeEntriesCsv } from "@/lib/files/csv-writer"
+import { writeEntriesXlsx } from "@/lib/files/entries-xlsx"
 import { checkFormats, checkInfocodeInfoname, checkMandatory, checkSnsTechname, checkUniqueDmc, OPTIONAL_IN_REPLY } from "@/lib/rules/check/entry-rules"
 import { checkSchemaLocation } from "@/lib/rules/check/schema-location"
 import type { Candidate, Finding, Report } from "@/lib/rules/check/types"
@@ -14,15 +14,20 @@ import { readReplyFile } from "./reply"
  * Prüfkern „XML prüfen" (PROJ-20 Tech Design C/E): XSD (PROJ-11) → Lesen in deklarierter Kodierung →
  * DML-Leser der gewählten Issue → Regeln wie Check-in (A, B, C, E, I) + „MI einheitlich" statt Regel D;
  * Pflichtfelder wie REPLY (Ausgabedaten optional, Sammelhinweis).
- * Refinement 2/3 (2026-11-16): ist der Ausgabetyp `addresdm/issno/@type` leer, erhält die CSV ergänzte Ausgabedaten —
+ * Refinement 2/3 (2026-11-16): ist der Ausgabetyp `addresdm/issno/@type` leer, erhält die Excel-Datei ergänzte Ausgabedaten —
  * Ausgabetyp aus dem Eintragstyp abgeleitet (Prüfung auf Originaldaten).
+ * Refinement 2026-11-26 (3): Ergebnis ist eine MS-Excel-Datei mit 37 Spalten wie beim Check-out (Baustein „Einträge als Excel“),
+ * keine CSV mehr; Informationsfelder leer (nicht in der DMRL-XML).
  * Ohne Bildschirmbezug und ohne Datenbestand. Speichert nichts.
  */
 
 export const XSD_NOT_PERFORMED = "XSD-Prüfung nicht durchgeführt"
 export const ISSUE_MISMATCH = "Datei passt nicht zur gewählten Issue — bitte Issue prüfen."
-export const CSV_HAS_ERRORS = "Die CSV enthält Fehler aus der Prüfung — ein Check-in wird abgewiesen, bis sie behoben sind."
-export const CSV_WITHOUT_XSD = "Die XSD-Prüfung wurde nicht durchgeführt — der Check-in in eine DMRL prüft die Einträge erneut."
+export const XLSX_HAS_ERRORS = "Die Excel-Datei enthält Fehler aus der Prüfung — ein Check-in wird abgewiesen, bis sie behoben sind."
+/** Dauerhinweis an der Download-Schaltfläche (Refinement 2026-11-26 (3)) */
+export const XLSX_INFO_FIELDS_EMPTY =
+  "Die Informationsfelder (orig bis io-pm) sind leer — beim Check-in werden gespeicherte Werte der DMRL dadurch geleert."
+export const XLSX_WITHOUT_XSD = "Die XSD-Prüfung wurde nicht durchgeführt — der Check-in in eine DMRL prüft die Einträge erneut."
 export const MI_NOT_UNIFORM = "uneinheitlich"
 export const issueDataMissing = (count: number) =>
   `Bei ${count} ${count === 1 ? "Eintrag fehlen" : "Einträgen fehlen"} Ausgabedaten (Ausgabenummer, Ausgabetyp, Datum) — beim Check-in sind sie Pflicht.`
@@ -47,7 +52,7 @@ export function toCheckDate(date: Date): CheckDate {
 }
 
 export const issueDataFilled = (count: number, date: CheckDate) =>
-  `Bei ${count} ${count === 1 ? "Eintrag fehlten" : "Einträgen fehlten"} Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer ${DEFAULT_ISSNO} und Datum ${date.day}.${date.month}.${date.year} (nur wo leer).`
+  `Bei ${count} ${count === 1 ? "Eintrag fehlten" : "Einträgen fehlten"} Ausgabedaten — in der Excel-Datei ergänzt: Ausgabetyp aus dem Eintragstyp (n → new, c → changed, d → deleted; ohne Eintragstyp new und Eintragstyp n), Ausgabenummer ${DEFAULT_ISSNO} und Datum ${date.day}.${date.month}.${date.year} (nur wo leer).`
 
 export type XsdState = "bestanden" | "schemafehler" | "nicht_wohlgeformt" | "nicht_durchgefuehrt"
 
@@ -71,9 +76,9 @@ export interface XmlCheckResult {
   candidates: Candidate[]
   report: Report
   summary: XmlCheckSummary
-  /** CSV im Check-out-Format (mit ergänzten Ausgabedaten) — null, wenn die Datei nicht lesbar ist */
-  csv: string | null
-  /** Anzahl Einträge, deren Ausgabedaten in der CSV ergänzt wurden */
+  /** MS-Excel-Datei im Check-out-Format (37 Spalten, mit ergänzten Ausgabedaten) — null, wenn die Datei nicht lesbar ist */
+  xlsx: Uint8Array | null
+  /** Anzahl Einträge, deren Ausgabedaten in der Excel-Datei ergänzt wurden */
   filledEntries: number
   /** Datum der Prüfung (für ergänzte Ausgabedaten) */
   checkDate: CheckDate
@@ -105,7 +110,7 @@ export function checkModelicUniform(candidates: Candidate[]): { modelic: string;
 export const needsIssueData = (c: Candidate) => c.fields.type === ""
 
 /**
- * Ergänzt fehlende Ausgabedaten für die CSV (Refinement 2/3): nur bei leerem Ausgabetyp. Ausgabetyp aus dem Eintragstyp
+ * Ergänzt fehlende Ausgabedaten für die Excel-Datei (Refinement 2/3): nur bei leerem Ausgabetyp. Ausgabetyp aus dem Eintragstyp
  * abgeleitet; Ausgabenummer nur, wenn leer; Datum nur, wenn Tag/Monat/Jahr alle leer; Eintragstyp nur, wenn leer.
  * Vorhandene Werte werden nie überschrieben. Liefert Kopien, Originale bleiben.
  */
@@ -180,7 +185,7 @@ export function checkXmlText(
     candidates: [],
     report: { lineLabel: "Zeile / Eintrag", findings },
     summary: EMPTY_SUMMARY,
-    csv: null,
+    xlsx: null,
     filledEntries: 0,
   })
 
@@ -213,7 +218,7 @@ export function checkXmlText(
     ...checkSnsTechname(candidates),
     ...checkInfocodeInfoname(candidates),
   ]
-  // Ergänzung nur für die CSV; Bericht und Zusammenfassung beruhen auf den Originaldaten
+  // Ergänzung nur für die Excel-Datei; Bericht und Zusammenfassung beruhen auf den Originaldaten
   const filled = fillIssueData(candidates, checkDate)
   return {
     ...base,
@@ -221,8 +226,8 @@ export function checkXmlText(
     candidates,
     report: { lineLabel: "Zeile / Eintrag", findings },
     summary: xmlCheckSummary(candidates, mi.modelic),
-    // 28 Spalten ohne `dmc`/Informationsfelder — gespeicherte Informationsfelder bleiben beim Check-in erhalten (BUG-QA13-1)
-    csv: writeEntriesCsv(filled.candidates, COLUMNS_WITHOUT_INFO_FIELDS),
+    // 37 Spalten wie beim Check-out; Informationsfelder leer → beim Check-in werden gespeicherte Werte geleert (gewollt, Refinement 3)
+    xlsx: writeEntriesXlsx(filled.candidates),
     filledEntries: filled.filled,
   }
 }
@@ -239,9 +244,9 @@ export async function runXmlCheck(file: File, issue: S1000dIssue, validate: type
   return { ok: true, result: checkXmlText(file.name, issue, read.text, xsdResult) }
 }
 
-/** CSV-Dateiname = Name der XML-Datei mit Endung .csv */
-export function xmlCsvFileName(xmlFileName: string): string {
-  return `${xmlFileName.replace(/\.xml$/i, "")}.csv`
+/** Dateiname der Excel-Datei = Name der XML-Datei mit Endung .xlsx */
+export function xmlXlsxFileName(xmlFileName: string): string {
+  return `${xmlFileName.replace(/\.xml$/i, "")}.xlsx`
 }
 
 export const formatDmlCode = (dmlc: DmlCode) => `DML-${dmlc.modelic}-${dmlc.sendid}-${dmlc.dmltype.toUpperCase()}-${dmlc.diyear}-${dmlc.seqnum}`

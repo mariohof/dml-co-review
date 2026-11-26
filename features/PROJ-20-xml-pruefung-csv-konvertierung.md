@@ -1,6 +1,6 @@
 # PROJ-20: XML-Prüfung & Excel-Konvertierung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-14
 **Last Updated:** 2026-11-26
 
@@ -637,6 +637,27 @@ Die Excel-Datei wird wie bisher die CSV **beim Prüfen** erzeugt, nicht erst bei
 - `src/lib/workflows/xml-check.ts` — CSV des Werkzeugs mit `COLUMNS_WITHOUT_INFO_FIELDS` → ohne `dmc` und Informationsfelder (BUG-QA13-1).
 - Tests: `xml-check.test.ts` (28 Spalten); `qa-proj9-10-info.test.ts` (Check-in der Werkzeug-CSV erhält gespeicherte Informationsfelder, Hinweis im Prüfbericht); E2E `PROJ-20-qa-refinement2.spec.ts` neu „BUG-QA13-1“ und Rundlauf-Test erwartet jetzt den Hinweis „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.“ statt „Keine Fehler und keine Hinweise.“
 - Gesamt: 714 Unit-Tests und 164 E2E-Tests grün; Lint ohne Fehler.
+
+### Implementierungsnotizen Refinement 2026-11-26 (3) (Frontend) — MS-Excel mit 37 Spalten statt CSV
+- `src/lib/workflows/xml-check.ts`: Das Prüfergebnis enthält `xlsx` (Bytes) statt `csv`, geschrieben mit dem bestehenden Baustein `writeEntriesXlsx` (Check-out/Export), also 37 Spalten, Blatt „Einträge“, Text-Zellen, DMC-Sortierung. Weitere Änderungen:
+  - Dateiname über `xmlXlsxFileName` (`<XML-Name>.xlsx`)
+  - neue Texte `XLSX_HAS_ERRORS`, `XLSX_WITHOUT_XSD` und `XLSX_INFO_FIELDS_EMPTY` (Dauerhinweis)
+  - Hinweis „… in der Excel-Datei ergänzt …“
+  - Prüfung und Ergänzung der Ausgabedaten unverändert
+- `src/components/xml-check/xml-check-tool.tsx`:
+  - Schaltfläche „Excel-Datei herunterladen“ (Download der Bytes mit Excel-Dateityp über `downloadBytes`)
+  - Dauerhinweis zu leeren Informationsfeldern (shadcn `Alert` mit Info-Symbol) unter einer etwaigen Fehler- bzw. XSD-Warnung
+  - „Keine Excel-Datei — die Datei kann nicht gelesen werden.“
+  - Der Prüfbericht bleibt CSV.
+- `src/app/(app)/xml-pruefung/page.tsx`: Einleitungstext spricht von der MS-Excel-Datei.
+- `src/lib/files/csv-writer.ts`: `COLUMNS_WITHOUT_INFO_FIELDS` entfernt (einziger Nutzer war das Werkzeug). `writeEntriesCsv` behält die wählbare Spaltenliste.
+- Check-in, Leser, Regelwerk und Excel-Schreiber sind unverändert.
+- **Tests:**
+  - neue Testhilfe `src/lib/workflows/xml-check-xlsx.testutil.ts`: liest die Werkzeug-Excel wie der Check-in
+  - Unit/Komponente umgestellt (`xml-check.test.ts`, `qa-proj20.test.ts`, `xml-check-tool.test.tsx`). Geprüft werden 37 Spalten in Check-out-Reihenfolge, `dmc` gefüllt, Informationsfelder und `answer_timestamp` leer, keine Formelzellen im Blatt, Umlaute aus UTF-16, Dauerhinweis, MIME-Typ und Dateiname.
+  - `qa-proj9-10-info.test.ts`: Die Werkzeug-Excel leert die gespeicherten Informationsfelder (Zusammenfassung „Informationsfelder … aktualisiert“). Eine ältere 28-Spalten-CSV erhält sie weiterhin.
+  - E2E (`PROJ-20-*.spec.ts`): Download `.xlsx`, Inhalt über `checkOutXlsxToCsv`, Check-in mit der .xlsx. Der Test zu BUG-QA13-1 ist umgedreht: 37 Spalten, Dauerhinweis, `orig` nach dem Check-in leer.
+  - Ergebnis: Unit 764/764 grün, betroffene E2E 44/44 grün (PROJ-20, PROJ-22, BUG-QA1-1).
 
 ### Bugfix BUG-QA1-1 (2026-11-15) — UTF-16-Dateien
 - `declaredEncoding` (`src/lib/workflows/reply.ts`) erkennt UTF-16 jetzt am BOM (`FF FE` / `FE FF`) oder — ohne BOM — am Bytemuster von „<?“ (Little/Big Endian); sonst wie bisher die XML-Deklaration (Standard UTF-8). Gemeinsamer Baustein für REPLY-Import (PROJ-13) und „XML prüfen“ (PROJ-20).

@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs"
 import { expect, test, type Page } from "@playwright/test"
 
-import { patchDataset, readDataset, startAs } from "./helpers"
+import { checkOutXlsxToCsv, patchDataset, readDataset, startAs } from "./helpers"
 
 /**
- * PROJ-20 QA Refinement 2/3 (2026-11-16): fehlende Ausgabedaten werden in der CSV ergänzt
+ * PROJ-20 QA Refinement 2/3 (2026-11-16): fehlende Ausgabedaten werden in der Excel-Datei ergänzt
  * (Ausgabetyp aus dem Eintragstyp, issno 001, Prüfdatum, Eintragstyp n — nur wo leer) — im echten Browser mit echter XSD-Prüfung.
  */
 
@@ -24,14 +24,18 @@ async function checkContent(page: Page, name: string, content: string | Buffer, 
   await page.getByRole("button", { name: "Prüfen" }).click()
 }
 
-async function downloadCsv(page: Page) {
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+/** Excel-Datei des Werkzeugs (PROJ-20 Refinement 2026-11-26 (3)); `csv` = Inhalt als Text für Inhaltsprüfungen */
+async function downloadXlsx(page: Page) {
   const downloadPromise = page.waitForEvent("download")
-  await page.getByRole("button", { name: "CSV herunterladen" }).click()
+  await page.getByRole("button", { name: "Excel-Datei herunterladen" }).click()
   const download = await downloadPromise
-  return { name: download.suggestedFilename(), csv: readFileSync((await download.path())!, "utf8") }
+  const bytes = readFileSync((await download.path())!)
+  return { name: download.suggestedFilename(), bytes, csv: checkOutXlsxToCsv(bytes) }
 }
 
-/** CSV → Zeilen als Objekte (Spaltenname → Wert); Werte enthalten in den Testdaten kein Semikolon */
+/** Inhalt (als CSV-Text) → Zeilen als Objekte (Spaltenname → Wert); Werte enthalten in den Testdaten kein Semikolon */
 function csvRecords(csv: string) {
   const [head, ...rows] = csv.replace(/^﻿/, "").split("\r\n").filter(Boolean)
   const header = head.split(";")
@@ -57,21 +61,21 @@ const stripIssueData42 = (xml: string) =>
     .replace(/<issueDate\b[^>]*>\s*<\/issueDate>/g, "")
     .replace(/\s+issueType="[^"]*"/g, "")
 
-test("4.2 ohne Ausgabedaten: Hinweis „ergänzt“ mit Tagesdatum, CSV mit 001/abgeleitetem Ausgabetyp/Datum, Eintragstyp n nur wo leer", async ({ page }) => {
+test("4.2 ohne Ausgabedaten: Hinweis „ergänzt“ mit Tagesdatum, Excel-Datei mit 001/abgeleitetem Ausgabetyp/Datum, Eintragstyp n nur wo leer", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   const exported = await exportGtfdemoXml(page)
-  // entfernt auch die issueInfo/issueDate im Kopf (dort optional); betroffen sind für die CSV nur die Einträge
+  // entfernt auch die issueInfo/issueDate im Kopf (dort optional); betroffen sind für die Excel-Datei nur die Einträge
   const xml = stripIssueData42(exported.xml)
   const original = csvRecords((await (async () => {
     await checkContent(page, exported.name, exported.xml, "4.2")
-    return downloadCsv(page)
+    return downloadXlsx(page)
   })()).csv)
 
   await checkContent(page, exported.name, xml, "4.2")
   const d = today()
-  await expect(page.getByText(new RegExp(`Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp .* Ausgabenummer 001 und Datum ${d.day}\\.${d.month}\\.${d.year}`)).first()).toBeVisible()
+  await expect(page.getByText(new RegExp(`Einträgen fehlten Ausgabedaten — in der Excel-Datei ergänzt: Ausgabetyp aus dem Eintragstyp .* Ausgabenummer 001 und Datum ${d.day}\\.${d.month}\\.${d.year}`)).first()).toBeVisible()
   await expect(page.getByText(/beim Check-in sind sie Pflicht/)).toHaveCount(0)
-  const filled = csvRecords((await downloadCsv(page)).csv)
+  const filled = csvRecords((await downloadXlsx(page)).csv)
   expect(filled).toHaveLength(original.length)
   for (const [i, row] of filled.entries()) {
     expect(row).toMatchObject({ issno: "001", type: derivedIssueType(original[i].dmentryType), day: d.day, month: d.month, year: d.year })
@@ -84,12 +88,12 @@ test("4.2 mit issueInfo, aber ohne issueType: ergänzt — Ausgabenummer und Dat
   await startAs(page, "Ben Bearbeiter")
   const exported = await exportGtfdemoXml(page)
   await checkContent(page, exported.name, exported.xml, "4.2")
-  const original = csvRecords((await downloadCsv(page)).csv)
+  const original = csvRecords((await downloadXlsx(page)).csv)
   const xml = exported.xml.replace(/\s+issueType="[^"]*"/g, "")
   await checkContent(page, exported.name, xml, "4.2")
-  await expect(page.getByText(/in der CSV ergänzt/).first()).toBeVisible()
+  await expect(page.getByText(/in der Excel-Datei ergänzt/).first()).toBeVisible()
   await expect(page.getByText(/beim Check-in sind sie Pflicht/)).toHaveCount(0)
-  const rows = csvRecords((await downloadCsv(page)).csv)
+  const rows = csvRecords((await downloadXlsx(page)).csv)
   expect(rows).toHaveLength(original.length)
   for (const [i, row] of rows.entries()) {
     expect(row).toMatchObject({ issno: original[i].issno, day: original[i].day, month: original[i].month, year: original[i].year })
@@ -97,12 +101,12 @@ test("4.2 mit issueInfo, aber ohne issueType: ergänzt — Ausgabenummer und Dat
   }
 })
 
-test("Rundlauf in bestehende DMRL: 4.2-Export ohne Ausgabedaten → CSV → Check-in in GTFDEMO besteht; Datum der Einträge als Änderung gemeldet", async ({ page }) => {
+test("Rundlauf in bestehende DMRL: 4.2-Export ohne Ausgabedaten → Excel → Check-in in GTFDEMO besteht; Datum der Einträge als Änderung gemeldet", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   const exported = await exportGtfdemoXml(page)
   await checkContent(page, exported.name, stripIssueData42(exported.xml), "4.2")
-  await expect(page.getByText(/in der CSV ergänzt/).first()).toBeVisible()
-  const converted = await downloadCsv(page)
+  await expect(page.getByText(/in der Excel-Datei ergänzt/).first()).toBeVisible()
+  const converted = await downloadXlsx(page)
 
   await page.goto("/dmrl/dmrl-gtfdemo")
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-out" }).click()
@@ -111,10 +115,10 @@ test("Rundlauf in bestehende DMRL: 4.2-Export ohne Ausgabedaten → CSV → Chec
   await checkoutPromise
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: XLSX_MIME, buffer: converted.bytes })
   await expect(dialog.getByText("Prüfung bestanden")).toBeVisible()
-  // Werkzeug-CSV hat 28 Spalten → einziger Hinweis: Informationsfelder bleiben erhalten (Refinement 2026-11-26 (2), BUG-QA13-1)
-  await expect(dialog.getByText("Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.")).toBeVisible()
+  // Werkzeug-Excel hat 37 Spalten wie der Check-out (Refinement 2026-11-26 (3)) → kein Hinweis „Datei ohne Informationsfelder“
+  await expect(dialog.getByText("Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.")).toHaveCount(0)
   // GTFDEMO hat bereits 001/new mit anderem Datum → das Prüfdatum erscheint als Änderung (gewollt laut Tech Design K)
   await expect(dialog.getByText("Geänderte Einträge (10)")).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Übernehmen" })).toBeEnabled()
@@ -125,21 +129,22 @@ test("Nichts gespeichert: Datenbestand vor und nach Prüfung mit Ergänzung iden
   const exported = await exportGtfdemoXml(page)
   const before = await readDataset(page)
   await checkContent(page, exported.name, stripIssueData42(exported.xml), "4.2")
-  await expect(page.getByText(/in der CSV ergänzt/).first()).toBeVisible()
-  await downloadCsv(page)
+  await expect(page.getByText(/in der Excel-Datei ergänzt/).first()).toBeVisible()
+  await downloadXlsx(page)
   expect(await readDataset(page)).toEqual(before)
 })
 
-test("BUG-QA13-1: Werkzeug-CSV hat 28 Spalten; Check-in erhält gespeicherte Informationsfelder der DMRL", async ({ page }) => {
+test("Refinement 2026-11-26 (3): Werkzeug-Excel hat 37 Spalten wie der Check-out; Check-in leert gespeicherte Informationsfelder (gewollt)", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   await patchDataset(page, `for (const e of data.entries) if (e.dmrlId === "dmrl-gtfdemo") e.fields.orig = "ALT01"`)
   const exported = await exportGtfdemoXml(page)
   await checkContent(page, exported.name, stripIssueData42(exported.xml), "4.2")
-  const converted = await downloadCsv(page)
+  const converted = await downloadXlsx(page)
+  expect(converted.name).toMatch(/\.xlsx$/)
   const header = converted.csv.replace(/^﻿/, "").split("\r\n")[0].split(";")
-  expect(header).toHaveLength(28)
-  expect(header).not.toContain("dmc")
-  expect(header).not.toContain("orig")
+  expect(header).toHaveLength(37)
+  expect(header.slice(-9)).toEqual(["dmc", "orig", "applic_type", "applic_model", "applic_version", "rfu", "dtd-schema", "spec", "io-pm"])
+  await expect(page.getByText(/Die Informationsfelder \(orig bis io-pm\) sind leer — beim Check-in werden gespeicherte Werte der DMRL dadurch geleert/)).toBeVisible()
 
   await page.goto("/dmrl/dmrl-gtfdemo")
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-out" }).click()
@@ -148,11 +153,11 @@ test("BUG-QA13-1: Werkzeug-CSV hat 28 Spalten; Check-in erhält gespeicherte Inf
   await checkoutPromise
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
-  await expect(dialog.getByText("Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.")).toBeVisible()
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: XLSX_MIME, buffer: converted.bytes })
+  await expect(dialog.getByText(/Informationsfelder bei \d+ Einträgen aktualisiert/).first()).toBeVisible()
   await dialog.getByRole("button", { name: "Übernehmen" }).click()
   await expect(dialog).toBeHidden()
   const data = await readDataset(page)
   const entries = data.entries.filter((e: { dmrlId: string }) => e.dmrlId === "dmrl-gtfdemo")
-  expect(entries.every((e: { fields: { orig: string } }) => e.fields.orig === "ALT01")).toBe(true)
+  expect(entries.every((e: { fields: { orig: string } }) => e.fields.orig === "")).toBe(true)
 })

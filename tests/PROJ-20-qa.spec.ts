@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 
-import { readDataset, startAs, switchUser } from "./helpers"
+import { checkOutXlsxToCsv, readDataset, startAs, switchUser } from "./helpers"
 
 /** PROJ-20 QA: Rundlauf, Sicherheit und Grenzfälle im echten Browser mit echter XSD-Prüfung */
 
@@ -19,14 +19,18 @@ async function checkContent(page: Page, name: string, content: string | Buffer, 
   await page.getByRole("button", { name: "Prüfen" }).click()
 }
 
-async function downloadCsv(page: Page) {
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+/** Excel-Datei des Werkzeugs (PROJ-20 Refinement 2026-11-26 (3)); `csv` = Inhalt als Text für Inhaltsprüfungen */
+async function downloadXlsx(page: Page) {
   const downloadPromise = page.waitForEvent("download")
-  await page.getByRole("button", { name: "CSV herunterladen" }).click()
+  await page.getByRole("button", { name: "Excel-Datei herunterladen" }).click()
   const download = await downloadPromise
-  return { name: download.suggestedFilename(), csv: readFileSync((await download.path())!, "utf8") }
+  const bytes = readFileSync((await download.path())!)
+  return { name: download.suggestedFilename(), bytes, csv: checkOutXlsxToCsv(bytes) }
 }
 
-test("Rundlauf: exportierte DMRL-XML (4.2) → CSV → Check-in in die ausgecheckte DMRL besteht die Regelprüfung", async ({ page }) => {
+test("Rundlauf: exportierte DMRL-XML (4.2) → Excel → Check-in in die ausgecheckte DMRL besteht die Regelprüfung", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   await page.goto("/dmrl/dmrl-gtfdemo")
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Exportieren" }).click()
@@ -38,7 +42,7 @@ test("Rundlauf: exportierte DMRL-XML (4.2) → CSV → Check-in in die ausgechec
   await checkContent(page, exported.suggestedFilename(), xml, "4.2")
   await expect(page.getByLabel("Zusammenfassung")).toContainText("GTFDEMO")
   await expect(page.getByText("Keine Fehler und keine Hinweise.")).toBeVisible()
-  const converted = await downloadCsv(page)
+  const converted = await downloadXlsx(page)
 
   await page.goto("/dmrl/dmrl-gtfdemo")
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-out" }).click()
@@ -47,18 +51,18 @@ test("Rundlauf: exportierte DMRL-XML (4.2) → CSV → Check-in in die ausgechec
   await checkoutPromise
   await page.getByRole("toolbar", { name: "Aktionen" }).getByRole("button", { name: "Check-in" }).click()
   const dialog = page.getByRole("dialog")
-  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: "text/csv", buffer: Buffer.from(converted.csv) })
+  await dialog.getByLabel("Datei für den Check-in").setInputFiles({ name: converted.name, mimeType: XLSX_MIME, buffer: converted.bytes })
   await expect(dialog.getByText("Prüfung bestanden")).toBeVisible()
   await expect(dialog.getByRole("button", { name: "Übernehmen" })).toBeEnabled()
 })
 
-test("Empfänger-REPLY mit Ausgabedaten → CSV → Check-in fragt nach Übernahme der Antworten", async ({ page }) => {
+test("Empfänger-REPLY mit Ausgabedaten → Excel → Check-in fragt nach Übernahme der Antworten", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   // PHUNGUN-Einträge erhalten Ausgabedaten, damit die Pflichtfelder des Check-ins erfüllt sind
   const xml = replyXml().replace(/<\/dmtitle>/g, '</dmtitle><issno issno="001" type="new"/><issdate day="01" month="02" year="2027"/>')
   await checkContent(page, REPLY, xml)
   await expect(page.getByLabel("Zusammenfassung")).toContainText("30 freigegeben · 2 zu überarbeiten")
-  const converted = await downloadCsv(page)
+  const converted = await downloadXlsx(page)
   expect(converted.csv).toContain(";n;")
 
   // SEND zurückziehen ist nicht nötig: PHUNGUN wartet auf REPLY → Check-out nicht möglich; daher Fahrzeug-unabhängig nur Antwortspalten prüfen
@@ -97,8 +101,8 @@ test("Externe Entities (XXE) werden nicht nachgeladen", async ({ page }) => {
   await checkContent(page, "xxe.xml", xml)
   await expect(page.getByLabel("Zusammenfassung").or(page.getByText("Die Datei kann nicht geprüft werden"))).toBeVisible()
   await expect(page.locator("body")).not.toContainText("root:")
-  if (await page.getByRole("button", { name: "CSV herunterladen" }).count()) {
-    const { csv } = await downloadCsv(page)
+  if (await page.getByRole("button", { name: "Excel-Datei herunterladen" }).count()) {
+    const { csv } = await downloadXlsx(page)
     expect(csv).not.toContain("root:")
   }
 })
@@ -112,11 +116,11 @@ test("Benutzerwechsel bei angezeigtem Ergebnis: Werkzeug bleibt offen und nutzba
   await expect(page.getByRole("heading", { name: "Werkzeug." })).toBeVisible()
 })
 
-test("Keine DMRL-XML (wohlgeformt, anderes Wurzelelement): keine CSV", async ({ page }) => {
+test("Keine DMRL-XML (wohlgeformt, anderes Wurzelelement): keine Excel-Datei", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   await checkContent(page, "dm.xml", '<?xml version="1.0" encoding="UTF-8"?><dmodule><content/></dmodule>')
   await expect(page.getByText(/Datei passt nicht zur gewählten Issue/).first()).toBeVisible()
-  await expect(page.getByRole("button", { name: "CSV herunterladen" })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "Excel-Datei herunterladen" })).toHaveCount(0)
 })
 
 test("Leere und zu große Dateien werden abgewiesen", async ({ page }) => {
@@ -151,12 +155,12 @@ test("Große Datei (knapp 5 MB): Prüfung und Konvertierung in wenigen Sekunden,
   const seconds = (Date.now() - started) / 1000
   console.log(`PROJ-20 QA: ${entries.length + 32} Einträge, ${(Buffer.byteLength(big) / 1024 / 1024).toFixed(2)} MB in ${seconds.toFixed(1)} s`)
   expect(seconds).toBeLessThan(15)
-  const { csv } = await downloadCsv(page)
+  const { csv } = await downloadXlsx(page)
   expect(csv.split("\r\n").filter(Boolean).length).toBe(entries.length + 33)
   expect(await readDataset(page)).toEqual(before)
 })
 
-test("UTF-16-Datei (BUG-QA1-1): XSD-Prüfung, Lesen und CSV in UTF-8", async ({ page }) => {
+test("UTF-16-Datei (BUG-QA1-1): XSD-Prüfung, Lesen und Excel-Datei mit Umlauten", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   const xml = replyXml().replace(/^\ufeff/, "").replace(/encoding="[^"]*"/i, 'encoding="UTF-16"')
   const utf16 = Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(xml, "utf16le")])
@@ -164,6 +168,6 @@ test("UTF-16-Datei (BUG-QA1-1): XSD-Prüfung, Lesen und CSV in UTF-8", async ({ 
   await expect(page.getByLabel("Zusammenfassung")).toContainText("30 freigegeben · 2 zu überarbeiten")
   await expect(page.getByText("Die Datei kann nicht geprüft werden")).toHaveCount(0)
   await expect(page.getByText(XSD_NOT_PERFORMED_TEXT)).toHaveCount(0)
-  const { csv } = await downloadCsv(page)
+  const { csv } = await downloadXlsx(page)
   expect(csv.split("\r\n").filter(Boolean)).toHaveLength(33)
 })

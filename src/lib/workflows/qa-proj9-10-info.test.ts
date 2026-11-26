@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 
 import { buildDemoDataset, DEMO_IDS } from "@/lib/data/demo-data"
-import { ENTRY_FILE_COLUMNS, INFO_FIELD_NAMES, type Dataset, type Dmrl, type EntrySnapshot, type User } from "@/lib/data/schema"
-import { COLUMNS_WITHOUT_INFO_FIELDS, writeEntriesCsv } from "@/lib/files/csv-writer"
+import { CORE_FIELD_NAMES, ENTRY_FILE_COLUMNS, INFO_FIELD_NAMES, type Dataset, type Dmrl, type EntrySnapshot, type User } from "@/lib/data/schema"
+import { writeEntriesCsv } from "@/lib/files/csv-writer"
 import { ENTRIES_SHEET_NAME, writeEntriesXlsx } from "@/lib/files/entries-xlsx"
 import { readXlsxSheet } from "@/lib/files/xlsx-reader"
 import { NO_INFO_FIELDS_HINT, readCheckinCsv } from "@/lib/rules/check/csv-reader"
@@ -146,12 +146,28 @@ describe("Dateien mit Eintragstabelle", () => {
   })
 })
 
-describe("CSV aus der XML-Prüfung (PROJ-20) einchecken — BUG-QA13-1 behoben", () => {
-  it("Werkzeug-CSV (28 Spalten, aus der XML ohne Informationsfelder) erhält die gespeicherten Informationsfelder", () => {
+describe("Datei aus der XML-Prüfung (PROJ-20) einchecken", () => {
+  // Einträge wie aus einer Empfänger-XML (Informationsfelder leer)
+  const fromXml = (data: Dataset) =>
+    lockRows(data).map((e) => ({ ...e, fields: { ...e.fields, ...Object.fromEntries(INFO_FIELD_NAMES.map((n) => [n, ""])) } }))
+
+  it("Werkzeug-Excel (37 Spalten, Informationsfelder leer) leert die gespeicherten Informationsfelder — gewollt (PROJ-20 Refinement 2026-11-26 (3))", () => {
     const data = checkOut(withStoredInfo())
-    // Einträge wie aus einer Empfänger-XML (Informationsfelder leer), geschrieben wie im Werkzeug
-    const fromXml = lockRows(data).map((e) => ({ ...e, fields: { ...e.fields, ...Object.fromEntries(INFO_FIELD_NAMES.map((n) => [n, ""])) } }))
-    const csv = writeEntriesCsv(fromXml, COLUMNS_WITHOUT_INFO_FIELDS)
+    // geschrieben wie im Werkzeug: Baustein „Einträge als Excel“
+    const sheet = readXlsxSheet(writeEntriesXlsx(fromXml(data)), ENTRIES_SHEET_NAME)
+    if (!sheet.ok) throw new Error("nicht lesbar")
+    expect(sheet.rows[0].cells).toEqual([...ENTRY_FILE_COLUMNS])
+    const { checked, result } = checkIn(data, { source: "xlsx", rows: sheet.rows })
+    expect(errorCount(checked.report)).toBe(0)
+    expect(checked.summary.informationsfelder).toBe(vehicle(data).length)
+    expect(checked.report.findings.map((f) => f.message)).not.toContain(NO_INFO_FIELDS_HINT)
+    if (!result.ok) throw new Error(result.message)
+    expect(vehicle(result.data).every((e) => INFO_FIELD_NAMES.every((n) => e.fields[n] === ""))).toBe(true)
+  })
+
+  it("ältere Werkzeug-CSV (28 Spalten, Stand 26.11.2026 vormittags) erhält die gespeicherten Informationsfelder weiterhin", () => {
+    const data = checkOut(withStoredInfo())
+    const csv = writeEntriesCsv(fromXml(data), CORE_FIELD_NAMES)
     expect(csv.replace(/^\uFEFF/, "").split("\r\n")[0].split(";")).toHaveLength(28)
     const { checked, result } = checkIn(data, csv)
     expect(errorCount(checked.report)).toBe(0)

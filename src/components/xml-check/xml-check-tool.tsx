@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Download, FileUp, Loader2, RotateCw, SearchCheck, ShieldAlert, TriangleAlert } from "lucide-react"
+import { Download, FileUp, Info, Loader2, RotateCw, SearchCheck, ShieldAlert, TriangleAlert } from "lucide-react"
 
 import { CheckReportView } from "@/components/check/check-report-view"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -11,24 +11,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { S1000D_ISSUES, type S1000dIssue } from "@/lib/data/schema"
-import { downloadTextFile } from "@/lib/files/download"
+import { downloadBytes, downloadTextFile } from "@/lib/files/download"
+import { XLSX_MIME_TYPE } from "@/lib/files/xlsx-writer"
 import { reportFileName, reportToCsv } from "@/lib/rules/check/report"
 import { errorCount, hintCount } from "@/lib/rules/check/types"
 import {
-  CSV_HAS_ERRORS,
-  CSV_WITHOUT_XSD,
   formatDmlCode,
   runXmlCheck,
+  XLSX_HAS_ERRORS,
+  XLSX_INFO_FIELDS_EMPTY,
+  XLSX_WITHOUT_XSD,
   XSD_NOT_PERFORMED,
-  xmlCsvFileName,
   xmlReportSubject,
+  xmlXlsxFileName,
   type XmlCheckResult,
 } from "@/lib/workflows/xml-check"
 import { acceptXmlUpload } from "@/lib/xsd/client"
 
 type State = { kind: "leer" } | { kind: "laeuft" } | { kind: "fehler"; message: string } | { kind: "ergebnis"; result: XmlCheckResult }
 
-/** Werkzeug „XML prüfen" (PROJ-20): beliebige DMRL-XML prüfen und als CSV im Check-out-Format herunterladen — speichert nichts */
+/** Werkzeug „XML prüfen" (PROJ-20): beliebige DMRL-XML prüfen und als MS-Excel-Datei im Check-out-Format (37 Spalten) herunterladen — speichert nichts */
 export function XmlCheckTool() {
   const [issue, setIssue] = useState<S1000dIssue | "">("")
   const [file, setFile] = useState<File | null>(null)
@@ -195,7 +197,8 @@ function XmlCheckResultView({ result, onRetry, retrying }: XmlCheckResultViewPro
   const issueNumber = header ? `${header.issno.issno}-${header.issno.inwork}` : ""
   const date = header ? [header.issdate.year, header.issdate.month, header.issdate.day].filter(Boolean).join("-") : ""
   const reference = header?.dmlref ? `${formatDmlCode(header.dmlref.dmlc)}${header.dmlref.issno ? ` (${header.dmlref.issno.issno}-${header.dmlref.issno.inwork})` : ""}` : ""
-  const csvWarning = errors > 0 ? CSV_HAS_ERRORS : result.xsd === "nicht_durchgefuehrt" ? CSV_WITHOUT_XSD : null
+  const xlsxWarning = errors > 0 ? XLSX_HAS_ERRORS : result.xsd === "nicht_durchgefuehrt" ? XLSX_WITHOUT_XSD : null
+  const xlsx = result.xlsx
 
   return (
     <section aria-label="Prüfergebnis" className="space-y-6">
@@ -246,21 +249,27 @@ function XmlCheckResultView({ result, onRetry, retrying }: XmlCheckResultViewPro
           <CardTitle className="text-lg">Herunterladen</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {result.csv === null ? (
-            <p className="text-sm text-muted-foreground">Keine CSV — die Datei kann nicht gelesen werden.</p>
+          {xlsx === null ? (
+            <p className="text-sm text-muted-foreground">Keine Excel-Datei — die Datei kann nicht gelesen werden.</p>
           ) : (
-            csvWarning && (
-              <Alert className="border-amber-300 bg-amber-50 text-amber-950 [&>svg]:text-amber-700">
-                <TriangleAlert className="h-4 w-4" aria-hidden />
-                <AlertDescription>{csvWarning}</AlertDescription>
+            <>
+              {xlsxWarning && (
+                <Alert className="border-amber-300 bg-amber-50 text-amber-950 [&>svg]:text-amber-700">
+                  <TriangleAlert className="h-4 w-4" aria-hidden />
+                  <AlertDescription>{xlsxWarning}</AlertDescription>
+                </Alert>
+              )}
+              <Alert>
+                <Info className="h-4 w-4" aria-hidden />
+                <AlertDescription>{XLSX_INFO_FIELDS_EMPTY}</AlertDescription>
               </Alert>
-            )
+            </>
           )}
           <div className="flex flex-wrap gap-2">
-            {result.csv !== null && (
-              <Button onClick={() => downloadTextFile(xmlCsvFileName(result.fileName), result.csv!, "text/csv;charset=utf-8")}>
+            {xlsx !== null && (
+              <Button onClick={() => downloadBytes(xmlXlsxFileName(result.fileName), xlsx, XLSX_MIME_TYPE)}>
                 <Download className="mr-2 h-4 w-4" aria-hidden />
-                CSV herunterladen
+                Excel-Datei herunterladen
               </Button>
             )}
             <Button variant="outline" onClick={() => downloadTextFile(reportFileName(subject), reportToCsv(result.report), "text/csv;charset=utf-8")}>
@@ -278,7 +287,7 @@ function XmlCheckResultView({ result, onRetry, retrying }: XmlCheckResultViewPro
           subject={subject}
           defaultOrder="regel"
           failTitle="Die Datei enthält Fehler"
-          failNote={result.csv === null ? "Es wird keine CSV erzeugt." : "Die CSV kann mit Warnung heruntergeladen werden."}
+          failNote={xlsx === null ? "Es wird keine Excel-Datei erzeugt." : "Die Excel-Datei kann mit Warnung heruntergeladen werden."}
         />
       </div>
     </section>

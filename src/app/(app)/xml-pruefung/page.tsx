@@ -8,8 +8,8 @@ export default function XmlCheckPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">XML prüfen</p>
         <h1 className="text-3xl font-bold tracking-tight text-brand-darkest">Werkzeug.</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          Eine beliebige DMRL-XML prüfen und als CSV im Check-out-Format herunterladen. Die CSV lässt sich in Excel bearbeiten und über den Check-in in
-          eine DMRL übernehmen.
+          Eine beliebige DMRL-XML prüfen und als MS-Excel-Datei im Check-out-Format herunterladen. Die Excel-Datei lässt sich bearbeiten und über den
+          Check-in in eine DMRL übernehmen.
         </p>
       </div>
       <XmlCheckTool />

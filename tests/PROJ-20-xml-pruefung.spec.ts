@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 
-import { patchDataset, readDataset, startAs } from "./helpers"
+import { checkOutXlsxToCsv, patchDataset, readDataset, startAs } from "./helpers"
 
-/** PROJ-20: XML prüfen & CSV-Konvertierung (eigenständiges Werkzeug, echte XSD-Serverfunktion) */
+/** PROJ-20: XML prüfen & Excel-Konvertierung (eigenständiges Werkzeug, echte XSD-Serverfunktion) */
 
 const DEMO_DIR = join(__dirname, "..", "public", "demo-dateien")
 const REPLY = "DML-PHUNGUN-C1234-C-2026-00002_001-00.XML"
@@ -32,7 +32,7 @@ test("Benennung „Werkzeug“ (Refinement 2026-11-22): Menüpunkt, Überschrift
   await expect(nav.getByRole("link", { name: "Werkzeug" })).toHaveAttribute("aria-current", "page")
 })
 
-test("Menüpunkt „Werkzeug“; Empfänger-REPLY: Zusammenfassung mit Antworten, CSV-Download mit Namen der XML", async ({ page }) => {
+test("Menüpunkt „Werkzeug“; Empfänger-REPLY: Zusammenfassung mit Antworten, Excel-Download mit Namen der XML", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   await openTool(page)
   await expect(page.getByText("Bitte zuerst die S1000D-Issue der Datei wählen.")).toBeVisible()
@@ -43,12 +43,18 @@ test("Menüpunkt „Werkzeug“; Empfänger-REPLY: Zusammenfassung mit Antworten
   await expect(summary).toContainText("30 freigegeben · 2 zu überarbeiten · 0 ohne Antwort")
   const before = await readDataset(page)
   const downloadPromise = page.waitForEvent("download")
-  await page.getByRole("button", { name: "CSV herunterladen" }).click()
+  await page.getByRole("button", { name: "Excel-Datei herunterladen" }).click()
   const download = await downloadPromise
-  expect(download.suggestedFilename()).toBe("DML-PHUNGUN-C1234-C-2026-00002_001-00.csv")
-  const csv = readFileSync((await download.path())!, "utf8")
+  expect(download.suggestedFilename()).toBe("DML-PHUNGUN-C1234-C-2026-00002_001-00.xlsx")
+  const csv = checkOutXlsxToCsv(readFileSync((await download.path())!))
   expect(csv.startsWith("﻿dmentryType;modelic")).toBe(true)
+  // 37 Spalten wie beim Check-out (Refinement 2026-11-26 (3))
+  expect(csv.replace(/^\uFEFF/, "").split("\r\n")[0].split(";")).toHaveLength(37)
   expect(csv.split("\r\n").filter(Boolean)).toHaveLength(33)
+  // Prüfbericht bleibt CSV
+  const reportPromise = page.waitForEvent("download")
+  await page.getByRole("button", { name: "Prüfbericht herunterladen" }).click()
+  expect((await reportPromise).suggestedFilename()).toMatch(/\.csv$/)
   // nichts gespeichert
   expect(await readDataset(page)).toEqual(before)
 })
@@ -68,30 +74,30 @@ test("Bearbeiter ohne DMRL-Berechtigung kann das Werkzeug nutzen", async ({ page
   await expect(page.getByLabel("Zusammenfassung")).toBeVisible()
 })
 
-test("nicht wohlgeformte XML: Fehler mit Zeile, keine CSV", async ({ page }) => {
+test("nicht wohlgeformte XML: Fehler mit Zeile, keine Excel-Datei", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   await openTool(page)
   await checkFile(page, "TEST-3_Kein-gueltiges-XML.XML")
   await expect(page.getByText(/Die Datei ist kein gültiges XML \(Zeile \d+\)/).first()).toBeVisible()
-  await expect(page.getByText("Keine CSV — die Datei kann nicht gelesen werden.")).toBeVisible()
-  await expect(page.getByRole("button", { name: "CSV herunterladen" })).toHaveCount(0)
+  await expect(page.getByText("Keine Excel-Datei — die Datei kann nicht gelesen werden.")).toBeVisible()
+  await expect(page.getByRole("button", { name: "Excel-Datei herunterladen" })).toHaveCount(0)
 })
 
-test("Schemafehler: XSD-Befunde im Bericht, CSV mit Warnung", async ({ page }) => {
+test("Schemafehler: XSD-Befunde im Bericht, Excel-Datei mit Warnung", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   await openTool(page)
   await checkFile(page, "TEST-1_Pflichtelement-fehlt.XML")
   await expect(page.getByRole("cell", { name: "Schema (XSD)" }).first()).toBeVisible()
   await expect(page.getByText(/ein Check-in wird abgewiesen, bis sie behoben sind/)).toBeVisible()
-  await expect(page.getByRole("button", { name: "CSV herunterladen" })).toBeVisible()
+  await expect(page.getByRole("button", { name: "Excel-Datei herunterladen" })).toBeVisible()
 })
 
-test("falsche Issue gewählt: „Datei passt nicht zur gewählten Issue“, keine CSV", async ({ page }) => {
+test("falsche Issue gewählt: „Datei passt nicht zur gewählten Issue“, keine Excel-Datei", async ({ page }) => {
   await startAs(page, "Anna Bearbeitung")
   await openTool(page)
   await checkFile(page, REPLY, "4.2")
   await expect(page.getByText(/Datei passt nicht zur gewählten Issue/).first()).toBeVisible()
-  await expect(page.getByRole("button", { name: "CSV herunterladen" })).toHaveCount(0)
+  await expect(page.getByRole("button", { name: "Excel-Datei herunterladen" })).toHaveCount(0)
 })
 
 for (const width of [375, 768, 1440]) {
@@ -118,16 +124,16 @@ test("Neuladen: Ergebnis ist weg", async ({ page }) => {
 
 // ---------------------------------------------------------------- Refinement 2026-11-16
 
-test("Ausgabedaten fehlen (Demo-REPLY): keine Fehler, Hinweis „ergänzt“, CSV mit Standardwerten und Tagesdatum", async ({ page }) => {
+test("Ausgabedaten fehlen (Demo-REPLY): keine Fehler, Hinweis „ergänzt“, Excel-Datei mit Standardwerten und Tagesdatum", async ({ page }) => {
   await startAs(page, "Ben Bearbeiter")
   await openTool(page)
   await checkFile(page, REPLY)
   await expect(page.getByText("0 Fehler, 1 Hinweis")).toBeVisible()
-  await expect(page.getByText(/Bei 32 Einträgen fehlten Ausgabedaten — in der CSV ergänzt/).first()).toBeVisible()
+  await expect(page.getByText(/Bei 32 Einträgen fehlten Ausgabedaten — in der Excel-Datei ergänzt/).first()).toBeVisible()
   await expect(page.getByText(/ein Check-in wird abgewiesen/)).toHaveCount(0)
   const downloadPromise = page.waitForEvent("download")
-  await page.getByRole("button", { name: "CSV herunterladen" }).click()
-  const csv = readFileSync((await (await downloadPromise).path())!, "utf8")
+  await page.getByRole("button", { name: "Excel-Datei herunterladen" }).click()
+  const csv = checkOutXlsxToCsv(readFileSync((await (await downloadPromise).path())!))
   const now = new Date()
   const today = [String(now.getDate()).padStart(2, "0"), String(now.getMonth() + 1).padStart(2, "0"), String(now.getFullYear())].join(";")
   const rows = csv.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean).slice(1)

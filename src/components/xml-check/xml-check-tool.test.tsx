@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { DEMO_FILES } from "@/lib/data/demo-data"
 import { DEMO_XML_FILES } from "@/lib/data/demo-xml.generated"
 import type { XsdResult } from "@/lib/xsd/types"
+import { readToolXlsx, toolXlsxHeader } from "@/lib/workflows/xml-check-xlsx.testutil"
+import { ENTRY_FILE_COLUMNS } from "@/lib/data/schema"
+import { XLSX_MIME_TYPE } from "@/lib/files/xlsx-writer"
 import { XmlCheckTool } from "./xml-check-tool"
 
 const validate = vi.fn<() => Promise<XsdResult>>()
@@ -12,7 +15,11 @@ vi.mock("@/lib/xsd/client", async (importOriginal) => ({
   validateXml: () => validate(),
 }))
 const download = vi.fn()
-vi.mock("@/lib/files/download", () => ({ downloadTextFile: (...args: unknown[]) => download(...args) }))
+const downloadBytes = vi.fn()
+vi.mock("@/lib/files/download", () => ({
+  downloadTextFile: (...args: unknown[]) => download(...args),
+  downloadBytes: (...args: unknown[]) => downloadBytes(...args),
+}))
 
 const SEND_NAME = DEMO_FILES.send2
 const SEND = DEMO_XML_FILES[SEND_NAME]
@@ -39,6 +46,7 @@ describe("XML prüfen (PROJ-20)", () => {
     validate.mockReset()
     validate.mockResolvedValue({ state: "gueltig", issue: "2.3" })
     download.mockClear()
+    downloadBytes.mockClear()
     window.localStorage.clear()
   })
 
@@ -57,7 +65,7 @@ describe("XML prüfen (PROJ-20)", () => {
     expect(screen.getByRole("button", { name: "Prüfen" })).toBeDisabled()
   })
 
-  it("Demo-SEND: Zusammenfassung, Hinweis „Ausgabedaten ergänzt“, CSV ohne Warnung mit Namen der XML-Datei; nichts gespeichert", async () => {
+  it("Demo-SEND: Zusammenfassung, Hinweis „Ausgabedaten ergänzt“, Excel-Datei ohne Fehlerwarnung mit Namen der XML-Datei; nichts gespeichert", async () => {
     render(<XmlCheckTool />)
     chooseIssue("2.3")
     await chooseFile(SEND, SEND_NAME)
@@ -67,38 +75,44 @@ describe("XML prüfen (PROJ-20)", () => {
     expect(within(summary).getByText("PHUNGUN")).toBeInTheDocument()
     expect(within(summary).getByText("SEND")).toBeInTheDocument()
     expect(screen.getByText("0 Fehler, 1 Hinweis")).toBeInTheDocument()
-    expect(screen.getAllByText(/Einträgen fehlten Ausgabedaten — in der CSV ergänzt: Ausgabetyp aus dem Eintragstyp \(n → new, c → changed, d → deleted/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Einträgen fehlten Ausgabedaten — in der Excel-Datei ergänzt: Ausgabetyp aus dem Eintragstyp \(n → new, c → changed, d → deleted/).length).toBeGreaterThan(0)
     expect(screen.queryByText(/ein Check-in wird abgewiesen, bis sie behoben sind/)).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "CSV herunterladen" }))
-    const [fileName, csv] = download.mock.calls[0]
-    expect(fileName).toBe("DML-PHUNGUN-D0815-C-2026-00002_001-00.csv")
-    expect(csv).toMatch(/^﻿dmentryType;modelic/)
-    expect(csv).toMatch(/;001;new;\d{2};\d{2};\d{4};/)
-    expect(csv).toMatch(/^d;.*;001;deleted;\d{2};\d{2};\d{4};/m)
+    // Dauerhinweis zu den leeren Informationsfeldern (Refinement 2026-11-26 (3))
+    expect(screen.getByText(/Die Informationsfelder \(orig bis io-pm\) sind leer — beim Check-in werden gespeicherte Werte der DMRL dadurch geleert/)).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "CSV herunterladen" })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Excel-Datei herunterladen" }))
+    const [fileName, bytes, mimeType] = downloadBytes.mock.calls[0]
+    expect(fileName).toBe("DML-PHUNGUN-D0815-C-2026-00002_001-00.xlsx")
+    expect(mimeType).toBe(XLSX_MIME_TYPE)
+    expect(toolXlsxHeader(bytes)).toEqual([...ENTRY_FILE_COLUMNS])
+    const fields = readToolXlsx(bytes).candidates.map((c) => c.fields)
+    expect(fields.some((f) => f.issno === "001" && f.type === "new")).toBe(true)
+    expect(fields.some((f) => f.dmentryType === "d" && f.issno === "001" && f.type === "deleted")).toBe(true)
     fireEvent.click(screen.getByRole("button", { name: "Prüfbericht herunterladen" }))
-    expect(download.mock.calls[1][0]).toMatch(/^Pruefbericht-XML-DML-PHUNGUN-D0815-C-2026-00002_001-00-\d{4}-\d{2}-\d{2}\.csv$/)
+    expect(download.mock.calls[0][0]).toMatch(/^Pruefbericht-XML-DML-PHUNGUN-D0815-C-2026-00002_001-00-\d{4}-\d{2}-\d{2}\.csv$/)
     expect(window.localStorage.length).toBe(0)
   })
 
-  it("nicht wohlgeformt: Bericht, keine CSV", async () => {
+  it("nicht wohlgeformt: Bericht, keine Excel-Datei", async () => {
     validate.mockResolvedValue({ state: "nicht_wohlgeformt", issue: "2.3", findings: [{ line: 4, message: "Premature end of data" }] })
     render(<XmlCheckTool />)
     chooseIssue("2.3")
     await chooseFile("<dml>", "kaputt.xml")
     await check()
-    expect(await screen.findByText("Keine CSV — die Datei kann nicht gelesen werden.")).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "CSV herunterladen" })).not.toBeInTheDocument()
+    expect(await screen.findByText("Keine Excel-Datei — die Datei kann nicht gelesen werden.")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Excel-Datei herunterladen" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Die Informationsfelder \(orig bis io-pm\) sind leer/)).not.toBeInTheDocument()
     expect(screen.getByText(/Die Datei ist kein gültiges XML \(Zeile 4\)/)).toBeInTheDocument()
   })
 
-  it("XSD nicht verfügbar: deutlicher Hinweis, CSV mit Warnung", async () => {
+  it("XSD nicht verfügbar: deutlicher Hinweis, Excel-Datei mit Warnung", async () => {
     validate.mockResolvedValue({ state: "nicht_verfuegbar", reason: "programm_fehlt" })
     render(<XmlCheckTool />)
     chooseIssue("2.3")
     await chooseFile(SEND, SEND_NAME)
     await check()
     expect((await screen.findAllByRole("alert")).some((a) => a.textContent?.startsWith("XSD-Prüfung nicht durchgeführt"))).toBe(true)
-    expect(screen.getByRole("button", { name: "CSV herunterladen" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Excel-Datei herunterladen" })).toBeInTheDocument()
   })
 
   it("Server läuft nicht: Ursache mit Handlungsanweisung; „Erneut prüfen“ behält das Ergebnis und ersetzt es durch das neue", async () => {
