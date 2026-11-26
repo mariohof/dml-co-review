@@ -43,6 +43,8 @@ const REPLY = withIssueData(DEMO_XML_FILES[DEMO_FILES.reply1]).replace(
 )
 const SEND = withIssueData(DEMO_SEND)
 const BIKE_42 = readFileSync(join(process.cwd(), "docs/beispiele/issue-4.2/DML-S1000DBIKE-B6865-S-2016-00002_001-00.XML"), "utf8")
+const BIKE_50 = readFileSync(join(process.cwd(), "docs/beispiele/issue-5.0/DML-S1000DBIKE-B6865-S-2019-00001_001-00.XML"), "utf8")
+const BIKE_60 = readFileSync(join(process.cwd(), "docs/beispiele/issue-6.0/DML-S1000DBIKE-B6865-S-2024-00001_001-00.XML"), "utf8")
 const VALID: XsdResult = { state: "gueltig", issue: "2.3" }
 const NOW = new Date(2027, 2, 5, 10, 0)
 const xmlFile = (content: BlobPart, name = "partner.xml") => new File([content], name, { type: "application/xml" })
@@ -90,6 +92,25 @@ describe("checkXmlText — gültige Datei", () => {
     expect(result.candidates.length).toBeGreaterThan(50)
     expect(result.summary.modelic).toBe(MI_NOT_UNIFORM)
     expect(result.report.findings.filter((f) => f.group === "D").every((f) => f.message.includes("S1000DBIKE"))).toBe(true)
+  })
+
+  it("Issue 6.0 (Beispiel aus docs/beispiele, PROJ-22): 79 Einträge, XSD bestanden, Regelverstöße der Datei erkannt, kein Schema-Hinweis", () => {
+    const result = checkXmlText("bike60.XML", "6.0", BIKE_60, { state: "gueltig", issue: "6.0" })
+    expect(result.xsd).toBe("bestanden")
+    expect(result.candidates).toHaveLength(79)
+    expect(result.summary.modelic).toBe("S1000DBIKE")
+    const groups = new Set(result.report.findings.filter((f) => f.severity === "fehler").map((f) => f.group))
+    expect([...groups].sort()).toEqual(["B", "E", "I"])
+    expect(result.report.findings.filter((f) => f.group === "B" && f.severity === "fehler").every((f) => f.field === "security")).toBe(true)
+    expect(result.report.findings.some((f) => f.group === "XSD")).toBe(false)
+  })
+
+  it("Schema-Angabe 5.0 bei gewählter Issue 6.0: ein Hinweis, Prüfung und CSV laufen weiter (PROJ-22 E)", () => {
+    const result = checkXmlText("bike50.XML", "6.0", BIKE_50, { state: "gueltig", issue: "6.0" })
+    expect(result.report.findings.filter((f) => f.group === "XSD")).toEqual([
+      { severity: "hinweis", group: "XSD", message: "Die Schema-Angabe der Datei verweist auf S1000D Issue 5.0, gewählt ist Issue 6.0 — bitte Issue prüfen." },
+    ])
+    expect(result.csv).not.toBeNull()
   })
 
   it("SEND ohne Ausgabedaten: keine Pflichtfeld-Fehler, ein Hinweis „ergänzt“, CSV mit allen Einträgen (Refinement 2)", () => {

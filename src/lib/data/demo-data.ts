@@ -17,6 +17,8 @@ import {
  * - PHUNGUN (Issue 2.3): Austauschkette aus den drei Beispiel-XMLs, Einträge aus SEND 00002
  * - Geschütztes Transportfahrzeug (4.2) und Transporthubschrauber (5.0): je 10 fest hinterlegte,
  *   regelkonforme Einträge (PROJ-8), kein Archiv, kein Verlauf
+ * - Fahrrad BIKE60 (6.0, PROJ-22): 12 regelkonforme Einträge aus der Beispiel-DMRL
+ *   docs/beispiele/issue-6.0/DML-S1000DBIKE-B6865-S-2024-00001_001-00.XML, kein Archiv, kein Verlauf
  */
 
 export const DEMO_FILES = {
@@ -28,15 +30,18 @@ export const DEMO_FILES = {
 export const DEMO_IDS = {
   orgOriginator: "org-d0815",
   orgPartner: "org-c1234",
+  orgAsd: "org-b6865",
   admin: "user-admin",
   editorAnna: "user-anna-bearbeitung",
   editorBen: "user-ben-bearbeiter",
   sysPhungun: "sys-phungun",
   sysVehicle: "sys-gtfdemo",
   sysAircraft: "sys-thsdemo",
+  sysBike: "sys-bike60",
   dmrlPhungun: "dmrl-phungun",
   dmrlVehicle: "dmrl-gtfdemo",
   dmrlAircraft: "dmrl-thsdemo",
+  dmrlBike: "dmrl-bike60",
   archiveSend1: "archive-phungun-send-00001-2026",
   archiveReply1: "archive-phungun-reply-c1234-00001-2026",
   archiveSend2: "archive-phungun-send-00002-2026",
@@ -125,6 +130,60 @@ const AIRCRAFT_ROWS: DemoRow[] = [
   ["65", "2", "0", "00", "00", "520", "Heckrotorblatt", "Ausbau"],
   ["65", "2", "0", "00", "00", "720", "Heckrotorblatt", "Einbau"],
 ]
+
+/** BIKE60 (PROJ-22): DMC-Teile wie in der Beispiel-DMRL — chapnum, section, subsect, subject, discode, discodev, incode, incodev, itemloc */
+type BikeRow = [string, string, string, string, string, string, string, string, string, techname: string, infoname: string]
+
+// Ausschnitt mit je SNS genau einem Tech Name und je Infocode genau einem Info Name (PROJ-8 E/I)
+const BIKE_ROWS: BikeRow[] = [
+  ["D00", "0", "0", "00", "00", "AA", "001", "A", "A", "Bicycle", "Title page"],
+  ["D00", "0", "0", "00", "00", "AA", "002", "A", "A", "Bicycle", "List of effective data modules"],
+  ["D00", "0", "0", "00", "00", "AA", "042", "A", "A", "Bicycle", "Description of function"],
+  ["D00", "0", "0", "00", "00", "AA", "130", "A", "A", "Bicycle", "Riding a bicycle"],
+  ["D00", "0", "0", "01", "00", "AA", "520", "A", "A", "Fork", "Remove procedures"],
+  ["D00", "0", "0", "01", "00", "AA", "720", "A", "A", "Fork", "Install procedures"],
+  ["DA0", "1", "0", "20", "00", "AA", "215", "A", "A", "Tire", "Fill with air"],
+  ["DA0", "1", "0", "20", "00", "AA", "362", "B", "A", "Tire", "Check pressure"],
+  ["DA1", "0", "0", "00", "00", "AA", "041", "A", "A", "Brake system", "Description of how it is made"],
+  ["DA1", "2", "0", "00", "00", "AA", "520", "A", "A", "Front brake", "Remove procedures"],
+  ["DA1", "2", "0", "00", "00", "AA", "720", "A", "A", "Front brake", "Install procedures"],
+  ["DA4", "1", "0", "00", "00", "AA", "241", "A", "A", "Chain", "Oil"],
+]
+
+const BIKE_RPC_NAME = "AEROSPACE, SECURITY AND DEFENCE INDUSTRIES ASSOCIATION OF EUROPE"
+
+function buildBikeEntries(): DmrlEntry[] {
+  return BIKE_ROWS.map(([chapnum, section, subsect, subject, discode, discodev, incode, incodev, itemloc, techname, infoname], index) => ({
+    id: `entry-bike60-${String(index + 1).padStart(3, "0")}`,
+    dmrlId: DEMO_IDS.dmrlBike,
+    status: "in_bearbeitung",
+    fields: {
+      ...emptyEntryFields(),
+      dmentryType: "n",
+      modelic: "S1000DBIKE",
+      sdc: "AAA",
+      chapnum,
+      section,
+      subsect,
+      subject,
+      discode,
+      discodev,
+      incode,
+      incodev,
+      itemloc,
+      techname,
+      infoname,
+      language: "en",
+      country: "US",
+      security: "01",
+      rpc: "B6865",
+      rpcname: BIKE_RPC_NAME,
+      issno: "001",
+      type: "new",
+      ...FIXED_ENTRY_DATE,
+    },
+  }))
+}
 
 function demoFile(name: string): string {
   const content = DEMO_XML_FILES[name]
@@ -224,6 +283,7 @@ export function buildDemoDataset(): Dataset {
     organisations: [
       { id: DEMO_IDS.orgOriginator, code: "D0815", name: "Musterbehörde Technische Dokumentation" },
       partner,
+      { id: DEMO_IDS.orgAsd, code: "B6865", name: "Aerospace, Security and Defence Industries Association of Europe" },
     ],
     users: [
       { id: DEMO_IDS.admin, name: "Administrator", role: "administrator", active: true, isSystemAccount: true },
@@ -251,6 +311,13 @@ export function buildDemoDataset(): Dataset {
         description: "Fiktives Demo-Fluggerät (S1000D Issue 5.0)",
         s1000dIssue: "5.0",
         modelic: "THSDEMO",
+      },
+      {
+        id: DEMO_IDS.sysBike,
+        name: "Fahrrad BIKE60",
+        description: "Fiktives Demo-Fahrrad (S1000D Issue 6.0)",
+        s1000dIssue: "6.0",
+        modelic: "S1000DBIKE",
       },
     ],
     dmrls: [
@@ -294,11 +361,25 @@ export function buildDemoDataset(): Dataset {
         release: null,
         lock: null,
       },
+      {
+        id: DEMO_IDS.dmrlBike,
+        systemId: DEMO_IDS.sysBike,
+        originatorOrganisationId: DEMO_IDS.orgAsd,
+        dmlType: "c",
+        security: "01",
+        firstSendVersionIndex: `00001-${new Date().getFullYear()}`,
+        editorUserIds: [DEMO_IDS.editorAnna],
+        status: "in_bearbeitung",
+        partnerRemarks: "",
+        release: null,
+        lock: null,
+      },
     ],
     entries: [
       ...phungun.entries,
       ...buildFixedEntries(DEMO_IDS.dmrlVehicle, "gtfdemo", "GTFDEMO", VEHICLE_ROWS),
       ...buildFixedEntries(DEMO_IDS.dmrlAircraft, "thsdemo", "THSDEMO", AIRCRAFT_ROWS),
+      ...buildBikeEntries(),
     ],
     archive: phungun.archive,
     releases: [],

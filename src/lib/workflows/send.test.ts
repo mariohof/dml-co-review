@@ -76,7 +76,9 @@ describe("Voraussetzungen", () => {
   })
 
   it("Empfänger ohne Originator; „SEND zurückziehen\" nur Administrator bei Status gesendet", () => {
-    expect(sendPartners(demo, dmrl(demo, DEMO_IDS.dmrlVehicle)).map((o) => o.code)).toEqual(["C1234"])
+    // B6865 (PROJ-22) ist ebenfalls Empfänger für Fremd-DMRLs; für BIKE60 ist B6865 Originator
+    expect(sendPartners(demo, dmrl(demo, DEMO_IDS.dmrlVehicle)).map((o) => o.code)).toEqual(["B6865", "C1234"])
+    expect(sendPartners(demo, dmrl(demo, DEMO_IDS.dmrlBike)).map((o) => o.code)).toEqual(["C1234", "D0815"])
     expect(lastSendPartner(demo, dmrl(demo, DEMO_IDS.dmrlPhungun))?.code).toBe("C1234")
     expect(lastSendPartner(demo, dmrl(demo, DEMO_IDS.dmrlVehicle))).toBeNull()
     expect(withdrawSendBlocked(demo, dmrl(demo, DEMO_IDS.dmrlPhungun), user(demo, DEMO_IDS.admin))).toBeNull()

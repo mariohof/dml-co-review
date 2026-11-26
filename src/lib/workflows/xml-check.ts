@@ -2,6 +2,7 @@ import { DmlParseError, readDml, type ParsedDml } from "@/lib/data/dml-reader"
 import type { DmlCode, S1000dIssue } from "@/lib/data/schema"
 import { COLUMNS_WITHOUT_INFO_FIELDS, writeEntriesCsv } from "@/lib/files/csv-writer"
 import { checkFormats, checkInfocodeInfoname, checkMandatory, checkSnsTechname, checkUniqueDmc, OPTIONAL_IN_REPLY } from "@/lib/rules/check/entry-rules"
+import { checkSchemaLocation } from "@/lib/rules/check/schema-location"
 import type { Candidate, Finding, Report } from "@/lib/rules/check/types"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { deriveIssueType } from "@/lib/dmrl/issue-type"
@@ -184,6 +185,8 @@ export function checkXmlText(
   })
 
   if (xsd === "nicht_wohlgeformt") return unreadable(xsdFindings)
+  // Hinweis bei abweichender Schema-Angabe (PROJ-22 E) — die XSDs 5.0/6.0 erkennen die Verwechslung nicht
+  xsdFindings.push(...checkSchemaLocation(text, issue, "auswahl"))
 
   let parsed: ParsedDml
   try {

@@ -37,7 +37,7 @@ describe("Organisationsverwaltung", () => {
   it("zeigt die Demo-Organisationen sortiert nach CAGE-Code, als benutzt, mit gesperrtem Löschen", async () => {
     renderPage()
     const rows = (await screen.findAllByRole("row")).slice(1)
-    expect(rows.map((row) => within(row).getAllByRole("cell")[0].textContent)).toEqual(["C1234", "D0815"])
+    expect(rows.map((row) => within(row).getAllByRole("cell")[0].textContent)).toEqual(["B6865", "C1234", "D0815"])
     expect(screen.getAllByText("im Workflow benutzt")).toHaveLength(2)
     expect(screen.getByLabelText("C1234 löschen")).toBeDisabled()
     expect(
@@ -83,7 +83,7 @@ describe("Organisationsverwaltung", () => {
     fireEvent.change(within(dialog).getByLabelText("CAGE-Code"), { target: { value: "c1234" } })
     fireEvent.click(within(dialog).getByRole("button", { name: "Speichern" }))
     expect(await within(dialog).findByText("CAGE-Code bereits vergeben.")).toBeInTheDocument()
-    expect(storedOrgs()).toHaveLength(2)
+    expect(storedOrgs()).toHaveLength(3)
   })
 
   it("zeigt „Keine Organisationen gefunden\", wenn die Suche nichts findet", async () => {

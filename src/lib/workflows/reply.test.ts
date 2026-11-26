@@ -236,6 +236,69 @@ describe("Vollständiger Zyklus 4.2: SEND → REPLY", () => {
   })
 })
 
+/** PROJ-22: Issue 6.0 mit Demo-System BIKE60; Hinweis bei abweichender Schema-Angabe */
+describe("Vollständiger Zyklus 6.0: SEND → REPLY (BIKE60)", () => {
+  async function bikeCycle() {
+    const { executeSend } = await import("./send")
+    const { writeDml } = await import("@/lib/data/dml-writer")
+    const { readDml } = await import("@/lib/data/dml-reader")
+    const demo = buildDemoDataset()
+    const prepared = prepareSend(demo, dmrl(demo, DEMO_IDS.dmrlBike), "org-c1234", "", AT)
+    const sent = executeSend(demo, DEMO_IDS.dmrlBike, user(demo, DEMO_IDS.editorAnna), prepared)
+    if (!sent.ok) throw new Error(sent.message)
+    const parsed = readDml(prepared.xml, "6.0")
+    const replyXml = writeDml(
+      {
+        header: { ...parsed.header, direction: "reply", dmlc: { ...parsed.header.dmlc, sendid: "C1234", seqnum: "00001" }, dmlref: { dmlc: prepared.dmlc, issno: null }, remarks: "" },
+        entries: parsed.entries.map((f, i) => ({ ...f, answer: i === 0 ? "n" : "y", answer_comment: i === 0 ? "Titel prüfen" : "" })),
+      },
+      "6.0",
+      { answers: true }
+    )
+    return { prepared, data: sent.data, replyXml }
+  }
+
+  it("SEND trägt Schema-Angabe und BREX von Issue 6.0; die Antwort wird ohne Befund übernommen", async () => {
+    const { prepared, data, replyXml } = await bikeCycle()
+    expect(prepared.xml).toContain('xsi:noNamespaceSchemaLocation="http://www.s1000d.org/S1000D_6/xml_schema_flat/dml.xsd"')
+    expect(prepared.xml).toMatch(/<dmCode modelIdentCode="S1000D" systemDiffCode="H" systemCode="04"/)
+    expect(prepared.fileName).toBe(`DML-S1000DBIKE-B6865-C-${AT.slice(0, 4)}-00001_001-00.XML`)
+    const result = checkReplyFile(data, dmrl(data, DEMO_IDS.dmrlBike), replyXml)
+    expect(result.report.findings).toEqual([])
+    const done = executeReplyImport(data, DEMO_IDS.dmrlBike, user(data, DEMO_IDS.editorAnna), {
+      fileName: "DML-S1000DBIKE-C1234-C-2026-00001_001-00.XML",
+      text: replyXml,
+      result,
+      sendArchiveId: data.archive.at(-1)!.id,
+    })
+    if (!done.ok) throw new Error(done.message)
+    expect(done.data.entries.filter((e) => e.dmrlId === DEMO_IDS.dmrlBike && e.status === "zu_ueberarbeiten")).toHaveLength(1)
+    expect(done.data.entries.filter((e) => e.dmrlId === DEMO_IDS.dmrlBike && e.status === "freigegeben")).toHaveLength(11)
+  })
+
+  it("REPLY mit Schema-Angabe 5.0 bei einem 6.0-System: genau ein Hinweis, Import trotzdem möglich", async () => {
+    const { data, replyXml } = await bikeCycle()
+    const as50 = replyXml.replace("S1000D_6/xml_schema_flat", "S1000D_5-0/xml_schema_flat")
+    const result = checkReplyFile(data, dmrl(data, DEMO_IDS.dmrlBike), as50)
+    expect(result.report.findings).toEqual([
+      {
+        severity: "hinweis",
+        group: "XSD",
+        message:
+          "Die Schema-Angabe der Datei verweist auf S1000D Issue 5.0, das System verwendet Issue 6.0 — bitte prüfen, ob die Datei in der richtigen Version erstellt wurde.",
+      },
+    ])
+    expect(errorCount(result.report)).toBe(0)
+    const done = executeReplyImport(data, DEMO_IDS.dmrlBike, user(data, DEMO_IDS.editorAnna), {
+      fileName: "reply.XML",
+      text: as50,
+      result,
+      sendArchiveId: data.archive.at(-1)!.id,
+    })
+    expect(done.ok).toBe(true)
+  })
+})
+
 /** answer_timestamp beim REPLY (PROJ-13, Refinement 2026-11-21) */
 describe("answer_timestamp", () => {
   it("alle 32 geprüften Einträge (30 y, 2 n) erhalten den Zeitpunkt der Übernahme", () => {

@@ -55,6 +55,18 @@ describe.skipIf(!hasXmllint)("XSD-Prüfung mit xmllint", () => {
     })
   })
 
+  it("S1000DBIKE-Beispiel 6.0 ist gültig gegen 6.0 (offline mit lokaler xml.xsd, PROJ-22)", async () => {
+    expect(await validateWithXmllint(file("docs/beispiele/issue-6.0/DML-S1000DBIKE-B6865-S-2024-00001_001-00.XML"), "6.0")).toEqual({
+      state: "gueltig",
+      issue: "6.0",
+    })
+  })
+
+  it("5.0 und 6.0 akzeptieren sich gegenseitig — Grund für den Hinweis über die Schema-Angabe (PROJ-22 E)", async () => {
+    expect(await validateWithXmllint(file("docs/beispiele/issue-5.0/DML-S1000DBIKE-B6865-S-2019-00001_001-00.XML"), "6.0")).toMatchObject({ state: "gueltig" })
+    expect(await validateWithXmllint(file("docs/beispiele/issue-6.0/DML-S1000DBIKE-B6865-S-2024-00001_001-00.XML"), "5.0")).toMatchObject({ state: "gueltig" })
+  })
+
   it("Testdatei 1 (Pflichtelement fehlt): Schemafehler mit Zeile und Originalmeldung", async () => {
     const result = await validateWithXmllint(demo("TEST-1_Pflichtelement-fehlt.XML"), "2.3")
     expect(result).toMatchObject({ state: "schemafehler", issue: "2.3" })

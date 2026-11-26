@@ -7,8 +7,8 @@ test.describe("PROJ-1 Datenhaltung + Demo-Daten", () => {
     await freshStart(page)
     const data = await readDataset(page)
     expect(data.formatVersion).toBe(2)
-    expect(data.systems.map((s: { s1000dIssue: string }) => s.s1000dIssue)).toEqual(["2.3", "4.2", "5.0"])
-    expect(data.organisations.map((o: { code: string }) => o.code)).toEqual(["D0815", "C1234"])
+    expect(data.systems.map((s: { s1000dIssue: string }) => s.s1000dIssue)).toEqual(["2.3", "4.2", "5.0", "6.0"])
+    expect(data.organisations.map((o: { code: string }) => o.code)).toEqual(["D0815", "C1234", "B6865"])
     expect(data.users.map((u: { name: string }) => u.name)).toEqual(["Administrator", "Anna Bearbeitung", "Ben Bearbeiter"])
   })
 
@@ -24,6 +24,13 @@ test.describe("PROJ-1 Datenhaltung + Demo-Daten", () => {
       "reply 00001-2026",
       "send 00002-2026",
     ])
+  })
+
+  test("Fahrrad BIKE60 (6.0, PROJ-22) hat 12 Einträge in Bearbeitung", async ({ page }) => {
+    await startAs(page, "Administrator")
+    const row = bodyRows(page).filter({ hasText: "Fahrrad BIKE60" })
+    await expect(row).toContainText("12")
+    await expect(row).toContainText("In Bearbeitung")
   })
 
   test("Fahrzeug (4.2) und Fluggerät (5.0) haben je 10 Einträge in Bearbeitung", async ({ page }) => {
@@ -59,12 +66,12 @@ test.describe("PROJ-1 Datenhaltung + Demo-Daten", () => {
     await page.getByRole("button", { name: "Demo-Daten zurücksetzen" }).click()
     await expect(page.getByRole("alertdialog")).toContainText("Alle Änderungen gehen verloren")
     await page.getByRole("button", { name: "Abbrechen" }).click()
-    expect((await readDataset(page)).organisations).toHaveLength(3)
+    expect((await readDataset(page)).organisations).toHaveLength(4)
 
     await page.getByRole("button", { name: "Demo-Daten zurücksetzen" }).click()
     await page.getByRole("button", { name: "Zurücksetzen" }).click()
     await expect(page.getByText("Demo-Daten wurden zurückgesetzt.")).toBeVisible()
-    expect((await readDataset(page)).organisations).toHaveLength(2)
+    expect((await readDataset(page)).organisations).toHaveLength(3)
     // Anmeldung bleibt erhalten
     await expect(page.getByRole("button", { name: /Benutzer: Administrator/ })).toBeVisible()
   })
@@ -83,7 +90,7 @@ test.describe("PROJ-1 Datenhaltung + Demo-Daten", () => {
     await expect(page.getByText("Daten können nicht geladen werden")).toBeVisible()
     await page.getByRole("button", { name: "Demo-Daten neu laden" }).click()
     await loginAs(page, "Administrator")
-    await expect(bodyRows(page)).toHaveCount(3)
+    await expect(bodyRows(page)).toHaveCount(4)
   })
 
   test("Daten einer älteren Prototyp-Version werden als inkompatibel erkannt", async ({ page }) => {

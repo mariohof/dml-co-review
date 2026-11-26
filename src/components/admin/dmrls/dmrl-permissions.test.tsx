@@ -36,7 +36,7 @@ describe("DMRL-Berechtigungen", () => {
     renderPage()
     const rows = (await screen.findAllByRole("row")).slice(1)
     const editorsCell = (row: HTMLElement) => within(row).getAllByRole("cell")[7].textContent
-    expect(rows.map(editorsCell)).toEqual(["Anna BearbeitungBen Bearbeiter", "Anna Bearbeitung", "Ben Bearbeiter"])
+    expect(rows.map(editorsCell)).toEqual(["Anna Bearbeitung", "Anna BearbeitungBen Bearbeiter", "Anna Bearbeitung", "Ben Bearbeiter"])
   })
 
   it("vergibt eine Berechtigung über die Mehrfachauswahl", async () => {

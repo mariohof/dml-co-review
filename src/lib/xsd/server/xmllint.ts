@@ -20,7 +20,7 @@ const MAX_OUTPUT_BYTES = 4 * 1024 * 1024
 export interface XmllintOptions {
   /** Programmpfad; Standard: Umgebungsvariable XMLLINT_PATH oder „xmllint" im Systempfad */
   xmllintPath?: string
-  /** Ordner mit issue-2.3 / issue-4.2 / issue-5.0 */
+  /** Ordner mit issue-2.3 / issue-4.2 / issue-5.0 / issue-6.0 */
   schemaRoot?: string
   timeoutMs?: number
 }

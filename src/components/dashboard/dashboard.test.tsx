@@ -37,12 +37,12 @@ const tile = (label: string) => within(screen.getByRole("group", { name: "Kennza
 const tableRows = () => within(screen.getByRole("table")).getAllByRole("row").slice(1)
 
 describe("Dashboard", () => {
-  it("Administrator: Kacheln 3 / 1 / 20 / 0, Tabelle mit allen Spalten und „Auswahl\"", async () => {
+  it("Administrator: Kacheln 4 / 1 / 32 / 0, Tabelle mit allen Spalten und „Auswahl\"", async () => {
     renderDashboard(DEMO_IDS.admin)
-    expect(await screen.findByText("3 sichtbare Bestände")).toBeInTheDocument()
-    expect(tile("Bestände")).toHaveTextContent("3")
+    expect(await screen.findByText("4 sichtbare Bestände")).toBeInTheDocument()
+    expect(tile("Bestände")).toHaveTextContent("4")
     expect(tile("Offene SEND")).toHaveTextContent("1")
-    expect(tile("Offene Änderungen")).toHaveTextContent("20")
+    expect(tile("Offene Änderungen")).toHaveTextContent("32")
     expect(tile("Freigegeben")).toHaveTextContent("0")
     const phungun = tableRows().find((row) => within(row).queryByText("PHUNGUN"))!
     expect(phungun).toHaveTextContent("PHUNGUN–D0815–C")
@@ -85,7 +85,7 @@ describe("Dashboard", () => {
     const first = data.entries.find((e) => e.dmrlId === DEMO_IDS.dmrlPhungun)!
     data.entries = data.entries.map((e) => (e.id === first.id ? { ...e, status: "zu_ueberarbeiten" } : e))
     const view = renderDashboard(DEMO_IDS.editorAnna, "", data)
-    expect(await screen.findByText("2 sichtbare Bestände")).toBeInTheDocument()
+    expect(await screen.findByText("3 sichtbare Bestände")).toBeInTheDocument()
     const tasks = screen.getByRole("list", { name: "Meine Aufgaben" })
     expect(within(tasks).getByRole("link", { name: "1 Eintrag zu überarbeiten: PHUNGUN" })).toHaveAttribute("href", `/dmrl/${DEMO_IDS.dmrlPhungun}`)
     expect(screen.getByText("1 zu überarbeiten")).toBeInTheDocument()

@@ -2,8 +2,8 @@ import { DmlParseError, type ParsedDml } from "./dml-parser-2-3"
 import { emptyEntryFields, type DmlCode, type DmlHeader, type DmlRef, type EntryFields } from "./schema"
 
 /**
- * Liest eine S1000D-DML der Issues 4.2 und 5.0 (für unsere Felder identisch) mit dem Browser-DOMParser.
- * Mapping laut docs/dmrl-mapping.md, Abschnitt „Mapping Issue 4.2 / 5.0".
+ * Liest eine S1000D-DML der Issues 4.2, 5.0 und 6.0 (für unsere Felder identisch) mit dem Browser-DOMParser.
+ * Mapping laut docs/dmrl-mapping.md, Abschnitt „Mapping Issue 4.2 / 5.0 / 6.0".
  */
 
 function child(parent: Element | null | undefined, name: string): Element | null {

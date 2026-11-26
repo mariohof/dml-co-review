@@ -9,9 +9,9 @@ const kpi = (page: import("@playwright/test").Page, label: string) =>
 
 test("Kennzahlen, Kachel-Filter, Issue-Filter, Suche, Auswahl, Benutzerwechsel", async ({ page }) => {
   await startAs(page, "Administrator")
-  await expect(kpi(page, "Bestände")).toContainText("3")
+  await expect(kpi(page, "Bestände")).toContainText("4")
   await expect(kpi(page, "Offene SEND")).toContainText("1")
-  await expect(kpi(page, "Offene Änderungen")).toContainText("20")
+  await expect(kpi(page, "Offene Änderungen")).toContainText("32")
   await expect(kpi(page, "Freigegeben")).toContainText("0")
 
   await kpi(page, "Offene SEND").click()
@@ -19,7 +19,7 @@ test("Kennzahlen, Kachel-Filter, Issue-Filter, Suche, Auswahl, Benutzerwechsel",
   await expect(page.getByText("1 sichtbare Bestände")).toBeVisible()
   await expect(kpi(page, "Offene SEND")).toHaveAttribute("aria-pressed", "true")
   await kpi(page, "Offene SEND").click()
-  await expect(page.getByText("3 sichtbare Bestände")).toBeVisible()
+  await expect(page.getByText("4 sichtbare Bestände")).toBeVisible()
 
   await page.getByRole("combobox", { name: "Filter S1000D-Issue" }).click()
   await page.getByRole("option", { name: "Issue 4.2" }).click()

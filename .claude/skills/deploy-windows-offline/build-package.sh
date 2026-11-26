@@ -12,7 +12,7 @@
 #   2. node_modules für Windows x64: aus dem letzten Offline-ZIP mit gleicher Lock-Datei übernehmen,
 #      sonst `npm ci --os=win32 --cpu=x64` + .bin-Symlinks in Windows-Shims (.cmd/.ps1) umwandeln
 #   3. macOS-Binärdateien vorübergehend ergänzen, mit dem Startskript bauen + Probestart (Port 8899)
-#   4. Rauchtest (Seiten, XSD-Prüfung 4.2/5.0), Server beenden
+#   4. Rauchtest (Seiten, XSD-Prüfung 4.2/5.0/6.0), Server beenden
 #   5. macOS-Binärdateien, Protokoll, Build-Cache entfernen; Start-Vermerk prüfen (nichts zu installieren/bauen)
 #   6. ZIP mit fortlaufender Versionsnummer anlegen
 set -euo pipefail
@@ -138,7 +138,7 @@ for url in / /xml-pruefung; do
   code="$(curl -s --noproxy '*' -o /dev/null -w '%{http_code}' "http://localhost:$PORT$url")"
   echo "GET $url → $code"; [ "$code" = "200" ] || fail "GET $url liefert $code"
 done
-for issue in 4.2 5.0; do
+for issue in 4.2 5.0 6.0; do
   file="$(ls "$REPO/docs/beispiele/issue-$issue/"*.XML | head -1)"
   answer="$(curl -s --noproxy '*' -X POST -H "Origin: http://localhost:$PORT" --data-binary @"$file" "http://localhost:$PORT/api/xsd-pruefung?issue=$issue")"
   echo "XSD $issue → $answer"

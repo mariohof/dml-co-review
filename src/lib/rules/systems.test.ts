@@ -27,7 +27,7 @@ describe("Prüfung", () => {
     [{ name: "phungun" }, "Bezeichnung bereits vergeben"],
     [{ name: "x".repeat(121) }, "höchstens 120"],
     [{ s1000dIssue: "" }, "S1000D-Issue wählen"],
-    [{ s1000dIssue: "6.0" }, "S1000D-Issue wählen"],
+    [{ s1000dIssue: "7.0" }, "S1000D-Issue wählen"],
     [{ modelic: "" }, "Model Ident Code eingeben"],
     [{ modelic: "A" }, "2–14"],
     [{ modelic: "A".repeat(15) }, "2–14"],

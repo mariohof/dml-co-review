@@ -38,8 +38,8 @@ describe("DMRL-Verwaltung", () => {
   it("listet die DMRLs sortiert nach System mit Kopfangaben und Status", async () => {
     renderPage()
     const rows = (await screen.findAllByRole("row")).slice(1)
-    expect(rows.map((row) => within(row).getAllByRole("cell")[1].textContent)).toEqual(["GTFDEMO", "PHUNGUN", "THSDEMO"])
-    const phungun = rows[1]
+    expect(rows.map((row) => within(row).getAllByRole("cell")[1].textContent)).toEqual(["S1000DBIKE", "GTFDEMO", "PHUNGUN", "THSDEMO"])
+    const phungun = rows[2]
     expect(within(phungun).getByText("D0815")).toBeInTheDocument()
     expect(within(phungun).getByText("Gesendet")).toBeInTheDocument()
     expect(within(phungun).getByText("32 Einträge")).toBeInTheDocument()

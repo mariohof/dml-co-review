@@ -65,12 +65,12 @@ Quelle: `261111_DMRLMapping.md` (Product Owner). XPaths entsprechen der Elements
 
 Dateinamensschema: `DML-{modelic}-{sendid}-{dmltype}-{diyear}-{seqnum}_{issno}-{inwork}.XML`
 
-## Mapping Issue 4.2 / 5.0
+## Mapping Issue 4.2 / 5.0 / 6.0
 
-Abgeleitet aus `schemas/s1000d/issue-4.2/dml.xsd` und `issue-5.0/dml.xsd` (für diese Felder identisch) und der Beispieldatei `docs/beispiele/issue-4.2/DML-S1000DBIKE-B6865-S-2016-00002_001-00.XML`. Präfix `E` = `/dml/dmlContent/dmlEntry`, `R` = `E/dmRef/dmRefIdent`.
+Abgeleitet aus `schemas/s1000d/issue-4.2/dml.xsd`, `issue-5.0/dml.xsd` und `issue-6.0/dml.xsd` (für diese Felder identisch) und den Beispieldateien unter `docs/beispiele/issue-4.2/`, `issue-5.0/` und `issue-6.0/`. 6.0 bringt nur zusätzliche optionale Elemente (`extEntityIdent`, `referenceUsage`), die die Anwendung weder liest noch schreibt (PROJ-22). Präfix `E` = `/dml/dmlContent/dmlEntry`, `R` = `E/dmRef/dmRefIdent`.
 
 ### Datenmoduleintrag
-| CSV-Feld | Issue 2.3 | Issue 4.2 / 5.0 |
+| CSV-Feld | Issue 2.3 | Issue 4.2 / 5.0 / 6.0 |
 | --- | --- | --- |
 | dmentryType | dmentry/@type | E/@dmlEntryType |
 | modelic | …/avee/modelic | R/dmCode/@modelIdentCode |
@@ -99,7 +99,7 @@ Abgeleitet aus `schemas/s1000d/issue-4.2/dml.xsd` und `issue-5.0/dml.xsd` (für 
 | remarks | dmentry/remarks | E/remarks/simplePara |
 
 ### Kopf
-| Feld | Issue 2.3 | Issue 4.2 / 5.0 |
+| Feld | Issue 2.3 | Issue 4.2 / 5.0 / 6.0 |
 | --- | --- | --- |
 | direction | /dml/@direction | /dml/@listDirection |
 | dmlc | /dml/dmlc/(modelic, sendid, dmltype/@type, diyear, seqnum) | …/dmlIdent/dmlCode/@modelIdentCode, @senderIdent, @dmlType, @yearOfDataIssue, @seqNumber |
@@ -107,23 +107,27 @@ Abgeleitet aus `schemas/s1000d/issue-4.2/dml.xsd` und `issue-5.0/dml.xsd` (für 
 | issdate | /dml/issdate | …/dmlAddressItems/issueDate |
 | security | /dml/security/@class | …/dmlStatus/security/@securityClassification |
 | dmlref | /dml/dmlref/dmlc (+ issno) | …/dmlStatus/dmlRef/dmlRefIdent/dmlCode (+ issueInfo) |
-| brexDmRef | — | …/dmlStatus/brexDmRef/dmRef (Pflicht) — Standard-BREX: 4.2 `S1000D-F-04-10-0301-00A-022A-D`, 5.0 `S1000D-G-04-10-0301-00A-022A-D` |
+| brexDmRef | — | …/dmlStatus/brexDmRef/dmRef (Pflicht) — Standard-BREX: 4.2 `S1000D-F-04-10-0301-00A-022A-D`, 5.0 `S1000D-G-04-10-0301-00A-022A-D`, 6.0 `S1000D-H-04-10-0301-00A-022A-D` |
 | remarks | /dml/remarks | …/dmlStatus/remarks/simplePara |
 
 (`…` = `/dml/identAndStatusSection/dmlAddress` bzw. `/dml/identAndStatusSection`)
 
+Schema-Angabe beim Schreiben (`/dml/@xsi:noNamespaceSchemaLocation`): `http://www.s1000d.org/S1000D_2-3/…`, `…/S1000D_4-2/…`, `…/S1000D_5-0/…` bzw. `…/S1000D_6/xml_schema_flat/dml.xsd`.
+
+Beim Lesen (REPLY-Import, XML-Prüfung) wird die Schema-Angabe über die Versionskennung im Pfad einer Issue zugeordnet (`S1000D_2-3`/`S1000D2.3`, `S1000D_4-2`, `S1000D_5-0`, `S1000D_6`/`S1000D_6-0`, Groß-/Kleinschreibung egal). Weicht sie von der gewählten Issue ab, gibt es einen **Hinweis** (Gruppe XSD), weil sich die Schemas 5.0 und 6.0 gegenseitig akzeptieren. Ohne Angabe oder bei unbekannter Kennung gibt es keinen Hinweis (PROJ-22).
+
 ### Wertebereiche laut Schema
-- `securityClassification`: 4.2/5.0 `01`–`20`, 2.3 `01`–`24` → Anwendung verwendet `01`–`20`
-- `issueNumber`: 4.2 `\d{3}`, 5.0 `\d{3,5}`; `inWork` `\d{2}`
+- `securityClassification`: 4.2/5.0/6.0 `01`–`20`, 2.3 `01`–`24` → Anwendung verwendet `01`–`20`
+- `issueNumber`: 4.2 `\d{3}`, 5.0/6.0 `\d{3,5}`; `inWork` `\d{2}`
 - `languageIsoCode` `[a-z]{2,3}`, `countryIsoCode` `[A-Z]{2}`
 - `issueType`: new, changed, deleted, revised, status, rinstate-changed, rinstate-revised, rinstate-status
 - `dmlEntryType`: c, d, n; `dmlType`: c, p, s; `answerToEntry`: y, n
 - Jede DML braucht mindestens einen Eintrag (alle Issues)
 
 ## XSD-Schemas
-- Ablage: `schemas/s1000d/issue-{2.3,4.2,5.0}/` (`dml.xsd` + eingebundene Schemas)
-- Issue 5.0: Import von `xml.xsd` auf lokale Kopie umgestellt (statt `http://www.w3.org/2001/xml.xsd`), damit `xmllint --nonet` offline validiert
-- Alle drei Schemas kompilieren mit `xmllint --nonet`; die PHUNGUN-Beispieldateien sind gegen Issue 2.3 gültig, `docs/beispiele/issue-4.2/DML-S1000DBIKE-B6865-S-2016-00002_001-00.XML` gegen 4.2 und `docs/beispiele/issue-5.0/DML-S1000DBIKE-B6865-S-2019-00001_001-00.XML` gegen 5.0
+- Ablage: `schemas/s1000d/issue-{2.3,4.2,5.0,6.0}/` (`dml.xsd` + eingebundene Schemas)
+- Issue 5.0 und 6.0: Import von `xml.xsd` auf lokale Kopie umgestellt (statt `http://www.w3.org/2001/xml.xsd`), damit `xmllint --nonet` offline validiert (6.0: PROJ-22, 2026-11-26)
+- Alle vier Schemas kompilieren mit `xmllint --nonet`; die PHUNGUN-Beispieldateien sind gegen Issue 2.3 gültig, `docs/beispiele/issue-4.2/DML-S1000DBIKE-B6865-S-2016-00002_001-00.XML` gegen 4.2 `docs/beispiele/issue-5.0/DML-S1000DBIKE-B6865-S-2019-00001_001-00.XML` gegen 5.0 und `docs/beispiele/issue-6.0/DML-S1000DBIKE-B6865-S-2024-00001_001-00.XML` gegen 6.0
 
 ## Offen
 - Ausgabedaten der Einträge (`issno`, DM-Ausgabetyp, Datum) im SEND-XML: derzeit enthalten (PROJ-12), ggf. später anpassen (NSG sieht sie nicht vor)

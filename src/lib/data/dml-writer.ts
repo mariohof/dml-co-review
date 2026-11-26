@@ -2,7 +2,7 @@ import type { DmlCode, DmlHeader, DmlRef, EntryFields, S1000dIssue } from "./sch
 
 /**
  * DML-Schreiber je Issue (PROJ-12 Tech Design C) — Gegenstück zum DML-Leser (PROJ-8).
- * Feste Struktur nach docs/dmrl-mapping.md und den Schemas dml.xsd 2.3 / 4.2 / 5.0; keine XML-Bibliothek.
+ * Feste Struktur nach docs/dmrl-mapping.md und den Schemas dml.xsd 2.3 / 4.2 / 5.0 / 6.0; keine XML-Bibliothek.
  * Genutzt von SEND (PROJ-12), Freigabestand (PROJ-14) und Export (PROJ-18).
  */
 
@@ -16,13 +16,14 @@ export interface DmlWriteOptions {
   answers: boolean
 }
 
-/** Standard-BREX je Issue (Model Ident Code S1000D) */
-const BREX: Record<Exclude<S1000dIssue, "2.3">, string> = { "4.2": "F", "5.0": "G" }
+/** Standard-BREX je Issue (Model Ident Code S1000D); 6.0 = H (PROJ-22, vom Product Owner bestätigt) */
+const BREX: Record<Exclude<S1000dIssue, "2.3">, string> = { "4.2": "F", "5.0": "G", "6.0": "H" }
 
 const SCHEMA_LOCATION: Record<S1000dIssue, string> = {
   "2.3": "http://www.s1000d.org/S1000D_2-3/xml_schema_flat/dml.xsd",
   "4.2": "http://www.s1000d.org/S1000D_4-2/xml_schema_flat/dml.xsd",
   "5.0": "http://www.s1000d.org/S1000D_5-0/xml_schema_flat/dml.xsd",
+  "6.0": "http://www.s1000d.org/S1000D_6/xml_schema_flat/dml.xsd",
 }
 
 /** Text und Attributwerte maskieren; Steuerzeichen, die XML 1.0 nicht erlaubt, entfernen */
@@ -157,7 +158,7 @@ function write23(doc: DmlDocument, options: DmlWriteOptions): string {
   return out.toString()
 }
 
-// ---------------------------------------------------------------- Issue 4.2 / 5.0
+// ---------------------------------------------------------------- Issue 4.2 / 5.0 / 6.0
 
 function dmlCode4x(out: XmlOut, dmlc: DmlCode) {
   out.empty("dmlCode", {
@@ -178,7 +179,7 @@ function remarks4x(out: XmlOut, value: string) {
 }
 
 function brex4x(out: XmlOut, issue: Exclude<S1000dIssue, "2.3">) {
-  // S1000D-F-04-10-0301-00A-022A-D (4.2) bzw. S1000D-G-04-10-0301-00A-022A-D (5.0)
+  // S1000D-F-04-10-0301-00A-022A-D (4.2), S1000D-G-… (5.0) bzw. S1000D-H-… (6.0)
   out.open("brexDmRef")
   out.open("dmRef")
   out.open("dmRefIdent")

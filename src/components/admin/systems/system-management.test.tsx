@@ -37,8 +37,8 @@ describe("Systemverwaltung", () => {
   it("listet die Demo-Systeme sortiert nach Bezeichnung mit MI, Issue und DMRL-Link", async () => {
     renderPage()
     const rows = (await screen.findAllByRole("row")).slice(1)
-    expect(rows.map((row) => within(row).getAllByRole("cell")[1].textContent)).toEqual(["GTFDEMO", "PHUNGUN", "THSDEMO"])
-    expect(screen.getAllByRole("link", { name: /vorhanden/ })).toHaveLength(3)
+    expect(rows.map((row) => within(row).getAllByRole("cell")[1].textContent)).toEqual(["S1000DBIKE", "GTFDEMO", "PHUNGUN", "THSDEMO"])
+    expect(screen.getAllByRole("link", { name: /vorhanden/ })).toHaveLength(4)
     expect(screen.getByLabelText("PHUNGUN löschen")).toBeDisabled()
     expect(screen.getByLabelText("Transporthubschrauber löschen")).toBeDisabled()
   })
@@ -80,7 +80,7 @@ describe("Systemverwaltung", () => {
     fireEvent.change(mi, { target: { value: "phungun" } })
     fireEvent.click(within(dialog).getByRole("button", { name: "Speichern" }))
     expect(await within(dialog).findByText("Model Ident Code bereits vergeben.")).toBeInTheDocument()
-    expect(storedSystems()).toHaveLength(3)
+    expect(storedSystems()).toHaveLength(4)
   })
 
   it("zeigt „Keine Systeme gefunden\" bei erfolgloser Suche und findet über den MI", async () => {

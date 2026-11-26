@@ -4,7 +4,7 @@ import { S1000D_ISSUES } from "@/lib/data/schema"
 
 /**
  * Vertrag der XSD-Prüfung (PROJ-11 Tech Design C/D) zwischen Browser und Serverfunktion.
- * Anfrage: POST {XSD_ENDPOINT}?issue=2.3 | 4.2 | 5.0, Body = XML-Datei (roh, höchstens 5 MB).
+ * Anfrage: POST {XSD_ENDPOINT}?issue=2.3 | 4.2 | 5.0 | 6.0, Body = XML-Datei (roh, höchstens 5 MB).
  * Antwort: JSON gemäß `xsdResultSchema`.
  */
 

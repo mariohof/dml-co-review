@@ -80,8 +80,10 @@ test.describe("PROJ-4 Organisationsverwaltung", () => {
     await page.goto("/verwaltung/organisationen")
   })
 
-  test("Demo: C1234 und D0815 sind im Workflow benutzt, Löschen gesperrt", async ({ page }) => {
-    await expect(bodyRows(page)).toHaveText([/C1234.*im Workflow benutzt/, /D0815.*im Workflow benutzt/])
+  test("Demo: C1234 und D0815 sind im Workflow benutzt, Löschen gesperrt; B6865 (PROJ-22) nur der DMRL BIKE60 zugeordnet", async ({ page }) => {
+    await expect(bodyRows(page)).toHaveText([/B6865/, /C1234.*im Workflow benutzt/, /D0815.*im Workflow benutzt/])
+    await expect(bodyRows(page).filter({ hasText: "B6865" })).not.toContainText("im Workflow benutzt")
+    await expect(page.getByLabel("B6865 löschen")).toBeDisabled()
     await expect(page.getByLabel("C1234 löschen")).toBeDisabled()
     await expect(page.getByLabel("D0815 löschen")).toBeDisabled()
   })
@@ -104,11 +106,11 @@ test.describe("PROJ-4 Organisationsverwaltung", () => {
     await dialog.getByLabel("CAGE-Code").fill("x0001")
     await expect(dialog.getByLabel("CAGE-Code")).toHaveValue("X0001")
     await dialog.getByRole("button", { name: "Speichern" }).click()
-    await expect(bodyRows(page)).toHaveCount(3)
+    await expect(bodyRows(page)).toHaveCount(4)
     await page.getByLabel("X0001 löschen").click()
     dialog = page.getByRole("alertdialog")
     await dialog.getByRole("button", { name: "Löschen" }).click()
-    await expect(bodyRows(page)).toHaveCount(2)
+    await expect(bodyRows(page)).toHaveCount(3)
   })
 })
 
@@ -140,7 +142,7 @@ test.describe("PROJ-5 Systemverwaltung", () => {
     await expect(row).toContainText("— keine —")
     await page.getByLabel("Wasseraufbereitung löschen").click()
     await page.getByRole("alertdialog").getByRole("button", { name: "Löschen" }).click()
-    await expect(bodyRows(page)).toHaveCount(3)
+    await expect(bodyRows(page)).toHaveCount(4)
   })
 })
 
@@ -197,7 +199,7 @@ test.describe("PROJ-6 DMRL anlegen", () => {
     await page.goto("/verwaltung/dmrl")
     await page.getByLabel("DMRL Transporthubschrauber löschen").click()
     await page.getByRole("alertdialog").getByRole("button", { name: "Löschen" }).click()
-    await expect(bodyRows(page)).toHaveCount(2)
+    await expect(bodyRows(page)).toHaveCount(3)
     await page.goto("/verwaltung/systeme")
     await expect(bodyRows(page).filter({ hasText: "THSDEMO" })).toContainText("— keine —")
   })
@@ -221,7 +223,7 @@ test.describe("PROJ-17 DMRL-Berechtigungen", () => {
     await dialog.getByRole("button", { name: "Speichern" }).click()
 
     await switchUser(page, "Anna Bearbeitung")
-    await expect(bodyRows(page)).toHaveCount(3)
+    await expect(bodyRows(page)).toHaveCount(4)
 
     await switchUser(page, "Administrator")
     await page.goto("/verwaltung/dmrl")

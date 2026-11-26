@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { buildDemoDataset, DEMO_FILES, DEMO_IDS } from "./demo-data"
 import { DEMO_XML_FILES } from "./demo-xml.generated"
 import { currentVersionIndex } from "./queries"
+import { checkCommon } from "@/lib/rules/check/entry-rules"
 import { datasetSchema, SECURITY_PATTERN, type DmrlEntry } from "./schema"
 
 const demo = buildDemoDataset()
@@ -19,18 +20,21 @@ describe("Demo-Datenbestand", () => {
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true)
   })
 
-  it("enthält 3 Systeme mit den Issues 2.3, 4.2 und 5.0 und den festgelegten Namen", () => {
+  it("enthält 4 Systeme mit den Issues 2.3, 4.2, 5.0 und 6.0 und den festgelegten Namen", () => {
     expect(demo.systems.map((s) => [s.name, s.modelic, s.s1000dIssue])).toEqual([
       ["PHUNGUN", "PHUNGUN", "2.3"],
       ["Geschütztes Transportfahrzeug", "GTFDEMO", "4.2"],
       ["Transporthubschrauber", "THSDEMO", "5.0"],
+      // PROJ-22
+      ["Fahrrad BIKE60", "S1000DBIKE", "6.0"],
     ])
   })
 
-  it("enthält die Organisationen D0815 und C1234 mit neutralen Namen", () => {
+  it("enthält die Organisationen D0815, C1234 und B6865 (PROJ-22)", () => {
     expect(demo.organisations.map((o) => [o.code, o.name])).toEqual([
       ["D0815", "Musterbehörde Technische Dokumentation"],
       ["C1234", "Partner Systemtechnik GmbH"],
+      ["B6865", "Aerospace, Security and Defence Industries Association of Europe"],
     ])
   })
 
@@ -43,11 +47,25 @@ describe("Demo-Datenbestand", () => {
     ])
   })
 
-  it("vergibt die Berechtigungen laut Spec (Anna: PHUNGUN + Fahrzeug, Ben: Fahrzeug + Fluggerät)", () => {
+  it("vergibt die Berechtigungen laut Spec (Anna: PHUNGUN + Fahrzeug + BIKE60, Ben: Fahrzeug + Fluggerät)", () => {
     const editorsOf = (id: string) => demo.dmrls.find((d) => d.id === id)?.editorUserIds
     expect(editorsOf(DEMO_IDS.dmrlPhungun)).toEqual([DEMO_IDS.editorAnna])
     expect(editorsOf(DEMO_IDS.dmrlVehicle)).toEqual([DEMO_IDS.editorAnna, DEMO_IDS.editorBen])
     expect(editorsOf(DEMO_IDS.dmrlAircraft)).toEqual([DEMO_IDS.editorBen])
+    expect(editorsOf(DEMO_IDS.dmrlBike)).toEqual([DEMO_IDS.editorAnna])
+  })
+
+  it("legt die DMRL BIKE60 mit Originator B6865, Typ c, Sicherheitseinstufung 01 und Status in Bearbeitung an (PROJ-22)", () => {
+    const dmrl = demo.dmrls.find((d) => d.id === DEMO_IDS.dmrlBike)
+    expect(dmrl).toMatchObject({
+      systemId: DEMO_IDS.sysBike,
+      originatorOrganisationId: DEMO_IDS.orgAsd,
+      dmlType: "c",
+      security: "01",
+      status: "in_bearbeitung",
+      firstSendVersionIndex: `00001-${new Date().getFullYear()}`,
+    })
+    expect(demo.systems.find((s) => s.id === DEMO_IDS.sysBike)?.description).toBe("Fiktives Demo-Fahrrad (S1000D Issue 6.0)")
   })
 
   describe("DMRL PHUNGUN", () => {
@@ -107,13 +125,14 @@ describe("Demo-Datenbestand", () => {
   })
 
   describe.each([
-    ["Fahrzeug", DEMO_IDS.dmrlVehicle, "GTFDEMO"],
-    ["Fluggerät", DEMO_IDS.dmrlAircraft, "THSDEMO"],
-  ])("DMRL %s", (_label, dmrlId, modelic) => {
+    ["Fahrzeug", DEMO_IDS.dmrlVehicle, "GTFDEMO", 10, "de", "DE"],
+    ["Fluggerät", DEMO_IDS.dmrlAircraft, "THSDEMO", 10, "de", "DE"],
+    ["Fahrrad BIKE60", DEMO_IDS.dmrlBike, "S1000DBIKE", 12, "en", "US"],
+  ])("DMRL %s", (_label, dmrlId, modelic, count, language, country) => {
     const entries = entriesOf(dmrlId)
 
-    it("hat 10 Einträge mit Eintragstyp n im Status in Bearbeitung, kein Archiv, keinen Verlauf", () => {
-      expect(entries).toHaveLength(10)
+    it(`hat ${count} Einträge mit Eintragstyp n im Status in Bearbeitung, kein Archiv, keinen Verlauf`, () => {
+      expect(entries).toHaveLength(count)
       expect(entries.every((e) => e.fields.dmentryType === "n" && e.status === "in_bearbeitung")).toBe(true)
       expect(demo.archive.some((a) => a.dmrlId === dmrlId)).toBe(false)
       expect(demo.history.some((h) => h.dmrlId === dmrlId)).toBe(false)
@@ -129,8 +148,8 @@ describe("Demo-Datenbestand", () => {
         expect(entry.fields.modelic).toBe(modelic)
         for (const field of required) expect(entry.fields[field], field).not.toBe("")
         expect(entry.fields.security).toMatch(SECURITY_PATTERN)
-        expect(entry.fields.language).toBe("de")
-        expect(entry.fields.country).toBe("DE")
+        expect(entry.fields.language).toBe(language)
+        expect(entry.fields.country).toBe(country)
       }
       expect(new Set(entries.map(dmc)).size).toBe(entries.length)
 
@@ -144,6 +163,11 @@ describe("Demo-Datenbestand", () => {
         expect(infocodes.get(infoKey) ?? f.infoname, `Infocode ${infoKey}`).toBe(f.infoname)
         infocodes.set(infoKey, f.infoname)
       }
+    })
+
+    it("ergibt im Regelwerk (Check-in) keine Fehler", () => {
+      const candidates = entries.map((e, index) => ({ line: index + 1, fields: e.fields }))
+      expect(checkCommon(candidates, "checkin", modelic).filter((f) => f.severity === "fehler")).toEqual([])
     })
   })
 

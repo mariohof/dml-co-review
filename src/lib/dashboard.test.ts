@@ -18,14 +18,14 @@ const demo = buildDemoDataset()
 const user = (data: Dataset, id: string) => data.users.find((u) => u.id === id) as User
 
 describe("Kennzahlen und Tabelle", () => {
-  it("Administrator, Demo: Bestände 3, Offene SEND 1, Offene Änderungen 20, Freigegeben 0", () => {
-    expect(dashboardStats(dashboardRows(demo, user(demo, DEMO_IDS.admin)))).toEqual({ bestaende: 3, offeneSend: 1, offeneAenderungen: 20, freigegeben: 0 })
+  it("Administrator, Demo: Bestände 4, Offene SEND 1, Offene Änderungen 32, Freigegeben 0", () => {
+    expect(dashboardStats(dashboardRows(demo, user(demo, DEMO_IDS.admin)))).toEqual({ bestaende: 4, offeneSend: 1, offeneAenderungen: 32, freigegeben: 0 })
   })
 
-  it("Anna Bearbeitung sieht nur PHUNGUN und Fahrzeug", () => {
+  it("Anna Bearbeitung sieht nur PHUNGUN, Fahrzeug und BIKE60", () => {
     const rows = dashboardRows(demo, user(demo, DEMO_IDS.editorAnna))
-    expect(rows.map((r) => r.system?.modelic).sort()).toEqual(["GTFDEMO", "PHUNGUN"])
-    expect(dashboardStats(rows)).toEqual({ bestaende: 2, offeneSend: 1, offeneAenderungen: 10, freigegeben: 0 })
+    expect(rows.map((r) => r.system?.modelic).sort()).toEqual(["GTFDEMO", "PHUNGUN", "S1000DBIKE"])
+    expect(dashboardStats(rows)).toEqual({ bestaende: 3, offeneSend: 1, offeneAenderungen: 22, freigegeben: 0 })
   })
 
   it("Zeilenwerte: Kennung, Version, Einträge, Fortschritt; sortiert nach Systemname", () => {
@@ -87,10 +87,11 @@ describe("Filter", () => {
 
   it("Kacheln, Status (mehrfach), Issue, Suche nach Name/MI", () => {
     expect(names({ kachel: "send" })).toEqual(["PHUNGUN"])
-    expect(names({ kachel: "aenderungen" }).sort()).toEqual(["GTFDEMO", "THSDEMO"])
+    expect(names({ kachel: "aenderungen" }).sort()).toEqual(["GTFDEMO", "S1000DBIKE", "THSDEMO"])
     expect(names({ kachel: "freigegeben" })).toEqual([])
-    expect(names({ status: ["gesendet", "in_bearbeitung"] })).toHaveLength(3)
+    expect(names({ status: ["gesendet", "in_bearbeitung"] })).toHaveLength(4)
     expect(names({ issue: "4.2" })).toEqual(["GTFDEMO"])
+    expect(names({ issue: "6.0" })).toEqual(["S1000DBIKE"])
     expect(names({ suche: "phun" })).toEqual(["PHUNGUN"])
     expect(names({ suche: "Transporthubschrauber" })).toEqual(["THSDEMO"])
   })

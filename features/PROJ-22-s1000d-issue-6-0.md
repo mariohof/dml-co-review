@@ -1,6 +1,6 @@
 # PROJ-22: S1000D Issue 6.0 Unterstützung
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-26
 **Last Updated:** 2026-11-26
 
@@ -149,6 +149,8 @@ Fehlende Pflichtwerte (Sicherheitseinstufung je Eintrag `01`, Eintragstyp, Ausga
 | Hinweis in Gruppe „XSD" | Inhaltlich eine Ergänzung der Schemaprüfung; keine neue Regelgruppe im Regelwerk PROJ-8 | 2026-11-26 |
 | BREX-Verweis 6.0: `S1000D-H-04-10-0301-00A-022A-D` | Fortschreibung des Musters F (4.2) / G (5.0); vom Product Owner bestätigt | 2026-11-26 |
 | Startskript unverändert | Es prüft den Ordner `schemas` als Ganzes; der neue Unterordner ist automatisch enthalten | 2026-11-26 |
+| 6.0-Schema: Import von `xml.xsd` auf die mitgelieferte lokale Kopie umgestellt | Das Original lädt `http://www.w3.org/2001/xml.xsd` aus dem Netz; mit `xmllint --nonet` ließ sich das Schema sonst nicht übersetzen (Ergebnis „Schema fehlt“). Gleiches Vorgehen wie bei 5.0 (PROJ-11, Commit c21c157) | 2026-11-26 |
+| Zwei Meldungstexte für den Schema-Hinweis | REPLY-Import: „…das System verwendet Issue X…“; XML-Prüfung: „…gewählt ist Issue X — bitte Issue prüfen.“ Im Werkzeug gibt es kein System | 2026-11-26 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
@@ -228,6 +230,35 @@ Der Hinweis verhindert weder Import noch CSV-Download. Bei nicht wohlgeformten D
 
 ### F) Abhängigkeiten (Pakete)
 Keine neuen Pakete.
+
+## Implementation Notes (Frontend, 2026-11-26)
+Kein Backend nötig: Die XSD-Serverfunktion nutzt den neuen Schema-Ordner ohne Codeänderung.
+
+**Geändert**
+- `src/lib/data/schema.ts`: `S1000D_ISSUES` um „6.0“ ergänzt. Systemformular, Werkzeug, Dashboard-Filter, XSD-Schnittstelle und Ladeprüfung übernehmen das automatisch; die Formatversion bleibt 2.
+- `src/lib/data/dml-writer.ts`: Schema-Angabe `http://www.s1000d.org/S1000D_6/xml_schema_flat/dml.xsd` und BREX `H` für 6.0. Leser und Schreiber von 4.x werden mitbenutzt.
+- **Neu** `src/lib/rules/check/schema-location.ts`: liest die Schema-Angabe aus dem Wurzelelement (`noNamespaceSchemaLocation` mit beliebigem Präfix, sonst letzte URL von `schemaLocation`) und ordnet sie über die Versionskennung einer Issue zu. Erkannt werden auch `S1000D2.3` (NSG-Pfad der PHUNGUN-Dateien), `S1000D_6-0` und Kleinschreibung. Weicht die Issue ab, entsteht genau ein Hinweis in Gruppe XSD.
+- `src/lib/rules/check/reply.ts` und `src/lib/workflows/xml-check.ts` rufen den Abgleich auf. Im Werkzeug erscheint der Hinweis auch, wenn die Datei mit dem gewählten Leser nicht lesbar ist, aber nicht bei nicht wohlgeformten Dateien.
+- `src/lib/data/demo-data.ts`: Organisation B6865, System „Fahrrad BIKE60“ (S1000DBIKE, 6.0), DMRL `dmrl-bike60` mit 12 Einträgen laut Abschnitt F.
+- `schemas/s1000d/issue-6.0/dml.xsd`: Import von `xml.xsd` lokal (siehe Technical Decisions).
+- Meldung der XSD-Schnittstelle für unbekannte Issues nennt jetzt 2.3, 4.2, 5.0 und 6.0. Kommentare in xmllint, Leser und Typen sind angepasst.
+- Dokumentation: `docs/dmrl-mapping.md` (Mapping 4.2/5.0/6.0, Schema-Angaben, BREX, Wertebereiche) und die Schema-Tabelle in PROJ-11.
+- Windows-Offline-Paket: Der Rauchtest in `build-package.sh` und `SKILL.md` prüft zusätzlich die XSD-Prüfung mit 6.0. Ein neues Paket ist noch nicht gebaut.
+
+**Nebenwirkung (gewollt, aber erwähnenswert)**
+- B6865 erscheint als möglicher SEND-Empfänger bei allen anderen DMRLs, weil jede Organisation außer dem Originator wählbar ist. Bei BIKE60 sind C1234 und D0815 wählbar.
+- B6865 ist nicht „im Workflow benutzt“. Löschen ist trotzdem gesperrt, solange die Organisation der DMRL BIKE60 als Originator zugeordnet ist.
+
+**Tests**
+- Neu: `schema-location.test.ts` (Lesen, Zuordnung, Hinweis, keine Hinweise für die PHUNGUN-Demodateien).
+- Zyklus 6.0 SEND → REPLY für BIKE60 in `reply.test.ts`: Schema-Angabe und BREX H im SEND; REPLY ohne Befund; REPLY mit 5.0-Angabe ergibt genau einen Hinweis, der Import bleibt möglich.
+- xmllint: 6.0-Beispiel gültig gegen 6.0; 5.0 und 6.0 akzeptieren sich gegenseitig.
+- Werkzeug: 6.0-Beispiel mit 79 Einträgen und Fehlern nur in den Gruppen B (`security`), E und I; 5.0-Beispiel gegen 6.0 ergibt den Hinweis.
+- Demo-Daten: BIKE60 hat Kopf und Berechtigung laut Spec, und das Regelwerk des Check-ins (`checkCommon`) meldet für alle drei fest hinterlegten Demo-DMRLs keine Fehler. Einen Excel-Check-out mit anschließendem Check-in gibt es für BIKE60 nicht als eigenen Test; das bleibt für /qa.
+- Die Writer-XSD-Tests laufen über alle Issues und decken 6.0 damit automatisch ab (SEND, Export mit Antworten, mit/ohne Bezug).
+- Bestehende Unit- und E2E-Tests mit fest erwarteten Demo-Zählungen (3 → 4 Bestände, Organisationen, Systeme, Berechtigungen, Kacheln 20 → 32 offene Änderungen) sind angepasst.
+- Neu: E2E `tests/PROJ-22-issue-6-0.spec.ts` (Issue-Auswahl, SEND BIKE60 mit echter XSD-Prüfung, Werkzeug mit 6.0- und 5.0-Beispiel).
+- Ergebnis 2026-11-26: Vitest 745 bestanden (1 übersprungen); Playwright nach den Anpassungen alle bestanden. Lint: 0 Fehler.
 
 ## QA Test Results
 _To be added by /qa_

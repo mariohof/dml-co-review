@@ -3,6 +3,7 @@ import { ENTRY_FIELD_NAMES, isInfoField, type DmlCode, type DmrlStatus, type Ent
 import { versionIndexOf } from "@/lib/data/schema"
 import { formatDmc } from "@/lib/dmrl/entries"
 import { checkCommon, OPTIONAL_IN_REPLY } from "./entry-rules"
+import { checkSchemaLocation } from "./schema-location"
 import type { Candidate, Finding, Report } from "./types"
 
 /** REPLY-Prüfung (PROJ-8 Gruppen A–E, I, G, H) — läuft nach bestandener XSD-Prüfung (PROJ-11) */
@@ -109,6 +110,8 @@ export function runReplyCheck(xml: string, context: ReplyContext): ReplyResult {
   }
   const candidates = parsed.entries.map((fields, index) => ({ line: index + 1, fields }))
   const findings = [
+    // Hinweis bei abweichender Schema-Angabe (PROJ-22 E) — blockiert den Import nicht
+    ...checkSchemaLocation(xml, context.issue, "system"),
     ...checkReplyAgainstSend(parsed, candidates, context),
     ...checkCommon(candidates, "reply", context.systemModelic),
     ...checkAnswers(candidates),

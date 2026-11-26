@@ -120,7 +120,7 @@ export const userSchema = z.object({
 })
 export type User = z.infer<typeof userSchema>
 
-export const S1000D_ISSUES = ["2.3", "4.2", "5.0"] as const
+export const S1000D_ISSUES = ["2.3", "4.2", "5.0", "6.0"] as const
 export type S1000dIssue = (typeof S1000D_ISSUES)[number]
 
 export const systemSchema = z.object({

@@ -30,8 +30,8 @@ describe("Rechte-Regel", () => {
     expect(data.dmrls.every((d) => canAccessDmrl(admin, d))).toBe(true)
   })
 
-  it("erlaubt Bearbeitern nur berechtigte DMRLs (Demo: Anna PHUNGUN + Fahrzeug, Ben Fahrzeug + Fluggerät)", () => {
-    expect(visibleDmrls(data, anna).map((d) => d.id)).toEqual([DEMO_IDS.dmrlPhungun, DEMO_IDS.dmrlVehicle])
+  it("erlaubt Bearbeitern nur berechtigte DMRLs (Demo: Anna PHUNGUN + Fahrzeug + BIKE60, Ben Fahrzeug + Fluggerät)", () => {
+    expect(visibleDmrls(data, anna).map((d) => d.id)).toEqual([DEMO_IDS.dmrlPhungun, DEMO_IDS.dmrlVehicle, DEMO_IDS.dmrlBike])
     expect(visibleDmrls(data, ben).map((d) => d.id)).toEqual([DEMO_IDS.dmrlVehicle, DEMO_IDS.dmrlAircraft])
     expect(canAccessDmrl(anna, dmrl(DEMO_IDS.dmrlAircraft))).toBe(false)
   })
@@ -42,7 +42,7 @@ describe("Rechte-Regel", () => {
 
   it("wirkt eine Rollenänderung sofort (Bearbeiter → Administrator sieht alles)", () => {
     const promoted = { ...anna, role: "administrator" as const }
-    expect(visibleDmrls(data, promoted)).toHaveLength(3)
+    expect(visibleDmrls(data, promoted)).toHaveLength(4)
     expect(canAccessAdministration(promoted)).toBe(true)
   })
 

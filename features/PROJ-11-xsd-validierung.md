@@ -18,8 +18,9 @@ Jede DMRL-XML-Datei, die die Anwendung erzeugt oder annimmt, wird gegen das S100
 | 2.3 | `schemas/s1000d/issue-2.3/dml.xsd` (+ dc, rdf, xcf, xlink) | PHUNGUN-Beispieldateien gültig |
 | 4.2 | `schemas/s1000d/issue-4.2/dml.xsd` (+ dc, rdf, xcf, xlink) | |
 | 5.0 | `schemas/s1000d/issue-5.0/dml.xsd` (+ dc, rdf, xcf, xlink, xml) | `xml.xsd` lokal (Offline-Prüfung) |
+| 6.0 | `schemas/s1000d/issue-6.0/dml.xsd` (+ dc, rdf, xcf, xlink, xml) | `xml.xsd` lokal (Offline-Prüfung); ergänzt durch PROJ-22 (2026-11-26) |
 
-Maßgeblich ist **immer das Issue des Systems** der DMRL. Eine Datei eines anderen Issues fällt dadurch durch.
+Maßgeblich ist **immer das Issue des Systems** der DMRL. Eine Datei eines anderen Issues fällt dadurch durch. Ausnahme 5.0 ↔ 6.0: Die Schemas akzeptieren sich gegenseitig; die Verwechslung meldet PROJ-22 als Hinweis über die Schema-Angabe der Datei.
 
 ## Einsatz
 | Einsatz | Geprüft wird | Bei Fehler |

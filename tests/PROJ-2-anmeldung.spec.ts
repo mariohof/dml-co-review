@@ -36,13 +36,13 @@ test.describe("PROJ-2 Simulierte Anmeldung & Rollenwechsel", () => {
       await expect(page.getByRole("menuitem", { name: item })).toBeVisible()
     }
     await page.keyboard.press("Escape")
-    await expect(bodyRows(page)).toHaveCount(3)
+    await expect(bodyRows(page)).toHaveCount(4)
   })
 
   test("Bearbeiter: nur „Dashboard\", nur berechtigte DMRLs", async ({ page }) => {
     await startAs(page, "Anna Bearbeitung")
     await expect(page.getByRole("button", { name: "Verwaltung" })).toHaveCount(0)
-    await expect(bodyRows(page)).toHaveText([/Geschütztes Transportfahrzeug/, /PHUNGUN/])
+    await expect(bodyRows(page)).toHaveText([/Fahrrad BIKE60/, /Geschütztes Transportfahrzeug/, /PHUNGUN/])
   })
 
   test("Bearbeiter ohne Berechtigung sieht den Hinweis im Dashboard", async ({ page }) => {
@@ -103,7 +103,7 @@ test.describe("PROJ-2 Simulierte Anmeldung & Rollenwechsel", () => {
     await startAs(page, "Anna Bearbeitung")
     await patchDataset(page, "data.users.find(u => u.id === 'user-anna-bearbeitung').role = 'administrator'")
     await expect(page.getByRole("button", { name: "Verwaltung" })).toBeVisible()
-    await expect(bodyRows(page)).toHaveCount(3)
+    await expect(bodyRows(page)).toHaveCount(4)
   })
 })
 

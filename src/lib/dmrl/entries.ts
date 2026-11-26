@@ -5,7 +5,7 @@ import { ENTRY_STATUSES, type EntryFields, type EntrySnapshot, type EntryStatus 
  * DMRL-Ansicht, Freigabestand (PROJ-14), Archiv (PROJ-15), Prüfberichte (PROJ-8).
  */
 
-/** DMC aus den 11 Feldern, z. B. PHUNGUN-A-A05-40-0000-01A-000A-A (gleich für Issue 2.3/4.2/5.0) */
+/** DMC aus den 11 Feldern, z. B. PHUNGUN-A-A05-40-0000-01A-000A-A (gleich für Issue 2.3/4.2/5.0/6.0) */
 export function formatDmc(f: Pick<EntryFields, "modelic" | "sdc" | "chapnum" | "section" | "subsect" | "subject" | "discode" | "discodev" | "incode" | "incodev" | "itemloc">): string {
   return [
     f.modelic,
