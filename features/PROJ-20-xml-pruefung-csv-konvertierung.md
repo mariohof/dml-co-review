@@ -5,7 +5,9 @@
 **Last Updated:** 2026-11-26
 
 
-> **Refinement 2026-11-26 (über `/refine PROJ-9`) — 37 Spalten:** Die konvertierte CSV hat 37 Spalten (wie Check-out); `dmc` ist gefüllt, die Informationsfelder `orig` bis `io-pm` sind leer (nicht in der Empfänger-XML).
+> **Refinement 2026-11-26 (2) — CSV mit 28 Spalten (Anlass BUG-QA13-1):** Die konvertierte CSV hat **28 Spalten** (Aufbau vom 21.11.2026: bis `remarks`, inkl. `answer_timestamp`) — **ohne** `dmc` und **ohne** die Informationsfelder `orig` bis `io-pm`. Grund: Eine Empfänger-XML enthält keine Informationsfelder; eine 37-Spalten-CSV mit leeren Informationsfeldern würde beim Check-in alle gespeicherten Werte der DMRL leeren. Mit 28 Spalten greift die Check-in-Regel „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten“ (PROJ-10); am Check-in ändert sich nichts. Ersetzt den Stand des ersten Refinements vom selben Tag (37 Spalten, Informationsfelder leer). Check-out, Export und Freigabestand behalten 37 Spalten (PROJ-9).
+
+> ~~**Refinement 2026-11-26 (über `/refine PROJ-9`) — 37 Spalten:** Die konvertierte CSV hat 37 Spalten (wie Check-out); `dmc` ist gefüllt, die Informationsfelder `orig` bis `io-pm` sind leer (nicht in der Empfänger-XML).~~ — ersetzt durch Refinement 2026-11-26 (2)
 
 > **Refinement 2026-11-21 (über PROJ-13) — `answer_timestamp`:** Die konvertierte CSV hat 28 Spalten (wie Check-out); `answer_timestamp` ist leer, da eine Empfänger-XML keinen Übernahme-Zeitpunkt enthält.
 
@@ -74,7 +76,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 **Prüfbericht:** gleiche Darstellung und gleicher Download wie beim Check-in (PROJ-10), gruppiert nach XSD und Regeln.
 
 **CSV**
-- Aufbau wie Check-out (PROJ-9): 27 Spalten, Semikolon, UTF-8 mit BOM, nach DMC sortiert, inkl. `answer`/`answer_comment`, Formelschutz (BUG-QA2-1)
+- Aufbau: **28 Spalten** wie die Check-out-CSV vom 21.11.2026 — ohne `dmc` und ohne Informationsfelder *(Refinement 2026-11-26 (2))*; Semikolon, UTF-8 mit BOM, nach DMC sortiert, inkl. `answer`/`answer_comment`, Formelschutz (BUG-QA2-1)
 - Dateiname: Name der XML-Datei mit Endung `.csv`, z. B. `DML-PHUNGUN-C1234-C-2026-00002_001-00.csv`
 - Fehlende Ausgabedaten mit Standardwerten ergänzt (siehe „Prüfung“); alle übrigen Werte unverändert aus der XML
 - Bei Fehlern: Hinweis direkt an der Schaltfläche: „Die CSV enthält Fehler aus der Prüfung — ein Check-in wird abgewiesen, bis sie behoben sind.“
@@ -133,7 +135,8 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 
 ### Ergebnis und CSV
 - [ ] Angenommen eine Prüfung ist abgeschlossen, wenn die Zusammenfassung angezeigt wird, dann enthält sie Dateiname, Issue, DML-Code, Ausgabestand, Datum, Sicherheitseinstufung, MI, Anzahl Einträge und Anzahl Antworten je Art
-- [ ] Angenommen eine lesbare Datei, wenn „CSV herunterladen“ gewählt wird, dann wird eine CSV im Check-out-Format (27 Spalten, Semikolon, UTF-8 mit BOM, nach DMC sortiert) mit dem Namen der XML-Datei und Endung `.csv` heruntergeladen
+- [ ] Angenommen eine lesbare Datei, wenn „CSV herunterladen“ gewählt wird, dann wird eine CSV mit **28 Spalten** (Aufbau vom 21.11.2026, ohne `dmc` und Informationsfelder; Semikolon, UTF-8 mit BOM, nach DMC sortiert) mit dem Namen der XML-Datei und Endung `.csv` heruntergeladen *(Refinement 2026-11-26 (2) — bisher 27 bzw. Check-out-Format)*
+- [ ] Angenommen eine DMRL hat gespeicherte Informationsfelder (z. B. `orig`), wenn die CSV des Werkzeugs in die ausgecheckte DMRL eingecheckt wird, dann bleiben die gespeicherten Informationsfelder unverändert und der Prüfbericht nennt „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten.“ *(Refinement 2026-11-26 (2), BUG-QA13-1)*
 - [ ] Angenommen eine Empfänger-XML mit Antworten, wenn sie konvertiert wird, dann stehen Antwort und Begründung je Eintrag in den Spalten `answer` und `answer_comment`
 - [ ] Angenommen ein Eintrag enthält einen Wert, der mit `=`, `+`, `-` oder `@` beginnt, wenn die CSV erzeugt wird, dann ist der Wert wie bei allen CSV-Dateien gegen Formelausführung geschützt
 - [ ] Angenommen eine fehlerfreie Datei wurde konvertiert, wenn die CSV unverändert in eine passend ausgecheckte DMRL eingecheckt wird, dann besteht sie die Regelprüfung des Check-ins (Abweichungen nur aus dem Abgleich mit der DMRL, z. B. MI des Systems); enthält sie Empfängerantworten, fragt der Check-in, ob sie übernommen werden (nach Anpassung PROJ-10)
@@ -165,6 +168,7 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 - **XSD-Prüfung nicht erreichbar, weil der Server beendet wurde** (Browser-Tab noch offen): Regelprüfung läuft im Browser weiter; Hinweis „Server läuft nicht“ mit „Erneut prüfen“. *(Ursache des Falls TWLBORFLOS vom 2026-11-16; xmllint selbst prüft die Datei fehlerfrei.)*
 - **App über Rechnername oder Netzwerkadresse geöffnet:** Serverfunktion lehnt ab (Schutz aus BUG-QA2-3); Hinweis „Zugriff abgelehnt — bitte über http://localhost:<Port> öffnen“.
 - **Doppelte DMC:** Bericht meldet Regel C; die CSV enthält beide Einträge (Check-in würde sie abweisen).
+- **Werkzeug-CSV in eine DMRL mit gespeicherten Informationsfeldern einchecken:** Informationsfelder bleiben erhalten (28-Spalten-Datei); neue Einträge aus der CSV haben leere Informationsfelder. Wer Informationsfelder pflegen will, checkt danach normal aus (37 Spalten) *(Refinement 2026-11-26 (2))*.
 
 ## Technical Requirements (optional)
 - Prüfung einer 5-MB-Datei in wenigen Sekunden
@@ -213,6 +217,8 @@ Neben der Meldung gibt es die Schaltfläche **„Erneut prüfen“** (wie „Ern
 | Fehlt nur die Ausgabenummer (Ausgabetyp vorhanden), wird nichts ergänzt | Bei `changed`/`deleted` wäre `001` meist falsch; die Nummer klärt der Bearbeiter | 2026-11-16 |
 | Lange Codes in der Zusammenfassung nach Bindestrichen umbrechen, rein per CSS (kein eingefügtes Zeichen) — bereits umgesetzt | Umbruch mitten in Codegruppen (z. B. `0000` / `1`) ist schwer lesbar; Wunsch Product Owner: nur CSS | 2026-11-16 |
 | Menüpunkt und Seitenüberschrift heißen „Werkzeug“ statt „XML prüfen“ | Wunsch Product Owner | 2026-11-22 |
+| CSV des Werkzeugs mit 28 Spalten (ohne `dmc` und Informationsfelder) statt 37 | BUG-QA13-1: leere Informationsfelder einer Empfänger-XML würden beim Check-in gespeicherte Werte leeren; mit 28 Spalten bleiben sie über die bestehende Check-in-Regel erhalten, ohne Änderung am Check-in. Alternativen verworfen: leere Werte beim Check-in nicht übernehmen (bewusstes Leeren unmöglich), eigener 29-Spalten-Aufbau mit `dmc` (vierte Dateifassung) | 2026-11-26 |
+| Kein zusätzlicher Hinweis im Werkzeug zur fehlenden `dmc`-Spalte | Der Check-in meldet „Datei ohne Informationsfelder – gespeicherte Werte bleiben erhalten“; die Werkzeug-CSV ist Zwischenstand für den Check-in | 2026-11-26 |
 | Adresse `/xml-pruefung` bleibt | Lesezeichen und Verweise bleiben gültig; die Adresse beschreibt weiterhin die Funktion | 2026-11-22 |
 | Zeile über der Überschrift wechselt von „Werkzeug“ zu „XML prüfen“ | Vermeidet „Werkzeug“ doppelt; die Funktion bleibt auf der Seite benannt | 2026-11-22 |
 
